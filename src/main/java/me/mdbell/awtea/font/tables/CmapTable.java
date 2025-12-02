@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import me.mdbell.awtea.font.cmap.*;
-import org.jetbrains.annotations.NotNull;
 import me.mdbell.awtea.font.ByteReader;
 
 import java.util.ArrayList;
@@ -121,7 +120,6 @@ public final class CmapTable {
 			.build();
 	}
 
-	@NotNull
 	private static EncRecord getEncRecord(List<EncRecord> records) {
 		EncRecord chosen;
 
