@@ -17,7 +17,7 @@ import java.util.jar.JarFile;
 
 public class ApiDiff {
 
-	private static final String AWTEA_ROOT_PACKAGE = "awtea.classlib";
+	private static final String AWTEA_ROOT_PACKAGE = "me.mdbell.awtea.classlib";
 	private static final String AWTEA_PREFIX = AWTEA_ROOT_PACKAGE + ".";
 	private static final String CLASS_PREFIX = "T";
 
