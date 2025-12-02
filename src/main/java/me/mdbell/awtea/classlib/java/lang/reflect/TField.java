@@ -9,4 +9,13 @@ public class TField {
     public void setInt(Object obj, int value) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
+
+    public int getModifiers() {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    public String getName() {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
 }

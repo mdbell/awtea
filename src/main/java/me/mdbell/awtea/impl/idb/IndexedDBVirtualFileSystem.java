@@ -32,4 +32,9 @@ public class IndexedDBVirtualFileSystem implements VirtualFileSystem {
     public String canonicalize(String path) {
         return path.replaceAll("/+", "/"); // Normalize path
     }
+
+    @Override
+    public String[] getRoots() {
+        return new String[]{ROOT_DIR};
+    }
 }

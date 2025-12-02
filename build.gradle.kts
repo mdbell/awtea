@@ -32,9 +32,9 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.36")
     annotationProcessor("org.projectlombok:lombok:1.18.36")
 
-    implementation("org.teavm:teavm-core:0.11.0")
-    implementation("org.teavm:teavm-classlib:0.11.0")
-    implementation("org.teavm:teavm-jso-apis:0.11.0")
+    implementation("org.teavm:teavm-core:0.13.0")
+    implementation("org.teavm:teavm-classlib:0.13.0")
+    implementation("org.teavm:teavm-jso-apis:0.13.0")
 }
 
 tasks.test {
