@@ -5,8 +5,13 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 /**
+ * Not actually deprecated, but marked so to remind
+ * us to use the base java.util.Random - and only use this class
+ * internally
+ *
  * @see java.util.Random
  */
+@Deprecated
 public class Random{
     /**
      * State for Xorshift64 PRNG
