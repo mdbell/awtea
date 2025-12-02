@@ -13,15 +13,15 @@ java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
 }
-
-teavm {
-    all {
-        debugInformation = true
-    }
-    js {
-        moduleType = JSModuleType.ES2015
-    }
-}
+//
+//teavm {
+//    all {
+//        debugInformation = true
+//    }
+//    js {
+//        moduleType = JSModuleType.ES2015
+//    }
+//}
 
 repositories {
     mavenCentral()
