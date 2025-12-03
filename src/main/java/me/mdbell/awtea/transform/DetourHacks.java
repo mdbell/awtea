@@ -1,11 +1,15 @@
 package me.mdbell.awtea.transform;
 
+import me.mdbell.awtea.detour.FieldDetour;
 import org.teavm.model.*;
 import org.teavm.model.instructions.InvokeInstruction;
 import me.mdbell.awtea.detour.NoDetours;
 import me.mdbell.awtea.detour.SystemDetour;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DetourHacks implements ClassHolderTransformer {
@@ -24,6 +28,10 @@ public class DetourHacks implements ClassHolderTransformer {
         put(System.class.getName(), new MethodDetour[]{
                 new MethodDetour(MethodDescriptor.parse("exit(I)V"), SystemDetour.class)
         });
+		put(Field.class.getName(), new MethodDetour[]{
+			new MethodDetour(MethodDescriptor.parse("getInt(Ljava/lang/Object;)I"), FieldDetour.class),
+			new MethodDetour(MethodDescriptor.parse("setInt(Ljava/lang/Object;I)V"), FieldDetour.class)
+		});
     }};
 
     @Override
@@ -61,7 +69,22 @@ public class DetourHacks implements ClassHolderTransformer {
         for (MethodDetour detour : detours) {
             MethodDescriptor desc = detour.desc;
             if (ref.getDescriptor().equals(desc)) {
-                invoke.setMethod(new MethodReference(detour.newClass.getName(), detour.desc));
+				Variable thisVar = invoke.getInstance();
+				MethodDescriptor descriptor = detour.desc;
+				if(thisVar != null) {
+					// need to pass the instance as the first argument for non-static methods
+					List<Variable> newArgs = new ArrayList<>();
+					newArgs.add(thisVar);
+					newArgs.addAll(invoke.getArguments());
+					invoke.setArguments(newArgs.toArray(new Variable[0]));
+					invoke.setInstance(null);
+					ValueType[] signature = descriptor.getSignature();
+					ValueType[] newSignature = new ValueType[signature.length + 1];
+					newSignature[0] = ValueType.object(invoke.getMethod().getClassName());
+					System.arraycopy(signature, 0, newSignature, 1, signature.length);
+					descriptor = new MethodDescriptor(descriptor.getName(),newSignature);
+				}
+                invoke.setMethod(new MethodReference(detour.newClass.getName(), descriptor));
             }
         }
     }
