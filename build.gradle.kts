@@ -2,7 +2,6 @@ import org.teavm.gradle.api.JSModuleType
 
 plugins {
     id ("java")
-    id("org.teavm") version "0.11.0"
 }
 
 java {
@@ -35,8 +34,4 @@ dependencies {
     implementation("org.teavm:teavm-core:0.13.0")
     implementation("org.teavm:teavm-classlib:0.13.0")
     implementation("org.teavm:teavm-jso-apis:0.13.0")
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

@@ -1,5 +1,7 @@
 package me.mdbell.awtea.classlib.javax.sound.sampled;
 
+import lombok.Getter;
+
 import javax.sound.sampled.*;
 
 /**
@@ -122,4 +124,13 @@ public interface TLine extends AutoCloseable {
      */
     void removeLineListener(LineListener listener);
 
+	@Getter
+	class Info {
+
+		protected Class<? extends TDataLine> lineClass;
+
+		public Info(Class<? extends TDataLine> lineClass) {
+			this.lineClass = lineClass;
+		}
+	}
 }
