@@ -1,6 +1,7 @@
 
 plugins {
     id ("java")
+    id ("maven-publish")
 }
 
 java {
@@ -11,6 +12,19 @@ java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
 }
+
+group = "me.mdbell"
+version = "0.1.0"
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+            artifactId = "awtea"
+        }
+    }
+}
+
 //
 //teavm {
 //    all {
