@@ -145,4 +145,9 @@ public abstract class TColorModel {
 		}
 		return rgbDefaultModel;
 	}
+
+	public TWritableRaster createCompatibleWritableRaster(int w, int h) {
+		throw new UnsupportedOperationException
+			("This method is not supported by this color model");
+	}
 }
