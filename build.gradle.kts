@@ -1,4 +1,3 @@
-import org.teavm.gradle.api.JSModuleType
 
 plugins {
     id ("java")
