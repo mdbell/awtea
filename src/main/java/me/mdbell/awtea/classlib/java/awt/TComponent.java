@@ -7,6 +7,7 @@ import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.classlib.java.awt.image.TImageProducer;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -20,6 +21,10 @@ public abstract class TComponent {
     @Getter
     @Setter
     protected int x, y, width, height;
+
+    @Setter
+    @Getter
+    private Dimension preferredSize;
 
     protected List<TMouseListener> mouseListeners = new ArrayList<>();
     protected List<TMouseMotionListener> mouseMotionListeners = new ArrayList<>();
@@ -171,7 +176,7 @@ public abstract class TComponent {
 
     }
 
-	public void setFocusTraversalKeysEnabled(boolean focusTraversalKeysEnabled) {
+    public void setFocusTraversalKeysEnabled(boolean focusTraversalKeysEnabled) {
 
 	}
 

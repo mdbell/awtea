@@ -18,6 +18,10 @@ public class TAudioSystem {
 		return createLine(format);
     }
 
+	public static TSourceDataLine getSourceDataLine(AudioFormat format) throws LineUnavailableException {
+		return (TSourceDataLine) createLine(format);
+	}
+
 	private static AbstractDataLine createLine(AudioFormat format) throws LineUnavailableException {
 		if(isSecureContext()) {
 			// better code path - but requires more permissions
