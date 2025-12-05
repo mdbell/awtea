@@ -3,12 +3,14 @@ package me.mdbell.awtea.util;
 import me.mdbell.awtea.util.jso.JSRecord;
 import me.mdbell.awtea.util.jso.MediaQueryList;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.typedarrays.ArrayBufferView;
+import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 public final class JSObjectsExtensions {
 
@@ -31,4 +33,14 @@ public final class JSObjectsExtensions {
 //        options.put("willReadFrequently", JSBoolean.valueOf(frequentReads));
 		return (CanvasRenderingContext2D) element.getContext("2d", options);
 	}
+
+	@JSBody(params = {"blob"}, script = "return (window.URL || window.webkitURL).createObjectURL(blob);")
+	public static native String createObjectUrl(JSObject blob);
+
+	@JSBody(params = {"url"}, script = "return (window.URL || window.webkitURL).revokeObjectURL(url);")
+	public static native void revokeObjectUrl(String url);
+
+	@JSByRef
+	@JSBody(params = {"arr"}, script = "return arr;")
+	public static native byte[] getArrayFromJS(Uint8ClampedArray arr);
 }

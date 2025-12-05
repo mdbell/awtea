@@ -4,19 +4,17 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.SneakyThrows;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.image.*;
+import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.classlib.java.awt.TDimension;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
-import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLImageElement;
 import org.teavm.jso.typedarrays.Uint8Array;
-import org.teavm.jso.typedarrays.Uint8ClampedArray;
-import me.mdbell.awtea.util.JSObjectsExtensions;
 
 import java.io.IOException;
 import java.net.URL;
@@ -25,7 +23,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 @ExtensionMethod({JSObjectsExtensions.class})
-public class TTeaVmToolkit extends TToolkit{
+public class TTeaVmToolkit extends TToolkit {
 
 	private static final TColorModel colorModel = new TDirectColorModel(32,
 		0x00FF0000,  // Red
@@ -35,11 +33,11 @@ public class TTeaVmToolkit extends TToolkit{
 	);
 
 	@Override
-    public TImage createImage(byte[] imagedata, int imageoffset, int imagelength) {
+	public TImage createImage(byte[] imagedata, int imageoffset, int imagelength) {
 		byte[] sub = Arrays.copyOfRange(imagedata, imageoffset, imageoffset + imagelength);
-        CanvasRenderingContext2D context2D = loadImage(sub);
-        return loadImageFromContext(context2D);
-    }
+		CanvasRenderingContext2D context2D = loadImage(sub);
+		return loadImageFromContext(context2D);
+	}
 
 	@SneakyThrows
 	@Override
@@ -100,8 +98,8 @@ public class TTeaVmToolkit extends TToolkit{
 	@Override
 	public int getScreenResolution() {
 		return 96; // Common default DPI - hardcoded for simplicity (can likely be obtained
-		           // through some CSS/JS fuckery if needed)
-		           // See: https://gist.github.com/bsorrentino/cf3f8a439ef688d2f869e1c00aaeecf9
+		// through some CSS/JS fuckery if needed)
+		// See: https://gist.github.com/bsorrentino/cf3f8a439ef688d2f869e1c00aaeecf9
 	}
 
 	@Override
@@ -127,43 +125,33 @@ public class TTeaVmToolkit extends TToolkit{
 	}
 
 	public static CanvasRenderingContext2D loadImage(byte[] data) {
-        Uint8Array arr = new Uint8Array(data.length);
-        arr.set(data);
-        JSObject blob = blob(arr);
-        String url = createObjectUrl(blob);
-        return loadImage(url);
-    }
+		Uint8Array arr = new Uint8Array(data.length);
+		arr.set(data);
+		JSObject blob = blob(arr);
+		String url = blob.createObjectUrl();
+		return loadImage(url);
+	}
 
-    @Async
-    private static native CanvasRenderingContext2D loadImage(String url);
+	@Async
+	private static native CanvasRenderingContext2D loadImage(String url);
 
-    private static void loadImage(String url, AsyncCallback<CanvasRenderingContext2D> callback) {
-        HTMLImageElement img = (HTMLImageElement) Window.current().getDocument().createElement("img");
-        HTMLCanvasElement canvasElement = (HTMLCanvasElement) Window.current().getDocument().createElement("canvas");
-        img.onLoad(evt -> {
-            canvasElement.setWidth(img.getWidth());
-            canvasElement.setHeight(img.getHeight());
-            CanvasRenderingContext2D context = canvasElement.getContext2d(true);
-            context.drawImage(img, 0, 0);
-            revokeObjectUrl(url);
-            callback.complete(context);
-        });
-        img.onEvent("error", evt -> {
-            callback.error(new IOException("Unable to read image from URL"));
-        });
-        img.setSrc(url);
-    }
+	private static void loadImage(String url, AsyncCallback<CanvasRenderingContext2D> callback) {
+		HTMLImageElement img = (HTMLImageElement) Window.current().getDocument().createElement("img");
+		HTMLCanvasElement canvasElement = (HTMLCanvasElement) Window.current().getDocument().createElement("canvas");
+		img.onLoad(evt -> {
+			canvasElement.setWidth(img.getWidth());
+			canvasElement.setHeight(img.getHeight());
+			CanvasRenderingContext2D context = canvasElement.getContext2d(true);
+			context.drawImage(img, 0, 0);
+			url.revokeObjectUrl();
+			callback.complete(context);
+		});
+		img.onEvent("error", evt -> {
+			callback.error(new IOException("Unable to read image from URL"));
+		});
+		img.setSrc(url);
+	}
 
-    @JSBody(params = {"arr"}, script = "return new Blob([arr]);")
-    private static native JSObject blob(Uint8Array arr);
-
-    @JSBody(params = {"blob"}, script = "return (window.URL || window.webkitURL).createObjectURL(blob);")
-    private static native String createObjectUrl(JSObject blob);
-
-    @JSBody(params = {"url"}, script = "return (window.URL || window.webkitURL).revokeObjectURL(url);")
-    private static native void revokeObjectUrl(String url);
-
-    @JSByRef
-    @JSBody(params = {"arr"}, script = "return arr;")
-    private static native byte[] getArrayFromJS(Uint8ClampedArray arr);
+	@JSBody(params = {"arr"}, script = "return new Blob([arr]);")
+	private static native JSObject blob(Uint8Array arr);
 }
