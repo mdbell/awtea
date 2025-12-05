@@ -52,6 +52,9 @@ public class Theme {
 			"--aw-button-bg: #f5f5f5;" +
 			"--aw-button-border: #888;" +
 			"--aw-error-fg: #b00020;" +
+			"--aw-warning-fg: #e65c00;" +
+			"--aw-info-fg: #0066cc;" +
+			"--aw-debug-fg: #444;" +
 			"}" +
 			"." + DARK_MODE_CLASS + " {" +
 			"--aw-bg: #1e1e1e;" +
@@ -66,6 +69,9 @@ public class Theme {
 			"--aw-button-bg: #333;" +
 			"--aw-button-border: #777;" +
 			"--aw-error-fg: #ff8080;" +
+			"--aw-warning-fg: #ffb366;" +
+			"--aw-info-fg: #3399ff;" +
+			"--aw-debug-fg: #ccc;" +
 			"}");
 
 		Window.current().getDocument().getHead().appendChild(style);

@@ -2,6 +2,7 @@ package me.mdbell.awtea.util.ui;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.browser.Storage;
@@ -26,7 +27,6 @@ public abstract class FloatingWindow {
 	protected HTMLElement bodyEl;
 	protected HTMLElement headerControlsEl;
 	protected HTMLElement titleEl;
-	protected HTMLElement darkBtnEl;
 
 	@Getter
 	private String title;
@@ -37,7 +37,6 @@ public abstract class FloatingWindow {
 
 	private final String storagePosLeftKey;
 	private final String storagePosRightKey;
-	private final String storageIsDarkModeKey;
 
 	// drag
 	private boolean dragging = false;
@@ -45,6 +44,25 @@ public abstract class FloatingWindow {
 	private int dragStartMouseY;
 	private int dragStartLeft;
 	private int dragStartTop;
+
+	// Resizing
+	private boolean resizing = false;
+	private int resizeStartMouseX;
+	private int resizeStartMouseY;
+	private int resizeStartWidth;
+	private int resizeStartHeight;
+	@Getter
+	@Setter
+	private int minWidth = 300;
+	@Getter
+	@Setter
+	private int minHeight = 150;
+
+	// Maximizing
+	private boolean maximized = false;
+	private int prevLeft, prevTop, prevWidth, prevHeight;
+
+	private boolean pointerListenersAttached = false;
 
 	// config
 	private final int refreshIntervalMs;
@@ -59,6 +77,12 @@ public abstract class FloatingWindow {
 	private static int zCounter = 10000;
 	private HTMLElement taskbarButton;
 	private boolean minimized = false;
+
+	@Getter
+	@Setter
+	private boolean autoscroll = false;
+	private boolean stickToBottom = true;
+
 
 	static {
 		Theme.get(); // ensure theme is initialized
@@ -75,7 +99,6 @@ public abstract class FloatingWindow {
 
 		storagePosLeftKey = windowId + ".left";
 		storagePosRightKey = windowId + ".top";
-		storageIsDarkModeKey = windowId + ".darkmode";
 
 		document = Window.current().getDocument();
 
@@ -185,7 +208,7 @@ public abstract class FloatingWindow {
 		renderIfChanged();
 	}
 
-	public final void renderIfChanged() {
+	private void renderIfChanged() {
 		String sig = computeSignature();
 		if (sig != null && sig.equals(lastSignature)) {
 			return; // no-op, no flicker
@@ -215,6 +238,10 @@ public abstract class FloatingWindow {
 			bodyEl.replaceChild(newContent, bodyContent);
 		}
 		bodyContent = newContent;
+
+		if (autoscroll) {
+			autoscroll(bodyEl);
+		}
 	}
 
 	public void close() {
@@ -247,10 +274,15 @@ public abstract class FloatingWindow {
 			evt.preventDefault();
 		});
 
+		header.addEventListener("dblclick", evt -> {
+			evt.preventDefault();
+			toggleMaximize();
+		});
+
 
 		titleEl = document.createElement("div");
 		titleEl.setClassName("aw-window-title");
-		titleEl.setTextContent(title);
+		titleEl.setTextContent("AWTea - " + title);
 		header.appendChild(titleEl);
 
 		headerControlsEl = document.createElement("div");
@@ -282,7 +314,24 @@ public abstract class FloatingWindow {
 		// Body
 		bodyEl = document.createElement("div");
 		bodyEl.setClassName("aw-window-body");
+
+		// resizer
+		HTMLElement resizer = document.createElement("div");
+		resizer.setClassName("aw-window-resizer");
+		container.appendChild(resizer);
+
+		resizer.addEventListener("mousedown", evt -> {
+			MouseEvent e = (MouseEvent) evt;
+			startResize(e);
+			evt.preventDefault();
+		});
+
 		container.appendChild(bodyEl);
+
+		bodyEl.addEventListener("scroll", evt -> {
+			int scrollBottom = bodyEl.getScrollHeight() - (bodyEl.getScrollTop() + bodyEl.getClientHeight());
+			stickToBottom = scrollBottom < 20; // threshold
+		});
 	}
 
 	// ----- Style -----
@@ -351,6 +400,26 @@ public abstract class FloatingWindow {
 				"flex: 1;" +
 				"min-height: 0;" +  // allow flex to shrink
 				"overflow: auto;" +
+				"}" +
+				".aw-window-resizer { " +
+				"position: absolute;" +
+				"right: 0;" +
+				"bottom: 0;" +
+				"width: 12px;" +
+				"height: 12px;" +
+				"cursor: se-resize;" +
+				"background: transparent;" +
+				"}" +
+				".aw-window-resizer::before { " +
+				"content: '';" +
+				"position: absolute;" +
+				"right: 3px;" +
+				"bottom: 3px;" +
+				"width: 8px;" +
+				"height: 8px;" +
+				"border-right: 2px solid rgba(255,255,255,0.7);" +
+				"border-bottom: 2px solid rgba(255,255,255,0.7);" +
+				"pointer-events: none;" +
 				"}"
 		);
 		document.getHead().appendChild(style);
@@ -371,44 +440,96 @@ public abstract class FloatingWindow {
 		style.setProperty("right", "auto");
 		style.setProperty("bottom", "auto");
 
-		attachGlobalDragListeners();
+		attachPointerListeners();
+		bringToFront();
 	}
 
-	private void attachGlobalDragListeners() {
-		if (document.getElementById("aw-window-drag-listeners") != null) {
+	private void attachPointerListeners() {
+		if (pointerListenersAttached) {
 			return;
 		}
-		HTMLElement marker = document.createElement("div");
-		marker.setId("aw-window-drag-listeners");
-		marker.getStyle().setProperty("display", "none");
-		document.getBody().appendChild(marker);
+		pointerListenersAttached = true;
 
-		document.addEventListener("mousemove", new EventListener<Event>() {
-			@Override
-			public void handleEvent(Event evt) {
-				if (!dragging) return;
-				MouseEvent e = (MouseEvent) evt;
+		document.addEventListener("mousemove", evt -> {
+			MouseEvent e = (MouseEvent) evt;
+
+			if (dragging) {
 				int dx = e.getClientX() - dragStartMouseX;
 				int dy = e.getClientY() - dragStartMouseY;
 
 				int newLeft = dragStartLeft + dx;
-				int newTop = dragStartTop + dy;
+				int newTop  = dragStartTop  + dy;
 
 				CSSStyleDeclaration style = container.getStyle();
 				style.setProperty("left", newLeft + "px");
-				style.setProperty("top", newTop + "px");
+				style.setProperty("top",  newTop  + "px");
+
+				evt.preventDefault();
+			} else if (resizing) {
+				int dx = e.getClientX() - resizeStartMouseX;
+				int dy = e.getClientY() - resizeStartMouseY;
+
+				int newWidth  = Math.max(minWidth,  resizeStartWidth  + dx);
+				int newHeight = Math.max(minHeight, resizeStartHeight + dy);
+
+				CSSStyleDeclaration style = container.getStyle();
+				style.setProperty("width",  newWidth  + "px");
+				style.setProperty("height", newHeight + "px");
+
 				evt.preventDefault();
 			}
 		});
 
-		document.addEventListener("mouseup", new EventListener<Event>() {
-			@Override
-			public void handleEvent(Event evt) {
+		document.addEventListener("mouseup", evt -> {
+			if (dragging) {
 				dragging = false;
-				schedule(FloatingWindow.this::savePersistentData);
+				schedule(this::savePersistentData);
+			}
+			if (resizing) {
+				resizing = false;
+				// schedule(this::saveSize);
 			}
 		});
 	}
+
+
+	// ----- Resizing -----
+
+	private void startResize(MouseEvent e) {
+		resizing = true;
+		resizeStartMouseX = e.getClientX();
+		resizeStartMouseY = e.getClientY();
+		resizeStartWidth = container.getOffsetWidth();
+		resizeStartHeight = container.getOffsetHeight();
+
+		attachPointerListeners();
+		bringToFront();
+	}
+
+	private void toggleMaximize() {
+		CSSStyleDeclaration s = container.getStyle();
+		if (!maximized) {
+			prevLeft = container.getOffsetLeft();
+			prevTop = container.getOffsetTop();
+			prevWidth = container.getOffsetWidth();
+			prevHeight = container.getOffsetHeight();
+
+			s.setProperty("left", "0px");
+			s.setProperty("top", "0px");
+			s.setProperty("width", "100vw");
+			s.setProperty("height", "100vh");
+
+			maximized = true;
+		} else {
+			s.setProperty("left", prevLeft + "px");
+			s.setProperty("top", prevTop + "px");
+			s.setProperty("width", prevWidth + "px");
+			s.setProperty("height", prevHeight + "px");
+
+			maximized = false;
+		}
+	}
+
 
 	// ----- Persistence -----
 
@@ -434,7 +555,7 @@ public abstract class FloatingWindow {
 	}
 
 	private void savePersistentData() {
-		if (dragging) {
+		if (dragging || resizing) {
 			return; // don't save while dragging
 		}
 
@@ -452,5 +573,13 @@ public abstract class FloatingWindow {
 
 		storage.setItem(storagePosLeftKey, Integer.toString(left));
 		storage.setItem(storagePosRightKey, Integer.toString(top));
+	}
+
+	// ----- Scroll helpers -----
+
+	private void autoscroll(HTMLElement body) {
+		if (stickToBottom) {
+			body.setScrollTop(body.getScrollHeight());
+		}
 	}
 }

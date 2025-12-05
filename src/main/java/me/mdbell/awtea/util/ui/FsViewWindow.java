@@ -31,7 +31,7 @@ public class FsViewWindow extends FloatingWindow {
 	}
 
 	public FsViewWindow(int refreshIntervalMs) {
-		super("fsviewer", "AWTea Filesystem Viewer", 500, "500px", refreshIntervalMs);
+		super("fsviewer", "Filesystem Viewer", 500, "500px", refreshIntervalMs);
 	}
 
 	@Override
