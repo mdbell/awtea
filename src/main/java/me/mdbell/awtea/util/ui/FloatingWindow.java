@@ -349,10 +349,12 @@ public abstract class FloatingWindow {
 			HTMLElement element = menuBar.getElement();
 			HTMLElement menuParent = element.getParentNode() != null ? (HTMLElement) element.getParentNode() : null;
 			// ensure menu bar is first child of body
-			if(menuParent != null) {
-				menuParent.removeChild(element);
+			if(menuParent != container) {
+				if (menuParent != null) {
+					menuParent.removeChild(element);
+				}
+				container.insertBefore(element, bodyEl);
 			}
-			container.insertBefore(element, bodyEl);
 		}
 
 		HTMLElement newContent = buildBodyContent();  // built off-DOM
