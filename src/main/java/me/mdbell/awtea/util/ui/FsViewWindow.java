@@ -97,6 +97,7 @@ public class FsViewWindow extends FloatingWindow {
 
 	public FsViewWindow(int refreshIntervalMs) {
 		super("fsviewer", "Filesystem Viewer", 500, 500, refreshIntervalMs);
+		initMenuBar();
 	}
 
 	@Override
@@ -140,6 +141,14 @@ public class FsViewWindow extends FloatingWindow {
 			sb.append(f.lastModified()).append('\u0000');
 		}
 		return sb.toString();
+	}
+
+	private void initMenuBar() {
+		MenuBar menuBar = new MenuBar(this::schedule);
+		var fileMenu = menuBar.addMenu("File");
+		fileMenu.addAction("Upload File(s)...", () -> uploadTo(currentDir));
+
+		setMenuBar(menuBar);
 	}
 
 	@Override

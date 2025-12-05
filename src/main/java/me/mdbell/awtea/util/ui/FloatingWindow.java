@@ -80,6 +80,9 @@ public abstract class FloatingWindow {
 	private boolean autoscroll = false;
 	private boolean stickToBottom = true;
 
+	@Getter
+	@Setter
+	private MenuBar menuBar;
 
 	static {
 		AwCss.sheet()
@@ -156,6 +159,8 @@ public abstract class FloatingWindow {
 			.prop("flex", "1")
 			.prop("min-height", "0") // allow flex to shrink
 			.prop("overflow", "auto")
+			.createClass("aw-window-body:has(.aw-menubar)")
+			.prop("padding-top", "0")
 			.createClass("aw-window-resizer")
 			.prop("position", "absolute")
 			.prop("right", "0")
@@ -339,6 +344,16 @@ public abstract class FloatingWindow {
 			return; // no-op, no flicker
 		}
 		lastSignature = sig;
+
+		if( menuBar != null ) {
+			HTMLElement element = menuBar.getElement();
+			HTMLElement menuParent = element.getParentNode() != null ? (HTMLElement) element.getParentNode() : null;
+			// ensure menu bar is first child of body
+			if(menuParent != null) {
+				menuParent.removeChild(element);
+			}
+			container.insertBefore(element, bodyEl);
+		}
 
 		HTMLElement newContent = buildBodyContent();  // built off-DOM
 
