@@ -75,7 +75,7 @@ public class IndexedDBHelper {
 	}
 
 	private void log(String str) {
-		System.out.println(str);
+		//System.out.println(str);
 	}
 
 	public void resizeFile(String path, int size) {

@@ -19,7 +19,7 @@ public class IDBUtils {
     private final IDBFactory factory = IDBFactory.getInstance();
 
     static {
-        requestPersistentStorage();
+		requestPersistentStorageImpl().await();
     }
 
     @Async
@@ -37,29 +37,6 @@ public class IDBUtils {
         });
 
         request.setOnSuccess(() -> callback.complete(request.getResult()));
-    }
-
-
-    @Async
-    private native boolean requestPersistentStorage();
-
-    private void requestPersistentStorage(AsyncCallback<Boolean> callback) {
-
-        if (!hasStorage()) {
-            System.err.println("Persistent storage not supported.");
-            callback.complete(false);
-            return;
-        }
-
-        requestPersistentStorageImpl().then(value -> {
-            callback.complete(value.booleanValue());
-            return value;
-        }).catchError(err -> {
-            System.err.println("Failed to request persistent storage: " + err);
-            callback.complete(false);
-            return false;
-        });
-
     }
 
     @JSBody(script = "return navigator.storage && navigator.storage.persist;")

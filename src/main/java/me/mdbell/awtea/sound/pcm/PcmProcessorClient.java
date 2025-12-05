@@ -68,7 +68,7 @@ public class PcmProcessorClient {
 
 	public void init() {
 
-		addModule(moduleUrl);
+		addAudioModule(this.context, moduleUrl).await();
 
 		AudioWorkletNode.Options opts = JSObjects.create();
 		opts.setNumberOfInputs(0);
@@ -176,19 +176,6 @@ public class PcmProcessorClient {
 	@JSBody(params = {"options"}, script = "return new AudioContext(options)")
 	private static native AudioContext createContext(AudioContextOptions options);
 
-	@Async
-	private native int addModule(String module);
-
-	@SuppressWarnings("unused")
-	private void addModule(String module, AsyncCallback<Integer> callback){
-		addAudioModule(this.context, module).then(u -> {
-			callback.complete(1);
-			return u;
-		}).catchError(err -> {
-			callback.error(new RuntimeException("Failed to add module!"));
-			return err;
-		});
-	}
 
 	@JSBody(params = {"context", "module"}, script = "return context.audioWorklet.addModule(module);")
 	private static native JSPromise<JSUndefined> addAudioModule(AudioContext context, String module);

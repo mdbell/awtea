@@ -101,6 +101,9 @@ public class TApplet extends TContainer {
 
     @Override
     public void setSize(int width, int height) {
-        stub.appletResize(width, height);
+		super.setSize(width, height);
+		if(stub != null) {
+			stub.appletResize(width, height);
+		}
     }
 }

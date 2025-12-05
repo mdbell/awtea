@@ -8,8 +8,6 @@ import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.browser.Storage;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.css.CSSStyleDeclaration;
-import org.teavm.jso.dom.events.Event;
-import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MouseEvent;
 import org.teavm.jso.dom.html.HTMLButtonElement;
 import org.teavm.jso.dom.html.HTMLDocument;
@@ -46,6 +44,7 @@ public abstract class FloatingWindow {
 	private int dragStartTop;
 
 	// Resizing
+	private boolean resizable = true;
 	private boolean resizing = false;
 	private int resizeStartMouseX;
 	private int resizeStartMouseY;
@@ -105,6 +104,21 @@ public abstract class FloatingWindow {
 			.prop("display", "flex")
 			.prop("flex-direction", "column")
 			.prop("overflow", "hidden")
+			.prop("scrollbar-width", "thin")
+			.prop("scrollbar-color")
+			.value(Theme.Var.SCROLLBAR_THUMB)
+			.value(Theme.Var.SCROLLBAR_TRACK)
+			.end()
+			.createClass("aw-window::-webkit-scrollbar")
+			.prop("width", "8px")
+			.end()
+			.createClass("aw-window::-webkit-scrollbar-track")
+			.prop("background", Theme.Var.SCROLLBAR_TRACK)
+			.end()
+			.createClass("aw-window::-webkit-scrollbar-thumb")
+			.prop("background", Theme.Var.SCROLLBAR_THUMB)
+			.prop("border-radius", "4px")
+			.end()
 			.createClass("aw-window-header")
 			.prop("display", "flex")
 			.prop("align-items", "center")
@@ -173,7 +187,7 @@ public abstract class FloatingWindow {
 	protected FloatingWindow(String windowId,
 							 String titleText,
 							 int widthPx,
-							 String heightCss,
+							 int heightPx,
 							 int refreshIntervalMs) {
 		this.windowId = windowId;
 		this.refreshIntervalMs = refreshIntervalMs;
@@ -186,17 +200,47 @@ public abstract class FloatingWindow {
 
 		container = document.createElement("div");
 		container.setClassName("aw-window");
-		CSSStyleDeclaration style = container.getStyle();
-		style.setProperty("width", widthPx + "px");
-		style.setProperty("height", heightCss);
-
-		container.addEventListener("onclick", evt -> bringToFront());
 
 		restorePersistentData();
 
+		setSize(widthPx, heightPx);
 		buildShell();
 
 		Taskbar.get().registerWindow(this);
+	}
+
+	public void setScrollable(boolean scrollable) {
+		if (scrollable) {
+			bodyEl.getStyle().removeProperty("overflow");
+		} else {
+			bodyEl.getStyle().setProperty("overflow", "hidden");
+		}
+	}
+
+	public void setResizeable(boolean resizable) {
+		HTMLElement resizer = container.querySelector(".aw-window-resizer");
+		if (resizable) {
+			resizer.getStyle().setProperty("display", "block");
+		} else {
+			resizer.getStyle().setProperty("display", "none");
+		}
+		this.resizable = resizable;
+	}
+
+	public void setSize(int widthPx, int heightPx) {
+		CSSStyleDeclaration style = container.getStyle();
+		String width = widthPx == 0 ? "auto" : widthPx + "px";
+		String height = heightPx == 0 ? "auto" : heightPx + "px";
+		style.setProperty("width", width);
+		style.setProperty("height", height);
+	}
+
+	public int getWidth() {
+		return container.getOffsetWidth();
+	}
+
+	public int getHeight() {
+		return container.getOffsetHeight();
 	}
 
 	public boolean isVisible() {
@@ -345,6 +389,9 @@ public abstract class FloatingWindow {
 	private void buildShell() {
 		container.setInnerHTML("");
 
+		// Click to bring to front
+		container.addEventListener("onclick", evt -> bringToFront());
+
 		// Header
 		HTMLElement header = document.createElement("div");
 		header.setClassName("aw-window-header");
@@ -396,6 +443,10 @@ public abstract class FloatingWindow {
 		bodyEl = document.createElement("div");
 		bodyEl.setClassName("aw-window-body");
 
+		bodyEl.addEventListener("mousedown", evt -> {
+			bringToFront();
+		});
+
 		// resizer
 		HTMLElement resizer = document.createElement("div");
 		resizer.setClassName("aw-window-resizer");
@@ -421,8 +472,8 @@ public abstract class FloatingWindow {
 		dragging = true;
 		dragStartMouseX = e.getClientX();
 		dragStartMouseY = e.getClientY();
-		dragStartLeft = container.getOffsetLeft();
-		dragStartTop = container.getOffsetTop();
+		dragStartLeft = Math.max(container.getOffsetLeft(), 0);
+		dragStartTop = Math.max(container.getOffsetTop(), 0);
 
 		CSSStyleDeclaration style = container.getStyle();
 		style.setProperty("left", dragStartLeft + "px");
@@ -486,6 +537,11 @@ public abstract class FloatingWindow {
 	// ----- Resizing -----
 
 	private void startResize(MouseEvent e) {
+
+		if (!resizable) {
+			return;
+		}
+
 		resizing = true;
 		resizeStartMouseX = e.getClientX();
 		resizeStartMouseY = e.getClientY();
@@ -498,6 +554,11 @@ public abstract class FloatingWindow {
 
 	private void toggleMaximize() {
 		CSSStyleDeclaration s = container.getStyle();
+
+		if(!resizable) {
+			return;
+		}
+
 		if (!maximized) {
 			prevLeft = container.getOffsetLeft();
 			prevTop = container.getOffsetTop();

@@ -34,6 +34,8 @@ public class Theme {
 			.prop(Var.BORDER, "#ccc")
 			.prop(Var.SHADOW, "rgba(0,0,0,0.25)")
 			.prop(Var.ACCENT, "#0066cc")
+			.prop(Var.SCROLLBAR_THUMB, "rgba(0,0,0,0.2)")
+			.prop(Var.SCROLLBAR_TRACK, "rgba(0,0,0,0.1)")
 			.prop(Var.HEADER_BACKGROUND, "#f0f0f0")
 			.prop(Var.HEADER_BORDER, "#ddd")
 			.prop(Var.ENTRY_BORDER, "#f0f0f0")
@@ -52,6 +54,8 @@ public class Theme {
 			.prop(Var.BORDER, "#444")
 			.prop(Var.SHADOW, "rgba(0,0,0,0.6)")
 			.prop(Var.ACCENT, "#3399ff")
+			.prop(Var.SCROLLBAR_THUMB, "rgba(255,255,255,0.2)")
+			.prop(Var.SCROLLBAR_TRACK, "rgba(255,255,255,0.1)")
 			.prop(Var.HEADER_BACKGROUND, "#2b2b2b")
 			.prop(Var.HEADER_BORDER, "#444")
 			.prop(Var.ENTRY_BORDER, "#333")
@@ -177,6 +181,8 @@ public class Theme {
 		BORDER("--aw-border"),
 		SHADOW("--aw-shadow"),
 		ACCENT("--aw-accent"),
+		SCROLLBAR_THUMB("--aw-scrollbar-thumb"),
+		SCROLLBAR_TRACK("--aw-scrollbar-track"),
 		HEADER_BACKGROUND("--aw-header-bg"),
 		HEADER_BORDER("--aw-header-border"),
 		ENTRY_BORDER("--aw-entry-border"),
@@ -195,10 +201,12 @@ public class Theme {
 			this.cssVarName = cssVarName;
 		}
 
+		@Override
 		public String toCssKey() {
 			return this.cssVarName;
 		}
 
+		@Override
 		public String toCssValue() {
 			return AwCss.var(this.cssVarName);
 		}

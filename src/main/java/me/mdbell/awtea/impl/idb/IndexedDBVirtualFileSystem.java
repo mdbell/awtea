@@ -6,7 +6,7 @@ import org.teavm.runtime.fs.VirtualFileSystem;
 
 public class IndexedDBVirtualFileSystem implements VirtualFileSystem {
 	public static final String ROOT_DIR = "/";
-	public static final String HOME_DIR = "/home/";
+	public static final String HOME_DIR = "/home";
 
 	public IndexedDBVirtualFileSystem() {
 		if (!IndexedDBHelper.exists(ROOT_DIR)) {

@@ -50,7 +50,7 @@ public class LogWindow extends FloatingWindow {
 	}
 
 	public LogWindow() {
-		super("logviewer", "Log Viewer", 800, "400px", 0); // no timer needed
+		super("logviewer", "Log Viewer", 800, 400, 0); // no timer needed
 		setAutoscroll(true);
 
 		// Install console hook
