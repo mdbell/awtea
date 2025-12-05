@@ -28,22 +28,22 @@ public class LogWindow extends FloatingWindow {
 			.createClass("log-entry-error")
 			.prop("color", Theme.Var.ERROR_FOREGROUND)
 			.before()
-			.prop("content", "'[ERR] '")
+			.prop("content", "'[ERR]'")
 			.prop("font-weight", "bold")
 			.createClass("log-entry-warn")
 			.prop("color", Theme.Var.WARNING_FOREGROUND)
 			.before()
-			.prop("content", "'[WRN] '")
+			.prop("content", "'[WRN]'")
 			.prop("font-weight", "bold")
 			.createClass("log-entry-info")
 			.prop("color", Theme.Var.INFO_FOREGROUND)
 			.before()
-			.prop("content", "'[INF] '")
+			.prop("content", "'[INF]'")
 			.prop("font-weight", "bold")
 			.createClass("log-entry-debug")
 			.prop("color", Theme.Var.DEBUG_FOREGROUND)
 			.before()
-			.prop("content", "'[DBG] '")
+			.prop("content", "'[DBG]'")
 			.prop("font-weight", "bold")
 			.end()
 			.inject();
@@ -65,11 +65,11 @@ public class LogWindow extends FloatingWindow {
 		LogEntry entry = new LogEntry(logLevel, msg);
 		lines.add(entry);
 		if (lines.size() > MAX_LINES) {
-			HTMLElement element = lines.get(0).getElement();
+			LogEntry e = lines.remove(0);
+			HTMLElement element = e.getElement();
 			if (element != null && element.getParentNode() != null) {
 				element.getParentNode().removeChild(element);
 			}
-			lines.remove(0);
 		}
 		// Re-render content based on new log state
 		render();
@@ -102,7 +102,10 @@ public class LogWindow extends FloatingWindow {
 			}
 			HTMLElement span = createElement("li");
 			span.setClassName("log-entry log-entry-" + line.getLevel().getName());
-			span.setTextContent(line.getMessage());
+			span.setTextContent("[" +
+				Theme.formatTimestamp(line.getTimestamp(), false) +
+				"]: " +
+				line.getMessage());
 			pre.appendChild(span);
 
 			line.element = span;
@@ -146,9 +149,12 @@ public class LogWindow extends FloatingWindow {
 		@Setter(AccessLevel.PRIVATE)
 		protected HTMLElement element;
 
+		private final long timestamp;
+
 		public LogEntry(LogLevel level, String message) {
 			this.level = level;
 			this.message = message;
+			this.timestamp = System.currentTimeMillis();
 		}
 	}
 }

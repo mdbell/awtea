@@ -8,6 +8,9 @@ import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLBodyElement;
 import org.teavm.jso.dom.html.HTMLElement;
 
+import java.util.Calendar;
+import java.util.Date;
+
 @ExtensionMethod({JSObjectsExtensions.class})
 public class Theme {
 
@@ -95,6 +98,76 @@ public class Theme {
 		if (!localStorage.nullish()) {
 			localStorage.setItem(DARK_MODE_STORAGE_KEY, Boolean.toString(darkMode));
 		}
+	}
+
+	public static String humanReadableSize(long bytes) {
+		if (bytes < 0) {
+			return "?";
+		}
+		if (bytes < 1024) {
+			return bytes + " B";
+		}
+
+		int unit = 1024;
+		String[] units = {"B", "KB", "MB", "GB", "TB"};
+		double value = bytes;
+		int idx = 0;
+		while (value >= unit && idx < units.length - 1) {
+			value /= unit;
+			idx++;
+		}
+		return String.format("%.1f %s", value, units[idx]);
+	}
+
+	public static String humanReadableTimestamp(long epochMillis) {
+		long now = System.currentTimeMillis();
+		long diff = now - epochMillis;
+
+		long seconds = diff / 1000;
+		long minutes = seconds / 60;
+		long hours = minutes / 60;
+		long days = hours / 24;
+
+		if (seconds < 60) {
+			return "just now";
+		}
+		if (minutes < 60) {
+			return plural(minutes, "min");
+		}
+		if (hours < 24) {
+			return plural(hours, "hour");
+		}
+		if (days < 7) {
+			return plural(days, "day");
+		}
+
+		return formatTimestamp(epochMillis, true);
+	}
+
+	public static String formatTimestamp(long epochMillis, boolean withDate) {
+		Date d = new Date(epochMillis);
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(d);
+
+		StringBuilder sb = new StringBuilder();
+
+		if (withDate) {
+			sb.append(cal.get(Calendar.YEAR)).append("-")
+				.append(pad(cal.get(Calendar.MONTH) + 1)).append("-")
+				.append(pad(cal.get(Calendar.DAY_OF_MONTH))).append(" ");
+		}
+		sb.append(pad(cal.get(Calendar.HOUR_OF_DAY))).append(":")
+			.append(pad(cal.get(Calendar.MINUTE))).append(":")
+			.append(pad(cal.get(Calendar.SECOND)));
+		return sb.toString();
+	}
+
+	public static String plural(long n, String unit) {
+		return n + " " + unit + (n == 1 ? "" : "s") + " ago";
+	}
+
+	public static String pad(int n) {
+		return (n < 10 ? "0" : "") + n;
 	}
 
 	@Getter
