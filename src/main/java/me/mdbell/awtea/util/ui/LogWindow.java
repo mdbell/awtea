@@ -15,11 +15,42 @@ public class LogWindow extends FloatingWindow {
 	private HTMLElement body;
 	private HTMLElement pre;
 
-	private static boolean stylesInjected = false;
+	static {
+		AwCss.sheet()
+			.createClass("log-viewer-list")
+			.prop("list-style-type", "none")
+			.prop("padding", "0")
+			.prop("margin", "0")
+			.createClass("log-entry")
+			.prop("font-family", "monospace")
+			.prop("white-space", "pre-wrap")
+			.prop("margin", "0")
+			.createClass("log-entry-error")
+			.prop("color", Theme.Var.ERROR_FOREGROUND)
+			.before()
+			.prop("content", "'[ERR] '")
+			.prop("font-weight", "bold")
+			.createClass("log-entry-warn")
+			.prop("color", Theme.Var.WARNING_FOREGROUND)
+			.before()
+			.prop("content", "'[WRN] '")
+			.prop("font-weight", "bold")
+			.createClass("log-entry-info")
+			.prop("color", Theme.Var.INFO_FOREGROUND)
+			.before()
+			.prop("content", "'[INF] '")
+			.prop("font-weight", "bold")
+			.createClass("log-entry-debug")
+			.prop("color", Theme.Var.DEBUG_FOREGROUND)
+			.before()
+			.prop("content", "'[DBG] '")
+			.prop("font-weight", "bold")
+			.end()
+			.inject();
+	}
 
 	public LogWindow() {
 		super("logviewer", "Log Viewer", 800, "400px", 0); // no timer needed
-		injectStylesOnce();
 		setAutoscroll(true);
 
 		// Install console hook
@@ -27,37 +58,6 @@ public class LogWindow extends FloatingWindow {
 			// Make sure UI changes happen via schedule(), like in FsViewWindow
 			schedule(() -> appendLine(level, msg));
 		});
-	}
-
-	private void injectStylesOnce() {
-		if (stylesInjected) return;
-		stylesInjected = true;
-
-
-		HTMLElement style = document.createElement("style");
-
-		style.setTextContent(
-			".log-viewer-list {" +
-			"list-style-type: none;" +
-			"padding: 0;" +
-			"margin: 0;" +
-			"}" +
-			".log-entry {" +
-			"font-family: monospace;" +
-			"white-space: pre-wrap;" +
-			"margin: 0;" +
-			"}" +
-			".log-entry-error { color: var(--aw-error-fg); }" +
-			".log-entry-error:before { content: '[ERR] '; font-weight: bold; }" +
-			".log-entry-warn { color: var(--aw-warning-fg); }" +
-			".log-entry-warn:before { content: '[WRN] '; font-weight: bold; }" +
-			".log-entry-info { color: var(--aw-info-fg); }" +
-			".log-entry-info:before { content: '[INF] '; font-weight: bold; }" +
-			".log-entry-debug { color: var(--aw-debug-fg); }" +
-			".log-entry-debug:before { content: '[DBG] '; font-weight: bold; }"
-		);
-
-		document.getHead().appendChild(style);
 	}
 
 	private void appendLine(String level, String msg) {

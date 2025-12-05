@@ -18,7 +18,48 @@ public final class Taskbar {
 	private final Map<String, HTMLElement> buttons = new HashMap<>();
 
 	static {
-		Theme.get(); // ensure theme is initialized
+
+		AwCss.sheet()
+			.createClass("aw-taskbar")
+			.prop("position", "fixed")
+			.prop("left", "0")
+			.prop("right", "0")
+			.prop("bottom", "0")
+			.prop("height", "30px")
+			.prop("display", "flex")
+			.prop("align-items", "center")
+			.prop("gap", "4px")
+			.prop("padding", "0 6px")
+			.prop("background", Theme.Var.HEADER_BACKGROUND)
+			.prop("border-top")
+			.value("1px solid")
+			.value( Theme.Var.BORDER)
+			.end()
+			.prop("font-family", "sans-serif")
+			.prop("font-size", "12px")
+			.prop("z-index", "9998")
+			.end()
+			.createClass("aw-taskbar-button")
+			.prop("padding", "2px 8px")
+			.prop("border-radius", "3px")
+			.prop("border")
+			.value("1px solid")
+			.value(Theme.Var.BORDER)
+			.end()
+			.prop("background", Theme.Var.BUTTON_BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
+			.prop("cursor", "pointer")
+			.prop("max-width", "160px")
+			.prop("overflow", "hidden")
+			.prop("text-overflow", "ellipsis")
+			.prop("white-space", "nowrap")
+			.prop("margin-right", "4px")
+			.end()
+			.createClass("aw-taskbar-button.aw-active")
+			.prop("font-weight", "600")
+			.prop("border-color", Theme.Var.ACCENT)
+			.end()
+			.inject();
 	}
 
 	private Taskbar() {
@@ -28,22 +69,20 @@ public final class Taskbar {
 		bar = document.createElement("div");
 		bar.setClassName("aw-taskbar");
 
-		boolean isDarkModeInital = Theme.get().isDarkMode();
+		boolean isDarkModeInital = Theme.isDarkMode();
 		HTMLButtonElement darkModeToggle = (HTMLButtonElement) document.createElement("button");
 		darkModeToggle.setClassName("aw-taskbar-button");
 		darkModeToggle.setTextContent(isDarkModeInital ? "☀" : "☾");
 		darkModeToggle.onClick(evt -> {
 			invokeLater(() -> {
-				boolean isDarkMode = Theme.get().isDarkMode();
-				Theme.get().setDarkMode(!isDarkMode);
+				boolean isDarkMode = Theme.isDarkMode();
+				Theme.setDarkMode(!isDarkMode);
 				darkModeToggle.setTextContent(!isDarkMode ? "☀" : "☾");
 			});
 		});
 		bar.appendChild(darkModeToggle);
 
 		document.getBody().appendChild(bar);
-
-		injectStyles();
 	}
 
 	public static Taskbar get() {
@@ -51,46 +90,6 @@ public final class Taskbar {
 			instance = new Taskbar();
 		}
 		return instance;
-	}
-
-	private void injectStyles() {
-		HTMLElement style = document.createElement("style");
-		style.setTextContent(
-			".aw-taskbar { " +
-				"position: fixed;" +
-				"left: 0;" +
-				"right: 0;" +
-				"bottom: 0;" +
-				"height: 30px;" +
-				"display: flex;" +
-				"align-items: center;" +
-				"gap: 4px;" +
-				"padding: 0 6px;" +
-				"background: var(--aw-header-bg, #f0f0f0);" +
-				"border-top: 1px solid var(--aw-border);" +
-				"font-family: sans-serif;" +
-				"font-size: 12px;" +
-				"z-index: 9998;" +
-				"}" +
-				".aw-taskbar-button { " +
-				"padding: 2px 8px;" +
-				"border-radius: 3px;" +
-				"border: 1px solid var(--aw-border);" +
-				"background: var(--aw-button-bg);" +
-				"color: var(--aw-fg);" +
-				"cursor: pointer;" +
-				"max-width: 160px;" +
-				"overflow: hidden;" +
-				"text-overflow: ellipsis;" +
-				"white-space: nowrap;" +
-				"margin-right: 4px;" +
-				"}" +
-				".aw-taskbar-button.aw-active { " +
-				"font-weight: 600;" +
-				"border-color: var(--aw-accent, #4c8bf5);" +
-				"}"
-		);
-		document.getHead().appendChild(style);
 	}
 
 	/**

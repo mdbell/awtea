@@ -67,8 +67,6 @@ public abstract class FloatingWindow {
 	// config
 	private final int refreshIntervalMs;
 
-	private static boolean stylesInjected = false;
-
 	private HTMLElement bodyContent;   // current body root
 	private String lastSignature;
 
@@ -85,7 +83,91 @@ public abstract class FloatingWindow {
 
 
 	static {
-		Theme.get(); // ensure theme is initialized
+		AwCss.sheet()
+			.createClass("aw-window")
+			.prop("position", "fixed")
+			.prop("top", "10px")
+			.prop("right", "10px")
+			.prop("font-family", "sans-serif")
+			.prop("font-size", "13px")
+			.prop("border")
+			.value("1px solid")
+			.value(Theme.Var.BORDER)
+			.end()
+			.prop("border-radius", "4px")
+			.prop("background",  Theme.Var.BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
+			.prop("box-shadow")
+			.value("0 0 0 1px")
+			.value(Theme.Var.SHADOW)
+			.end()
+			.prop("z-index", "9999")
+			.prop("display", "flex")
+			.prop("flex-direction", "column")
+			.prop("overflow", "hidden")
+			.createClass("aw-window-header")
+			.prop("display", "flex")
+			.prop("align-items", "center")
+			.prop("justify-content", "space-between")
+			.prop("padding", "0.25rem 0.5rem")
+			.prop("background", Theme.Var.HEADER_BACKGROUND)
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.HEADER_BORDER)
+			.end()
+			.prop("border-radius", "4px 4px 0 0")
+			.prop("cursor", "move")
+			.createClass("aw-window-title")
+			.prop("margin", "0")
+			.prop("font-size", "13px")
+			.prop("font-weight", "600")
+			.createClass("aw-window-header-controls")
+			.prop("display", "flex")
+			.prop("gap", "4px")
+			.createClass("aw-window-button")
+			.prop("min-width", "1.2rem")
+			.prop("height", "1.2rem")
+			.prop("padding", "0.1rem 0.4rem")
+			.prop("border-radius", "3px")
+			.prop("border")
+			.value("1px solid")
+			.value(Theme.Var.BUTTON_BORDER)
+			.end()
+			.prop("background", Theme.Var.BUTTON_BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
+			.prop("cursor", "pointer")
+			.prop("font-size", "12px")
+			.createClass("aw-window-body")
+			.prop("padding", "0.5rem 0.6rem 0.6rem 0.6rem")
+			.prop("flex", "1")
+			.prop("min-height", "0") // allow flex to shrink
+			.prop("overflow", "auto")
+			.createClass("aw-window-resizer")
+			.prop("position", "absolute")
+			.prop("right", "0")
+			.prop("bottom", "0")
+			.prop("width", "12px")
+			.prop("height", "12px")
+			.prop("cursor", "se-resize")
+			.prop("background", "transparent")
+			.before()
+			.prop("content", "''")
+			.prop("position", "absolute")
+			.prop("right", "3px")
+			.prop("bottom", "3px")
+			.prop("width", "8px")
+			.prop("height", "8px")
+			.prop("border-right")
+			.value("2px", "solid")
+			.value(Theme.Var.FOREGROUND)
+			.end()
+			.prop("border-bottom")
+			.value("2px", "solid")
+			.value(Theme.Var.FOREGROUND)
+			.end()
+			.prop("pointer-events", "none")
+			.end()
+			.inject();
 	}
 
 	protected FloatingWindow(String windowId,
@@ -110,7 +192,6 @@ public abstract class FloatingWindow {
 
 		container.addEventListener("onclick", evt -> bringToFront());
 
-		injectStylesOnce();
 		restorePersistentData();
 
 		buildShell();
@@ -332,97 +413,6 @@ public abstract class FloatingWindow {
 			int scrollBottom = bodyEl.getScrollHeight() - (bodyEl.getScrollTop() + bodyEl.getClientHeight());
 			stickToBottom = scrollBottom < 20; // threshold
 		});
-	}
-
-	// ----- Style -----
-
-	private void injectStylesOnce() {
-		if (stylesInjected) return;
-		stylesInjected = true;
-
-		HTMLElement style = document.createElement("style");
-		style.setTextContent(
-//				Main Window CSS
-			".aw-window { " +
-				"position: fixed;" +
-				"top: 10px;" +
-				"right: 10px;" +
-				"font-family: sans-serif;" +
-				"font-size: 13px;" +
-				"border: 1px solid var(--aw-border);" +
-				"border-radius: 4px;" +
-				"background: var(--aw-bg);" +
-				"color: var(--aw-fg);" +
-				"box-shadow: 0 2px 12px var(--aw-shadow);" +
-				"z-index: 9999;" +
-//				Main window should be a flex column to allow header + body layout, with body expanding
-				"display: flex;" +
-				"flex-direction: column;" +
-				"overflow: hidden;" +
-				"}" +
-//				Header CSS
-				".aw-window-header { " +
-				"display: flex;" +
-				"align-items: center;" +
-				"justify-content: space-between;" +
-				"padding: 0.25rem 0.5rem;" +
-				"background:var(--aw-header-bg);" +
-				"border-bottom: 1px solid var(--aw-header-border);" +
-				"border-radius: 4px 4px 0 0;" +
-				"cursor: move;" +
-				"}" +
-//				Title CSS
-				".aw-window-title { " +
-				"margin: 0;" +
-				"font-size: 13px;" +
-				"font-weight: 600;" +
-				"}" +
-//				Controls CSS
-				".aw-window-header-controls { " +
-				"display: flex;" +
-				"gap: 4px;" +
-				"}" +
-//				Button CSS
-				".aw-window-button { " +
-				"min-width: 1.2rem;" +
-				"height: 1.2rem;" +
-				"padding: 0.1rem 0.4rem;" +
-				"border-radius: 3px;" +
-				"border: 1px solid var(--aw-button-border);" +
-				"background: var(--aw-button-bg);" +
-				"color: var(--aw-fg);" +
-				"cursor: pointer;" +
-				"font-size: 12px;" +
-				"}" +
-//				Window Body CSS
-				".aw-window-body { " +
-				"padding: 0.5rem 0.6rem 0.6rem 0.6rem;" +
-				"flex: 1;" +
-				"min-height: 0;" +  // allow flex to shrink
-				"overflow: auto;" +
-				"}" +
-				".aw-window-resizer { " +
-				"position: absolute;" +
-				"right: 0;" +
-				"bottom: 0;" +
-				"width: 12px;" +
-				"height: 12px;" +
-				"cursor: se-resize;" +
-				"background: transparent;" +
-				"}" +
-				".aw-window-resizer::before { " +
-				"content: '';" +
-				"position: absolute;" +
-				"right: 3px;" +
-				"bottom: 3px;" +
-				"width: 8px;" +
-				"height: 8px;" +
-				"border-right: 2px solid rgba(255,255,255,0.7);" +
-				"border-bottom: 2px solid rgba(255,255,255,0.7);" +
-				"pointer-events: none;" +
-				"}"
-		);
-		document.getHead().appendChild(style);
 	}
 
 	// ----- Dragging -----

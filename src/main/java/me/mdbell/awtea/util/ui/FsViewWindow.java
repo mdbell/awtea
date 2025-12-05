@@ -25,9 +25,71 @@ public class FsViewWindow extends FloatingWindow {
 
 	private File[] files = new File[0];
 
+	static {
+		AwCss.sheet()
+			.createClass("fs-pathbar")
+			.prop("display", "flex")
+			.prop("align-items", "center")
+			.prop("justify-content", "space-between")
+			.prop("margin-bottom", "0.5rem")
+			.prop("gap", "0.5rem")
+			.createClass("fs-path")
+			.prop("flex", "1")
+			.prop("white-space", "nowrap")
+			.prop("overflow", "hidden")
+			.prop("text-overflow", "ellipsis")
+			.createClass("fs-path a")
+			.prop("color", "inherit")
+			.createClass("fs-path strong")
+			.prop("font-weight", "600")
+			.createClass("fs-list")
+			.prop("list-style", "none")
+			.prop("padding-left", "0")
+			.prop("margin", "0")
+			.prop("border-top")
+				.value("1px solid")
+				.value(Theme.Var.HEADER_BORDER)
+				.end().end()
+			.createClass("fs-entry")
+			.prop("display", "flex")
+			.prop("align-items", "baseline")
+			.prop("padding", "0.25rem 0")
+			.prop("border-bottom")
+				.value("1px solid")
+				.value(Theme.Var.ENTRY_BORDER)
+				.end().end()
+			.createClass("fs-entry a")
+			.prop("text-decoration", "none")
+			.prop("cursor", "pointer")
+			.prop("color", "inherit")
+			.createClass("fs-entry a.fs-dir")
+			.prop("font-weight", "600")
+			.createClass("fs-entry-type")
+			.prop("width", "50px")
+			.prop("flex-shrink", "0")
+			.prop("color", Theme.Var.TYPE_FOREGROUND)
+			.prop("font-family", "monospace")
+			.createClass("fs-entry-name")
+			.prop("flex", "1")
+			.prop("min-width", "0")
+			.createClass("fs-entry-meta")
+			.prop("flex-shrink", "0")
+			.prop("margin-left", "0.5rem")
+			.prop("color", Theme.Var.META_FOREGROUND)
+			.prop("font-size", "11px")
+			.prop("white-space", "nowrap")
+			.createClass("fs-empty")
+			.prop("padding", "0.4rem 0")
+			.prop("color", Theme.Var.META_FOREGROUND)
+			.createClass("fs-error")
+			.prop("color", Theme.Var.ERROR_FOREGROUND)
+			.prop("padding", "0.4rem 0")
+			.end()
+			.inject();
+	}
+
 	public FsViewWindow() {
 		this(1000);
-		injectStyles();
 	}
 
 	public FsViewWindow(int refreshIntervalMs) {
@@ -307,78 +369,6 @@ public class FsViewWindow extends FloatingWindow {
 			currentDir = dir;
 			render();
 		}
-	}
-
-	private void injectStyles() {
-		HTMLElement style = document.createElement("style");
-		style.setTextContent(
-//			Path viewer styles
-			".fs-pathbar { " +
-				"display: flex;" +
-				"align-items: center;" +
-				"justify-content: space-between;" +
-				"margin-bottom: 0.5rem;" +
-				"gap: 0.5rem;" +
-				"}" +
-				".fs-path { " +
-				"flex: 1;" +
-				"white-space: nowrap;" +
-				"overflow: hidden;" +
-				"text-overflow: ellipsis;" +
-				"}" +
-				".fs-path a { " +
-				"color: inherit;" +
-				"}" +
-				".fs-path strong { " +
-				"font-weight: 600;" +
-				"}" +
-				".fs-list { " +
-				"list-style: none;" +
-				"padding-left: 0;" +
-				"margin: 0;" +
-				"border-top: 1px solid var(--aw-header-border)" +
-				"}" +
-				".fs-entry { " +
-				"display: flex;" +
-				"align-items: baseline;" +
-				"padding: 0.25rem 0;" +
-				"border-bottom: 1px solid var(--aw-entry-border);" +
-				"}" +
-				".fs-entry a { " +
-				"text-decoration: none;" +
-				"cursor: pointer;" +
-				"color: inherit;" +
-				"}" +
-				".fs-entry a.fs-dir { " +
-				"font-weight: 600;" +
-				"}" +
-				".fs-entry-type { " +
-				"width: 50px;" +
-				"flex-shrink: 0;" +
-				"color: var(--aw-type-fg);" +
-				"font-family: monospace;" +
-				"}" +
-				".fs-entry-name { " +
-				"flex: 1;" +
-				"min-width: 0;" +
-				"}" +
-				".fs-entry-meta { " +
-				"flex-shrink: 0;" +
-				"margin-left: 0.5rem;" +
-				"color: var(--aw-meta-fg);" +
-				"font-size: 11px;" +
-				"white-space: nowrap;" +
-				"}" +
-				".fs-empty { " +
-				"padding: 0.4rem 0;" +
-				"color: var(--aw-meta-fg);" +
-				"}" +
-				".fs-error { " +
-				"color: var(--aw-error-fq);" +
-				"padding: 0.4rem 0;" +
-				"}"
-		);
-		document.getHead().appendChild(style);
 	}
 
 	private String humanReadableSize(long bytes) {

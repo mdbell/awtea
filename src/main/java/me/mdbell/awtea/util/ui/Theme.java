@@ -1,5 +1,6 @@
 package me.mdbell.awtea.util.ui;
 
+import lombok.Getter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.browser.Storage;
@@ -16,68 +17,54 @@ public class Theme {
 
 	private static final Storage localStorage = Window.current().getLocalStorage();
 
-	private static final Theme INSTANCE = new Theme();
+	private static final HTMLBodyElement body;
 
-	HTMLBodyElement body;
-
-	private static boolean injected = false;
-
-	private Theme() {
+	static {
 		body = Window.current().getDocument().getBody();
-		injectStyles();
-
-		// Set initial theme based on user preference
 		boolean darkMode = getDarkModeFromStorage();
 		setDarkMode(darkMode);
+
+		AwCss.sheet()
+			.rule(":root")
+			.prop(Var.BACKGROUND, "rgba(255,255,255,0.97)")
+			.prop(Var.FOREGROUND, "#000")
+			.prop(Var.BORDER, "#ccc")
+			.prop(Var.SHADOW, "rgba(0,0,0,0.25)")
+			.prop(Var.ACCENT, "#0066cc")
+			.prop(Var.HEADER_BACKGROUND, "#f0f0f0")
+			.prop(Var.HEADER_BORDER, "#ddd")
+			.prop(Var.ENTRY_BORDER, "#f0f0f0")
+			.prop(Var.META_FOREGROUND, "#777")
+			.prop(Var.TYPE_FOREGROUND, "#666")
+			.prop(Var.BUTTON_BACKGROUND, "#f5f5f5")
+			.prop(Var.BUTTON_BORDER, "#888")
+			.prop(Var.ERROR_FOREGROUND, "#b00020")
+			.prop(Var.WARNING_FOREGROUND, "#e65c00")
+			.prop(Var.INFO_FOREGROUND, "#0066cc")
+			.prop(Var.DEBUG_FOREGROUND, "#444")
+			.end()
+			.createClass(DARK_MODE_CLASS)
+			.prop(Var.BACKGROUND, "#1e1e1e")
+			.prop(Var.FOREGROUND, "#eee")
+			.prop(Var.BORDER, "#444")
+			.prop(Var.SHADOW, "rgba(0,0,0,0.6)")
+			.prop(Var.ACCENT, "#3399ff")
+			.prop(Var.HEADER_BACKGROUND, "#2b2b2b")
+			.prop(Var.HEADER_BORDER, "#444")
+			.prop(Var.ENTRY_BORDER, "#333")
+			.prop(Var.META_FOREGROUND, "#aaa")
+			.prop(Var.TYPE_FOREGROUND, "#aaa")
+			.prop(Var.BUTTON_BACKGROUND, "#333")
+			.prop(Var.BUTTON_BORDER, "#777")
+			.prop(Var.ERROR_FOREGROUND, "#ff8080")
+			.prop(Var.WARNING_FOREGROUND, "#ffb366")
+			.prop(Var.INFO_FOREGROUND, "#3399ff")
+			.prop(Var.DEBUG_FOREGROUND, "#ccc")
+			.end()
+			.inject();
 	}
 
-	private static void injectStyles() {
-		if (injected) {
-			return;
-		}
-		injected = true;
-
-		HTMLElement style = Window.current().getDocument().createElement("style");
-
-		style.setTextContent(":root {" +
-			"--aw-bg: rgba(255,255,255,0.97);" +
-			"--aw-fg: #000;" +
-			"--aw-border: #ccc;" +
-			"--aw-shadow: rgba(0,0,0,0.25);" +
-			"--aw-header-bg: #f0f0f0;" +
-			"--aw-header-border: #ddd;" +
-			"--aw-entry-border: #f0f0f0;" +
-			"--aw-meta-fg: #777;" +
-			"--aw-type-fg: #666;" +
-			"--aw-button-bg: #f5f5f5;" +
-			"--aw-button-border: #888;" +
-			"--aw-error-fg: #b00020;" +
-			"--aw-warning-fg: #e65c00;" +
-			"--aw-info-fg: #0066cc;" +
-			"--aw-debug-fg: #444;" +
-			"}" +
-			"." + DARK_MODE_CLASS + " {" +
-			"--aw-bg: #1e1e1e;" +
-			"--aw-fg: #eee;" +
-			"--aw-border: #444;" +
-			"--aw-shadow: rgba(0,0,0,0.6);" +
-			"--aw-header-bg: #2b2b2b;" +
-			"--aw-header-border: #444;" +
-			"--aw-entry-border: #333;" +
-			"--aw-meta-fg: #aaa;" +
-			"--aw-type-fg: #aaa;" +
-			"--aw-button-bg: #333;" +
-			"--aw-button-border: #777;" +
-			"--aw-error-fg: #ff8080;" +
-			"--aw-warning-fg: #ffb366;" +
-			"--aw-info-fg: #3399ff;" +
-			"--aw-debug-fg: #ccc;" +
-			"}");
-
-		Window.current().getDocument().getHead().appendChild(style);
-	}
-
-	public boolean isDarkMode() {
+	public static boolean isDarkMode() {
 		return body.getClassList().contains(DARK_MODE_CLASS);
 	}
 
@@ -98,7 +85,7 @@ public class Theme {
 		return Window.current().matchMedia(mediaQuery).getMatches();
 	}
 
-	public void setDarkMode(boolean darkMode) {
+	public static void setDarkMode(boolean darkMode) {
 		if (isDarkMode() && !darkMode) {
 			body.getClassList().remove(DARK_MODE_CLASS);
 		} else if (!isDarkMode() && darkMode) {
@@ -110,7 +97,37 @@ public class Theme {
 		}
 	}
 
-	public static Theme get() {
-		return INSTANCE;
+	@Getter
+	public enum Var implements AwCss.CssKey {
+		BACKGROUND("--aw-bg"),
+		FOREGROUND("--aw-fg"),
+		BORDER("--aw-border"),
+		SHADOW("--aw-shadow"),
+		ACCENT("--aw-accent"),
+		HEADER_BACKGROUND("--aw-header-bg"),
+		HEADER_BORDER("--aw-header-border"),
+		ENTRY_BORDER("--aw-entry-border"),
+		META_FOREGROUND("--aw-meta-fg"),
+		TYPE_FOREGROUND("--aw-type-fg"),
+		BUTTON_BACKGROUND("--aw-button-bg"),
+		BUTTON_BORDER("--aw-button-border"),
+		ERROR_FOREGROUND("--aw-error-fg"),
+		WARNING_FOREGROUND("--aw-warning-fg"),
+		INFO_FOREGROUND("--aw-info-fg"),
+		DEBUG_FOREGROUND("--aw-debug-fg");
+
+		private final String cssVarName;
+
+		Var(String cssVarName) {
+			this.cssVarName = cssVarName;
+		}
+
+		public String toCssKey() {
+			return this.cssVarName;
+		}
+
+		public String toCssValue() {
+			return AwCss.var(this.cssVarName);
+		}
 	}
 }
