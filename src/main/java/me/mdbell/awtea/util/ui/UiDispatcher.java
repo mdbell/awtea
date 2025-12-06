@@ -1,6 +1,8 @@
 package me.mdbell.awtea.util.ui;
 
 
+import me.mdbell.awtea.util.ThreadUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,31 +11,20 @@ public final class UiDispatcher {
 	private static final int INVOKE_INTERVAL_MS = 50;
 
 	static {
-		new Thread(() -> {
-			while (true) {
-				List<Runnable> toRun;
-				synchronized (queue) {
-					if (queue.isEmpty()) {
-						toRun = null;
-					} else {
-						toRun = new ArrayList<>(queue);
-						queue.clear();
-					}
-				}
-				if (toRun != null) {
-					for (Runnable r : toRun) {
-						try {
-							r.run();
-						} catch (Throwable ignored) {
-						}
-					}
-				}
+		ThreadUtils.runAtFixedRate("AWTea-dispatcher", () -> {
+			List<Runnable> toRun;
+			synchronized (queue) {
+				toRun = new ArrayList<>(queue);
+				queue.clear();
+			}
+			for (Runnable r : toRun) {
 				try {
-					Thread.sleep(INVOKE_INTERVAL_MS);
-				} catch (InterruptedException ignored) {
+					r.run();
+				} catch (Throwable t) {
+					t.printStackTrace();
 				}
 			}
-		}).start();
+		}, INVOKE_INTERVAL_MS);
 	}
 
 	private UiDispatcher() {

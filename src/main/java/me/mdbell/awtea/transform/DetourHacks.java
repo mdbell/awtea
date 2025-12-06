@@ -47,6 +47,20 @@ public class DetourHacks implements ClassHolderTransformer {
 			new MethodDetour(MethodDescriptor.parse("<init>(Ljava/io/File;Ljava/lang/String;)V"),
 				RandomAccessFileDetour.class, "open"),
 		});
+		put(Thread.class.getName(), new MethodDetour[]{
+			new MethodDetour(MethodDescriptor.parse("<init>(Ljava/lang/Runnable;Ljava/lang/String;)V"),
+				me.mdbell.awtea.detour.ThreadDetour.class, "init"),
+			new MethodDetour(MethodDescriptor.parse("<init>(Ljava/lang/Runnable;)V"),
+				me.mdbell.awtea.detour.ThreadDetour.class, "init"),
+			new MethodDetour(MethodDescriptor.parse("<init>(Ljava/lang/String;)V"),
+				me.mdbell.awtea.detour.ThreadDetour.class, "init"),
+			new MethodDetour(MethodDescriptor.parse("<init>()V"),
+				me.mdbell.awtea.detour.ThreadDetour.class, "init"),
+			new MethodDetour(MethodDescriptor.parse("start()V"),
+				me.mdbell.awtea.detour.ThreadDetour.class, "start"),
+			new MethodDetour(MethodDescriptor.parse("sleep(J)V"),
+				me.mdbell.awtea.detour.ThreadDetour.class, "sleep"),
+		});
     }};
 
     @Override
@@ -62,18 +76,18 @@ public class DetourHacks implements ClassHolderTransformer {
             return;
         }
 
-        method.getProgram().getBasicBlocks().forEach(this::transformBlock);
+        method.getProgram().getBasicBlocks().forEach(block -> transformBlock(method, block));
     }
 
-    private void transformBlock(BasicBlock instructions) {
+    private void transformBlock(MethodHolder method, BasicBlock instructions) {
         instructions.forEach(instruction -> {
             if (instruction instanceof InvokeInstruction) {
-                transformInvoke((InvokeInstruction) instruction);
+                transformInvoke(method, (InvokeInstruction) instruction);
             }
         });
     }
 
-    private void transformInvoke(InvokeInstruction invoke) {
+    private void transformInvoke(MethodHolder method, InvokeInstruction invoke) {
         MethodReference ref = invoke.getMethod();
         MethodDetour[] detours = this.detours.get(ref.getClassName());
 
@@ -87,11 +101,14 @@ public class DetourHacks implements ClassHolderTransformer {
 				Variable thisVar = invoke.getInstance();
 
 				if(ref.getName().equals("<init>")) {
+					if(method.getOwnerName().equals(invoke.getMethod().getClassName()) && thisVar.getIndex() == 0) {
+						// skip constructor detours for constructors of the same class
+						continue;
+					}
 					// constructor detour - need to convert to a static method call
 					thisVar = invoke.getInstance();
 					invoke.setReceiver(thisVar);
 					invoke.setInstance(null);
-					thisVar = null;
 					ValueType[] signature = desc.getSignature();
 					signature[signature.length - 1] = ValueType.object(ref.getClassName());
 					MethodDescriptor newDesc = new MethodDescriptor(detour.newMethodName, signature);
@@ -103,8 +120,7 @@ public class DetourHacks implements ClassHolderTransformer {
 					if(previous == null) {
 						throw new RuntimeException("Failed to find ConstructInstruction for constructor detour");
 					}
-					previous.replace(new EmptyInstruction());
-					//TODO: walk back and remove the ConstructInstruction
+//					previous.replace(new EmptyInstruction());
 					continue;
 				}
 
