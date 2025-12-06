@@ -31,7 +31,7 @@ public class IndexedDBVirtualFile implements VirtualFile {
 
     @Override
     public String[] listFiles() {
-        return IndexedDBHelper.listDirectory(path);
+        return IndexedDBHelper.listDirectory(path).await();
     }
 
     @Override

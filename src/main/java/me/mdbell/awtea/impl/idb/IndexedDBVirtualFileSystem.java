@@ -9,9 +9,6 @@ public class IndexedDBVirtualFileSystem implements VirtualFileSystem {
 	public static final String HOME_DIR = "/home";
 
 	public IndexedDBVirtualFileSystem() {
-		if (!IndexedDBHelper.exists(ROOT_DIR)) {
-			IndexedDBHelper.createDirectory(ROOT_DIR);
-		}
 		if (!IndexedDBHelper.exists(HOME_DIR)) {
 			IndexedDBHelper.createDirectory(HOME_DIR);
 		}

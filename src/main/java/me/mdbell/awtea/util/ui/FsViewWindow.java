@@ -102,7 +102,6 @@ public class FsViewWindow extends FloatingWindow {
 
 	@Override
 	protected String computeSignature() {
-
 		if (currentDir == null || !currentDir.isDirectory()) {
 			return null;
 		}
@@ -147,6 +146,8 @@ public class FsViewWindow extends FloatingWindow {
 		MenuBar menuBar = new MenuBar(this::schedule);
 		var fileMenu = menuBar.addMenu("File");
 		fileMenu.addAction("Upload File(s)...", () -> uploadTo(currentDir));
+
+		fileMenu.addAction("Delete Current Directory", () -> deleteDirectory(currentDir));
 
 		setMenuBar(menuBar);
 	}
@@ -212,6 +213,9 @@ public class FsViewWindow extends FloatingWindow {
 				HTMLElement metaCol = createElement("span");
 				metaCol.setClassName("fs-entry-meta");
 				String meta = humanReadableSize(size);
+				if(!file.exists()) {
+					meta += " • (missing)";
+				}
 				if (modified > 0) {
 					meta += " • " + humanReadableTimestamp(modified);
 				}
@@ -294,7 +298,32 @@ public class FsViewWindow extends FloatingWindow {
 	}
 
 	private void deleteDirectory(File file) {
+		if (file == null || !file.isDirectory()) {
+			return;
+		}
 
+		// Recursively delete contents
+		File[] contents = file.listFiles();
+		if (contents != null) {
+			for (File f : contents) {
+				if (f.isDirectory()) {
+					deleteDirectory(f);
+				} else {
+					f.delete();
+				}
+			}
+		}
+
+		// Delete the directory itself
+		file.delete();
+
+		// Navigate to parent
+		File parent = file.getParentFile();
+		if (parent != null) {
+			navigateTo(parent);
+		} else {
+			navigateTo(ROOT);
+		}
 	}
 
 	protected HTMLElement constructPathSpan() {
