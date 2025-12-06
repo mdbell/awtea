@@ -32,35 +32,36 @@ public final class RandomMonitorWindow extends FloatingWindow {
 			.value("1px solid")
 			.value(Theme.Var.TABLE_HEADER_BORDER)
 			.end()
-			.prop("padding", "2px 4px")
-			.prop("text-align", "left")
 			.prop("background", Theme.Var.TABLE_HEADER_BACKGROUND)
 			.prop("color", Theme.Var.META_FOREGROUND)
+			.prop("padding", "2px 4px")
+			.prop("text-align", "left")
 
 			.createClass("random-monitor-data-cell")
 			.prop("padding", "2px 4px")
-			.prop("border-bottom")
-			.value("1px solid")
-			.value(Theme.Var.TABLE_HEADER_BORDER)
-			.end()
 			.prop("white-space", "nowrap")
 
 			.createClass("random-monitor-row")
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.TABLE_ROW_BORDER)
+			.end()
 			.prop("background", Theme.Var.TABLE_ROW_BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
 			.prop("cursor", "default")
 
 			// row “heat” variants
 			.createClass("rnd-row-cold")
-			.prop("background-color", "rgba(120,120,120,0.15)")
+			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND)
 
 			.createClass("rnd-row-normal")
-			.prop("background-color", "rgba(255,255,255,0.04)")
+			.prop("background", Theme.Var.ROW_STATUS_OK_BACKGROUND)
 
 			.createClass("rnd-row-warm")
-			.prop("background-color", "rgba(220,160,0,0.2)")
+			.prop("background", Theme.Var.ROW_STATUS_WARN_BACKGROUND)
 
 			.createClass("rnd-row-hot")
-			.prop("background-color", "rgba(220,60,60,0.25)")
+			.prop("background", Theme.Var.ROW_STATUS_ERROR_BACKGROUND)
 
 			// monospace numeric columns
 			.createClass("random-monitor-num-cell")
@@ -163,17 +164,17 @@ public final class RandomMonitorWindow extends FloatingWindow {
 			tr.getClassList().add(heatClass);
 
 			// ID
-			addCell(tr, String.valueOf(s.id), false);
+			addCell(tr, String.valueOf(s.getId()), false);
 
 			// Seed (hex-ish)
 			String seedText = "0x" + Long.toHexString(s.seed);
 			addCell(tr, seedText, false);
 
 			// Created / last use / age
-			addCell(tr, Theme.formatTimestamp(s.createdAt, true), false);
-			addCell(tr, Theme.humanReadableTimestamp(s.lastUse), false);
+			addCell(tr, Theme.formatTimestamp(s.getCreatedMillis(), true), false);
+			addCell(tr, Theme.humanReadableTimestamp(s.getLastUpdatedMillis()), false);
 
-			long ageMs = now - s.createdAt;
+			long ageMs = now - s.getCreatedMillis();
 			String ageText = Theme.humanReadableTimestamp(now - ageMs); // a bit hacky, but reuses wording
 			addCell(tr, ageText, false);
 
@@ -213,7 +214,7 @@ public final class RandomMonitorWindow extends FloatingWindow {
 		if (totalCalls == 0) {
 			return "rnd-row-cold";
 		}
-		long idleMs = now - s.lastUse;
+		long idleMs = now - s.getLastUpdatedMillis();
 
 		// Very active & recent => hot
 		if (totalCalls > 100000 && idleMs < 2000) {

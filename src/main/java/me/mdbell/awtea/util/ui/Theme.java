@@ -54,6 +54,12 @@ public class Theme {
 			.prop(Var.TABLE_ROW_BACKGROUND, "#ffffff")
 			.prop(Var.TABLE_ROW_ALT_BACKGROUND, "#f9f9f9")
 			.prop(Var.TABLE_ROW_HOVER_BACKGROUND, "#e6f2ff")
+			.prop(Var.TABLE_ROW_BORDER, "#eeeeee")
+
+			.prop(Var.ROW_STATUS_MUTED_BACKGROUND, "rgba(160,160,160,0.18)")   // grey-ish
+			.prop(Var.ROW_STATUS_OK_BACKGROUND, "rgba(0,160,0,0.18)")          // green-ish
+			.prop(Var.ROW_STATUS_WARN_BACKGROUND, "rgba(230,190,0,0.2)")       // amber
+			.prop(Var.ROW_STATUS_ERROR_BACKGROUND, "rgba(220,60,60,0.24)")     // red-ish
 
 			.prop(Var.METER_BACKGROUND, "#dddddd")
 			.prop(Var.METER_GOOD, "#4caf50")   // green
@@ -85,6 +91,12 @@ public class Theme {
 			.prop(Var.TABLE_ROW_BACKGROUND, "#242424")
 			.prop(Var.TABLE_ROW_ALT_BACKGROUND, "#1e1e1e")
 			.prop(Var.TABLE_ROW_HOVER_BACKGROUND, "#303846")
+			.prop(Var.TABLE_ROW_BORDER, "#333333")
+
+			.prop(Var.ROW_STATUS_MUTED_BACKGROUND, "rgba(140,140,140,0.25)")
+			.prop(Var.ROW_STATUS_OK_BACKGROUND, "rgba(0,200,0,0.22)")
+			.prop(Var.ROW_STATUS_WARN_BACKGROUND, "rgba(230,210,80,0.24)")
+			.prop(Var.ROW_STATUS_ERROR_BACKGROUND, "rgba(230,80,80,0.26)")
 
 			.prop(Var.METER_BACKGROUND, "#333333")
 			.prop(Var.METER_GOOD, "#66bb6a")
@@ -233,6 +245,13 @@ public class Theme {
 		TABLE_ROW_BACKGROUND("--aw-table-row-bg"),
 		TABLE_ROW_ALT_BACKGROUND("--aw-table-row-alt-bg"),
 		TABLE_ROW_HOVER_BACKGROUND("--aw-table-row-hover-bg"),
+		TABLE_ROW_BORDER("--aw-table-row-border"),
+
+		// NEW: reusable “state row” backgrounds
+		ROW_STATUS_MUTED_BACKGROUND("--aw-row-status-muted-bg"),
+		ROW_STATUS_OK_BACKGROUND("--aw-row-status-ok-bg"),
+		ROW_STATUS_WARN_BACKGROUND("--aw-row-status-warn-bg"),
+		ROW_STATUS_ERROR_BACKGROUND("--aw-row-status-error-bg"),
 
 		METER_BACKGROUND("--aw-meter-bg"),
 		METER_GOOD("--aw-meter-good"),

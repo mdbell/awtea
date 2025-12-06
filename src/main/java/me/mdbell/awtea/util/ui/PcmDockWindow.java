@@ -15,6 +15,8 @@ public final class PcmDockWindow extends FloatingWindow {
 
 	private boolean suppressRefresh = false;
 
+	private boolean hasSelectedAtLeastOnce = false;
+
 	static {
 		AwCss.sheet()
 			.createClass("pcm-dock-root")
@@ -144,10 +146,11 @@ public final class PcmDockWindow extends FloatingWindow {
 				selectedLineId = Integer.parseInt(val);
 			} catch (NumberFormatException ignored) {
 				selectedLineId = -1;
+				hasSelectedAtLeastOnce = false;
 			}
 		});
 
-		select.addEventListener("focus", evt -> suppressRefresh = true);
+		select.addEventListener("focus", evt -> suppressRefresh = hasSelectedAtLeastOnce = true);
 		select.addEventListener("blur", evt -> suppressRefresh = false);
 
 		header.appendChild(select);
@@ -202,8 +205,19 @@ public final class PcmDockWindow extends FloatingWindow {
 		if (snaps.isEmpty()) {
 			return null;
 		}
-		if (selectedLineId == -1) {
-			return snaps.get(snaps.size() - 1);
+		if(!hasSelectedAtLeastOnce || selectedLineId == -1) {
+			// finds the most active line
+			return snaps.stream().min((a, b) -> {
+				float aMax = 0f;
+				for (float v : a.peaks) {
+					if (v > aMax) aMax = v;
+				}
+				float bMax = 0f;
+				for (float v : b.peaks) {
+					if (v > bMax) bMax = v;
+				}
+				return Float.compare(bMax, aMax);
+			}).orElse(null);
 		}
 		for (AudioMonitor.PcmSnapshot s : snaps) {
 			if (s.id == selectedLineId) {

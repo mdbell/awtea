@@ -159,6 +159,7 @@ public abstract class FloatingWindow {
 			.prop("flex", "1")
 			.prop("min-height", "0") // allow flex to shrink
 			.prop("overflow", "auto")
+			.prop("color", Theme.Var.FOREGROUND)
 			.createClass("aw-window-body:has(.aw-menubar)")
 			.prop("padding-top", "0")
 			.createClass("aw-window-resizer")

@@ -1,14 +1,9 @@
 package me.mdbell.awtea.monitor;
 
-import java.util.*;
+public final class RandomMonitor extends AbstractMonitor<RandomMonitor.State, RandomMonitor.Snapshot> {
 
-public final class RandomMonitor {
-
-	public static final class Snapshot {
-		public final int id;
+	public static final class Snapshot extends MonitorSnapshot<State> {
 		public final long seed;
-		public final long createdAt;
-		public final long lastUse;
 
 		public final long callsNextInt;
 		public final long callsNextIntBound;
@@ -19,10 +14,8 @@ public final class RandomMonitor {
 		public final long callsNextGaussian;
 
 		Snapshot(State s) {
-			this.id = s.id;
+			super(s);
 			this.seed = s.seed;
-			this.createdAt = s.createdAt;
-			this.lastUse = s.lastUse;
 			this.callsNextInt = s.callsNextInt;
 			this.callsNextIntBound = s.callsNextIntBound;
 			this.callsNextBoolean = s.callsNextBoolean;
@@ -33,11 +26,8 @@ public final class RandomMonitor {
 		}
 	}
 
-	private static final class State {
-		final int id;
+	public static final class State extends MonitorEntry{
 		long seed;
-		final long createdAt;
-		long lastUse;
 
 		long callsNextInt;
 		long callsNextIntBound;
@@ -47,16 +37,9 @@ public final class RandomMonitor {
 		long callsNextDouble;
 		long callsNextGaussian;
 
-		State(int id, long seed) {
-			this.id = id;
+		State(int id, String label, long seed) {
+			super(id, label);
 			this.seed = seed;
-			long now = System.currentTimeMillis();
-			this.createdAt = now;
-			this.lastUse = now;
-		}
-
-		void touch() {
-			lastUse = System.currentTimeMillis();
 		}
 	}
 
@@ -66,81 +49,60 @@ public final class RandomMonitor {
 		return INSTANCE;
 	}
 
-	private final Map<Object, State> states = new WeakHashMap<>();
-	private int nextId = 1;
-
 	private RandomMonitor() {
 	}
 
-	public synchronized void register(Object r, long seed) {
-		if (states.containsKey(r)) {
-			return;
-		}
-		states.put(r, new State(nextId++, seed));
+	public void register(Object r, long seed) {
+		setSeed(r, seed);
 	}
 
-	public synchronized void setSeed(Object r, long seed) {
-		State s = states.get(r);
-		if (s == null) {
-			register(r, seed);
-			s = states.get(r);
-		}
+	public void setSeed(Object r, long seed) {
+		State s = ensureEntry(r);
 		s.seed = seed;
-		s.touch();
-	}
-
-	private synchronized State state(Object r) {
-		State s = states.get(r);
-		if (s == null) {
-			// unknown instance – register with seed=0 as placeholder
-			register(r, 0L);
-			s = states.get(r);
-		}
-		s.touch();
-		return s;
 	}
 
 	public void onNextInt(Object r) {
-		State s = state(r);
+		State s = ensureEntry(r);
 		s.callsNextInt++;
 	}
 
 	public void onNextIntBound(Object r) {
-		State s = state(r);
+		State s = ensureEntry(r);
 		s.callsNextIntBound++;
 	}
 
 	public void onNextBoolean(Object r) {
-		State s = state(r);
+		State s = ensureEntry(r);
 		s.callsNextBoolean++;
 	}
 
 	public void onNextLong(Object r) {
-		State s = state(r);
+		State s = ensureEntry(r);
 		s.callsNextLong++;
 	}
 
 	public void onNextFloat(Object r) {
-		State s = state(r);
+		State s = ensureEntry(r);
 		s.callsNextFloat++;
 	}
 
 	public void onNextDouble(Object r) {
-		State s = state(r);
+		State s = ensureEntry(r);
 		s.callsNextDouble++;
 	}
 
 	public void onNextGaussian(Object r) {
-		State s = state(r);
+		State s = ensureEntry(r);
 		s.callsNextGaussian++;
 	}
 
-	public synchronized List<Snapshot> snapshot() {
-		ArrayList<Snapshot> result = new ArrayList<>(states.size());
-		for (State s : states.values()) {
-			result.add(new Snapshot(s));
-		}
-		result.sort(Comparator.comparingInt(a -> a.id));
-		return result;
+	@Override
+	protected State createEntry(int id, Object target, String label) {
+		return new State(id, label, 0L);
+	}
+
+	@Override
+	protected Snapshot buildSnapshot(State entry) {
+		return new Snapshot(entry);
 	}
 }

@@ -22,7 +22,12 @@ public final class ThreadMonitorWindow extends FloatingWindow {
 			.prop("font-size", "11px")
 
 			.createClass("thread-monitor-header-cell")
-			.prop("border-bottom", "1px solid rgba(255,255,255,0.15)")
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.TABLE_HEADER_BORDER)
+			.end()
+			.prop("background", Theme.Var.TABLE_HEADER_BACKGROUND)
+			.prop("color", Theme.Var.META_FOREGROUND)
 			.prop("padding", "2px 4px")
 			.prop("text-align", "left")
 
@@ -31,20 +36,25 @@ public final class ThreadMonitorWindow extends FloatingWindow {
 			.prop("white-space", "nowrap")
 
 			.createClass("thread-monitor-row")
-			.prop("border-bottom", "1px solid rgba(255,255,255,0.07)")
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.TABLE_ROW_BORDER)
+			.end()
+			.prop("background", Theme.Var.TABLE_ROW_BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
 			.prop("cursor", "default")
 
 			.createClass("thread-row-new")
-			.prop("background", "rgba(128,128,128,0.18)")
+			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND)
 
 			.createClass("thread-row-running")
-			.prop("background", "rgba(0,180,0,0.18)")
+			.prop("background", Theme.Var.ROW_STATUS_OK_BACKGROUND)
 
 			.createClass("thread-row-sleeping")
-			.prop("background", "rgba(230,230,80,0.2)")
+			.prop("background", Theme.Var.ROW_STATUS_WARN_BACKGROUND)
 
 			.createClass("thread-row-terminated")
-			.prop("background", "rgba(80,80,80,0.15)")
+			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND)
 
 			.end()
 			.inject();

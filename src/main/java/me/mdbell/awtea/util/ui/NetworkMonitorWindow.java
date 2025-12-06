@@ -22,7 +22,12 @@ public final class NetworkMonitorWindow extends FloatingWindow {
 			.prop("font-size", "11px")
 
 			.createClass("net-monitor-header-cell")
-			.prop("border-bottom", "1px solid rgba(255,255,255,0.15)")
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.TABLE_HEADER_BORDER)
+			.end()
+			.prop("background", Theme.Var.TABLE_HEADER_BACKGROUND)
+			.prop("color", Theme.Var.META_FOREGROUND)
 			.prop("padding", "2px 4px")
 			.prop("text-align", "left")
 
@@ -36,20 +41,25 @@ public final class NetworkMonitorWindow extends FloatingWindow {
 			.prop("font-family", "monospace")
 
 			.createClass("net-monitor-row")
-			.prop("border-bottom", "1px solid rgba(255,255,255,0.07)")
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.TABLE_ROW_BORDER)
+			.end()
+			.prop("background", Theme.Var.TABLE_ROW_BACKGROUND)
 			.prop("cursor", "default")
+			.prop("color", Theme.Var.FOREGROUND)
 
 			.createClass("net-row-open")
-			.prop("background", "rgba(0,180,0,0.15)")
+			.prop("background", Theme.Var.ROW_STATUS_OK_BACKGROUND)
 
 			.createClass("net-row-connecting")
-			.prop("background", "rgba(80,80,80,0.18)")
+			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND)
 
 			.createClass("net-row-error")
-			.prop("background", "rgba(220,0,0,0.2)")
+			.prop("background", Theme.Var.ROW_STATUS_ERROR_BACKGROUND)
 
 			.createClass("net-row-closed")
-			.prop("background", "rgba(255,255,255,0.05)")
+			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND)
 
 			.end()
 			.inject();

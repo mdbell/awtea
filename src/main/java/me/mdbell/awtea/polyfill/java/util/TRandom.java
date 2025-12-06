@@ -32,7 +32,9 @@ public class TRandom {
     private boolean haveStoredGaussian;
 
     public TRandom() {
-        this(System.currentTimeMillis()); // Default seed based on time
+		// Math.random() uses the JS native RNG, so we get a good random seed here
+		// (at least as good as we can get in a polyfill environment)
+        this((long) (System.currentTimeMillis() * Math.random()));
     }
 
     public TRandom(long seed) {
