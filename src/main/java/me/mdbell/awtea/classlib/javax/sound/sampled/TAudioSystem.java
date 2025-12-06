@@ -1,5 +1,6 @@
 package me.mdbell.awtea.classlib.javax.sound.sampled;
 
+import me.mdbell.awtea.impl.Debug;
 import org.teavm.jso.JSBody;
 import me.mdbell.awtea.sound.AbstractDataLine;
 import me.mdbell.awtea.sound.BufferedAudioLine;
@@ -24,6 +25,7 @@ public class TAudioSystem {
 
 	private static AbstractDataLine createLine(AudioFormat format) throws LineUnavailableException {
 		if(isSecureContext()) {
+			Debug.trigger();
 			// better code path - but requires more permissions
 			// moves most of the audio logic off the main thread, so we just stream PCM samples to it
 			// without needing to buffer in the main thread
