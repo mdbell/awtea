@@ -1,6 +1,6 @@
 package me.mdbell.awtea.util.ui;
 
-import me.mdbell.awtea.sound.AudioMonitor;
+import me.mdbell.awtea.monitor.AudioMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 
 import java.util.List;

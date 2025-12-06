@@ -1,8 +1,7 @@
 package me.mdbell.awtea.sound.pcm;
 
 import me.mdbell.awtea.sound.AbstractDataLine;
-import me.mdbell.awtea.sound.AudioMonitor;
-import me.mdbell.awtea.sound.DrainListener;
+import me.mdbell.awtea.monitor.AudioMonitor;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.LineUnavailableException;

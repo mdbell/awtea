@@ -1,6 +1,7 @@
 package me.mdbell.awtea.sound;
 
 import lombok.Getter;
+import me.mdbell.awtea.monitor.AudioMonitor;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;

@@ -1,6 +1,6 @@
 package me.mdbell.awtea.classlib.java.net;
 
-import org.teavm.common.Promise;
+import me.mdbell.awtea.monitor.NetworkMonitor;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;
@@ -26,16 +26,27 @@ public class TSocket {
 		PORT_TO_ROUTE_MAPPING.put(43595, "game");
 	}
 
+	private final String host;
+	private final int port;
+	private final String route;
+
 	private WebSocket socket;
 	private SocketInputStream in;
 	private SocketOutputStream out;
 	private boolean connected = false;
 
 	public TSocket(TInetAddress address, int port) throws TUnknownHostException {
+		this.host = address.getHost();
+		this.port = port;
+		this.route = PORT_TO_ROUTE_MAPPING.has(port) ? PORT_TO_ROUTE_MAPPING.get(port) : null;
+
 		this.in = new SocketInputStream();
 		this.out = new SocketOutputStream();
-		// Don't try to use socket yet, it will be set by the callback
-		this.connect(address.getHost(), port);
+
+		// register with monitor in "connecting" state
+		NetworkMonitor.get().register(this, host, port, route);
+
+		this.connect(host, port);
 	}
 
 	public void setSoTimeout(int timeout) throws SocketException {
@@ -54,7 +65,10 @@ public class TSocket {
 
 	public void close() throws IOException {
 		if (socket != null && socket.getReadyState() <= 1) {
+			NetworkMonitor.get().onClosing(this);
+
 			socket.close();
+			NetworkMonitor.get().onClosed(this);
 		}
 	}
 
@@ -72,10 +86,14 @@ public class TSocket {
 			this.socket = ws;  // Set socket after connection opens
 			this.connected = true;
 
+			NetworkMonitor.get().onOpen(TSocket.this);
+
+
 			// Set up handlers AFTER socket is assigned
 			socket.onMessage(evt -> {
-				Uint8ClampedArray arr = Uint8ClampedArray.create(evt.getDataAsArray());
+				Uint8ClampedArray arr = new Uint8ClampedArray(evt.getDataAsArray());
 				in.buffers.add(arr);
+				NetworkMonitor.get().onBytesIn(TSocket.this, arr.getLength());
 				in.completeAndDelete(CallbackResult.READ);
 			});
 
@@ -90,6 +108,7 @@ public class TSocket {
 		});
 
 		ws.onError(e -> {
+			NetworkMonitor.get().onError(TSocket.this, "connect error");
 			callback.error(new IOException("Unable to open socket"));
 		});
 	}
@@ -212,10 +231,15 @@ public class TSocket {
 			Uint8Array arr = new Uint8Array(b.length);
 			arr.set(b);
 			socket.send(arr);
+
+			NetworkMonitor.get().onBytesOut(TSocket.this, b.length);
 		}
 
 		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
+
+			NetworkMonitor.get().onBytesOut(TSocket.this, len);
+
 			write(Arrays.copyOfRange(b, off, len + off));
 		}
 	}

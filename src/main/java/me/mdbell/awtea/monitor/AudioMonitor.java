@@ -1,6 +1,6 @@
-package me.mdbell.awtea.sound;
+package me.mdbell.awtea.monitor;
 
-import me.mdbell.awtea.classlib.javax.sound.sampled.TAudioFormat;
+import me.mdbell.awtea.sound.AbstractDataLine;
 
 import javax.sound.sampled.AudioFormat;
 import java.util.ArrayList;
