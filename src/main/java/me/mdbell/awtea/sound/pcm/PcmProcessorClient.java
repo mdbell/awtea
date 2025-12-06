@@ -3,6 +3,7 @@ package me.mdbell.awtea.sound.pcm;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.experimental.ExtensionMethod;
+import me.mdbell.awtea.sound.DrainListener;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.*;
@@ -11,6 +12,7 @@ import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.core.JSUndefined;
 import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.events.MessageEvent;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
@@ -19,6 +21,8 @@ import org.teavm.jso.workers.MessagePort;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class PcmProcessorClient {
@@ -40,6 +44,8 @@ public class PcmProcessorClient {
 
 	@Getter
 	private int queuedFrames = 0;
+
+	private Set<DrainListener> drainListenerSet = new HashSet<>();
 
 	public PcmProcessorClient() {
 		this(44100); // 44Khz
@@ -66,6 +72,10 @@ public class PcmProcessorClient {
 		this.queuedFrames = 0;
 	}
 
+	public void addDrainListener(DrainListener listener) {
+		this.drainListenerSet.add(listener);
+	}
+
 	public void init() {
 
 		addAudioModule(this.context, moduleUrl).await();
@@ -85,10 +95,12 @@ public class PcmProcessorClient {
 				return;
 			}
 			if (msg.getType().equals("consumed")) {
-				queuedFrames -= msg.getFrames();
+				int frames = msg.getFrames();
+				queuedFrames -= frames;
 				if(queuedFrames < 0) {
 					queuedFrames = 0;
 				}
+				drainListenerSet.forEach(l -> l.onDrain(frames));
 			}
 		});
 

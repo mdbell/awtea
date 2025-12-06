@@ -88,6 +88,8 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 		writeEpoch++;
 
 		openBackend(framesHint);
+
+		AudioMonitor.get().registerOutputLine(this);
 	}
 
 	@Override
@@ -118,6 +120,7 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 		open = false;
 		running = false;
 		writeEpoch++;
+		AudioMonitor.get().unregisterLine(this);
 	}
 
 	@Override
@@ -280,6 +283,9 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 				int bytesPushed = framesEnqueued * frameSizeBytes;
 				writtenBytes[0] += bytesPushed;
 
+				AudioMonitor.get().onWrite(AbstractDataLine.this, bytesPushed);
+				onSamplesChunk(sampleScratch, framesEnqueued);
+
 				if (writtenBytes[0] >= bytesRequested) {
 					cb.complete(writtenBytes[0]);
 				} else {
@@ -290,4 +296,25 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 
 		new Writer().attempt();
 	}
+
+	// inside AbstractDataLine
+
+	protected void onSamplesChunk(float[] samples, int frames) {
+		// compute per-channel peak from this chunk and forward to AudioMonitor
+		if (samples == null || frames <= 0) {
+			return;
+		}
+		float[] peaks = new float[channels];
+		int idx = 0;
+		for (int f = 0; f < frames; f++) {
+			for (int ch = 0; ch < channels; ch++) {
+				float v = Math.abs(samples[idx++]);
+				if (v > peaks[ch]) {
+					peaks[ch] = v;
+				}
+			}
+		}
+		AudioMonitor.get().onPcmEnvelope(this, peaks);
+	}
+
 }

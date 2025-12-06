@@ -1,6 +1,8 @@
 package me.mdbell.awtea.sound.pcm;
 
 import me.mdbell.awtea.sound.AbstractDataLine;
+import me.mdbell.awtea.sound.AudioMonitor;
+import me.mdbell.awtea.sound.DrainListener;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.LineUnavailableException;
@@ -22,6 +24,8 @@ public class AudioWorkletLine extends AbstractDataLine {
 		backend = new PcmProcessorClient(sampleRate, channels, maxQueuedFrames);
 
 		backend.init();
+
+		backend.addDrainListener(frames -> AudioMonitor.get().onDrain(this, frames * frameSizeBytes));
 	}
 
 	@Override

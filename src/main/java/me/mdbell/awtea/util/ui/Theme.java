@@ -43,10 +43,22 @@ public class Theme {
 			.prop(Var.TYPE_FOREGROUND, "#666")
 			.prop(Var.BUTTON_BACKGROUND, "#f5f5f5")
 			.prop(Var.BUTTON_BORDER, "#888")
+
 			.prop(Var.ERROR_FOREGROUND, "#b00020")
 			.prop(Var.WARNING_FOREGROUND, "#e65c00")
 			.prop(Var.INFO_FOREGROUND, "#0066cc")
 			.prop(Var.DEBUG_FOREGROUND, "#444")
+
+			.prop(Var.TABLE_HEADER_BACKGROUND, "#f5f5f5")
+			.prop(Var.TABLE_HEADER_BORDER, "#dddddd")
+			.prop(Var.TABLE_ROW_BACKGROUND, "#ffffff")
+			.prop(Var.TABLE_ROW_ALT_BACKGROUND, "#f9f9f9")
+			.prop(Var.TABLE_ROW_HOVER_BACKGROUND, "#e6f2ff")
+
+			.prop(Var.METER_BACKGROUND, "#dddddd")
+			.prop(Var.METER_GOOD, "#4caf50")   // green
+			.prop(Var.METER_WARN, "#ffb300")   // amber
+			.prop(Var.METER_BAD, "#f44336")    // red
 			.end()
 			.createClass(DARK_MODE_CLASS)
 			.prop(Var.BACKGROUND, "#1e1e1e")
@@ -67,6 +79,17 @@ public class Theme {
 			.prop(Var.WARNING_FOREGROUND, "#ffb366")
 			.prop(Var.INFO_FOREGROUND, "#3399ff")
 			.prop(Var.DEBUG_FOREGROUND, "#ccc")
+
+			.prop(Var.TABLE_HEADER_BACKGROUND, "#2b2b2b")
+			.prop(Var.TABLE_HEADER_BORDER, "#444444")
+			.prop(Var.TABLE_ROW_BACKGROUND, "#242424")
+			.prop(Var.TABLE_ROW_ALT_BACKGROUND, "#1e1e1e")
+			.prop(Var.TABLE_ROW_HOVER_BACKGROUND, "#303846")
+
+			.prop(Var.METER_BACKGROUND, "#333333")
+			.prop(Var.METER_GOOD, "#66bb6a")
+			.prop(Var.METER_WARN, "#ffca28")
+			.prop(Var.METER_BAD, "#ef5350")
 			.end()
 			.inject();
 	}
@@ -104,7 +127,7 @@ public class Theme {
 		}
 	}
 
-	public static String humanReadableSize(long bytes) {
+	public static String humanReadableSize(double bytes) {
 		if (bytes < 0) {
 			return "?";
 		}
@@ -174,6 +197,16 @@ public class Theme {
 		return (n < 10 ? "0" : "") + n;
 	}
 
+	public static String pad(String base, int n, String padChar) {
+		StringBuilder sb = new StringBuilder(base);
+		int count = sb.length();
+		while (count < n) {
+			sb.insert(0, padChar);
+			count++;
+		}
+		return sb.toString();
+	}
+
 	@Getter
 	public enum Var implements AwCss.CssKey {
 		BACKGROUND("--aw-bg"),
@@ -193,7 +226,18 @@ public class Theme {
 		ERROR_FOREGROUND("--aw-error-fg"),
 		WARNING_FOREGROUND("--aw-warning-fg"),
 		INFO_FOREGROUND("--aw-info-fg"),
-		DEBUG_FOREGROUND("--aw-debug-fg");
+		DEBUG_FOREGROUND("--aw-debug-fg"),
+
+		TABLE_HEADER_BACKGROUND("--aw-table-header-bg"),
+		TABLE_HEADER_BORDER("--aw-table-header-border"),
+		TABLE_ROW_BACKGROUND("--aw-table-row-bg"),
+		TABLE_ROW_ALT_BACKGROUND("--aw-table-row-alt-bg"),
+		TABLE_ROW_HOVER_BACKGROUND("--aw-table-row-hover-bg"),
+
+		METER_BACKGROUND("--aw-meter-bg"),
+		METER_GOOD("--aw-meter-good"),
+		METER_WARN("--aw-meter-warn"),
+		METER_BAD("--aw-meter-bad");;
 
 		private final String cssVarName;
 
