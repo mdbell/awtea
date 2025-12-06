@@ -97,7 +97,6 @@ public final class PcmDockWindow extends FloatingWindow {
 	protected HTMLElement buildBodyContent() {
 		HTMLElement root = createElement("div");
 		root.setClassName("pcm-dock-root");
-
 		List<AudioMonitor.PcmSnapshot> snaps = monitor.snapshotPcm();
 		if (snaps.isEmpty()) {
 			HTMLElement empty = createElement("div");

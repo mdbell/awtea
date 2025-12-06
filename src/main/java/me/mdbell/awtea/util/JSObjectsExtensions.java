@@ -9,6 +9,7 @@ import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
+import org.teavm.jso.dom.xml.Element;
 import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
@@ -17,6 +18,12 @@ public final class JSObjectsExtensions {
 	public static <T extends JSObject> boolean nullish(T obj) {
 		return obj == null || JSObjects.isUndefined(obj);
 	}
+
+	@JSBody(params = {"element"}, script = "return element.firstElementChild;")
+	public static native Element getFirstElementChild(Element element);
+
+	@JSBody(params = {"element"}, script = "return element.nextElementSibling;")
+	public static native Element getNextElementSibling(Element element);
 
 	@JSBody(params = {"arr", "begin", "end"}, script = "arr.subarray(begin, end)")
 	public static native <T extends ArrayBufferView> T subarray(T arr, int begin, int end);

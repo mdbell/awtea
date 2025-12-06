@@ -12,6 +12,11 @@ import org.teavm.jso.dom.events.MouseEvent;
 import org.teavm.jso.dom.html.HTMLButtonElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
+import org.teavm.jso.dom.xml.Node;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 import static me.mdbell.awtea.util.ui.UiDispatcher.invokeLater;
 
@@ -83,6 +88,11 @@ public abstract class FloatingWindow {
 	@Getter
 	@Setter
 	private MenuBar menuBar;
+
+	private boolean delegatedClicksInstalled = false;
+
+	// Simple registry: "actionId" -> Runnable
+	private final Map<String, Runnable> clickHandlers = new HashMap<>();
 
 	static {
 		AwCss.sheet()
@@ -315,7 +325,11 @@ public abstract class FloatingWindow {
 
 	@SuppressWarnings("unchecked")
 	protected <T extends HTMLElement> T createElement(String tagName) {
-		return (T) document.createElement(tagName);
+		return  (T) document.createElement(tagName);
+	}
+
+	protected void registerClickHandler(String id, Runnable handler) {
+		clickHandlers.put(id, handler);
 	}
 
 	/**
@@ -376,20 +390,214 @@ public abstract class FloatingWindow {
 		}
 
 		if (bodyContent == null) {
+			bodyContent = newContent;
 			bodyEl.appendChild(newContent);
 		} else {
-			bodyEl.replaceChild(newContent, bodyContent);
+			patchElement(bodyContent, newContent);
 		}
-		bodyContent = newContent;
 
 		if (autoscroll) {
 			autoscroll(bodyEl);
 		}
 	}
 
+	/**
+	 * Patch an existing element to match the structure and content of a fresh one.
+	 * Tag name is assumed to be the same for the root; if it's not, we just replace.
+	 */
+	private void patchElement(HTMLElement live, HTMLElement fresh) {
+		String liveTag  = live.getTagName();
+		String freshTag = fresh.getTagName();
+		if (!liveTag.equalsIgnoreCase(freshTag)) {
+			replaceNode(live, fresh);
+			return;
+		}
+
+		if(!Objects.equals(live.getClassName(), fresh.getClassName())) {
+			live.setClassName(fresh.getClassName());
+		}
+
+		syncAttributes(live, fresh);
+		syncStyle(live, fresh);
+
+		boolean liveHasChildren  = hasElementChildren(live);
+		boolean freshHasChildren = hasElementChildren(fresh);
+
+		// ⚠️ KEY: if old node had only text and new one has element children,
+		// just replace it entirely; our fine-grained patching isn't worth it here.
+		if (!liveHasChildren && freshHasChildren) {
+			replaceNode(live, fresh);
+			return;
+		}
+
+		if (freshHasChildren || liveHasChildren) {
+			patchChildren(live, fresh);
+		} else if(!Objects.equals(live.getTextContent(), fresh.getTextContent())){
+			// both are leaf nodes → sync text only
+			live.setTextContent(fresh.getTextContent());
+		}
+	}
+
+	private void replaceNode(HTMLElement live, HTMLElement fresh) {
+		HTMLElement parent = (HTMLElement) live.getParentNode();
+		if (parent != null) {
+			parent.replaceChild(fresh, live);
+		}
+		if (live == bodyContent) {
+			bodyContent = fresh;
+		}
+	}
+
+	private void syncStyle(HTMLElement live, HTMLElement fresh) {
+		String freshStyle = fresh.getAttribute("style");
+		String liveStyle  = live.getAttribute("style");
+
+		if (freshStyle == null) {
+			if (liveStyle != null) {
+				live.removeAttribute("style");
+			}
+		} else if (!freshStyle.equals(liveStyle)) {
+			live.setAttribute("style", freshStyle);
+		}
+	}
+
+
+	private boolean hasElementChildren(HTMLElement el) {
+		return el.getFirstElementChild() != null;
+	}
+
+	private void syncAttributes(HTMLElement live, HTMLElement fresh) {
+
+		// data attributes
+		var attributes = fresh.getAttributes();
+		for(int i = 0; i < attributes.getLength(); i++){
+			var attr = attributes.item(i);
+			String name = attr.getName();
+			String freshData = fresh.getAttribute(name);
+			String liveData = live.getAttribute(name);
+			if (freshData != null && !freshData.equals(liveData)) {
+				live.setAttribute(name, freshData);
+			} else if (freshData == null && liveData != null) {
+				live.removeAttribute(name);
+			}
+		}
+	}
+
+	private void patchChildren(HTMLElement live, HTMLElement fresh) {
+		Node liveChild = live.getFirstChild();
+		Node freshChild = fresh.getFirstChild();
+
+		while (freshChild != null || liveChild != null) {
+			if (freshChild == null) {
+				// extra old nodes → remove
+				Node nextLive = liveChild.getNextSibling();
+				live.removeChild(liveChild);
+				liveChild = nextLive;
+				continue;
+			}
+
+			if (liveChild == null) {
+				// new nodes to append
+				live.appendChild(freshChild.cloneNode(true));
+				freshChild = freshChild.getNextSibling();
+				continue;
+			}
+
+			Node nextLive = liveChild.getNextSibling();
+			Node nextFresh = freshChild.getNextSibling();
+
+			patchNode(live, liveChild, freshChild);
+
+			liveChild = nextLive;
+			freshChild = nextFresh;
+		}
+	}
+
+	private void patchNode(HTMLElement parent, Node live, Node fresh) {
+		short liveType = live.getNodeType();
+		short freshType = fresh.getNodeType();
+
+		// Case 1: both text nodes
+		if (liveType == Node.TEXT_NODE && freshType == Node.TEXT_NODE) {
+			if (!safeEquals(live.getNodeValue(), fresh.getNodeValue())) {
+				live.setNodeValue(fresh.getNodeValue());
+			}
+			return;
+		}
+
+		// Case 2: node type changed (text <-> element, comment, etc.)
+		if (liveType != freshType) {
+			Node replacement = fresh.cloneNode(true);
+			parent.replaceChild(replacement, live);
+			return;
+		}
+
+		// Case 3: both elements
+		if (liveType == Node.ELEMENT_NODE) {
+			patchElement((HTMLElement) live, (HTMLElement) fresh);
+			return;
+		}
+
+		// Other node types – simplest: replace
+		Node replacement = fresh.cloneNode(true);
+		parent.replaceChild(replacement, live);
+	}
+
+	private boolean safeEquals(String a, String b) {
+		if (a == null) return b == null;
+		return a.equals(b);
+	}
+
+
 	public void close() {
 		setVisible(false);
 		Taskbar.get().unregisterWindow(this);
+	}
+
+	protected void ensureDelegatedClicks() {
+		if (delegatedClicksInstalled) {
+			return;
+		}
+		delegatedClicksInstalled = true;
+
+		bodyEl.addEventListener("click", evt -> {
+			org.teavm.jso.dom.events.Event event =
+				(org.teavm.jso.dom.events.Event) evt;
+
+			HTMLElement target = (HTMLElement) event.getTarget();
+
+			HTMLElement actionEl = findActionElement(target);
+			if (actionEl == null) {
+				return;
+			}
+
+			String handlerId = actionEl.getAttribute("data-aw-handler");
+			if (handlerId == null) {
+				return;
+			}
+
+			Runnable handler = clickHandlers.get(handlerId);
+			if (handler != null) {
+				event.preventDefault();
+				schedule(handler);
+			}
+		});
+	}
+
+	// Walk up DOM until we find something with data-aw-handler
+	private HTMLElement findActionElement(HTMLElement el) {
+		HTMLElement cur = el;
+		while (cur != null) {
+			String id = cur.getAttribute("data-aw-handler");
+			if (id != null && !id.isEmpty()) {
+				return cur;
+			}
+			if (!(cur.getParentNode() instanceof HTMLElement)) {
+				return null;
+			}
+			cur = (HTMLElement) cur.getParentNode();
+		}
+		return null;
 	}
 
 	/**

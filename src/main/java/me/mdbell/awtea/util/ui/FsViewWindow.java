@@ -98,6 +98,7 @@ public class FsViewWindow extends FloatingWindow {
 	public FsViewWindow(int refreshIntervalMs) {
 		super("fsviewer", "Filesystem Viewer", 500, 500, refreshIntervalMs);
 		initMenuBar();
+		ensureDelegatedClicks();
 	}
 
 	@Override
@@ -278,17 +279,18 @@ public class FsViewWindow extends FloatingWindow {
 		HTMLElement nameCol = document.createElement("span");
 		nameCol.setClassName("fs-entry-name");
 
+		String handlerId = String.valueOf((type + "-" + text).hashCode());
+
 		HTMLElement link = document.createElement("a");
 		link.setClassName(type != FileType.FILE ? "fs-dir" : "");
 		link.setTextContent(text);
 		if (action != null) {
+			registerClickHandler(handlerId, action);
 			link.setAttribute("href", "#");
-			link.addEventListener("click", evt -> {
-				evt.preventDefault();
-				schedule(action);
-			});
+			link.setAttribute("data-aw-handler", handlerId);
 		} else {
 			link.setAttribute("href", "javascript:void(0)");
+			link.removeAttribute("data-aw-handler");
 		}
 
 		nameCol.appendChild(link);
