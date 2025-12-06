@@ -34,6 +34,16 @@ public class ThreadDetour {
 		thread.start();
 	}
 
+	public static void setDaemon(Thread thread, boolean on) {
+		ThreadMonitor.get().onSetDaemon(thread, on);
+		thread.setDaemon(on);
+	}
+
+	public static void setPriority(Thread thread, int newPriority) {
+		ThreadMonitor.get().onSetPriority(thread, newPriority);
+		thread.setPriority(newPriority);
+	}
+
 	public static void sleep(long millis) throws InterruptedException {
 		try {
 			ThreadMonitor.get().onSleep(Thread.currentThread());

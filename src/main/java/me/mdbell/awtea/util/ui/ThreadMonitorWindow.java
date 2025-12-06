@@ -73,8 +73,7 @@ public final class ThreadMonitorWindow extends FloatingWindow {
 
 	@Override
 	protected String computeSignature() {
-		// simple: refresh on timer always
-		return null;
+		return String.valueOf(ThreadMonitor.get().getRevision());
 	}
 
 	@Override
@@ -103,6 +102,7 @@ public final class ThreadMonitorWindow extends FloatingWindow {
 			"ID",
 			"Name",
 			"Group",
+			"Priority",
 			"Daemon",
 			"State",
 			"Age",
@@ -125,16 +125,24 @@ public final class ThreadMonitorWindow extends FloatingWindow {
 		for (ThreadMonitor.ThreadSnapshot t : threads) {
 			HTMLElement row = createElement("tr");
 			row.setClassName("thread-monitor-row");
-			row.getClassList().add(classForState(t.state));
 
-			addCell(row, String.valueOf(t.id));
-			addCell(row, t.name != null ? t.name : "(unnamed)");
-			addCell(row, t.groupName != null ? t.groupName : "-");
-			addCell(row, t.daemon ? "yes" : "no");
-			addCell(row, t.state.toString().toLowerCase());
+			ThreadMonitor.State state = t.getState();
+			String label = t.getLabel();
+			String group = t.getGroupName();
+			int priority = t.getPriority();
+			boolean daemon = t.isDaemon();
 
-			long ageMs = now - t.createdAtMillis;
-			long idleMs = now - t.lastActivityMillis;
+			row.getClassList().add(classForState(state));
+
+			addCell(row, String.valueOf(t.getId()));
+			addCell(row, label);
+			addCell(row, group != null ? group : "-");
+			addCell(row, String.valueOf(priority));
+			addCell(row, daemon ? "yes" : "no");
+			addCell(row, state.toString().toLowerCase());
+
+			long ageMs = now - t.getCreatedMillis();
+			long idleMs = now - t.getLastUpdatedMillis();
 			addCell(row, formatDuration(ageMs));
 			addCell(row, idleMs < 0 ? "?" : formatDuration(idleMs));
 

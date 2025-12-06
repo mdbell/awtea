@@ -148,6 +148,7 @@ public final class PcmDockWindow extends FloatingWindow {
 				selectedLineId = -1;
 				hasSelectedAtLeastOnce = false;
 			}
+			select.blur();
 		});
 
 		select.addEventListener("focus", evt -> suppressRefresh = hasSelectedAtLeastOnce = true);

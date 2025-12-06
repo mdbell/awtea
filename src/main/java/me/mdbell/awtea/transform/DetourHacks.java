@@ -57,9 +57,13 @@ public class DetourHacks implements ClassHolderTransformer {
 			new MethodDetour(MethodDescriptor.parse("<init>()V"),
 				me.mdbell.awtea.detour.ThreadDetour.class, "init"),
 			new MethodDetour(MethodDescriptor.parse("start()V"),
-				me.mdbell.awtea.detour.ThreadDetour.class, "start"),
+				me.mdbell.awtea.detour.ThreadDetour.class),
 			new MethodDetour(MethodDescriptor.parse("sleep(J)V"),
-				me.mdbell.awtea.detour.ThreadDetour.class, "sleep"),
+				me.mdbell.awtea.detour.ThreadDetour.class),
+			new MethodDetour(MethodDescriptor.parse("setDaemon(Z)V"),
+				me.mdbell.awtea.detour.ThreadDetour.class),
+			new MethodDetour(MethodDescriptor.parse("setPriority(I)V"),
+				me.mdbell.awtea.detour.ThreadDetour.class),
 		});
     }};
 

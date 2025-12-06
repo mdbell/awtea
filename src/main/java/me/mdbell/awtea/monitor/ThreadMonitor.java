@@ -1,8 +1,12 @@
 package me.mdbell.awtea.monitor;
 
-import java.util.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
+import me.mdbell.awtea.detour.NoDetours;
 
-public final class ThreadMonitor {
+@NoDetours // Prevent detouring of monitor itself - could cause infinite recursion
+public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, ThreadMonitor.ThreadSnapshot> {
 
 	public enum State {
 		NEW,
@@ -12,29 +16,46 @@ public final class ThreadMonitor {
 		TERMINATED
 	}
 
-	public static final class ThreadSnapshot {
-		public final int id;
-		public final String name;
-		public final String groupName;
-		public final boolean daemon;
-		public final State state;
-		public final long createdAtMillis;
-		public final long lastActivityMillis;
+	@Getter
+	@Setter(AccessLevel.PACKAGE)
+	public static final class Entry extends MonitorEntry {
+		private String name;
+		private String groupName;
+		private boolean daemon;
+		private State state;
+		private int priority;
 
-		public ThreadSnapshot(int id,
-							  String name,
-							  String groupName,
-							  boolean daemon,
-							  State state,
-							  long createdAtMillis,
-							  long lastActivityMillis) {
-			this.id = id;
+		Entry(int id, String label) {
+			this(id, label, null, null, 0, false);
+		}
+
+		Entry(int id, String label, String name, String groupName, int priority, boolean daemon) {
+			super(id, label);
 			this.name = name;
 			this.groupName = groupName;
 			this.daemon = daemon;
-			this.state = state;
-			this.createdAtMillis = createdAtMillis;
-			this.lastActivityMillis = lastActivityMillis;
+			this.priority = priority;
+			this.state = State.NEW;
+		}
+	}
+
+	@Getter
+	public static final class ThreadSnapshot extends MonitorSnapshot<Entry> {
+		private final int id;
+		private final String name;
+		private final String groupName;
+		private final boolean daemon;
+		private final int priority;
+		private final State state;
+
+		public ThreadSnapshot(Entry e) {
+			super(e);
+			this.id = e.getId();
+			this.name = e.name;
+			this.groupName = e.groupName;
+			this.daemon = e.daemon;
+			this.priority = e.priority;
+			this.state = e.state;
 		}
 	}
 
@@ -44,109 +65,73 @@ public final class ThreadMonitor {
 		return INSTANCE;
 	}
 
-	private static final class Entry {
-		final int id;
-		final String name;
-		final String groupName;
-		final boolean daemon;
-		final long createdAtMillis;
+	private ThreadMonitor() {
 
-		long lastActivityMillis;
-		State state;
-
-		Entry(int id, String name, String groupName, boolean daemon) {
-			this.id = id;
-			this.name = name != null ? name : ("Thread-" + id);
-			this.groupName = groupName;
-			this.daemon = daemon;
-			long now = System.currentTimeMillis();
-			this.createdAtMillis = now;
-			this.lastActivityMillis = now;
-			this.state = State.NEW;
-		}
 	}
 
-	private final Map<Thread, Entry> entries = new WeakHashMap<>();
-	private int nextId = 1;
+	@Override
+	protected String defaultLabelFor(Object target, int id) {
+		if(!(target instanceof Thread)) {
+			throw new IllegalArgumentException("ThreadMonitor can only monitor Thread instances");
+		}
+		Thread thread = (Thread) target;
+		String name = thread.getName();
+		return name != null ? name : ("Thread-" + id);
+	}
 
-	private ThreadMonitor() {
+	@Override
+	protected Entry createEntry(int id, Object target, String label) {
+		Thread t = (Thread) target;
+		return new Entry(id, label);
+	}
+
+	@Override
+	protected ThreadSnapshot buildSnapshot(Entry entry) {
+		return new ThreadSnapshot(entry);
 	}
 
 	public void register(Thread t) {
-		if (t == null || entries.containsKey(t)) {
-			return;
-		}
-		String name = t.getName();
-		//TeaVM does not support ThreadGroup
-		// ThreadGroup group = t.getThreadGroup();
-		// String groupName = group != null ? group.getName() : null;
-		String groupName =  null;
+		Entry e = ensureEntry(t);
+		e.setName(t.getName());
+		//TeaVM doesn't support ThreadGroup yet
+//		ThreadGroup g = t.getThreadGroup();
+//		e.setGroupName(g != null ? g.getName() : null);
+		e.setDaemon(t.isDaemon());
+		e.setPriority(t.getPriority());
+	}
 
-		Entry e = new Entry(nextId++, name, groupName, t.isDaemon());
-		entries.put(t, e);
+	public void onSetPriority(Thread thread, int newPriority) {
+		Entry e = ensureEntry(thread);
+		e.setPriority(newPriority);
+	}
+
+	public void onSetDaemon(Thread thread, boolean on) {
+		Entry e = ensureEntry(thread);
+		e.setDaemon(on);
 	}
 
 	public void onStart(Thread t) {
-		Entry e = entries.get(t);
-		if (e == null) {
-			register(t);
-			e = entries.get(t);
-		}
-		e.state = State.STARTED;
-		e.lastActivityMillis = System.currentTimeMillis();
+		Entry e = ensureEntry(t);
+		e.setState(State.STARTED);
 	}
 
 	public void onRunEnter(Thread t) {
-		Entry e = entries.get(t);
-		if (e == null) {
-			register(t);
-			e = entries.get(t);
-		}
-		e.state = State.RUNNING;
-		e.lastActivityMillis = System.currentTimeMillis();
+		Entry e = ensureEntry(t);
+		e.setState(State.RUNNING);
 	}
 
 	public void onRunExit(Thread t) {
-		Entry e = entries.get(t);
-		if (e == null) {
-			return;
-		}
-		e.state = State.TERMINATED;
-		e.lastActivityMillis = System.currentTimeMillis();
+		Entry e = ensureEntry(t);
+		e.setState(State.TERMINATED);
 	}
 
 	public void onSleep(Thread t) {
-		Entry e = entries.get(t);
-		if (e == null) {
-			return;
-		}
-		e.state = State.SLEEPING;
-		e.lastActivityMillis = System.currentTimeMillis();
+		Entry e = ensureEntry(t);
+		e.setState(State.SLEEPING);
 	}
 
 	public void onWake(Thread t) {
-		Entry e = entries.get(t);
-		if (e == null) {
-			return;
-		}
-		e.state = State.RUNNING;
-		e.lastActivityMillis = System.currentTimeMillis();
-	}
-
-	public List<ThreadSnapshot> snapshot() {
-		ArrayList<ThreadSnapshot> result = new ArrayList<>(entries.size());
-		for (Entry e : entries.values()) {
-			result.add(new ThreadSnapshot(
-				e.id,
-				e.name,
-				e.groupName,
-				e.daemon,
-				e.state,
-				e.createdAtMillis,
-				e.lastActivityMillis
-			));
-		}
-		result.sort((a, b) -> Integer.compare(a.id, b.id));
-		return result;
+		Entry e = ensureEntry(t);
+		e.setState(State.RUNNING);
 	}
 }

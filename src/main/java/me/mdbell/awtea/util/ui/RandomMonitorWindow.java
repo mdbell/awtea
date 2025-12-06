@@ -85,8 +85,7 @@ public final class RandomMonitorWindow extends FloatingWindow {
 
 	@Override
 	protected String computeSignature() {
-		// Just refresh on timer; if you add a revision counter later, you can use it here.
-		return null;
+		return String.valueOf(monitor.getRevision());
 	}
 
 	@Override

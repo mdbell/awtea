@@ -55,7 +55,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	protected synchronized E ensureEntry(Object target, String label) {
 		E entry = entries.get(target);
 		if (entry != null) {
-			entry.touch();
+			touch(entry);
 			return entry;
 		}
 		int id = nextId.getAndIncrement();
@@ -66,7 +66,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 
 		entry = createEntry(id, target, label);
 		entries.put(target, entry);
-		revision++;
+		bumpRevision();
 		return entry;
 	}
 
