@@ -78,8 +78,7 @@ public final class NetworkMonitorWindow extends FloatingWindow {
 
 	@Override
 	protected String computeSignature() {
-		// simple: always refresh on timer
-		return null;
+		return String.valueOf(monitor.getRevision());
 	}
 
 	@Override
@@ -139,22 +138,26 @@ public final class NetworkMonitorWindow extends FloatingWindow {
 		for (NetworkMonitor.ConnectionSnapshot c : conns) {
 			HTMLElement row = createElement("tr");
 			row.setClassName("net-monitor-row");
-			row.getClassList().add(classForState(c.state));
+			NetworkMonitor.State state = c.getState();
+			String host = c.getHost();
+			String route = c.getRoute();
+			int port = c.getPort();
+			row.getClassList().add(classForState(state));
 
-			addCell(row, String.valueOf(c.id));
-			addCell(row, c.route != null ? c.route : "-");
-			addCell(row, c.host != null ? c.host : "-");
-			addCell(row, String.valueOf(c.port));
-			addCell(row, c.stateText);
+			addCell(row, String.valueOf(c.getId()));
+			addCell(row, route != null ? route : "-");
+			addCell(row, host != null ? host : "-");
+			addCell(row, String.valueOf(port));
+			addCell(row, state.toString().toLowerCase());
 
-			addCell(row, Theme.humanReadableSize(c.bytesIn));
-			addCell(row, Theme.humanReadableSize(c.bytesOut));
+			addCell(row, Theme.humanReadableSize(c.getBytesIn()));
+			addCell(row, Theme.humanReadableSize(c.getBytesOut()));
 
-			addRateCell(row, c.inRateBytesPerSec);
-			addRateCell(row, c.outRateBytesPerSec);
+			addRateCell(row, c.getInRateBytesPerSec());
+			addRateCell(row, c.getOutRateBytesPerSec());
 
-			long ageMs = now - c.createdAtMillis;
-			long idleMs = now - c.lastActivityMillis;
+			long ageMs = now - c.getCreatedMillis();
+			long idleMs = now - c.getLastUpdatedMillis();
 			addCell(row, formatDuration(ageMs));
 			addCell(row, idleMs < 0 ? "?" : formatDuration(idleMs));
 

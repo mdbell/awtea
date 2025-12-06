@@ -1,9 +1,11 @@
 package me.mdbell.awtea.monitor;
 
-import java.util.*;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 
-public final class NetworkMonitor {
+public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, NetworkMonitor.ConnectionSnapshot> {
 
 	public enum State {
 		CONNECTING,
@@ -13,44 +15,52 @@ public final class NetworkMonitor {
 		ERROR
 	}
 
-	public static final class ConnectionSnapshot {
-		public final int id;
-		public final String host;
-		public final int port;
-		public final String route;   // js5 / game / null
-		public final State state;
-		public final String stateText;
-		public final long createdAtMillis;
-		public final long lastActivityMillis;
-		public final long bytesIn;
-		public final long bytesOut;
-		public final double inRateBytesPerSec;
-		public final double outRateBytesPerSec;
+	@Getter
+	@Setter(AccessLevel.PACKAGE)
+	public static final class Entry extends MonitorEntry{
+		private String host;
+		private int port;
+		private String route;
+		private State state;
 
-		public ConnectionSnapshot(int id,
-								  String host,
-								  int port,
-								  String route,
-								  State state,
-								  String stateText,
-								  long createdAtMillis,
-								  long lastActivityMillis,
-								  long bytesIn,
-								  long bytesOut,
-								  double inRateBytesPerSec,
-								  double outRateBytesPerSec) {
-			this.id = id;
-			this.host = host;
-			this.port = port;
-			this.route = route;
-			this.state = state;
-			this.stateText = stateText;
-			this.createdAtMillis = createdAtMillis;
-			this.lastActivityMillis = lastActivityMillis;
-			this.bytesIn = bytesIn;
-			this.bytesOut = bytesOut;
-			this.inRateBytesPerSec = inRateBytesPerSec;
-			this.outRateBytesPerSec = outRateBytesPerSec;
+		private long bytesIn;
+		private long bytesOut;
+
+		// for rate calculation
+		private long prevBytesIn;
+		private long prevBytesOut;
+		private long prevTimeMillis;
+		private double inRate;
+		private double outRate;
+
+		Entry(int id, String label) {
+			super(id, label);
+			this.state = State.CONNECTING;
+			this.prevTimeMillis = System.currentTimeMillis();
+		}
+	}
+
+	@Getter
+	public static final class ConnectionSnapshot extends MonitorSnapshot<Entry> {
+		private final String host;
+		private final int port;
+		private final String route;   // js5 / game / null
+		private final State state;
+		private final long bytesIn;
+		private final long bytesOut;
+		private final double inRateBytesPerSec;
+		private final double outRateBytesPerSec;
+
+		public ConnectionSnapshot(Entry e) {
+			super(e);
+			this.host = e.host;
+			this.port = e.port;
+			this.route = e.route;
+			this.state = e.state;
+			this.bytesIn = e.bytesIn;
+			this.bytesOut = e.bytesOut;
+			this.inRateBytesPerSec = e.inRate;
+			this.outRateBytesPerSec = e.outRate;
 		}
 	}
 
@@ -60,140 +70,79 @@ public final class NetworkMonitor {
 		return INSTANCE;
 	}
 
-	private static final class Entry {
-		final int id;
-		final String host;
-		final int port;
-		final String route;
-		State state;
-		String stateText;
-		long createdAtMillis;
-		long lastActivityMillis;
-
-		long bytesIn;
-		long bytesOut;
-
-		// for rate calculation
-		long prevBytesIn;
-		long prevBytesOut;
-		long prevTimeMillis;
-		double inRate;
-		double outRate;
-
-		Entry(int id, String host, int port, String route) {
-			this.id = id;
-			this.host = host;
-			this.port = port;
-			this.route = route;
-			this.state = State.CONNECTING;
-			this.stateText = "connecting";
-			long now = System.currentTimeMillis();
-			this.createdAtMillis = now;
-			this.lastActivityMillis = now;
-			this.prevTimeMillis = now;
-		}
-	}
-
-	private final Map<Object, Entry> entries = new WeakHashMap<>();
-	private int nextId = 1;
-
 	private NetworkMonitor() {
 
 	}
 
 	public void register(Object socket, String host, int port, String route) {
-		Entry e = new Entry(nextId++, host, port, route);
-		entries.put(socket, e);
+		Entry e = ensureEntry(socket);
+		e.setHost(host);
+		e.setPort(port);
+		e.setRoute(route);
 	}
 
 	public void onOpen(Object socket) {
-		Entry e = entries.get(socket);
-		if (e == null) return;
-		e.state = State.OPEN;
-		e.stateText = "open";
-		e.lastActivityMillis = System.currentTimeMillis();
+		Entry e = ensureEntry(socket);
+		e.setState(State.OPEN);
 	}
 
 	public void onClosing(Object socket) {
-		Entry e = entries.get(socket);
-		if (e == null) return;
-		e.state = State.CLOSING;
-		e.stateText = "closing";
-		e.lastActivityMillis = System.currentTimeMillis();
+		Entry e = ensureEntry(socket);
+		e.setState(State.CLOSING);
 	}
 
 	public void onClosed(Object socket) {
-		Entry e = entries.get(socket);
-		if (e == null) return;
-		e.state = State.CLOSED;
-		e.stateText = "closed";
-		e.lastActivityMillis = System.currentTimeMillis();
+		Entry e = ensureEntry(socket);
+		e.setState(State.CLOSED);
 	}
 
 	public void onError(Object socket, String message) {
-		Entry e = entries.get(socket);
-		if (e == null) return;
-		e.state = State.ERROR;
-		e.stateText = message != null ? message : "error";
-		e.lastActivityMillis = System.currentTimeMillis();
+		Entry e = ensureEntry(socket);
+		e.setState(State.ERROR);
 	}
 
 	public void onBytesIn(Object socket, int len) {
-		if (len <= 0) return;
-		Entry e = entries.get(socket);
-		if (e == null) return;
+		if (len <= 0) {
+			return;
+		}
+		Entry e = ensureEntry(socket);
 		e.bytesIn += len;
-		e.lastActivityMillis = System.currentTimeMillis();
 	}
 
 	public void onBytesOut(Object socket, int len) {
-		if (len <= 0) return;
-		Entry e = entries.get(socket);
-		if (e == null) return;
+		if (len <= 0) {
+			return;
+		}
+		Entry e = ensureEntry(socket);
 		e.bytesOut += len;
-		e.lastActivityMillis = System.currentTimeMillis();
 	}
 
-	public List<ConnectionSnapshot> snapshot() {
+	@Override
+	protected Entry createEntry(int id, Object target, String label) {
+		return new Entry(id, label);
+	}
+
+	@Override
+	protected ConnectionSnapshot buildSnapshot(Entry entry) {
 		long now = System.currentTimeMillis();
-		List<ConnectionSnapshot> list = new ArrayList<>(entries.size());
-
-		for (Entry e : entries.values()) {
-			long dt = now - e.prevTimeMillis;
-			if (dt <= 0) {
-				dt = 1;
-			}
-			long dIn = e.bytesIn - e.prevBytesIn;
-			long dOut = e.bytesOut - e.prevBytesOut;
-
-			double inRate = (dIn * 1000.0) / dt;
-			double outRate = (dOut * 1000.0) / dt;
-
-			// simple EMA to smooth a bit
-			double alpha = 0.3;
-			e.inRate = e.inRate * (1.0 - alpha) + inRate * alpha;
-			e.outRate = e.outRate * (1.0 - alpha) + outRate * alpha;
-
-			e.prevBytesIn = e.bytesIn;
-			e.prevBytesOut = e.bytesOut;
-			e.prevTimeMillis = now;
-
-			list.add(new ConnectionSnapshot(
-				e.id,
-				e.host,
-				e.port,
-				e.route,
-				e.state,
-				e.stateText,
-				e.createdAtMillis,
-				e.lastActivityMillis,
-				e.bytesIn,
-				e.bytesOut,
-				e.inRate,
-				e.outRate
-			));
+		long dt = now - entry.prevTimeMillis;
+		if (dt <= 0) {
+			dt = 1;
 		}
+		long dIn = entry.bytesIn - entry.prevBytesIn;
+		long dOut = entry.bytesOut - entry.prevBytesOut;
 
-		return list;
+		double inRate = (dIn * 1000.0) / dt;
+		double outRate = (dOut * 1000.0) / dt;
+
+		// simple EMA to smooth a bit
+		double alpha = 0.3;
+		entry.inRate = entry.inRate * (1.0 - alpha) + inRate * alpha;
+		entry.outRate = entry.outRate * (1.0 - alpha) + outRate * alpha;
+
+		entry.prevBytesIn = entry.bytesIn;
+		entry.prevBytesOut = entry.bytesOut;
+		entry.prevTimeMillis = now;
+		return new ConnectionSnapshot(entry);
 	}
 }
