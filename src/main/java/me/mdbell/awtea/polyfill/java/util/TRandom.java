@@ -1,5 +1,7 @@
 package me.mdbell.awtea.polyfill.java.util;
 
+import me.mdbell.awtea.monitor.RandomMonitor;
+
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -10,9 +12,10 @@ import java.util.stream.LongStream;
  * internally
  *
  * @see java.util.Random
+ * @see org.teavm.classlib.java.util.TRandom
  */
 @Deprecated
-public class Random{
+public class TRandom {
     /**
      * State for Xorshift64 PRNG
      */
@@ -28,17 +31,19 @@ public class Random{
      */
     private boolean haveStoredGaussian;
 
-    public Random() {
+    public TRandom() {
         this(System.currentTimeMillis()); // Default seed based on time
     }
 
-    public Random(long seed) {
+    public TRandom(long seed) {
         setSeed(seed);
+		RandomMonitor.get().register(this, seed);
     }
 
     public void setSeed(long seed) {
         // Prevent zero state (as Xorshift requires a non-zero state)
         state = (seed == 0) ? 0xdeadbeefL : seed;
+		RandomMonitor.get().setSeed(this, seed);
     }
 
     protected int next(int bits) {
@@ -49,6 +54,7 @@ public class Random{
     }
 
     public int nextInt() {
+		RandomMonitor.get().onNextInt(this);
         return next(32);
     }
 
@@ -56,10 +62,12 @@ public class Random{
         if (n <= 0) {
             throw new IllegalArgumentException();
         }
+		RandomMonitor.get().onNextIntBound(this);
         return Math.abs(nextInt()) % n;
     }
 
     public boolean nextBoolean() {
+		RandomMonitor.get().onNextBoolean(this);
         return (nextInt() & 1) != 0;
     }
 
@@ -75,14 +83,17 @@ public class Random{
     }
 
     public long nextLong() {
+		RandomMonitor.get().onNextLong(this);
         return ((long) next(32) << 32) | (next(32) & 0xFFFFFFFFL);
     }
 
     public float nextFloat() {
+		RandomMonitor.get().onNextFloat(this);
         return next(24) / ((float) (1 << 24));
     }
 
     public double nextDouble() {
+		RandomMonitor.get().onNextDouble(this);
         return ((long) next(26) << 27 | next(27)) / (double) (1L << 53);
     }
 
@@ -91,6 +102,7 @@ public class Random{
      * centered around 0 with a standard deviation of 1.0.
      */
     public double nextGaussian() {
+		RandomMonitor.get().onNextGaussian(this);
         if (haveStoredGaussian) {
             haveStoredGaussian = false;
             return storedGaussian;
