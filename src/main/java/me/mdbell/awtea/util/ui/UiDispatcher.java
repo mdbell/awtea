@@ -8,7 +8,7 @@ import java.util.List;
 
 public final class UiDispatcher {
 	private static final List<Runnable> queue = new ArrayList<>();
-	private static final int INVOKE_INTERVAL_MS = 50;
+	private static final int INVOKE_INTERVAL_MS = 75;
 
 	static {
 		ThreadUtils.runAtFixedRate("AWTea-dispatcher", () -> {

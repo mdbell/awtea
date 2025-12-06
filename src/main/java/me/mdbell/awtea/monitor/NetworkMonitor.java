@@ -1,9 +1,6 @@
 package me.mdbell.awtea.monitor;
 
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public final class NetworkMonitor {
@@ -97,7 +94,7 @@ public final class NetworkMonitor {
 		}
 	}
 
-	private final Map<Object, Entry> entries = new IdentityHashMap<>();
+	private final Map<Object, Entry> entries = new WeakHashMap<>();
 	private int nextId = 1;
 
 	private NetworkMonitor() {

@@ -3,10 +3,7 @@ package me.mdbell.awtea.monitor;
 import me.mdbell.awtea.sound.AbstractDataLine;
 
 import javax.sound.sampled.AudioFormat;
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class AudioMonitor {
 
@@ -110,10 +107,10 @@ public final class AudioMonitor {
 		}
 	}
 
-	private final Map<AbstractDataLine, LineInfo> byLine = new IdentityHashMap<>();
+	private final Map<AbstractDataLine, LineInfo> byLine = new WeakHashMap<>();
 	private final List<LineInfo> lines = new ArrayList<>();
 
-	private final Map<AbstractDataLine, PcmEnvelopeBuffer> pcmBuffers = new IdentityHashMap<>();
+	private final Map<AbstractDataLine, PcmEnvelopeBuffer> pcmBuffers = new WeakHashMap<>();
 
 	private int nextId = 1;
 

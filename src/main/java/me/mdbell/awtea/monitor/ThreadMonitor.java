@@ -1,9 +1,6 @@
 package me.mdbell.awtea.monitor;
 
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class ThreadMonitor {
 
@@ -69,7 +66,7 @@ public final class ThreadMonitor {
 		}
 	}
 
-	private final Map<Thread, Entry> entries = new IdentityHashMap<>();
+	private final Map<Thread, Entry> entries = new WeakHashMap<>();
 	private int nextId = 1;
 
 	private ThreadMonitor() {
