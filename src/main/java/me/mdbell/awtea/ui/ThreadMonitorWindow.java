@@ -1,4 +1,4 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import me.mdbell.awtea.monitor.ThreadMonitor;
 import org.teavm.jso.dom.html.HTMLElement;

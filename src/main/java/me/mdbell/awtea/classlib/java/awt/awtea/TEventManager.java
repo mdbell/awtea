@@ -1,4 +1,4 @@
-package me.mdbell.awtea.input;
+package me.mdbell.awtea.classlib.java.awt.awtea;
 
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.TAWTEvent;
@@ -8,12 +8,14 @@ import me.mdbell.awtea.classlib.java.awt.event.TFocusEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseWheelEvent;
+import me.mdbell.awtea.impl.Debug;
+import me.mdbell.awtea.input.MouseEventType;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.dom.events.*;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLElement;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -24,22 +26,23 @@ import java.util.List;
  * be removed later via {@link #detach()}.
  */
 @ExtensionMethod({JSObjectsExtensions.class})
-public final class EventManager implements AutoCloseable {
+public final class TEventManager implements AutoCloseable {
 
 	private final HTMLElement element;
 	private final TComponent component;
 
-	private final List<Registration> registrations = new ArrayList<>();
+	private final List<Registration> registrations;
 
-	public EventManager(HTMLElement element, TComponent component) {
+	public TEventManager(HTMLElement element, TComponent component) {
 		this.element = element;
 		this.component = component;
+		this.registrations = new LinkedList<>();
 	}
 
 	/**
 	 * Suppress the default browser context menu on right-click.
 	 */
-	public EventManager disableContextMenu() {
+	public TEventManager disableContextMenu() {
 		element.onEvent("contextmenu", Event::preventDefault).track(registrations);
 		return this;
 	}
@@ -47,7 +50,7 @@ public final class EventManager implements AutoCloseable {
 	/**
 	 * Attach mouse listeners, mapping to TMouseEvent.
 	 */
-	public EventManager withMouse() {
+	public TEventManager withMouse() {
 		for (MouseEventType type : MouseEventType.values()) {
 			element.onEvent(type.getType(), e -> {
 				MouseEvent me = (MouseEvent) e;
@@ -61,7 +64,7 @@ public final class EventManager implements AutoCloseable {
 	/**
 	 * Attach mouse wheel listener, mapping to TMouseWheelEvent.
 	 */
-	public EventManager withMouseWheel() {
+	public TEventManager withMouseWheel() {
 		element.onEvent("wheel", e -> {
 			WheelEvent we = (WheelEvent) e;
 			TAWTEvent awt = TMouseWheelEvent.adapt(component, (HTMLCanvasElement) element, we, "wheel");
@@ -73,7 +76,7 @@ public final class EventManager implements AutoCloseable {
 	/**
 	 * Attach keyboard listeners, mapping to TKeyEvent.
 	 */
-	public EventManager withKeyboard() {
+	public TEventManager withKeyboard() {
 		for (TKeyEvent.KeyEvent type : TKeyEvent.KeyEvent.values()) {
 			element.onEvent(type.getType(), e -> {
 				KeyboardEvent ke = (KeyboardEvent) e;
@@ -87,7 +90,7 @@ public final class EventManager implements AutoCloseable {
 	/**
 	 * Attach focus / blur listeners, mapping to TFocusEvent.
 	 */
-	public EventManager withFocus() {
+	public TEventManager withFocus() {
 
 		element.onEvent("focus", e -> {
 			post(new TFocusEvent(component, TFocusEvent.FOCUS_GAINED));
@@ -105,6 +108,7 @@ public final class EventManager implements AutoCloseable {
 
 	@Override
 	public void close() throws Exception {
+		Debug.trigger();
 		detach();
 	}
 

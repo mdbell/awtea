@@ -1,4 +1,4 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import me.mdbell.awtea.impl.TeaAppletStub;
 import org.teavm.jso.browser.Window;
@@ -6,7 +6,6 @@ import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLElement;
 
 import java.applet.Applet;
-import java.applet.AppletStub;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
@@ -28,7 +27,7 @@ public class AppletWindow extends FloatingWindow {
 		canvasElement.setAttribute("tabindex", "0"); // make canvas focusable
 		canvasElement.getStyle().setProperty("outline", "none"); // remove focus outline
 
-		applet.setStub(stub = new TeaAppletStub(canvasElement, props){
+		applet.setStub(stub = new TeaAppletStub(canvasElement, props) {
 			@Override
 			public URL getCodeBase() {
 				String url = getParameter("codebase");

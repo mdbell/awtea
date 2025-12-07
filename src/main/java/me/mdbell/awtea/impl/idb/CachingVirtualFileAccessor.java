@@ -34,7 +34,7 @@ public class CachingVirtualFileAccessor implements VirtualFileAccessor {
 	private static final List<CachingVirtualFileAccessor> instances = new ArrayList<>();
 
 	static {
-		ThreadUtils.runAtFixedRate(new CacheFlusher(), 500);
+		ThreadUtils.runAtFixedRate("vfs.flusher", new CacheFlusher(), 5 * 1000);
 	}
 
 	public CachingVirtualFileAccessor(VirtualFileAccessor accessor) {

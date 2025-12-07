@@ -1,4 +1,4 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -291,7 +291,7 @@ public abstract class FloatingWindow {
 
 		// start refresh timer
 		if (refreshIntervalMs > 0 && !fixedIntervalStarted) {
-			ThreadUtils.runAtFixedRate(() -> {
+			ThreadUtils.runAtFixedRate(windowId, () -> {
 				if (!dragging && container.getParentNode() != null) {
 					this.refreshContent();
 				}

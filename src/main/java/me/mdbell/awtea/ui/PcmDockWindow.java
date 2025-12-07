@@ -1,6 +1,5 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
-import me.mdbell.awtea.monitor.LineMonitor;
 import me.mdbell.awtea.monitor.PcmMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLInputElement;
@@ -82,7 +81,7 @@ public final class PcmDockWindow extends FloatingWindow {
 
 	@Override
 	protected void refreshContent() {
-		if(suppressRefresh) {
+		if (suppressRefresh) {
 			return;
 		}
 		super.refreshContent();
@@ -110,7 +109,7 @@ public final class PcmDockWindow extends FloatingWindow {
 
 		PcmMonitor.Snapshot selected = selectSnapshot(snaps);
 
-		if( selected == null) {
+		if (selected == null) {
 			HTMLElement empty = createElement("div");
 			empty.setTextContent("No PCM data (no active lines).");
 			empty.getStyle().setProperty("font-style", "italic");
@@ -158,7 +157,7 @@ public final class PcmDockWindow extends FloatingWindow {
 
 		header.appendChild(select);
 
-		if(!hasSelectedAtLeastOnce) {
+		if (!hasSelectedAtLeastOnce) {
 			HTMLElement hint = createElement("span");
 			hint.setTextContent(" (auto-selecting most active line)");
 			hint.getStyle().setProperty("font-style", "italic");
@@ -217,7 +216,7 @@ public final class PcmDockWindow extends FloatingWindow {
 		if (snaps.isEmpty()) {
 			return null;
 		}
-		if(!hasSelectedAtLeastOnce || selectedLineId == -1) {
+		if (!hasSelectedAtLeastOnce || selectedLineId == -1) {
 			// finds the most active line
 			return snaps.stream().min((a, b) -> {
 				float aMax = 0f;

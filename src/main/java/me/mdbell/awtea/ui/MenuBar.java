@@ -1,4 +1,4 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import lombok.Getter;
 import org.teavm.jso.browser.Window;
@@ -101,6 +101,7 @@ public class MenuBar {
 
 	public interface MenuHandle {
 		void addAction(String label, Runnable action);
+
 		HTMLElement getElement();
 	}
 

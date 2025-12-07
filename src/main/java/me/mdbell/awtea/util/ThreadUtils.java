@@ -1,13 +1,13 @@
 package me.mdbell.awtea.util;
 
+import lombok.Getter;
 import lombok.experimental.UtilityClass;
+import me.mdbell.awtea.monitor.ScheduleTaskMonitor;
 
 import java.util.PriorityQueue;
 
 @UtilityClass
 public class ThreadUtils {
-
-	private String schedulerThreadName = "ThreadUtils-Scheduler";
 
 	// --- scheduler state ---
 
@@ -17,9 +17,7 @@ public class ThreadUtils {
 
 	private volatile boolean schedulerRunning = false;
 
-	// --- Public API ---
-
-	public void runAtFixedRate(Runnable runnable, long periodMillis) {
+	public void runAtFixedRate(String name, Runnable runnable, long periodMillis) {
 		synchronized (lock) {
 			if (!schedulerRunning) {
 				startSchedulerThread();
@@ -28,16 +26,17 @@ public class ThreadUtils {
 			long now = System.currentTimeMillis();
 			long nextRun = now + periodMillis;
 
-			queue.add(new ScheduledTask(nextRun, periodMillis, runnable));
+			ScheduledTask task = new ScheduledTask(name, nextRun, periodMillis, runnable);
+			ScheduleTaskMonitor.get().onCreated(task, name, nextRun, periodMillis);
+			queue.add(task);
+
 			lock.notifyAll();
 		}
 	}
 
-	// --- scheduler thread loop ---
-
 	private void startSchedulerThread() {
 		schedulerRunning = true;
-		Thread schedulerThread = new Thread(ThreadUtils::pump, schedulerThreadName);
+		Thread schedulerThread = new Thread(ThreadUtils::pump, "AWTea-ThreadUtils-Scheduler");
 		schedulerThread.setPriority(5); // normal priority
 		schedulerThread.setDaemon(true);
 		schedulerThread.start();
@@ -49,16 +48,20 @@ public class ThreadUtils {
 				ScheduledTask task;
 
 				synchronized (lock) {
-					while (queue.isEmpty()) {
-						lock.wait(); // park here until we have something to do
+					task = queue.peek();
+
+					if (task == null) {
+						lock.wait(); // wait for tasks
+						continue;
 					}
 
 					long now = System.currentTimeMillis();
-					task = queue.peek();
 
 					long delay = task.nextRunTime - now;
 					if (delay > 0) {
+						ScheduleTaskMonitor.get().onWaiting(task);
 						lock.wait(delay); // sleep until the earliest task is due
+						ScheduleTaskMonitor.get().onQueued(task);
 						continue;
 					}
 
@@ -68,6 +71,7 @@ public class ThreadUtils {
 
 				// run task outside lock
 				try {
+					ScheduleTaskMonitor.get().onRunning(task);
 					task.runnable.run();
 				} catch (Throwable t) {
 					t.printStackTrace();
@@ -76,6 +80,7 @@ public class ThreadUtils {
 				// reschedule
 				synchronized (lock) {
 					task.nextRunTime = System.currentTimeMillis() + task.periodMillis;
+					ScheduleTaskMonitor.get().onQueued(task, task.nextRunTime);
 					queue.add(task);
 					lock.notifyAll();
 				}
@@ -87,14 +92,15 @@ public class ThreadUtils {
 		}
 	}
 
-	// --- data structure ---
-
-	private static class ScheduledTask implements Comparable<ScheduledTask> {
+	@Getter
+	public static class ScheduledTask implements Comparable<ScheduledTask> {
+		private final String name;
 		long nextRunTime;
 		final long periodMillis;
 		final Runnable runnable;
 
-		public ScheduledTask(long nextRunTime, long periodMillis, Runnable runnable) {
+		public ScheduledTask(String name, long nextRunTime, long periodMillis, Runnable runnable) {
+			this.name = name;
 			this.nextRunTime = nextRunTime;
 			this.periodMillis = periodMillis;
 			this.runnable = runnable;

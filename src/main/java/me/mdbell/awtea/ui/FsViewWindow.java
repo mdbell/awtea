@@ -1,4 +1,4 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -11,11 +11,9 @@ import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 
-import static me.mdbell.awtea.util.ui.Theme.humanReadableSize;
-import static me.mdbell.awtea.util.ui.Theme.humanReadableTimestamp;
+import static me.mdbell.awtea.ui.Theme.humanReadableSize;
+import static me.mdbell.awtea.ui.Theme.humanReadableTimestamp;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class FsViewWindow extends FloatingWindow {
@@ -50,17 +48,17 @@ public class FsViewWindow extends FloatingWindow {
 			.prop("padding-left", "0")
 			.prop("margin", "0")
 			.prop("border-top")
-				.value("1px solid")
-				.value(Theme.Var.HEADER_BORDER)
-				.end().end()
+			.value("1px solid")
+			.value(Theme.Var.HEADER_BORDER)
+			.end().end()
 			.createClass("fs-entry")
 			.prop("display", "flex")
 			.prop("align-items", "baseline")
 			.prop("padding", "0.25rem 0")
 			.prop("border-bottom")
-				.value("1px solid")
-				.value(Theme.Var.ENTRY_BORDER)
-				.end().end()
+			.value("1px solid")
+			.value(Theme.Var.ENTRY_BORDER)
+			.end().end()
 			.createClass("fs-entry a")
 			.prop("text-decoration", "none")
 			.prop("cursor", "pointer")
@@ -92,7 +90,7 @@ public class FsViewWindow extends FloatingWindow {
 	}
 
 	public FsViewWindow() {
-		this(1000);
+		this(10000);
 	}
 
 	public FsViewWindow(int refreshIntervalMs) {
@@ -214,7 +212,7 @@ public class FsViewWindow extends FloatingWindow {
 				HTMLElement metaCol = createElement("span");
 				metaCol.setClassName("fs-entry-meta");
 				String meta = humanReadableSize(size);
-				if(!file.exists()) {
+				if (!file.exists()) {
 					meta += " • (missing)";
 				}
 				if (modified > 0) {

@@ -1,4 +1,4 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import lombok.Getter;
 import lombok.experimental.ExtensionMethod;
@@ -6,7 +6,6 @@ import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.browser.Storage;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLBodyElement;
-import org.teavm.jso.dom.html.HTMLElement;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -144,7 +143,7 @@ public class Theme {
 			return "?";
 		}
 		if (bytes < 1024) {
-			return ((int)bytes) + " B";
+			return ((int) bytes) + " B";
 		}
 
 		int unit = 1024;

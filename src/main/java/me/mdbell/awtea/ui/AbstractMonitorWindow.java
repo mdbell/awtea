@@ -1,4 +1,4 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import me.mdbell.awtea.monitor.AbstractMonitor;
 import me.mdbell.awtea.monitor.MonitorEntry;
@@ -87,10 +87,14 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 
 	// ---- Hooks for subclasses ----
 
-	/** Column headers for the table. */
+	/**
+	 * Column headers for the table.
+	 */
 	protected abstract String[] getColumnHeaders();
 
-	/** Fill all cells for a snapshot row. You can call addCell() helpers or build manually. */
+	/**
+	 * Fill all cells for a snapshot row. You can call addCell() helpers or build manually.
+	 */
 	protected abstract void fillRow(HTMLElement row, S snapshot, int rowIndex);
 
 	// ---- Styling hooks (defaults can be overridden per window) ----
@@ -119,7 +123,9 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 		return "monitor-header-cell";
 	}
 
-	/** Base row class; you can override for status coloring, etc. */
+	/**
+	 * Base row class; you can override for status coloring, etc.
+	 */
 	protected String getRowCssClass(S snapshot, int rowIndex) {
 		return "monitor-row";
 	}
@@ -146,6 +152,28 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 		HTMLElement td = createElement("td");
 		td.setClassName("monitor-data-cell");
 		td.setTextContent(ms < 0 ? "?" : formatDuration(ms));
+		row.appendChild(td);
+	}
+
+	protected void addTimeTillCell(HTMLElement row, long futureTimeMillis) {
+		HTMLElement td = createElement("td");
+		td.setClassName("monitor-data-cell");
+		long now = System.currentTimeMillis();
+		long msTill = futureTimeMillis - now;
+
+		String formatted;
+
+		if (msTill < 0) {
+			formatted = "now";
+		} else if (msTill < 1000) {
+			formatted = msTill + "ms";
+		} else if (futureTimeMillis > 0) {
+			formatted = formatDuration(msTill);
+		} else {
+			formatted = "-";
+		}
+
+		td.setTextContent(formatted);
 		row.appendChild(td);
 	}
 

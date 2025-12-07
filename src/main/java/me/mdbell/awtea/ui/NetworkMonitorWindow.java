@@ -1,26 +1,24 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import me.mdbell.awtea.monitor.NetworkMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
-
-import java.util.List;
 
 public final class NetworkMonitorWindow extends AbstractMonitorWindow<NetworkMonitor.Entry, NetworkMonitor.Snapshot> {
 
 	private static String[] HEADERS = new String[]{
 		"ID",
-			"Route",
-			"Host",
-			"Port",
-			"State",
-			"Bytes In",
-			"In Buffer",
-			"Bytes Out",
-			"Out Buffer",
-			"In Rate",
-			"Out Rate",
-			"Age",
-			"Last Activity"
+		"Route",
+		"Host",
+		"Port",
+		"State",
+		"Bytes In",
+		"In Buffer",
+		"Bytes Out",
+		"Out Buffer",
+		"In Rate",
+		"Out Rate",
+		"Age",
+		"Last Activity"
 	};
 
 	public NetworkMonitorWindow() {

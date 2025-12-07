@@ -1,4 +1,4 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import lombok.*;
 import me.mdbell.awtea.util.ConsoleBridge;

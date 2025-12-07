@@ -1,12 +1,15 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import org.teavm.jso.dom.html.HTMLElement;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class AwCss {
 
-	private AwCss() {}
+	private AwCss() {
+	}
 
 	public static Set<Number> injects = new HashSet<>();
 
@@ -25,13 +28,14 @@ public final class AwCss {
 		String toCssValue();
 	}
 
-	public interface CssKey extends CssValue{
+	public interface CssKey extends CssValue {
 		@Override
 		String toCssValue();
+
 		String toCssKey();
 	}
 
-	public static final class Sheet implements CssValue{
+	public static final class Sheet implements CssValue {
 		private final StringBuilder sb = new StringBuilder();
 
 		private Sheet() {

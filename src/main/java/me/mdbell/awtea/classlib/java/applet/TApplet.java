@@ -5,7 +5,7 @@ import me.mdbell.awtea.classlib.java.awt.TCanvas2DGraphics;
 import me.mdbell.awtea.classlib.java.awt.TCanvasGraphics;
 import me.mdbell.awtea.classlib.java.awt.TContainer;
 import me.mdbell.awtea.classlib.java.awt.TGraphics;
-import me.mdbell.awtea.input.EventManager;
+import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 
@@ -21,7 +21,7 @@ public class TApplet extends TContainer {
 	private TCanvasGraphics graphics;
 	private CanvasRenderingContext2D context;
 
-	private EventManager eventManager;
+	private TEventManager eventManager;
 
 	public URL getCodeBase() {
 		return stub.getCodeBase();
@@ -39,9 +39,11 @@ public class TApplet extends TContainer {
 		this.stub = stub;
 		this.context = stub.getCanvas().getContext2d(false);
 		this.graphics = null;
-		eventManager.detach();
+		if (eventManager != null) {
+			eventManager.detach();
+		}
 
-		eventManager = new EventManager(stub.getCanvas(), this);
+		eventManager = new TEventManager(stub.getCanvas(), this);
 
 		eventManager.withFocus()
 			.withKeyboard()

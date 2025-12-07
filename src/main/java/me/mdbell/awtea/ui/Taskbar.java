@@ -1,4 +1,4 @@
-package me.mdbell.awtea.util.ui;
+package me.mdbell.awtea.ui;
 
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLButtonElement;
