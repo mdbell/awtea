@@ -34,6 +34,23 @@ public class ThreadUtils {
 		}
 	}
 
+	public void runOnce(String name, Runnable runnable, long delayMillis) {
+		synchronized (lock) {
+			if (!schedulerRunning) {
+				startSchedulerThread();
+			}
+
+			long now = System.currentTimeMillis();
+			long nextRun = now + delayMillis;
+
+			ScheduledTask task = new ScheduledTask(name, nextRun, runnable);
+			ScheduleTaskMonitor.get().onCreated(task, name, nextRun, 0);
+			queue.add(task);
+
+			lock.notifyAll();
+		}
+	}
+
 	private void startSchedulerThread() {
 		schedulerRunning = true;
 		Thread schedulerThread = new Thread(ThreadUtils::pump, "AWTea-ThreadUtils-Scheduler");
@@ -77,6 +94,11 @@ public class ThreadUtils {
 					t.printStackTrace();
 				}
 
+				if (task.type == TaskType.ONESHOT) {
+					ScheduleTaskMonitor.get().onCompleted(task);
+					continue; // do not reschedule
+				}
+
 				// reschedule
 				synchronized (lock) {
 					task.nextRunTime = System.currentTimeMillis() + task.periodMillis;
@@ -92,18 +114,29 @@ public class ThreadUtils {
 		}
 	}
 
+	public enum TaskType {
+		ONESHOT,
+		FIXED_RATE
+	}
+
 	@Getter
 	public static class ScheduledTask implements Comparable<ScheduledTask> {
 		private final String name;
 		long nextRunTime;
 		final long periodMillis;
 		final Runnable runnable;
+		final TaskType type;
+
+		public ScheduledTask(String name, long nextRunTime, Runnable runnable) {
+			this(name, nextRunTime, 0, runnable);
+		}
 
 		public ScheduledTask(String name, long nextRunTime, long periodMillis, Runnable runnable) {
 			this.name = name;
 			this.nextRunTime = nextRunTime;
 			this.periodMillis = periodMillis;
 			this.runnable = runnable;
+			this.type = periodMillis > 0 ? TaskType.FIXED_RATE : TaskType.ONESHOT;
 		}
 
 		@Override

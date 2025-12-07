@@ -117,7 +117,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
 		}
 		currentFramePosition = 0;
 
-		System.out.println("Opening AbstractDataLine with buffer size hint: " + framesHint + " frames");
+		System.out.println("Opening " + this.getClass().getSimpleName() + " with buffer hint size of " + framesHint + " frames");
 
 		try {
 			openBackend(framesHint);

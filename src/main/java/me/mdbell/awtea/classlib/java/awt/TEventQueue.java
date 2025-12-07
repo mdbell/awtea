@@ -2,6 +2,8 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.event.TActiveEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TInvocationEvent;
+import me.mdbell.awtea.monitor.EventQueueMonitor;
+import me.mdbell.awtea.monitor.EventTypeMonitor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
@@ -35,14 +37,29 @@ public class TEventQueue {
 	}
 
 	private void postEventInternal(int priority, TAWTEvent event) {
-		priorityQueues[priority].offer(event);
-		initEventDispatchThread();
-
 		synchronized (lock) {
-			if (eventDispatchThread != null) {
-				lock.notifyAll();
-			}
+			priorityQueues[priority].offer(event);
+			initEventDispatchThread();
+
+			// monitor: after enqueue, compute pending counts
+			EventQueueMonitor.get().onPost(this, priority, snapshotPendingCounts());
+			EventTypeMonitor.get().onPost(event);
+
+			lock.notifyAll();
 		}
+	}
+
+	private int[] snapshotPendingCounts() {
+		int[] counts = new int[NUM_PRIORITIES];
+		for (int i = 0; i < NUM_PRIORITIES; i++) {
+			int n = 0;
+			Queue q = priorityQueues[i];
+			for (TAWTEvent ignored : q) {
+				n++;
+			}
+			counts[i] = n;
+		}
+		return counts;
 	}
 
 	private void initEventDispatchThread() {
@@ -114,18 +131,23 @@ public class TEventQueue {
 			return;
 		}
 
-		Object source = event.getSource();
+		long start = System.currentTimeMillis();
+		try {
+			Object source = event.getSource();
 
-//		Debug.trigger();
-
-		if (event instanceof TActiveEvent) {
-			((TActiveEvent) event).dispatch();
-		} else if (source instanceof TComponent) {
-			TComponent comp = (TComponent) source;
-			comp.dispatchEvent(event);
-		} else {
-			//TODO: rest of event types, e.g. WindowEvent, ActionEvent, etc.
-//			System.err.println("Warning: Unhandled event type: " + event.getClass().getName());
+			if (event instanceof TActiveEvent) {
+				((TActiveEvent) event).dispatch();
+			} else if (source instanceof TComponent) {
+				((TComponent) source).dispatchEvent(event);
+			} else {
+				// TODO: other event types
+			}
+		} finally {
+			// After dispatch, queue sizes may have changed; we can recompute counts
+			int[] counts = snapshotPendingCounts();
+			long dt = System.currentTimeMillis() - start;
+			EventQueueMonitor.get().onDispatch(this, counts, dt, event);
+			EventTypeMonitor.get().onDispatch(event, dt);
 		}
 	}
 

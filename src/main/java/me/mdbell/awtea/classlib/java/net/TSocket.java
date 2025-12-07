@@ -1,10 +1,12 @@
 package me.mdbell.awtea.classlib.java.net;
 
+import lombok.Getter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.monitor.NetworkMonitor;
 import me.mdbell.awtea.net.SocketResolver;
 import me.mdbell.awtea.net.SocketResolverFactory;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.ThreadUtils;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.function.JSConsumer;
@@ -16,7 +18,6 @@ import org.teavm.jso.websocket.WebSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,6 +34,13 @@ public class TSocket {
 	private final SocketOutputStream outputStream;
 
 	private final List<Registration> registrations = new ArrayList<>();
+
+	/**
+	 * Socket read timeout in milliseconds.
+	 * 0 <= no timeout
+	 */
+	@Getter
+	private volatile int soTimeout;
 
 	public TSocket(TInetAddress address, int port) throws TUnknownHostException {
 		this.host = address.getHost();
@@ -59,10 +67,11 @@ public class TSocket {
 		}).track(registrations);
 	}
 
-	public void setSoTimeout(int timeout) throws SocketException {
+	public void setSoTimeout(int timeout) throws TSocketException {
+		this.soTimeout = timeout;
 	}
 
-	public void setTcpNoDelay(boolean on) throws SocketException {
+	public void setTcpNoDelay(boolean on) throws TSocketException {
 	}
 
 	public InputStream getInputStream() throws IOException {
@@ -114,13 +123,16 @@ public class TSocket {
 		private int index = 0;
 
 		private boolean eof = false;
-		private Throwable failure;
+		private volatile Throwable failure;   // touched from multiple threads
 
-		// A single waiter for "new data or closed"
+		// waiter for "new data / EOF / failure"
 		private JSConsumer<Void> pendingResolve;
 		private JSConsumer<Object> pendingReject;
 
 		private int availableBytes = 0;
+
+		// generation token to distinguish different waits
+		private volatile int waitToken = 0;
 
 		public void pushBuffer(Int8Array buf) {
 			if (eof || failure != null) {
@@ -147,22 +159,22 @@ public class TSocket {
 		}
 
 		private void wakeWaiter() {
-			if (pendingResolve != null || pendingReject != null) {
-				var r = pendingResolve;
-				var rej = pendingReject;
-				pendingResolve = null;
-				pendingReject = null;
-				if (failure != null && rej != null) {
-					rej.accept(failure);
-				} else if (r != null) {
-					r.accept(null);
-				}
+			JSConsumer<Void> r = pendingResolve;
+			JSConsumer<Object> rej = pendingReject;
+			// clear first to avoid double-fire
+			pendingResolve = null;
+			pendingReject = null;
+
+			if (failure != null && rej != null) {
+				rej.accept(failure);
+			} else if (r != null) {
+				r.accept(null);
 			}
 		}
 
 		@Override
 		public int available() {
-			if (failure != null || eof && buffers.isEmpty() && (curr == null || index >= curr.length)) {
+			if (failure != null || (eof && buffers.isEmpty() && (curr == null || index >= curr.length))) {
 				return 0;
 			}
 			return availableBytes;
@@ -196,15 +208,18 @@ public class TSocket {
 				}
 
 				if (failure != null) {
+					if (failure instanceof TSocketTimeoutException) {
+						throw (TSocketTimeoutException) failure;
+					}
 					throw new IOException("Socket read failed", failure);
 				}
 				if (eof && buffers.isEmpty() && (curr == null || index >= curr.length)) {
 					return -1;
 				}
 
-				// Wait for more data or closure
+				// Wait for more data / EOF / failure / timeout
 				waitForData().await();
-				// loop back and try again
+				// then loop and try again
 			}
 		}
 
@@ -212,7 +227,6 @@ public class TSocket {
 			if (failure != null) {
 				return 0;
 			}
-			// Ensure we have a current buffer
 			if (curr == null || index >= curr.length) {
 				if (buffers.isEmpty()) {
 					return 0;
@@ -222,9 +236,7 @@ public class TSocket {
 			}
 
 			int count = Math.min(len, curr.length - index);
-
 			System.arraycopy(curr, index, b, off, count);
-
 			index += count;
 			return count;
 		}
@@ -238,9 +250,47 @@ public class TSocket {
 				return JSPromise.resolve(null);
 			}
 
+			int timeout = TSocket.this.getSoTimeout();
+
 			return new JSPromise<>((resolve, reject) -> {
-				pendingResolve = resolve;
-				pendingReject = reject;
+				// new generation for this wait
+				final int myToken = ++waitToken;
+
+				// wrap resolve/reject so they only fire for the current wait
+				pendingResolve = v -> {
+					if (waitToken != myToken) {
+						return; // stale
+					}
+					pendingResolve = null;
+					pendingReject = null;
+					resolve.accept(v);
+				};
+				pendingReject = err -> {
+					if (waitToken != myToken) {
+						return; // stale
+					}
+					pendingResolve = null;
+					pendingReject = null;
+					reject.accept(err);
+				};
+
+				if (timeout > 0) {
+					ThreadUtils.runOnce("TSocket-ReadTimeout", () -> {
+						// runs on scheduler thread
+						if (waitToken != myToken) {
+							return; // this wait has already completed or been replaced
+						}
+
+						// still waiting; mark timeout and wake
+						if (failure == null &&
+							(pendingResolve != null || pendingReject != null)) {
+
+							failure = new TSocketTimeoutException(
+								"Read timed out after " + timeout + " ms");
+							wakeWaiter();
+						}
+					}, timeout);
+				}
 			});
 		}
 	}

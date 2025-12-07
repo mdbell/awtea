@@ -41,6 +41,11 @@ public class ScheduleTaskMonitor extends AbstractMonitor<ScheduleTaskMonitor.Ent
 		e.runCount++;
 	}
 
+	public void onCompleted(Object task) {
+		Entry e = ensureEntry(task);
+		// nothing to do here yet
+	}
+
 	@Override
 	protected Entry createEntry(int id, Object target, String label) {
 		return new Entry(id, label);

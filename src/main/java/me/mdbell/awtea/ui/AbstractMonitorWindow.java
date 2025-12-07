@@ -177,11 +177,25 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 		row.appendChild(td);
 	}
 
+
 	protected String formatRate(double bytesPerSec) {
 		if (bytesPerSec <= 0.0) {
 			return "-";
 		}
 		return Theme.humanReadableSize(bytesPerSec) + "/s";
+	}
+
+	protected String formatItemsPerSec(double itemsPerSec) {
+		if (itemsPerSec <= 0.0) {
+			return "-";
+		}
+		if (itemsPerSec < 1.0) {
+			return String.format("%.2f/s", itemsPerSec);
+		} else if (itemsPerSec < 10.0) {
+			return String.format("%.1f/s", itemsPerSec);
+		} else {
+			return String.format("%.0f/s", itemsPerSec);
+		}
 	}
 
 	protected String formatDuration(long ms) {

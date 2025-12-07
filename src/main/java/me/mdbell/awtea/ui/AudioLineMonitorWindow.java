@@ -5,7 +5,7 @@ import org.teavm.jso.dom.html.HTMLElement;
 
 import javax.sound.sampled.AudioFormat;
 
-public final class AudioMonitorWindow extends AbstractMonitorWindow<LineMonitor.Entry, LineMonitor.Snapshot> {
+public final class AudioLineMonitorWindow extends AbstractMonitorWindow<LineMonitor.Entry, LineMonitor.Snapshot> {
 
 	static final String[] HEADERS = new String[]{
 		"ID",
@@ -28,10 +28,10 @@ public final class AudioMonitorWindow extends AbstractMonitorWindow<LineMonitor.
 		return "monitor-header-cell";
 	}
 
-	public AudioMonitorWindow() {
+	public AudioLineMonitorWindow() {
 		super(
-			"audio.monitor",
-			"Audio Monitor",
+			"audio.line.monitor",
+			"Audio Line Monitor",
 			1050,
 			260,
 			250,   // refresh every 250ms
