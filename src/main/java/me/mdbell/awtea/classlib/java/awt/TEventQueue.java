@@ -1,5 +1,6 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import me.mdbell.awtea.classlib.java.awt.event.TActionEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TActiveEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TInvocationEvent;
 import me.mdbell.awtea.monitor.EventQueueMonitor;
@@ -33,7 +34,19 @@ public class TEventQueue {
 	}
 
 	public void postEvent(TAWTEvent event) {
-		postEventInternal(NORM_PRIORITY, event);
+		postEventInternal(getPriorityForEvent(event), event);
+	}
+
+	private int getPriorityForEvent(TAWTEvent event) {
+		if (event instanceof TInvocationEvent) {
+			return ULTIMATE_PRIORITY;
+		} else if (event instanceof TActiveEvent) {
+			return HIGH_PRIORITY;
+		} else if (event instanceof TActionEvent) {
+			return LOW_PRIORITY;
+		} else {
+			return NORM_PRIORITY;
+		}
 	}
 
 	private void postEventInternal(int priority, TAWTEvent event) {
