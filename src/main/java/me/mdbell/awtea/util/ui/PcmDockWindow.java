@@ -1,6 +1,6 @@
 package me.mdbell.awtea.util.ui;
 
-import me.mdbell.awtea.monitor.AudioMonitor;
+import me.mdbell.awtea.monitor.LineMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLInputElement;
 
@@ -8,7 +8,7 @@ import java.util.List;
 
 public final class PcmDockWindow extends FloatingWindow {
 
-	private final AudioMonitor monitor = AudioMonitor.get();
+	private final LineMonitor monitor = LineMonitor.get();
 
 	// simple selection state: current line id, -1 = first line
 	private int selectedLineId = -1;
@@ -97,7 +97,7 @@ public final class PcmDockWindow extends FloatingWindow {
 	protected HTMLElement buildBodyContent() {
 		HTMLElement root = createElement("div");
 		root.setClassName("pcm-dock-root");
-		List<AudioMonitor.PcmSnapshot> snaps = monitor.snapshotPcm();
+		List<LineMonitor.PcmSnapshot> snaps = monitor.snapshotPcm();
 		if (snaps.isEmpty()) {
 			HTMLElement empty = createElement("div");
 			empty.setTextContent("No PCM data (no active lines).");
@@ -107,7 +107,7 @@ public final class PcmDockWindow extends FloatingWindow {
 			return root;
 		}
 
-		AudioMonitor.PcmSnapshot selected = selectSnapshot(snaps);
+		LineMonitor.PcmSnapshot selected = selectSnapshot(snaps);
 
 		if( selected == null) {
 			HTMLElement empty = createElement("div");
@@ -129,7 +129,7 @@ public final class PcmDockWindow extends FloatingWindow {
 		HTMLInputElement select = createElement("select");
 		select.setClassName("pcm-dock-select");
 
-		for (AudioMonitor.PcmSnapshot snap : snaps) {
+		for (LineMonitor.PcmSnapshot snap : snaps) {
 			HTMLElement option = createElement("option");
 			option.setAttribute("value", Integer.toString(snap.id));
 			option.setTextContent(snap.id + " - " + snap.name);
@@ -201,7 +201,7 @@ public final class PcmDockWindow extends FloatingWindow {
 		return root;
 	}
 
-	private AudioMonitor.PcmSnapshot selectSnapshot(List<AudioMonitor.PcmSnapshot> snaps) {
+	private LineMonitor.PcmSnapshot selectSnapshot(List<LineMonitor.PcmSnapshot> snaps) {
 		if (snaps.isEmpty()) {
 			return null;
 		}
@@ -219,7 +219,7 @@ public final class PcmDockWindow extends FloatingWindow {
 				return Float.compare(bMax, aMax);
 			}).orElse(null);
 		}
-		for (AudioMonitor.PcmSnapshot s : snaps) {
+		for (LineMonitor.PcmSnapshot s : snaps) {
 			if (s.id == selectedLineId) {
 				return s;
 			}

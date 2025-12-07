@@ -1,13 +1,13 @@
 package me.mdbell.awtea.util.ui;
 
-import me.mdbell.awtea.monitor.AudioMonitor;
+import me.mdbell.awtea.monitor.LineMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 
 import java.util.List;
 
 public final class AudioMonitorWindow extends FloatingWindow {
 
-	private final AudioMonitor monitor = AudioMonitor.get();
+	private final LineMonitor monitor = LineMonitor.get();
 
 	static {
 		AwCss.sheet()
@@ -137,7 +137,7 @@ public final class AudioMonitorWindow extends FloatingWindow {
 		HTMLElement root = createElement("div");
 		root.setClassName("audio-monitor-root");
 
-		List<AudioMonitor.LineSnapshot> lines = monitor.snapshot();
+		List<LineMonitor.LineSnapshot> lines = monitor.snapshot();
 
 		if (lines.isEmpty()) {
 			HTMLElement empty = createElement("div");
@@ -160,7 +160,7 @@ public final class AudioMonitorWindow extends FloatingWindow {
 			"Dir",
 			"State",
 			"Name / Format",
-			"Buf (used/free)",
+			"Buf (used/total)",
 			"Fill",
 			"W Rate",
 			"D Rate",
@@ -187,33 +187,42 @@ public final class AudioMonitorWindow extends FloatingWindow {
 		// ----- body -----
 		HTMLElement tbody = createElement("tbody");
 
-		for (AudioMonitor.LineSnapshot line : lines) {
+		for (LineMonitor.LineSnapshot line : lines) {
 			HTMLElement row = createElement("tr");
 			row.setClassName("audio-monitor-row");
 
-			addCell(row, String.valueOf(line.id));
-			addCell(row, line.output ? "Out" : "In");
+			int id = line.getId();
+			boolean output = line.isOutput();
+			boolean open = line.isOpen();
+			boolean running = line.isRunning();
+			int bufferSizeBytes = line.getBufferSizeBytes();
+			int usedBytes = line.getUsedBytes();
+			int backlogBytes = line.getBacklogBytes();
+			int targetSlackBytes = line.getTargetSlackBytes();
 
-			String state = (line.open ? "open" : "closed") +
-				(line.running ? ", running" : ", stopped");
+			addCell(row, String.valueOf(id));
+			addCell(row, output ? "Out" : "In");
+
+			String state = (open ? "open" : "closed") +
+				(running ? ", running" : ", stopped");
 			addCell(row, state);
 
-			addCell(row, line.name + " (" + line.formatSummary() + ")");
+			addCell(row, line.getLabel() + " (" + line.formatSummary() + ")");
 
-			String buf = line.usedBytes + " / " + line.bufferSizeBytes + " bytes";
+			String buf = usedBytes + " / " + bufferSizeBytes + " bytes";
 			addCell(row, buf);
 
 			// Fill cell with bar
 			row.appendChild(createFillCell(line));
 
 			// write / drain rates (fixed width cells)
-			addRateCell(row, line.writeRateBytesPerSec);
-			addRateCell(row, line.drainRateBytesPerSec);
+			addRateCell(row, line.getWriteRateBytesPerSec());
+			addRateCell(row, line.getDrainRateBytesPerSec());
 
 			// backlog vs target
 			String backlogText;
-			if (line.targetSlackBytes > 0) {
-				backlogText = line.backlogBytes + " / " + line.targetSlackBytes + " bytes";
+			if (targetSlackBytes > 0) {
+				backlogText = backlogBytes + " / " + targetSlackBytes + " bytes";
 			} else {
 				backlogText = "-";
 			}
@@ -232,13 +241,14 @@ public final class AudioMonitorWindow extends FloatingWindow {
 		return root;
 	}
 
-	private static String getClassName(AudioMonitor.LineSnapshot line) {
+	private static String getClassName(LineMonitor.LineSnapshot line) {
 		String className = "line-closed";
 
-		if(line.open) {
-			double ratio = line.targetSlackBytes == 0
+		if(line.isOpen()) {
+			int targetSlack = line.getTargetSlackBytes();
+			double ratio = targetSlack == 0
 				? 0
-				: (double) line.backlogBytes / (double) line.targetSlackBytes;
+				: (double) line.getBacklogBytes() / (double) targetSlack;
 
 			if (ratio >= 2.0) {
 				className = "line-over-target";      // red: way over target
@@ -269,7 +279,7 @@ public final class AudioMonitorWindow extends FloatingWindow {
 		row.appendChild(td);
 	}
 
-	private HTMLElement createFillCell(AudioMonitor.LineSnapshot line) {
+	private HTMLElement createFillCell(LineMonitor.LineSnapshot line) {
 		HTMLElement td = createElement("td");
 		td.getStyle().setProperty("padding", "2px 4px");
 

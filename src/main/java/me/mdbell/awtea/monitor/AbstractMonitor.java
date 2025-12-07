@@ -3,6 +3,7 @@ package me.mdbell.awtea.monitor;
 import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,7 +40,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 * @param target the target object to monitor
 	 * @return the existing or newly created monitor entry
 	 */
-	protected final  E ensureEntry(Object target) {
+	protected final E ensureEntry(Object target) {
 		return ensureEntry(target, null);
 	}
 
@@ -75,13 +76,12 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 *
 	 * @param target the target object
 	 * @param id     the assigned ID
-	 * @return a default label in the format "ClassName@hashcode (#id)"
+	 * @return a default label in the format "ClassName@hashcode"
 	 */
 	protected String defaultLabelFor(Object target, int id) {
-		return target.getClass().getName()
+		return target.getClass().getSimpleName()
 			+ "@"
-			+ Integer.toHexString(System.identityHashCode(target))
-			+ " (#" + id + ")";
+			+ Integer.toHexString(System.identityHashCode(target));
 	}
 
 	/**
@@ -173,7 +173,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 		}
 
 		// Sort by ID ascending - mostly for UI consistency
-		out.sort((a, b) -> Integer.compare(a.getId(), b.getId()));
+		out.sort(Comparator.comparingInt(MonitorSnapshot::getId));
 
 		return out;
 	}

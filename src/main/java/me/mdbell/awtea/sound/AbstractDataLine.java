@@ -1,7 +1,7 @@
 package me.mdbell.awtea.sound;
 
 import lombok.Getter;
-import me.mdbell.awtea.monitor.AudioMonitor;
+import me.mdbell.awtea.monitor.LineMonitor;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;
@@ -26,12 +26,6 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 
 	@Getter
 	private boolean open = true;
-
-	/**
-	 * Mostly used to signal if a write should be interrupted - bit of a hack,
-	 * but we need some way to make writes sync
-	 */
-	private int writeEpoch = 0;
 
 	private float[] sampleScratch;
 
@@ -62,6 +56,14 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 	 */
 	protected abstract int enqueue(float[] samples, int frames);
 
+	/**
+	 * Drain up to `framesToDrain` frames from the backend.
+	 *
+	 * @param framesToDrain number of frames to drain, or -1 to wait until all drained
+	 * @return number of frames actually drained - may be less than requested
+	 */
+	protected abstract int drainInternal(int framesToDrain);
+
 	@Override
 	public void open(AudioFormat format, int bufferSize) throws LineUnavailableException {
 		this.format = format;
@@ -86,11 +88,12 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 
 		open = true;
 		running = false;
-		writeEpoch++;
+
+		System.out.println("Opening AbstractDataLine with buffer size hint: " + framesHint + " frames");
 
 		openBackend(framesHint);
 
-		AudioMonitor.get().registerOutputLine(this);
+		LineMonitor.get().registerOutputLine(this);
 	}
 
 	@Override
@@ -103,30 +106,33 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 	@Override
 	public void start() {
 		running = true;
+		LineMonitor.get().onStart(this);
 	}
 
 	@Override
 	public void stop() {
 		running = false;
-		writeEpoch++;
+		LineMonitor.get().onStop(this);
 	}
 
 	@Override
 	public void flush() {
-		writeEpoch++;
+		LineMonitor.get().onFlush(this);
 	}
 
 	@Override
 	public void close() {
 		open = false;
 		running = false;
-		writeEpoch++;
-		AudioMonitor.get().unregisterLine(this);
+		LineMonitor.get().onClose(this);
 	}
 
 	@Override
 	public void drain() {
-
+		if (!open || !running) {
+			return;
+		}
+		drainInternal(-1);
 	}
 
 	@Override
@@ -142,11 +148,17 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 	@Override
 	public final int available() {
 		if (!open || !running) {
+			LineMonitor.get().onAvailable(this, 0);
 			return 0;
 		}
 		int freeFrames = getFreeFrames();
 		if (freeFrames < 0) freeFrames = 0;
-		return freeFrames * frameSizeBytes;
+
+		int result = freeFrames * frameSizeBytes;
+
+		LineMonitor.get().onAvailable(this, result);
+
+		return result;
 	}
 
 	@Override
@@ -202,103 +214,95 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 	public void removeLineListener(LineListener listener) {
 	}
 
-
-	@Async
 	@Override
-	public final native int write(byte[] b, int off, int len);
-
-	@SuppressWarnings("unused")
-	private void write(byte[] b, int off, int len, AsyncCallback<Integer> cb) {
+	public final int write(byte[] b, int off, int len){
 
 		if (!open || getMaxFrames() <= 0) {
-			cb.complete(0);
-			return;
+			return 0;
 		}
 
 		final int frameSizeBytes = this.frameSizeBytes;
-		final int channels = this.channels;
-		final int sampleBytes = this.sampleSizeBytes;
-		final int bits = this.sampleSizeBits;
-		final boolean be = this.bigEndian;
-		final float scale = this.floatScale;
+		final int channels       = this.channels;
+		final int sampleBytes    = this.sampleSizeBytes;
+		final int bits           = this.sampleSizeBits;
+		final boolean be         = this.bigEndian;
+		final float scale        = this.floatScale;
 
 		int framesRequested = len / frameSizeBytes;
 		if (framesRequested == 0) {
-			cb.complete(0);
-			return;
+			return 0;
 		}
 		final int bytesRequested = framesRequested * frameSizeBytes;
 
-		final int startEpoch = writeEpoch;
-		final int[] writtenBytes = {0};
+		int writtenBytes = 0;
 
-		class Writer {
-			void attempt() {
-				if (!open || writeEpoch != startEpoch) {
-					cb.complete(writtenBytes[0]);
-					return;
+		while (writtenBytes < bytesRequested) {
+			if (!open || !running) {
+				break;
+			}
+
+			int remainingBytes  = bytesRequested - writtenBytes;
+			int remainingFrames = remainingBytes / frameSizeBytes;
+			if (remainingFrames <= 0) {
+				break;
+			}
+
+			int freeFrames = getFreeFrames();
+			if (freeFrames <= 0) {
+				// Let backend drain; this will async-wait and then return
+				int drained = drainInternal(remainingFrames);
+				// If nothing drained and still no free frames, bail out to avoid spinning
+				if (drained <= 0 && getFreeFrames() <= 0) {
+					break;
 				}
+				continue;
+			}
 
-				int remainingBytes = bytesRequested - writtenBytes[0];
-				if (remainingBytes <= 0) {
-					cb.complete(writtenBytes[0]);
-					return;
+			int maxScratchFrames = sampleScratch.length / channels;
+			int framesToConvert  = Math.min(remainingFrames, maxScratchFrames);
+			framesToConvert      = Math.min(framesToConvert, freeFrames);
+			if (framesToConvert <= 0) {
+				// Shouldn't happen, but be defensive
+				int drained = drainInternal(remainingFrames);
+				if (drained <= 0) {
+					break;
 				}
+				continue;
+			}
 
-				int remainingFrames = remainingBytes / frameSizeBytes;
+			int start = off + writtenBytes;
+			int end   = start + framesToConvert * frameSizeBytes;
+			int si    = 0;
 
-				// Backpressure from backend
-				int freeFrames = getFreeFrames();
-				if (freeFrames <= 0) {
-					Window.setTimeout(this::attempt, 0);
-					return;
-				}
-
-				int maxScratchFrames = sampleScratch.length / channels;
-				int framesToConvert = Math.min(remainingFrames, maxScratchFrames);
-				framesToConvert = Math.min(framesToConvert, freeFrames);
-				if (framesToConvert <= 0) {
-					Window.setTimeout(this::attempt, 0);
-					return;
-				}
-
-				int start = off + writtenBytes[0];
-				int end = start + framesToConvert * frameSizeBytes;
-				int si = 0;
-
-				// Convert bytes -> float samples (interleaved)
-				for (int i = start; i < end; i += frameSizeBytes) {
-					for (int ch = 0; ch < channels; ch++) {
-						int sampleOffset = i + ch * sampleBytes;
-						int sample = AudioUtils.getSample(b, sampleOffset, bits, be);
-						sampleScratch[si++] = sample * scale;
-					}
-				}
-
-				int framesEnqueued = enqueue(sampleScratch, framesToConvert);
-				if (framesEnqueued <= 0) {
-					Window.setTimeout(this::attempt, 0);
-					return;
-				}
-
-				int bytesPushed = framesEnqueued * frameSizeBytes;
-				writtenBytes[0] += bytesPushed;
-
-				AudioMonitor.get().onWrite(AbstractDataLine.this, bytesPushed);
-				onSamplesChunk(sampleScratch, framesEnqueued);
-
-				if (writtenBytes[0] >= bytesRequested) {
-					cb.complete(writtenBytes[0]);
-				} else {
-					Window.setTimeout(this::attempt, 0);
+			// Convert bytes -> float samples (interleaved)
+			for (int i = start; i < end; i += frameSizeBytes) {
+				for (int ch = 0; ch < channels; ch++) {
+					int sampleOffset = i + ch * sampleBytes;
+					int sample       = AudioUtils.getSample(b, sampleOffset, bits, be);
+					sampleScratch[si++] = sample * scale;
 				}
 			}
+
+			int framesEnqueued = enqueue(sampleScratch, framesToConvert);
+			if (framesEnqueued <= 0) {
+				// Backend lied about free frames or is temporarily stuck;
+				// try draining some and retry.
+				int drained = drainInternal(remainingFrames);
+				if (drained <= 0) {
+					break;
+				}
+				continue;
+			}
+
+			int bytesPushed = framesEnqueued * frameSizeBytes;
+			writtenBytes += bytesPushed;
+
+			LineMonitor.get().onWrite(this, bytesPushed);
+			onSamplesChunk(sampleScratch, framesEnqueued);
 		}
 
-		new Writer().attempt();
+		return writtenBytes;
 	}
-
-	// inside AbstractDataLine
 
 	protected void onSamplesChunk(float[] samples, int frames) {
 		// compute per-channel peak from this chunk and forward to AudioMonitor
@@ -315,7 +319,7 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 				}
 			}
 		}
-		AudioMonitor.get().onPcmEnvelope(this, peaks);
+		LineMonitor.get().onPcmEnvelope(this, peaks);
 	}
 
 }

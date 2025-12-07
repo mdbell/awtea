@@ -45,7 +45,7 @@ public class PcmProcessorClient {
 	@Getter
 	private int queuedFrames = 0;
 
-	private Set<DrainListener> drainListenerSet = new HashSet<>();
+	private final Set<DrainListener> drainListenerSet = new HashSet<>();
 
 	public PcmProcessorClient() {
 		this(44100); // 44Khz
@@ -100,7 +100,7 @@ public class PcmProcessorClient {
 				if(queuedFrames < 0) {
 					queuedFrames = 0;
 				}
-				drainListenerSet.forEach(l -> l.onDrain(frames));
+				drainListenerSet.removeIf(l -> l.onDrain(frames, queuedFrames));
 			}
 		});
 

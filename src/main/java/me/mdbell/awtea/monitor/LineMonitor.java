@@ -1,71 +1,93 @@
 package me.mdbell.awtea.monitor;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import me.mdbell.awtea.sound.AbstractDataLine;
 
 import javax.sound.sampled.AudioFormat;
 import java.util.*;
+import java.util.function.Supplier;
 
-public final class AudioMonitor {
+public final class LineMonitor extends AbstractMonitor<LineMonitor.LineEntry,
+	LineMonitor.LineSnapshot> {
 
-	private static final AudioMonitor INSTANCE = new AudioMonitor();
+	private static final LineMonitor INSTANCE = new LineMonitor();
 
-	public static AudioMonitor get() {
+	public static LineMonitor get() {
 		return INSTANCE;
 	}
 
 	/** How much "slack" we want in the buffer, in ms, for backlog calculation. */
-	private static final int TARGET_SLACK_MS = 40;
+	public static final int DEFAULT_TARGET_SLACK_MS = 100;
 
-	public static final class LineSnapshot {
-		public final int id;
-		public final String name;
-		public final boolean output;
-		public final boolean open;
-		public final boolean running;
-		public final AudioFormat format;
+	@Getter
+	@Setter
+	private int targetSlackMs = DEFAULT_TARGET_SLACK_MS;
 
-		public final int bufferSizeBytes;
-		public final int usedBytes;
-		public final int freeBytes;
+	private final Map<Object, PcmEnvelopeBuffer> pcmBuffers = new WeakHashMap<>();
 
-		public final long totalWrittenBytes;
+	@Getter
+	@Setter(AccessLevel.PACKAGE)
+	public static final class LineEntry extends MonitorEntry {
 
-		public final double writeRateBytesPerSec;
-		public final double drainRateBytesPerSec;
+		private int available;
+
+		private boolean output;
+		private boolean open;
+		private boolean running;
+		private AudioFormat format;
+
+		private int bufferSizeBytes;
+
+		private long totalWrittenBytes;
+		private int lastUsedBytes;
+		private int lastFreeBytes;
+
+		private long lastWriteTimeMs;
+		private double writeRateBytesPerSec;
+
+		private long lastDrainTimeMs;
+		private double drainRateBytesPerSec;
+
+		LineEntry(int id, String label) {
+			super(id, label);
+		}
+	}
+
+	@Getter
+	public static final class LineSnapshot extends MonitorSnapshot<LineEntry> {
+		private final boolean output;
+		private final boolean open;
+		private final boolean running;
+		private final AudioFormat format;
+
+		private final int bufferSizeBytes;
+		private final int usedBytes;
+		private final int freeBytes;
+
+		private final long totalWrittenBytes;
+
+		private final double writeRateBytesPerSec;
+		private final double drainRateBytesPerSec;
 
 		/** How many bytes above the "target slack" we are. */
-		public final int backlogBytes;
+		private final int backlogBytes;
 		/** Target slack in bytes (for given format). */
-		public final int targetSlackBytes;
+		private final int targetSlackBytes;
 
-		LineSnapshot(
-			int id,
-			String name,
-			boolean output,
-			boolean open,
-			boolean running,
-			AudioFormat format,
-			int bufferSizeBytes,
-			int usedBytes,
-			int freeBytes,
-			long totalWrittenBytes,
-			double writeRateBytesPerSec,
-			double drainRateBytesPerSec,
-			int backlogBytes,
-			int targetSlackBytes
-		) {
-			this.id = id;
-			this.name = name;
-			this.output = output;
-			this.open = open;
-			this.running = running;
-			this.format = format;
-			this.bufferSizeBytes = bufferSizeBytes;
-			this.usedBytes = usedBytes;
-			this.freeBytes = freeBytes;
-			this.totalWrittenBytes = totalWrittenBytes;
-			this.writeRateBytesPerSec = writeRateBytesPerSec;
-			this.drainRateBytesPerSec = drainRateBytesPerSec;
+		LineSnapshot(LineEntry entry, int backlogBytes, int targetSlackBytes) {
+			super(entry);
+			this.output = entry.output;
+			this.open = entry.isOpen();
+			this.running = entry.isActive();
+			this.format = entry.getFormat();
+			this.bufferSizeBytes = entry.getBufferSizeBytes();
+			this.usedBytes = entry.lastUsedBytes;
+			this.freeBytes = entry.lastFreeBytes;
+			this.totalWrittenBytes = entry.totalWrittenBytes;
+			this.writeRateBytesPerSec = entry.writeRateBytesPerSec;
+			this.drainRateBytesPerSec = entry.drainRateBytesPerSec;
 			this.backlogBytes = backlogBytes;
 			this.targetSlackBytes = targetSlackBytes;
 		}
@@ -83,64 +105,52 @@ public final class AudioMonitor {
 		}
 	}
 
-	private static final class LineInfo {
-		final AbstractDataLine line;
-		final String name;
-		final boolean output;
-		final int id;
+	private LineMonitor() {}
 
-		long totalWrittenBytes;
-		int lastUsedBytes;
-		int lastFreeBytes;
-
-		long lastWriteTimeMs;
-		double writeRateBytesPerSec;
-
-		long lastDrainTimeMs;
-		double drainRateBytesPerSec;
-
-		LineInfo(AbstractDataLine line, String name, boolean output, int id) {
-			this.line = line;
-			this.name = name;
-			this.output = output;
-			this.id = id;
-		}
-	}
-
-	private final Map<AbstractDataLine, LineInfo> byLine = new WeakHashMap<>();
-	private final List<LineInfo> lines = new ArrayList<>();
-
-	private final Map<AbstractDataLine, PcmEnvelopeBuffer> pcmBuffers = new WeakHashMap<>();
-
-	private int nextId = 1;
-
-	private AudioMonitor() {}
-
-	public void registerOutputLine(AbstractDataLine line) {
-		registerOutputLine(line, line.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(line)));
-	}
-
-	public synchronized void registerOutputLine(AbstractDataLine line, String name) {
-		if (byLine.containsKey(line)) {
-			return;
-		}
-		int id = nextId++;
-		LineInfo info = new LineInfo(line, name, true, id);
-		byLine.put(line, info);
-		lines.add(info);
+	public synchronized void registerOutputLine(AbstractDataLine line) {
+		LineEntry info = ensureEntry(line);
+		info.setOutput(true);
+		info.setFormat(line.getFormat());
+		info.setOpen(line.isOpen());
+		info.setRunning(line.isActive());
+		info.setBufferSizeBytes(line.getBufferSize());
 
 		AudioFormat format = line.getFormat();
 
 		int channels = format.getChannels();
 		int slots = 256; // ~256 time slices per line
-		pcmBuffers.put(line, new PcmEnvelopeBuffer(info.id, true, name, channels, slots));
+		pcmBuffers.put(line, new PcmEnvelopeBuffer(info.getId(), info.isOutput(), info.getLabel()
+			, channels, slots));
 	}
 
-	public synchronized void unregisterLine(AbstractDataLine line) {
-		LineInfo info = byLine.remove(line);
-		if (info != null) {
-			lines.remove(info);
-		}
+	public void onStart(Object line) {
+		LineEntry e = ensureEntry(line);
+		e.setRunning(true);
+	}
+
+	public void onStop(Object line) {
+		LineEntry e = ensureEntry(line);
+		e.setRunning(false);
+	}
+
+	public void onAvailable(AbstractDataLine abstractDataLine, int available) {
+		LineEntry info = ensureEntry(abstractDataLine);
+		info.setAvailable(available);
+	}
+
+	public void onClose(Object line) {
+		LineEntry e = ensureEntry(line);
+		e.setOpen(false);
+		e.setRunning(false);
+
+		pcmBuffers.remove(line);
+	}
+
+	public void onFlush(Object line) {
+		LineEntry e = ensureEntry(line);
+		// Reset write/drain rates
+		e.writeRateBytesPerSec = 0;
+		e.drainRateBytesPerSec = 0;
 	}
 
 	public void onPcmEnvelope(AbstractDataLine line, float[] peaks) {
@@ -161,10 +171,7 @@ public final class AudioMonitor {
 
 
 	public synchronized void onWrite(AbstractDataLine line, int bytesPushed) {
-		LineInfo info = byLine.get(line);
-		if (info == null) {
-			return;
-		}
+		LineEntry info = ensureEntry(line);
 
 		info.totalWrittenBytes += bytesPushed;
 
@@ -194,10 +201,7 @@ public final class AudioMonitor {
 
 	/** Optional: call from backend when bytes are actually drained. */
 	public synchronized void onDrain(AbstractDataLine line, int bytesDrained) {
-		LineInfo info = byLine.get(line);
-		if (info == null) {
-			return;
-		}
+		LineEntry info = ensureEntry(line);
 
 		long now = System.currentTimeMillis();
 		if (info.lastDrainTimeMs != 0 && bytesDrained > 0) {
@@ -223,60 +227,50 @@ public final class AudioMonitor {
 		}
 	}
 
-	public synchronized List<LineSnapshot> snapshot() {
-		List<LineSnapshot> result = new ArrayList<>(lines.size());
-		for (LineInfo info : lines) {
-			AbstractDataLine line = info.line;
+	@Override
+	protected LineEntry createEntry(int id, Object target, String label) {
+		return new LineEntry(id, label);
+	}
 
-			AudioFormat fmt = line.getFormat();
-			int bufferSize = 0;
-			int used = info.lastUsedBytes;
-			int free = info.lastFreeBytes;
+	@Override
+	protected LineSnapshot buildSnapshot(LineEntry info) {
 
-			try {
-				bufferSize = line.getBufferSize();
-				// If lastUsedBytes/lastFreeBytes are 0, we can lazily compute:
-				if (bufferSize > 0 && used == 0 && free == 0) {
-					free = line.available();
-					if (free < 0) free = 0;
-					used = Math.max(0, bufferSize - free);
-				}
-			} catch (Throwable ignored) {
+		AudioFormat fmt = info.getFormat();
+		int bufferSize = 0;
+		int used = info.lastUsedBytes;
+		int free = info.lastFreeBytes;
+
+		try {
+			bufferSize = info.getBufferSizeBytes();
+			// If lastUsedBytes/lastFreeBytes are 0, we can lazily compute:
+			if (bufferSize > 0 && used == 0 && free == 0) {
+				free = info.getAvailable();
+				if (free < 0) free = 0;
+				used = Math.max(0, bufferSize - free);
 			}
-
-			// Compute target slack in bytes from format
-			int targetSlackBytes = 0;
-			if (fmt != null) {
-				int sampleBytes = fmt.getSampleSizeInBits() / 8;
-				if (sampleBytes > 0) {
-					double bytesPerSecond =
-						fmt.getSampleRate() * fmt.getChannels() * sampleBytes;
-					targetSlackBytes = (int) (bytesPerSecond * TARGET_SLACK_MS / 1000.0);
-				}
-			}
-			int backlogBytes = 0;
-			if (targetSlackBytes > 0) {
-				backlogBytes = Math.max(0, used - targetSlackBytes);
-			}
-
-			result.add(new LineSnapshot(
-				info.id,
-				info.name,
-				info.output,
-				line.isOpen(),
-				line.isActive(),
-				fmt,
-				bufferSize,
-				used,
-				free,
-				info.totalWrittenBytes,
-				info.writeRateBytesPerSec,
-				info.drainRateBytesPerSec,
-				backlogBytes,
-				targetSlackBytes
-			));
+		} catch (Throwable ignored) {
 		}
-		return result;
+
+		// Compute target slack in bytes from format
+		int targetSlackBytes = 0;
+		if (fmt != null) {
+			int sampleBytes = fmt.getSampleSizeInBits() / 8;
+			if (sampleBytes > 0) {
+				double bytesPerSecond =
+					fmt.getSampleRate() * fmt.getChannels() * sampleBytes;
+				targetSlackBytes = (int) (bytesPerSecond * getTargetSlackMs() / 1000.0);
+			}
+		}
+
+		int backlogBytes = 0;
+		if (targetSlackBytes > 0) {
+			backlogBytes = Math.max(0, used - targetSlackBytes);
+		}
+
+		return new LineSnapshot(info,
+			backlogBytes,
+			targetSlackBytes
+		);
 	}
 
 	// inside AudioMonitor
