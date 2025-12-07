@@ -23,7 +23,7 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 		this.monitor = monitor;
 		setScrollable(true);
 	}
-	
+
 	@Override
 	protected String computeSignature() {
 		return String.valueOf(monitor.getRevision());
@@ -128,11 +128,74 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 		return "No data.";
 	}
 
-	// Small helper if you like uniform cells
 	protected void addCell(HTMLElement row, String text) {
 		HTMLElement td = createElement("td");
 		td.setClassName("monitor-data-cell");
 		td.setTextContent(text);
 		row.appendChild(td);
+	}
+
+	protected void addRateCell(HTMLElement row, double bytesPerSec) {
+		HTMLElement td = createElement("td");
+		td.setClassName("monitor-rate-cell");
+		td.setTextContent(formatRate(bytesPerSec));
+
+		row.appendChild(td);
+	}
+
+	private String formatRate(double bytesPerSec) {
+		if (bytesPerSec <= 0.0) {
+			return "-";
+		}
+		return Theme.humanReadableSize(bytesPerSec) + "/s";
+	}
+
+	static {
+		AwCss.sheet()
+			.createClass("monitor-root")
+			.prop("display", "flex")
+			.prop("flex-direction", "column")
+			.prop("gap", "0.4rem")
+
+			.createClass("monitor-table")
+			.prop("width", "100%")
+			.prop("border-collapse", "collapse")
+			.prop("font-size", "12px")
+			.prop("background", Theme.Var.BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
+
+			.createClass("monitor-header-cell")
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.TABLE_HEADER_BORDER)
+			.end()
+			.prop("padding", "2px 4px")
+			.prop("text-align", "left")
+			.prop("background", Theme.Var.TABLE_HEADER_BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
+
+			.createClass("monitor-rate-cell")
+			.prop("text-align", "right")
+			.prop("font-family", "monospace")
+			.prop("width", "100px")
+			.prop("max-width", "100px")
+			.prop("padding", "2px 4px")
+			.prop("color", Theme.Var.FOREGROUND)
+
+			.createClass("monitor-data-cell")
+			.prop("padding", "2px 4px")
+			.prop("white-space", "nowrap")
+			.prop("color", Theme.Var.FOREGROUND)
+
+			.createClass("monitor-row")
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.TABLE_HEADER_BORDER)
+			.end()
+			.prop("cursor", "default")
+			.subClass(":hover")
+			.prop("background", Theme.Var.TABLE_ROW_HOVER_BACKGROUND)
+
+			.end().inject();
 	}
 }

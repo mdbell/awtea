@@ -6,11 +6,9 @@ import lombok.Setter;
 import me.mdbell.awtea.sound.AbstractDataLine;
 
 import javax.sound.sampled.AudioFormat;
-import java.util.*;
-import java.util.function.Supplier;
 
-public final class LineMonitor extends AbstractMonitor<LineMonitor.LineEntry,
-	LineMonitor.LineSnapshot> {
+public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
+	LineMonitor.Snapshot> {
 
 	private static final LineMonitor INSTANCE = new LineMonitor();
 
@@ -25,11 +23,9 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.LineEntry,
 	@Setter
 	private int targetSlackMs = DEFAULT_TARGET_SLACK_MS;
 
-	private final Map<Object, PcmEnvelopeBuffer> pcmBuffers = new WeakHashMap<>();
-
 	@Getter
 	@Setter(AccessLevel.PACKAGE)
-	public static final class LineEntry extends MonitorEntry {
+	public static final class Entry extends MonitorEntry {
 
 		private int available;
 
@@ -50,13 +46,13 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.LineEntry,
 		private long lastDrainTimeMs;
 		private double drainRateBytesPerSec;
 
-		LineEntry(int id, String label) {
+		Entry(int id, String label) {
 			super(id, label);
 		}
 	}
 
 	@Getter
-	public static final class LineSnapshot extends MonitorSnapshot<LineEntry> {
+	public static final class Snapshot extends MonitorSnapshot<Entry> {
 		private final boolean output;
 		private final boolean open;
 		private final boolean running;
@@ -76,7 +72,7 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.LineEntry,
 		/** Target slack in bytes (for given format). */
 		private final int targetSlackBytes;
 
-		LineSnapshot(LineEntry entry, int backlogBytes, int targetSlackBytes) {
+		Snapshot(Entry entry, int backlogBytes, int targetSlackBytes) {
 			super(entry);
 			this.output = entry.output;
 			this.open = entry.isOpen();
@@ -108,70 +104,38 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.LineEntry,
 	private LineMonitor() {}
 
 	public synchronized void registerOutputLine(AbstractDataLine line) {
-		LineEntry info = ensureEntry(line);
+		Entry info = ensureEntry(line);
 		info.setOutput(true);
 		info.setFormat(line.getFormat());
 		info.setOpen(line.isOpen());
 		info.setRunning(line.isActive());
 		info.setBufferSizeBytes(line.getBufferSize());
-
-		AudioFormat format = line.getFormat();
-
-		int channels = format.getChannels();
-		int slots = 256; // ~256 time slices per line
-		pcmBuffers.put(line, new PcmEnvelopeBuffer(info.getId(), info.isOutput(), info.getLabel()
-			, channels, slots));
 	}
 
 	public void onStart(Object line) {
-		LineEntry e = ensureEntry(line);
+		Entry e = ensureEntry(line);
 		e.setRunning(true);
 	}
 
 	public void onStop(Object line) {
-		LineEntry e = ensureEntry(line);
+		Entry e = ensureEntry(line);
 		e.setRunning(false);
 	}
 
 	public void onAvailable(AbstractDataLine abstractDataLine, int available) {
-		LineEntry info = ensureEntry(abstractDataLine);
+		Entry info = ensureEntry(abstractDataLine);
 		info.setAvailable(available);
 	}
 
-	public void onClose(Object line) {
-		LineEntry e = ensureEntry(line);
-		e.setOpen(false);
-		e.setRunning(false);
-
-		pcmBuffers.remove(line);
-	}
-
 	public void onFlush(Object line) {
-		LineEntry e = ensureEntry(line);
+		Entry e = ensureEntry(line);
 		// Reset write/drain rates
 		e.writeRateBytesPerSec = 0;
 		e.drainRateBytesPerSec = 0;
 	}
 
-	public void onPcmEnvelope(AbstractDataLine line, float[] peaks) {
-		PcmEnvelopeBuffer buf = pcmBuffers.get(line);
-		if (buf == null) {
-			return;
-		}
-		buf.push(peaks);
-	}
-
-	public List<PcmSnapshot> snapshotPcm() {
-		List<PcmSnapshot> res = new java.util.ArrayList<>();
-		for (PcmEnvelopeBuffer buf : pcmBuffers.values()) {
-			res.add(buf.snapshot());
-		}
-		return res;
-	}
-
-
 	public synchronized void onWrite(AbstractDataLine line, int bytesPushed) {
-		LineEntry info = ensureEntry(line);
+		Entry info = ensureEntry(line);
 
 		info.totalWrittenBytes += bytesPushed;
 
@@ -201,7 +165,7 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.LineEntry,
 
 	/** Optional: call from backend when bytes are actually drained. */
 	public synchronized void onDrain(AbstractDataLine line, int bytesDrained) {
-		LineEntry info = ensureEntry(line);
+		Entry info = ensureEntry(line);
 
 		long now = System.currentTimeMillis();
 		if (info.lastDrainTimeMs != 0 && bytesDrained > 0) {
@@ -228,12 +192,12 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.LineEntry,
 	}
 
 	@Override
-	protected LineEntry createEntry(int id, Object target, String label) {
-		return new LineEntry(id, label);
+	protected Entry createEntry(int id, Object target, String label) {
+		return new Entry(id, label);
 	}
 
 	@Override
-	protected LineSnapshot buildSnapshot(LineEntry info) {
+	protected Snapshot buildSnapshot(Entry info) {
 
 		AudioFormat fmt = info.getFormat();
 		int bufferSize = 0;
@@ -267,83 +231,9 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.LineEntry,
 			backlogBytes = Math.max(0, used - targetSlackBytes);
 		}
 
-		return new LineSnapshot(info,
+		return new Snapshot(info,
 			backlogBytes,
 			targetSlackBytes
 		);
 	}
-
-	// inside AudioMonitor
-
-	public static final class PcmEnvelopeBuffer {
-		final int id;
-		final boolean output;
-		final String name;
-		final int channels;
-
-		// ring buffer of [time][channel] peaks, flattened
-		final float[] data;
-		final int capacity;       // number of time slots
-		int writePos = 0;
-		boolean filled = false;
-
-		PcmEnvelopeBuffer(int id, boolean output, String name, int channels, int capacity) {
-			this.id = id;
-			this.output = output;
-			this.name = name;
-			this.channels = channels;
-			this.capacity = capacity;
-			this.data = new float[capacity * channels];
-		}
-
-		void push(float[] peaks) {
-			int base = writePos * channels;
-			for (int ch = 0; ch < channels; ch++) {
-				float v = ch < peaks.length ? peaks[ch] : 0f;
-				// clamp to [0,1]
-				if (v < 0f) v = 0f;
-				if (v > 1f) v = 1f;
-				data[base + ch] = v;
-			}
-			writePos = (writePos + 1) % capacity;
-			if (writePos == 0) {
-				filled = true;
-			}
-		}
-
-		PcmSnapshot snapshot() {
-			int len = filled ? capacity : writePos;
-			float[] out = new float[len * channels];
-
-			// de-ring into chronological order: oldest -> newest
-			int start = filled ? writePos : 0;
-			for (int i = 0; i < len; i++) {
-				int srcIdx = ((start + i) % capacity) * channels;
-				int dstIdx = i * channels;
-				System.arraycopy(data, srcIdx, out, dstIdx, channels);
-			}
-
-			return new PcmSnapshot(id, output, name, channels, out, len);
-		}
-	}
-
-	public static final class PcmSnapshot {
-		public final int id;
-		public final boolean output;
-		public final String name;
-		public final int channels;
-		public final float[] peaks;   // [time][channel] flattened
-		public final int length;      // number of time slots
-
-		public PcmSnapshot(int id, boolean output, String name,
-						   int channels, float[] peaks, int length) {
-			this.id = id;
-			this.output = output;
-			this.name = name;
-			this.channels = channels;
-			this.peaks = peaks;
-			this.length = length;
-		}
-	}
-
 }

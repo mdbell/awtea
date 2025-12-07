@@ -1,6 +1,7 @@
 package me.mdbell.awtea.util.ui;
 
 import me.mdbell.awtea.monitor.LineMonitor;
+import me.mdbell.awtea.monitor.PcmMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLInputElement;
 
@@ -8,7 +9,7 @@ import java.util.List;
 
 public final class PcmDockWindow extends FloatingWindow {
 
-	private final LineMonitor monitor = LineMonitor.get();
+	private final PcmMonitor monitor = PcmMonitor.get();
 
 	// simple selection state: current line id, -1 = first line
 	private int selectedLineId = -1;
@@ -97,7 +98,7 @@ public final class PcmDockWindow extends FloatingWindow {
 	protected HTMLElement buildBodyContent() {
 		HTMLElement root = createElement("div");
 		root.setClassName("pcm-dock-root");
-		List<LineMonitor.PcmSnapshot> snaps = monitor.snapshotPcm();
+		List<PcmMonitor.Snapshot> snaps = monitor.snapshot();
 		if (snaps.isEmpty()) {
 			HTMLElement empty = createElement("div");
 			empty.setTextContent("No PCM data (no active lines).");
@@ -107,7 +108,7 @@ public final class PcmDockWindow extends FloatingWindow {
 			return root;
 		}
 
-		LineMonitor.PcmSnapshot selected = selectSnapshot(snaps);
+		PcmMonitor.Snapshot selected = selectSnapshot(snaps);
 
 		if( selected == null) {
 			HTMLElement empty = createElement("div");
@@ -129,11 +130,13 @@ public final class PcmDockWindow extends FloatingWindow {
 		HTMLInputElement select = createElement("select");
 		select.setClassName("pcm-dock-select");
 
-		for (LineMonitor.PcmSnapshot snap : snaps) {
+		for (PcmMonitor.Snapshot snap : snaps) {
+			int id = snap.getId();
+
 			HTMLElement option = createElement("option");
-			option.setAttribute("value", Integer.toString(snap.id));
-			option.setTextContent(snap.id + " - " + snap.name);
-			if (snap.id == selected.id) {
+			option.setAttribute("value", Integer.toString(id));
+			option.setTextContent(id + " - " + snap.getLabel());
+			if (id == selected.getId()) {
 				option.setAttribute("selected", "selected");
 			}
 			select.appendChild(option);
@@ -154,15 +157,24 @@ public final class PcmDockWindow extends FloatingWindow {
 		select.addEventListener("blur", evt -> suppressRefresh = false);
 
 		header.appendChild(select);
+
+		if(!hasSelectedAtLeastOnce) {
+			HTMLElement hint = createElement("span");
+			hint.setTextContent(" (auto-selecting most active line)");
+			hint.getStyle().setProperty("font-style", "italic");
+			hint.getStyle().setProperty("color", Theme.Var.META_FOREGROUND.toCssValue());
+			header.appendChild(hint);
+		}
+
 		root.appendChild(header);
 
 		// --- wave area ---
 		HTMLElement waves = createElement("div");
 		waves.setClassName("pcm-dock-wave-container");
 
-		int channels = selected.channels;
-		int slots = selected.length;
-		float[] peaks = selected.peaks;
+		int channels = selected.getChannels();
+		int slots = selected.getLength();
+		float[] peaks = selected.getPeaks();
 
 		for (int ch = 0; ch < channels; ch++) {
 			HTMLElement row = createElement("div");
@@ -201,7 +213,7 @@ public final class PcmDockWindow extends FloatingWindow {
 		return root;
 	}
 
-	private LineMonitor.PcmSnapshot selectSnapshot(List<LineMonitor.PcmSnapshot> snaps) {
+	private PcmMonitor.Snapshot selectSnapshot(List<PcmMonitor.Snapshot> snaps) {
 		if (snaps.isEmpty()) {
 			return null;
 		}
@@ -209,18 +221,18 @@ public final class PcmDockWindow extends FloatingWindow {
 			// finds the most active line
 			return snaps.stream().min((a, b) -> {
 				float aMax = 0f;
-				for (float v : a.peaks) {
+				for (float v : a.getPeaks()) {
 					if (v > aMax) aMax = v;
 				}
 				float bMax = 0f;
-				for (float v : b.peaks) {
+				for (float v : b.getPeaks()) {
 					if (v > bMax) bMax = v;
 				}
 				return Float.compare(bMax, aMax);
 			}).orElse(null);
 		}
-		for (LineMonitor.PcmSnapshot s : snaps) {
-			if (s.id == selectedLineId) {
+		for (PcmMonitor.Snapshot s : snaps) {
+			if (s.getId() == selectedLineId) {
 				return s;
 			}
 		}

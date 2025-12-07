@@ -2,6 +2,7 @@ package me.mdbell.awtea.sound;
 
 import lombok.Getter;
 import me.mdbell.awtea.monitor.LineMonitor;
+import me.mdbell.awtea.monitor.PcmMonitor;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;
@@ -124,7 +125,8 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 	public void close() {
 		open = false;
 		running = false;
-		LineMonitor.get().onClose(this);
+		LineMonitor.get().unregister(this);
+		PcmMonitor.get().unregister(this);
 	}
 
 	@Override
@@ -319,7 +321,7 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 				}
 			}
 		}
-		LineMonitor.get().onPcmEnvelope(this, peaks);
+		PcmMonitor.get().onPcmEnvelope(this, peaks);
 	}
 
 }

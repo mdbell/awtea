@@ -22,7 +22,6 @@ public class TAudioSystem {
 	}
 
 	private static AbstractDataLine createLine(AudioFormat format) throws LineUnavailableException {
-		Debug.trigger();
 		return new AudioWorkletLine(format);
 	}
 }
