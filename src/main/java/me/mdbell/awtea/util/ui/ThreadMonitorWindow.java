@@ -13,8 +13,7 @@ public final class ThreadMonitorWindow extends AbstractMonitorWindow<
 		"Priority",
 		"Daemon",
 		"State",
-		"Age",
-		"Idle"
+		"Age"
 	};
 
 	public ThreadMonitorWindow() {
@@ -50,9 +49,7 @@ public final class ThreadMonitorWindow extends AbstractMonitorWindow<
 		addCell(row, state.toString().toLowerCase());
 
 		long ageMs = now - t.getCreatedMillis();
-		long idleMs = now - t.getLastUpdatedMillis();
 		addCell(row, formatDuration(ageMs));
-		addCell(row, idleMs < 0 ? "?" : formatDuration(idleMs));
 	}
 
 	protected String getRowCssClass(ThreadMonitor.Snapshot snapshot, int rowIndex) {
