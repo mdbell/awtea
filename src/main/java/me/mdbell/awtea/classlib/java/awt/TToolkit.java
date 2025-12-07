@@ -1,9 +1,9 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import org.teavm.classlib.java.awt.TDimension;
 import me.mdbell.awtea.classlib.java.awt.image.TColorModel;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.classlib.java.awt.image.TImageProducer;
+import org.teavm.classlib.java.awt.TDimension;
 
 import java.net.URL;
 
@@ -24,9 +24,9 @@ public abstract class TToolkit {
 
 	public abstract TFontMetrics getFontMetrics(TFont font);
 
-	public abstract TImage  createImage(TImageProducer producer);
+	public abstract TImage createImage(TImageProducer producer);
 
-	public TImage createImage(byte[] imagedata){
+	public TImage createImage(byte[] imagedata) {
 		return createImage(imagedata, 0, imagedata.length);
 	}
 
@@ -52,32 +52,34 @@ public abstract class TToolkit {
 
 	public abstract void sync();
 
-	public final TEventQueue getSystemEventQueue(){
-			    return TEventQueue.getSystemEventQueue();
+	protected abstract TEventQueue getSystemEventQueueImpl();
+
+	public final TEventQueue getSystemEventQueue() {
+		return getDefaultToolkit().getSystemEventQueueImpl();
 	}
 
-	public final Object getDesktopProperty(String name){
-	    return null;
+	public final Object getDesktopProperty(String name) {
+		return null;
 	}
 
-	public int getMaximumCursorColors(){
-	    return 0;
-	}
-
-	public int getMenuShortcutKeyMask(){
-	    //return TInputEvent.CTRL_DOWN_MASK;
+	public int getMaximumCursorColors() {
 		return 0;
 	}
 
-	public int getMenuShortcutKeyMaskEx(){
-	    //return TInputEvent.CTRL_DOWN_MASK;
+	public int getMenuShortcutKeyMask() {
+		//return TInputEvent.CTRL_DOWN_MASK;
+		return 0;
+	}
+
+	public int getMenuShortcutKeyMaskEx() {
+		//return TInputEvent.CTRL_DOWN_MASK;
 		return 0;
 	}
 
 	// createCustomCursor
 
-	public TDimension getBestCursorSize(int preferredWidth, int preferredHeight){
-	    return new TDimension(preferredWidth, preferredHeight);
+	public TDimension getBestCursorSize(int preferredWidth, int preferredHeight) {
+		return new TDimension(preferredWidth, preferredHeight);
 	}
 
 	public TInsets getScreenInsets(TGraphicsConfiguration gc) {
@@ -88,12 +90,16 @@ public abstract class TToolkit {
 		}
 	}
 
+	public static TEventQueue getEventQueue() {
+		return getDefaultToolkit().getSystemEventQueue();
+	}
+
 	public static String getProperty(String key, String defaultValue) {
-	    return defaultValue;
+		return defaultValue;
 	}
 
 	public static TToolkit getDefaultToolkit() {
-	    return INSTANCE;
+		return INSTANCE;
 	}
 
 }

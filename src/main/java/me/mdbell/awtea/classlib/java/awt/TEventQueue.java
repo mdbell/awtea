@@ -1,156 +1,243 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import me.mdbell.awtea.classlib.java.awt.event.TComponentEvent;
+import me.mdbell.awtea.classlib.java.awt.event.TActiveEvent;
+import me.mdbell.awtea.classlib.java.awt.event.TInvocationEvent;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
 
 /**
- * TeaVM implementation of java.awt.EventQueue.
- * Provides a simple event dispatching queue for AWT events in the browser environment.
+ * @see java.awt.EventQueue
  */
 public class TEventQueue {
 
-    private static final TEventQueue systemEventQueue = new TEventQueue();
+	private final Queue[] priorityQueues = new Queue[NUM_PRIORITIES];
 
-    private final Queue<TAWTEvent> eventQueue = new LinkedList<>();
-    private TComponent dispatchTarget;
+	private static final int LOW_PRIORITY = 0;
+	private static final int NORM_PRIORITY = 1;
+	private static final int HIGH_PRIORITY = 2;
+	private static final int ULTIMATE_PRIORITY = 3;
 
-    public TEventQueue() {
-    }
+	private static final int NUM_PRIORITIES = ULTIMATE_PRIORITY + 1;
 
-    /**
-     * Gets the system event queue.
-     * In TeaVM, this returns a singleton instance since there's only one event thread.
-     */
-    public static TEventQueue getSystemEventQueue() {
-        return systemEventQueue;
-    }
+	private static TEventDispatchThread eventDispatchThread;
 
-    /**
-     * Posts an event to the queue.
-     * In the browser environment, events are typically dispatched synchronously,
-     * but this maintains the queue structure for compatibility.
-     */
-    public void postEvent(TAWTEvent event) {
-        eventQueue.offer(event);
-        processEvents();
-    }
+	protected static final Object lock = new Object();
 
-    /**
-     * Returns the next event without removing it from the queue.
-     */
-    public TAWTEvent peekEvent() {
-        return eventQueue.peek();
-    }
+	public TEventQueue() {
+		for (int i = 0; i < NUM_PRIORITIES; i++) {
+			priorityQueues[i] = new Queue();
+		}
+	}
 
-    /**
-     * Returns the next event of the specified ID without removing it.
-     */
-    public TAWTEvent peekEvent(int id) {
-        for (TAWTEvent event : eventQueue) {
-            if (event.getId() == id) {
-                return event;
-            }
-        }
-        return null;
-    }
+	public void postEvent(TAWTEvent event) {
+		postEventInternal(NORM_PRIORITY, event);
+	}
 
-    /**
-     * Removes and returns the next event from the queue.
-     * In TeaVM, this processes events synchronously.
-     * Note: wait() is not supported in browser environment, so this returns immediately.
-     */
-    public TAWTEvent getNextEvent() throws InterruptedException {
-        return eventQueue.poll();
-    }
+	private void postEventInternal(int priority, TAWTEvent event) {
+		priorityQueues[priority].offer(event);
+		initEventDispatchThread();
 
-    /**
-     * Dispatches an event to its target component.
-     * Component events are dispatched to their target component.
-     * Other AWT events may be handled differently based on type.
-     */
-    public void dispatchEvent(TAWTEvent event) {
-        if (event == null) {
-            return;
-        }
+		synchronized (lock) {
+			if (eventDispatchThread != null) {
+				lock.notifyAll();
+			}
+		}
+	}
 
-        // If it's a component event, dispatch to the component
-        if (event instanceof TComponentEvent) {
-            TComponentEvent componentEvent = (TComponentEvent) event;
-            TComponent target = componentEvent.getComponent();
-            if (target != null) {
-                target.dispatchEvent(componentEvent);
-            }
-        }
-        // Other AWTEvent types would be handled here if needed
-    }
+	private void initEventDispatchThread() {
+		if (eventDispatchThread == null) {
+			eventDispatchThread = new TEventDispatchThread("AWTea-EventDispatcher", this);
+			eventDispatchThread.start();
+		}
+	}
 
-    /**
-     * Processes all pending events in the queue.
-     * This is called automatically when events are posted.
-     */
-    private void processEvents() {
-        while (!eventQueue.isEmpty()) {
-            TAWTEvent event = eventQueue.poll();
-            if (event != null) {
-                dispatchEvent(event);
-            }
-        }
-    }
+	/**
+	 * Returns the next event without removing it from the queue.
+	 */
+	public TAWTEvent peekEvent() {
+		synchronized (lock) {
+			for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
+				Queue queue = priorityQueues[i];
+				TAWTEvent event = queue.peek();
+				if (event != null) {
+					return event;
+				}
+			}
+			return null;
+		}
+	}
 
-    /**
-     * Returns true if the calling thread is the event dispatch thread.
-     * In TeaVM/browser environment, all code runs on the main thread.
-     */
-    public static boolean isDispatchThread() {
-        return true;
-    }
+	/**
+	 * Returns the next event of the specified ID without removing it.
+	 */
+	public TAWTEvent peekEvent(int id) {
+		synchronized (lock) {
+			for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
+				Queue queue = priorityQueues[i];
+				for (TAWTEvent event : queue) {
+					if (event.getID() == id) {
+						return event;
+					}
+				}
+			}
+			return null;
+		}
+	}
 
-    /**
-     * Causes runnable to be executed on the event dispatch thread.
-     * In TeaVM, this executes immediately since we're always on the dispatch thread.
-     */
-    public static void invokeLater(Runnable runnable) {
-        if (runnable != null) {
-            runnable.run();
-        }
-    }
+	/**
+	 * Removes and returns the next event from the queue.
+	 * In TeaVM, this processes events synchronously.
+	 * Note: wait() is not supported in browser environment, so this returns immediately.
+	 */
+	public TAWTEvent getNextEvent() throws InterruptedException {
+		synchronized (lock) {
+			for (; ; ) {
+				// check all priorities, highest first
+				for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
+					Queue queue = priorityQueues[i];
+					TAWTEvent event = queue.poll();
+					if (event != null) {
+						return event; // lock is released when we exit this block
+					}
+				}
 
-    /**
-     * Causes runnable to be executed synchronously on the event dispatch thread.
-     * In TeaVM, this executes immediately since we're always on the dispatch thread.
-     */
-    public static void invokeAndWait(Runnable runnable) throws InterruptedException {
-        if (runnable != null) {
-            runnable.run();
-        }
-    }
+				// no events: park the EDT until someone posts one
+				lock.wait();
+				// on wake, loop and check queues again
+			}
+		}
+	}
 
-    /**
-     * Returns the most recent event in the queue.
-     */
-    public TAWTEvent getMostRecentEvent() {
-        TAWTEvent mostRecent = null;
-        for (TAWTEvent event : eventQueue) {
-            mostRecent = event;
-        }
-        return mostRecent;
-    }
+	protected void dispatchEvent(TAWTEvent event) {
+		if (event == null) {
+			return;
+		}
 
-    /**
-     * Pushes a new EventQueue onto the dispatch thread.
-     * Stubbed for TeaVM as we use a simple single-queue model.
-     */
-    public void push(TEventQueue newEventQueue) {
-        // Stubbed - not typically needed in browser environment
-    }
+		Object source = event.getSource();
 
-    /**
-     * Removes this EventQueue from the dispatch thread.
-     * Stubbed for TeaVM as we use a simple single-queue model.
-     */
-    protected void pop() throws java.util.EmptyStackException {
-        // Stubbed - not typically needed in browser environment
-    }
+//		Debug.trigger();
+
+		if (event instanceof TActiveEvent) {
+			((TActiveEvent) event).dispatch();
+		} else if (source instanceof TComponent) {
+			TComponent comp = (TComponent) source;
+			comp.dispatchEvent(event);
+		} else {
+			//TODO: rest of event types, e.g. WindowEvent, ActionEvent, etc.
+//			System.err.println("Warning: Unhandled event type: " + event.getClass().getName());
+		}
+	}
+
+	public static boolean isDispatchThread() {
+		return eventDispatchThread != null && Thread.currentThread() == eventDispatchThread.getThread();
+	}
+
+	public static void invokeLater(Runnable runnable) {
+		TToolkit.getEventQueue().postEvent(
+			new TInvocationEvent(TToolkit.getDefaultToolkit(), runnable));
+	}
+
+	/**
+	 * Causes runnable to be executed synchronously on the event dispatch thread.
+	 * In TeaVM, this executes immediately since we're always on the dispatch thread.
+	 */
+	public static void invokeAndWait(Runnable runnable) throws InterruptedException, InvocationTargetException {
+		invokeAndWait(TToolkit.getDefaultToolkit(), runnable);
+	}
+
+	private static void invokeAndWait(Object source, Runnable runnable) throws InvocationTargetException, InterruptedException {
+		if (isDispatchThread()) {
+			throw new Error("Cannot call invokeAndWait from the event dispatch thread");
+		}
+
+		TInvocationEvent event = new TInvocationEvent(source, runnable, null, true);
+
+		TToolkit.getEventQueue().postEvent(event);
+
+		event.getPromise().await();
+
+		Throwable throwable = event.getThrowable();
+		if (throwable != null) {
+			throw new InvocationTargetException(throwable);
+		}
+	}
+
+	/**
+	 * Pushes a new EventQueue onto the dispatch thread.
+	 * Stubbed for TeaVM as we use a simple single-queue model.
+	 */
+	public void push(TEventQueue newEventQueue) {
+		// Stubbed - not typically needed in browser environment
+	}
+
+	/**
+	 * Removes this EventQueue from the dispatch thread.
+	 * Stubbed for TeaVM as we use a simple single-queue model.
+	 */
+	protected void pop() throws java.util.EmptyStackException {
+		// Stubbed - not typically needed in browser environment
+	}
+
+	static class Queue implements Iterable<TAWTEvent> {
+		EventQueueItem head;
+		EventQueueItem tail;
+
+		void offer(TAWTEvent event) {
+			EventQueueItem item = new EventQueueItem(event);
+			if (tail != null) {
+				tail.next = item;
+				tail = item;
+			} else {
+				head = tail = item;
+			}
+		}
+
+		TAWTEvent poll() {
+			if (head == null) {
+				return null;
+			}
+			TAWTEvent event = head.event;
+			head = head.next;
+			if (head == null) {
+				tail = null;
+			}
+			return event;
+		}
+
+		TAWTEvent peek() {
+			if (head == null) {
+				return null;
+			}
+			return head.event;
+		}
+
+		@Override
+		public Iterator<TAWTEvent> iterator() {
+			return new Iterator<>() {
+				private EventQueueItem current = head;
+
+				@Override
+				public boolean hasNext() {
+					return current != null;
+				}
+
+				@Override
+				public TAWTEvent next() {
+					TAWTEvent event = current.event;
+					current = current.next;
+					return event;
+				}
+			};
+		}
+	}
+
+	static class EventQueueItem {
+		TAWTEvent event;
+		EventQueueItem next;
+
+		EventQueueItem(TAWTEvent event) {
+			this.event = event;
+		}
+	}
 }

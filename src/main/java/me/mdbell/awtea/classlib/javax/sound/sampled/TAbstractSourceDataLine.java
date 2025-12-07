@@ -128,7 +128,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
 		open = true;
 		running = false;
 
-		LineMonitor.get().registerOutputLine(this);
+		LineMonitor.get().onOpen(this);
 		dispatchLineEvent(TLineEvent.Type.OPEN);
 	}
 
@@ -140,7 +140,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
 	}
 
 	@Override
-	public void stop() {
+	public final void stop() {
 		running = false;
 		LineMonitor.get().onStop(this);
 		dispatchLineEvent(TLineEvent.Type.STOP);
@@ -153,10 +153,19 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
 
 	@Override
 	public void close() {
+		stop();
 		open = false;
-		running = false;
-		LineMonitor.get().unregister(this);
-		PcmMonitor.get().unregister(this);
+		this.format = null;
+		this.channels = 0;
+		this.sampleRate = 0;
+		this.sampleSizeBits = 0;
+		this.sampleSizeBytes = 0;
+		this.frameSizeBytes = 0;
+		this.bigEndian = false;
+		this.floatScale = 0f;
+		this.sampleScratch = null;
+		LineMonitor.get().onClose(this);
+		PcmMonitor.get().onClose(this);
 		dispatchLineEvent(TLineEvent.Type.CLOSE);
 	}
 

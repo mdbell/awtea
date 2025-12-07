@@ -7,6 +7,6 @@ class TToolKitFactory {
 	}
 
 	public static TToolkit createToolkit() {
-		return new TTeaVmToolkit();
+		return new TAWTeaToolkit();
 	}
 }

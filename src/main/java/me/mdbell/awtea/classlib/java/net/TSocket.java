@@ -2,9 +2,9 @@ package me.mdbell.awtea.classlib.java.net;
 
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.monitor.NetworkMonitor;
+import me.mdbell.awtea.net.SocketResolver;
+import me.mdbell.awtea.net.SocketResolverFactory;
 import me.mdbell.awtea.util.JSObjectsExtensions;
-import me.mdbell.awtea.util.jso.JSRecord;
-import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.function.JSConsumer;
@@ -23,16 +23,10 @@ import java.util.List;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class TSocket {
-
-	private static final JSRecord PORT_TO_ROUTE_MAPPING = JSRecord.create();
-
-	static {
-		PORT_TO_ROUTE_MAPPING.put(43594, "js5");
-		PORT_TO_ROUTE_MAPPING.put(43595, "game");
-	}
-
 	private final String host;
 	private final int port;
+
+	private final SocketResolver resolver;
 
 	private final WebSocket socket;
 	private final SocketInputStream inputStream;
@@ -43,15 +37,9 @@ public class TSocket {
 	public TSocket(TInetAddress address, int port) throws TUnknownHostException {
 		this.host = address.getHost();
 		this.port = port;
-		String route = PORT_TO_ROUTE_MAPPING.has(port) ? PORT_TO_ROUTE_MAPPING.get(port) : null;
-
-		// register with monitor in "connecting" state
-		NetworkMonitor.get().register(this, host, port, route);
+		this.resolver = SocketResolverFactory.getInstance().createSocketResolver();
 
 		this.socket = this.connect(host, port).await();
-
-		// cleanup on close
-		registrations.cleanup();
 
 		this.inputStream = new SocketInputStream();
 		this.outputStream = new SocketOutputStream();
@@ -96,13 +84,14 @@ public class TSocket {
 	}
 
 	private JSPromise<WebSocket> connect(String server, int port) {
-		return new JSPromise<>((resolve, reject) -> {
-			//String url = createWebsocketUrl(server, port);
-			String url = "wss://play.fifthage.io/js5";
-			System.out.println("Connecting to " + server + ":" + port + "(" + url + ") via WebSocket");
-			WebSocket ws = new WebSocket(url, "binary");
-			ws.setBinaryType("arraybuffer");
+		String url = this.resolver.resolveUrl(server, port);
+		System.out.println("Connecting to " + server + ":" + port + "(" + url + ") via WebSocket");
 
+		NetworkMonitor.get().register(this, host, port, url);
+		WebSocket ws = new WebSocket(url, "binary");
+		ws.setBinaryType("arraybuffer");
+
+		return new JSPromise<WebSocket>((resolve, reject) -> {
 			NetworkMonitor.get().onConnecting(TSocket.this);
 			ws.onOpen(e -> {
 				NetworkMonitor.get().onOpen(TSocket.this);
@@ -113,25 +102,10 @@ public class TSocket {
 				NetworkMonitor.get().onError(TSocket.this, e.toString());
 				reject.accept(new IOException("WebSocket error during connect"));
 			}).track(registrations);
+		}).onSettled(() -> {
+			registrations.cleanup();
+			return ws;
 		});
-	}
-
-	private String createWebsocketUrl(String server, int port) {
-		String protocol = Window.current().getLocation().getProtocol();
-//		if (protocol.equals("https:") || Settings.SECURE) {
-//			protocol = "wss";
-//		} else {
-//			protocol = "ws";
-//		}
-		protocol = "wss";
-		if (!PORT_TO_ROUTE_MAPPING.has(port)) {
-			return protocol + "://" + server + ":" + port;
-		}
-		String route = PORT_TO_ROUTE_MAPPING.get(port);
-		if ("localhost".equals(server)) {
-			return protocol + "://" + server + ":" + port + "/" + route;
-		}
-		return protocol + "://" + server + "/" + route;
 	}
 
 	class SocketInputStream extends InputStream {

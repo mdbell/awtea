@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.ThreadUtils;
 import org.teavm.jso.browser.Storage;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.css.CSSStyleDeclaration;
@@ -14,11 +15,10 @@ import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.xml.Node;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-
-import static me.mdbell.awtea.util.ui.UiDispatcher.invokeLater;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public abstract class FloatingWindow {
@@ -91,6 +91,8 @@ public abstract class FloatingWindow {
 
 	private boolean delegatedClicksInstalled = false;
 
+	private boolean fixedIntervalStarted = false;
+
 	// Simple registry: "actionId" -> Runnable
 	private final Map<String, Runnable> clickHandlers = new HashMap<>();
 
@@ -107,7 +109,7 @@ public abstract class FloatingWindow {
 			.value(Theme.Var.BORDER)
 			.end()
 			.prop("border-radius", "4px")
-			.prop("background",  Theme.Var.BACKGROUND)
+			.prop("background", Theme.Var.BACKGROUND)
 			.prop("color", Theme.Var.FOREGROUND)
 			.prop("box-shadow")
 			.value("0 0 0 1px")
@@ -288,12 +290,13 @@ public abstract class FloatingWindow {
 		bringToFront();
 
 		// start refresh timer
-		if (refreshIntervalMs > 0 && refreshIntervalId == -1) {
-			refreshIntervalId = Window.setInterval(() -> {
+		if (refreshIntervalMs > 0 && !fixedIntervalStarted) {
+			ThreadUtils.runAtFixedRate(() -> {
 				if (!dragging && container.getParentNode() != null) {
-					schedule(this::refreshContent);
+					this.refreshContent();
 				}
 			}, refreshIntervalMs);
+			fixedIntervalStarted = true;
 		}
 	}
 
@@ -325,7 +328,7 @@ public abstract class FloatingWindow {
 
 	@SuppressWarnings("unchecked")
 	protected <T extends HTMLElement> T createElement(String tagName) {
-		return  (T) document.createElement(tagName);
+		return (T) document.createElement(tagName);
 	}
 
 	protected void registerClickHandler(String id, Runnable handler) {
@@ -336,7 +339,15 @@ public abstract class FloatingWindow {
 	 * Use this instead of starting your own thread
 	 */
 	protected void schedule(Runnable r) {
-		invokeLater(r);
+		EventQueue.invokeLater(r);
+	}
+
+	protected void scheduleAndWait(Runnable r) {
+		try {
+			EventQueue.invokeAndWait(r);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -360,11 +371,11 @@ public abstract class FloatingWindow {
 		}
 		lastSignature = sig;
 
-		if( menuBar != null ) {
+		if (menuBar != null) {
 			HTMLElement element = menuBar.getElement();
 			HTMLElement menuParent = element.getParentNode() != null ? (HTMLElement) element.getParentNode() : null;
 			// ensure menu bar is first child of body
-			if(menuParent != container) {
+			if (menuParent != container) {
 				if (menuParent != null) {
 					menuParent.removeChild(element);
 				}
@@ -406,21 +417,21 @@ public abstract class FloatingWindow {
 	 * Tag name is assumed to be the same for the root; if it's not, we just replace.
 	 */
 	private void patchElement(HTMLElement live, HTMLElement fresh) {
-		String liveTag  = live.getTagName();
+		String liveTag = live.getTagName();
 		String freshTag = fresh.getTagName();
 		if (!liveTag.equalsIgnoreCase(freshTag)) {
 			replaceNode(live, fresh);
 			return;
 		}
 
-		if(!Objects.equals(live.getClassName(), fresh.getClassName())) {
+		if (!Objects.equals(live.getClassName(), fresh.getClassName())) {
 			live.setClassName(fresh.getClassName());
 		}
 
 		syncAttributes(live, fresh);
 		syncStyle(live, fresh);
 
-		boolean liveHasChildren  = hasElementChildren(live);
+		boolean liveHasChildren = hasElementChildren(live);
 		boolean freshHasChildren = hasElementChildren(fresh);
 
 		// ⚠️ KEY: if old node had only text and new one has element children,
@@ -432,7 +443,7 @@ public abstract class FloatingWindow {
 
 		if (freshHasChildren || liveHasChildren) {
 			patchChildren(live, fresh);
-		} else if(!Objects.equals(live.getTextContent(), fresh.getTextContent())){
+		} else if (!Objects.equals(live.getTextContent(), fresh.getTextContent())) {
 			// both are leaf nodes → sync text only
 			live.setTextContent(fresh.getTextContent());
 		}
@@ -450,7 +461,7 @@ public abstract class FloatingWindow {
 
 	private void syncStyle(HTMLElement live, HTMLElement fresh) {
 		String freshStyle = fresh.getAttribute("style");
-		String liveStyle  = live.getAttribute("style");
+		String liveStyle = live.getAttribute("style");
 
 		if (freshStyle == null) {
 			if (liveStyle != null) {
@@ -470,7 +481,7 @@ public abstract class FloatingWindow {
 
 		// data attributes
 		var attributes = fresh.getAttributes();
-		for(int i = 0; i < attributes.getLength(); i++){
+		for (int i = 0; i < attributes.getLength(); i++) {
 			var attr = attributes.item(i);
 			String name = attr.getName();
 			String freshData = fresh.getAttribute(name);
@@ -725,22 +736,22 @@ public abstract class FloatingWindow {
 				int dy = e.getClientY() - dragStartMouseY;
 
 				int newLeft = dragStartLeft + dx;
-				int newTop  = dragStartTop  + dy;
+				int newTop = dragStartTop + dy;
 
 				CSSStyleDeclaration style = container.getStyle();
 				style.setProperty("left", newLeft + "px");
-				style.setProperty("top",  newTop  + "px");
+				style.setProperty("top", newTop + "px");
 
 				evt.preventDefault();
 			} else if (resizing) {
 				int dx = e.getClientX() - resizeStartMouseX;
 				int dy = e.getClientY() - resizeStartMouseY;
 
-				int newWidth  = Math.max(minWidth,  resizeStartWidth  + dx);
+				int newWidth = Math.max(minWidth, resizeStartWidth + dx);
 				int newHeight = Math.max(minHeight, resizeStartHeight + dy);
 
 				CSSStyleDeclaration style = container.getStyle();
-				style.setProperty("width",  newWidth  + "px");
+				style.setProperty("width", newWidth + "px");
 				style.setProperty("height", newHeight + "px");
 
 				evt.preventDefault();
@@ -781,7 +792,7 @@ public abstract class FloatingWindow {
 	private void toggleMaximize() {
 		CSSStyleDeclaration s = container.getStyle();
 
-		if(!resizable) {
+		if (!resizable) {
 			return;
 		}
 

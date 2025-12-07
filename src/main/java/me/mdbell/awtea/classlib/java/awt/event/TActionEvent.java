@@ -16,180 +16,165 @@ import me.mdbell.awtea.classlib.java.awt.TAWTEvent;
 @ToString(callSuper = true)
 public class TActionEvent extends TAWTEvent {
 
-    /**
-     * The first number in the range of ids used for action events.
-     */
-    public static final int ACTION_FIRST = 1001;
+	/**
+	 * The first number in the range of ids used for action events.
+	 */
+	public static final int ACTION_FIRST = 1001;
 
-    /**
-     * The last number in the range of ids used for action events.
-     */
-    public static final int ACTION_LAST = 1001;
+	/**
+	 * The last number in the range of ids used for action events.
+	 */
+	public static final int ACTION_LAST = 1001;
 
-    /**
-     * The "action performed" event. This event is generated when a
-     * component-specific action occurs (such as button press).
-     */
-    public static final int ACTION_PERFORMED = ACTION_FIRST;
+	/**
+	 * The "action performed" event. This event is generated when a
+	 * component-specific action occurs (such as button press).
+	 */
+	public static final int ACTION_PERFORMED = ACTION_FIRST;
 
-    /**
-     * The shift modifier constant.
-     */
-    public static final int SHIFT_MASK = 1 << 0;
+	/**
+	 * The shift modifier constant.
+	 */
+	public static final int SHIFT_MASK = 1 << 0;
 
-    /**
-     * The control modifier constant.
-     */
-    public static final int CTRL_MASK = 1 << 1;
+	/**
+	 * The control modifier constant.
+	 */
+	public static final int CTRL_MASK = 1 << 1;
 
-    /**
-     * The meta modifier constant.
-     */
-    public static final int META_MASK = 1 << 2;
+	/**
+	 * The meta modifier constant.
+	 */
+	public static final int META_MASK = 1 << 2;
 
-    /**
-     * The alt modifier constant.
-     */
-    public static final int ALT_MASK = 1 << 3;
+	/**
+	 * The alt modifier constant.
+	 */
+	public static final int ALT_MASK = 1 << 3;
 
-    /**
-     * The object that originated the event.
-     */
-    private final Object source;
+	/**
+	 * The command string associated with this action.
+	 * This string is a description of the command that was performed.
+	 */
+	private final String actionCommand;
 
-    /**
-     * The command string associated with this action.
-     * This string is a description of the command that was performed.
-     */
-    private final String actionCommand;
+	/**
+	 * The modifier keys held down during this action event.
+	 */
+	private final int modifiers;
 
-    /**
-     * The modifier keys held down during this action event.
-     */
-    private final int modifiers;
+	/**
+	 * Timestamp of when this event occurred.
+	 */
+	private final long when;
 
-    /**
-     * Timestamp of when this event occurred.
-     */
-    private final long when;
+	/**
+	 * Constructs an ActionEvent object with the specified source, id, and command.
+	 *
+	 * @param source  the object that originated the event
+	 * @param id      the integer that identifies the event type
+	 * @param command a string that may specify a command (possibly one of several) associated with the event
+	 */
+	public TActionEvent(Object source, int id, String command) {
+		this(source, id, command, 0);
+	}
 
-    /**
-     * Constructs an ActionEvent object with the specified source, id, and command.
-     *
-     * @param source the object that originated the event
-     * @param id the integer that identifies the event type
-     * @param command a string that may specify a command (possibly one of several) associated with the event
-     */
-    public TActionEvent(Object source, int id, String command) {
-        this(source, id, command, 0);
-    }
+	/**
+	 * Constructs an ActionEvent object with the specified source, id, command, and modifiers.
+	 *
+	 * @param source    the object that originated the event
+	 * @param id        the integer that identifies the event type
+	 * @param command   a string that may specify a command (possibly one of several) associated with the event
+	 * @param modifiers the modifier keys held down during this action
+	 */
+	public TActionEvent(Object source, int id, String command, int modifiers) {
+		this(source, id, command, System.currentTimeMillis(), modifiers);
+	}
 
-    /**
-     * Constructs an ActionEvent object with the specified source, id, command, and modifiers.
-     *
-     * @param source the object that originated the event
-     * @param id the integer that identifies the event type
-     * @param command a string that may specify a command (possibly one of several) associated with the event
-     * @param modifiers the modifier keys held down during this action
-     */
-    public TActionEvent(Object source, int id, String command, int modifiers) {
-        this(source, id, command, System.currentTimeMillis(), modifiers);
-    }
+	/**
+	 * Constructs an ActionEvent object with the specified source, id, command, modifiers, and timestamp.
+	 *
+	 * @param source    the object that originated the event
+	 * @param id        the integer that identifies the event type
+	 * @param command   a string that may specify a command (possibly one of several) associated with the event
+	 * @param when      a long that gives the time the event occurred
+	 * @param modifiers the modifier keys held down during this action
+	 */
+	public TActionEvent(Object source, int id, String command, long when, int modifiers) {
+		super(source, id);
+		this.actionCommand = command;
+		this.modifiers = modifiers;
+		this.when = when;
+	}
 
-    /**
-     * Constructs an ActionEvent object with the specified source, id, command, modifiers, and timestamp.
-     *
-     * @param source the object that originated the event
-     * @param id the integer that identifies the event type
-     * @param command a string that may specify a command (possibly one of several) associated with the event
-     * @param when a long that gives the time the event occurred
-     * @param modifiers the modifier keys held down during this action
-     */
-    public TActionEvent(Object source, int id, String command, long when, int modifiers) {
-        super(id);
-        this.source = source;
-        this.actionCommand = command;
-        this.modifiers = modifiers;
-        this.when = when;
-    }
+	/**
+	 * Returns the command string associated with this action.
+	 *
+	 * @return the command string, or null if none exists
+	 */
+	public String getActionCommand() {
+		return actionCommand;
+	}
 
-    /**
-     * Returns the object where the event originated.
-     *
-     * @return the object where the event originated
-     */
-    public Object getSource() {
-        return source;
-    }
+	/**
+	 * Returns the modifier keys held down during this action event.
+	 *
+	 * @return the bitwise-or of the modifier constants
+	 */
+	public int getModifiers() {
+		return modifiers;
+	}
 
-    /**
-     * Returns the command string associated with this action.
-     *
-     * @return the command string, or null if none exists
-     */
-    public String getActionCommand() {
-        return actionCommand;
-    }
+	/**
+	 * Returns the timestamp of when this event occurred.
+	 *
+	 * @return the time the event occurred
+	 */
+	public long getWhen() {
+		return when;
+	}
 
-    /**
-     * Returns the modifier keys held down during this action event.
-     *
-     * @return the bitwise-or of the modifier constants
-     */
-    public int getModifiers() {
-        return modifiers;
-    }
+	/**
+	 * Returns a parameter string identifying this action event.
+	 * This method is useful for debugging.
+	 *
+	 * @return a string identifying the event and its associated command
+	 */
+	public String paramString() {
+		String typeStr;
+		switch (getID()) {
+			case ACTION_PERFORMED:
+				typeStr = "ACTION_PERFORMED";
+				break;
+			default:
+				typeStr = "unknown type";
+		}
+		return typeStr + ",cmd=" + actionCommand + ",when=" + when + ",modifiers=" + getModifiersString(modifiers);
+	}
 
-    /**
-     * Returns the timestamp of when this event occurred.
-     *
-     * @return the time the event occurred
-     */
-    public long getWhen() {
-        return when;
-    }
-
-    /**
-     * Returns a parameter string identifying this action event.
-     * This method is useful for debugging.
-     *
-     * @return a string identifying the event and its associated command
-     */
-    public String paramString() {
-        String typeStr;
-        switch (getId()) {
-            case ACTION_PERFORMED:
-                typeStr = "ACTION_PERFORMED";
-                break;
-            default:
-                typeStr = "unknown type";
-        }
-        return typeStr + ",cmd=" + actionCommand + ",when=" + when + ",modifiers=" + getModifiersString(modifiers);
-    }
-
-    /**
-     * Returns a string representation of the modifier keys.
-     *
-     * @param modifiers the modifier keys
-     * @return a string representation
-     */
-    private static String getModifiersString(int modifiers) {
-        StringBuilder sb = new StringBuilder();
-        if ((modifiers & SHIFT_MASK) != 0) {
-            sb.append("Shift+");
-        }
-        if ((modifiers & CTRL_MASK) != 0) {
-            sb.append("Ctrl+");
-        }
-        if ((modifiers & META_MASK) != 0) {
-            sb.append("Meta+");
-        }
-        if ((modifiers & ALT_MASK) != 0) {
-            sb.append("Alt+");
-        }
-        if (sb.length() > 0) {
-            sb.setLength(sb.length() - 1); // Remove trailing '+'
-        }
-        return sb.toString();
-    }
+	/**
+	 * Returns a string representation of the modifier keys.
+	 *
+	 * @param modifiers the modifier keys
+	 * @return a string representation
+	 */
+	private static String getModifiersString(int modifiers) {
+		StringBuilder sb = new StringBuilder();
+		if ((modifiers & SHIFT_MASK) != 0) {
+			sb.append("Shift+");
+		}
+		if ((modifiers & CTRL_MASK) != 0) {
+			sb.append("Ctrl+");
+		}
+		if ((modifiers & META_MASK) != 0) {
+			sb.append("Meta+");
+		}
+		if ((modifiers & ALT_MASK) != 0) {
+			sb.append("Alt+");
+		}
+		if (sb.length() > 0) {
+			sb.setLength(sb.length() - 1); // Remove trailing '+'
+		}
+		return sb.toString();
+	}
 }

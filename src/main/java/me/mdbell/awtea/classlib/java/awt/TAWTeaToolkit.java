@@ -1,6 +1,5 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-
 import lombok.SneakyThrows;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.image.*;
@@ -23,7 +22,9 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 @ExtensionMethod({JSObjectsExtensions.class})
-public class TTeaVmToolkit extends TToolkit {
+public class TAWTeaToolkit extends TToolkit {
+
+	private static final TEventQueue systemEventQueue = new TEventQueue();
 
 	private static final TColorModel colorModel = new TDirectColorModel(32,
 		0x00FF0000,  // Red
@@ -83,6 +84,11 @@ public class TTeaVmToolkit extends TToolkit {
 	@Override
 	public void sync() {
 
+	}
+
+	@Override
+	protected TEventQueue getSystemEventQueueImpl() {
+		return systemEventQueue;
 	}
 
 	@Override

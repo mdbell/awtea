@@ -5,10 +5,9 @@ import org.teavm.jso.dom.html.HTMLButtonElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
-
-import static me.mdbell.awtea.util.ui.UiDispatcher.invokeLater;
 
 public final class Taskbar {
 	private static Taskbar instance;
@@ -33,7 +32,7 @@ public final class Taskbar {
 			.prop("background", Theme.Var.HEADER_BACKGROUND)
 			.prop("border-top")
 			.value("1px solid")
-			.value( Theme.Var.BORDER)
+			.value(Theme.Var.BORDER)
 			.end()
 			.prop("font-family", "sans-serif")
 			.prop("font-size", "12px")
@@ -74,7 +73,7 @@ public final class Taskbar {
 		darkModeToggle.setClassName("aw-taskbar-button");
 		darkModeToggle.setTextContent(isDarkModeInital ? "☀" : "☾");
 		darkModeToggle.onClick(evt -> {
-			invokeLater(() -> {
+			EventQueue.invokeLater(() -> {
 				boolean isDarkMode = Theme.isDarkMode();
 				Theme.setDarkMode(!isDarkMode);
 				darkModeToggle.setTextContent(!isDarkMode ? "☀" : "☾");

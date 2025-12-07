@@ -3,23 +3,26 @@ package me.mdbell.awtea.util.ui;
 import me.mdbell.awtea.monitor.LineMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 
+import javax.sound.sampled.AudioFormat;
+
 public final class AudioMonitorWindow extends AbstractMonitorWindow<LineMonitor.Entry, LineMonitor.Snapshot> {
 
 	static final String[] HEADERS = new String[]{
 		"ID",
-			"Dir",
-			"State",
-			"Name / Format",
-			"Buf (used/total)",
-			"Fill",
-			"W Rate",
-			"D Rate",
-			"Backlog"
+		"Dir",
+		"State",
+		"Encoding",
+		"Name / Format",
+		"Buf (used/total)",
+		"Fill",
+		"W Rate",
+		"D Rate",
+		"Backlog"
 	};
 
 	@Override
 	protected String getHeaderCellCssClass(int columnIndex) {
-		if(columnIndex == 6 || columnIndex == 7) {
+		if (columnIndex == 6 || columnIndex == 7) {
 			return "audio-header-right monitor-header-cell";
 		}
 		return "monitor-header-cell";
@@ -29,7 +32,7 @@ public final class AudioMonitorWindow extends AbstractMonitorWindow<LineMonitor.
 		super(
 			"audio.monitor",
 			"Audio Monitor",
-			1000,
+			1050,
 			260,
 			250,   // refresh every 250ms
 			LineMonitor.get()
@@ -65,6 +68,8 @@ public final class AudioMonitorWindow extends AbstractMonitorWindow<LineMonitor.
 			(running ? ", running" : ", stopped");
 		addCell(row, state);
 
+		addCell(row, getHumanReadableEncoding(line.getFormat()));
+
 		addCell(row, line.getLabel() + " (" + line.formatSummary() + ")");
 
 		String buf = usedBytes + " / " + bufferSizeBytes + " bytes";
@@ -91,10 +96,28 @@ public final class AudioMonitorWindow extends AbstractMonitorWindow<LineMonitor.
 		row.getClassList().add(className);
 	}
 
+	private String getHumanReadableEncoding(AudioFormat format) {
+		AudioFormat.Encoding encoding = format != null ? format.getEncoding() : null;
+		if (encoding == null) {
+			return "(unknown)";
+		}
+		if (encoding.equals(AudioFormat.Encoding.PCM_SIGNED)) {
+			return "PCM Signed";
+		} else if (encoding.equals(AudioFormat.Encoding.PCM_UNSIGNED)) {
+			return "PCM Unsigned";
+		} else if (encoding.equals(AudioFormat.Encoding.ULAW)) {
+			return "u-Law";
+		} else if (encoding.equals(AudioFormat.Encoding.ALAW)) {
+			return "a-Law";
+		} else {
+			return encoding.toString();
+		}
+	}
+
 	private static String getClassName(LineMonitor.Snapshot line) {
 		String className = "line-closed";
 
-		if(line.isOpen()) {
+		if (line.isOpen()) {
 			int targetSlack = line.getTargetSlackBytes();
 			double ratio = targetSlack == 0
 				? 0

@@ -111,13 +111,14 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 	private LineMonitor() {
 	}
 
-	public synchronized void registerOutputLine(Object target) {
+	public synchronized void onOpen(Object target) {
 		DataLine line = (DataLine) target;
 		Entry info = ensureEntry(line);
 		info.setOutput(line instanceof SourceDataLine);
 		info.setFormat(line.getFormat());
 		info.setOpen(line.isOpen());
-		info.setRunning(line.isActive());
+		info.setRunning(line.isRunning());
+
 		int bufferSize = line.getBufferSize();
 		int available = line.available();
 		info.setAvailable(available);
@@ -194,7 +195,6 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 		}
 		info.lastDrainTimeMs = now;
 
-		// You can optionally refresh used/free here as well, if you have easy access
 		try {
 			int bufferSize = line.getBufferSize();
 			int free = line.available();
@@ -204,6 +204,12 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 			info.lastUsedBytes = used;
 		} catch (Throwable ignored) {
 		}
+	}
+
+	public void onClose(Object target) {
+		Entry e = ensureEntry(target);
+		e.setOpen(false);
+		e.setRunning(false);
 	}
 
 	@Override

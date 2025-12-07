@@ -9,10 +9,10 @@ import me.mdbell.awtea.classlib.java.awt.TComponent;
 @ToString(callSuper = true)
 public class TComponentEvent extends TAWTEvent {
 
-    private final TComponent component;
+	private final TComponent component;
 
-    public TComponentEvent(TComponent component, int id) {
-        super(id);
-        this.component = component;
-    }
+	public TComponentEvent(TComponent component, int id) {
+		super(component, id);
+		this.component = component;
+	}
 }
