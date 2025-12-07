@@ -148,7 +148,7 @@ public class TSocket {
 
 		private int availableBytes = 0;
 
-		public synchronized void pushBuffer(Int8Array buf) {
+		public void pushBuffer(Int8Array buf) {
 			if (eof || failure != null) {
 				return; // ignore if already closed/failed
 			}
@@ -167,17 +167,12 @@ public class TSocket {
 			availableBytes = 0;
 		}
 
-		public synchronized void signalClosed() {
+		public void signalClosed() {
 			eof = true;
 			wakeWaiter();
 		}
 
-		public synchronized void fail(Throwable t) {
-			failure = t;
-			wakeWaiter();
-		}
-
-		private synchronized void wakeWaiter() {
+		private void wakeWaiter() {
 			if (pendingResolve != null || pendingReject != null) {
 				var r = pendingResolve;
 				var rej = pendingReject;
@@ -192,7 +187,7 @@ public class TSocket {
 		}
 
 		@Override
-		public synchronized int available() {
+		public int available() {
 			if (failure != null || eof && buffers.isEmpty() && (curr == null || index >= curr.length)) {
 				return 0;
 			}
@@ -200,14 +195,14 @@ public class TSocket {
 		}
 
 		@Override
-		public synchronized int read() throws IOException {
+		public int read() throws IOException {
 			byte[] one = new byte[1];
 			int n = read(one, 0, 1);
 			return (n == -1) ? -1 : (one[0] & 0xFF);
 		}
 
 		@Override
-		public synchronized int read(byte[] b, int off, int len) throws IOException {
+		public int read(byte[] b, int off, int len) throws IOException {
 			if (b == null) {
 				throw new NullPointerException();
 			}
@@ -260,7 +255,7 @@ public class TSocket {
 			return count;
 		}
 
-		private synchronized JSPromise<Void> waitForData() {
+		private JSPromise<Void> waitForData() {
 			// If we already have data or are at EOF/failure, don't actually wait
 			if (failure != null ||
 				!buffers.isEmpty() ||
@@ -288,7 +283,7 @@ public class TSocket {
 
 		@Override
 		public void write(byte[] b) throws IOException {
-			write(Int8Array.fromJavaArray(b));
+			write(b, 0, b.length);
 		}
 
 		@Override

@@ -4,21 +4,20 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.sound.DrainListener;
-import org.teavm.interop.Async;
-import org.teavm.interop.AsyncCallback;
-import org.teavm.jso.*;
+import me.mdbell.awtea.util.JSObjectsExtensions;
+import org.teavm.jso.JSBody;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.core.JSUndefined;
 import org.teavm.jso.dom.events.EventListener;
-import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.events.MessageEvent;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.webaudio.AudioContext;
 import org.teavm.jso.workers.MessagePort;
-import me.mdbell.awtea.util.JSObjectsExtensions;
 
 import java.io.InputStream;
 import java.util.HashSet;
@@ -55,11 +54,11 @@ public class PcmProcessorClient {
 		this(sampleRate, 2); // stereo audio
 	}
 
-	public PcmProcessorClient(int sampleRate, int channels){
+	public PcmProcessorClient(int sampleRate, int channels) {
 		this(sampleRate, channels, sampleRate / 10); //~ 100ms
 	}
 
-	public PcmProcessorClient(int sampleRate, int channels, int maxQueuedFrames){
+	public PcmProcessorClient(int sampleRate, int channels, int maxQueuedFrames) {
 		this(sampleRate, channels, maxQueuedFrames, createContext(sampleRate));
 	}
 
@@ -91,13 +90,13 @@ public class PcmProcessorClient {
 		// for some reason. Why? idk.
 		setOnMessage(this.node.getPort(), evt -> {
 			LineMessage msg = (LineMessage) evt.getData();
-			if(msg.nullish() || msg.getType() == null){
+			if (msg.nullish() || msg.getType() == null) {
 				return;
 			}
 			if (msg.getType().equals("consumed")) {
 				int frames = msg.getFrames();
 				queuedFrames -= frames;
-				if(queuedFrames < 0) {
+				if (queuedFrames < 0) {
 					queuedFrames = 0;
 				}
 				drainListenerSet.removeIf(l -> l.onDrain(frames, queuedFrames));
@@ -115,26 +114,25 @@ public class PcmProcessorClient {
 		this.node.connect(this.context.getDestination());
 	}
 
-	public int enqueue(float[] data, int frames){
-		if(this.node.nullish()){
+	public int enqueue(float[] data, int frames) {
+		if (this.node.nullish()) {
 			return 0;
 		}
 
 		int free = this.maxQueuedFrames - this.queuedFrames;
-		if(free <= 0){
+		if (free <= 0) {
 			return 0;
 		}
 
 		int framesToSend = Math.min(frames, free);
 
-		if(framesToSend <= 0){
+		if (framesToSend <= 0) {
 			return 0;
 		}
 
-		// unwrap into Float32Array _without_ copying the data.
-		Float32Array arr = unwrap(data);
+		Float32Array arr = Float32Array.fromJavaArray(data);
 
-		if(framesToSend != frames){
+		if (framesToSend != frames) {
 			arr = arr.subarray(0, framesToSend * this.channels);
 		}
 
@@ -151,12 +149,12 @@ public class PcmProcessorClient {
 		return framesToSend;
 	}
 
-	public void close(){
-		if(!node.nullish()){
+	public void close() {
+		if (!node.nullish()) {
 			this.node.disconnect();
 			this.node = null;
 		}
-		if(!this.context.nullish()){
+		if (!this.context.nullish()) {
 			this.context.close();
 		}
 	}
@@ -164,8 +162,8 @@ public class PcmProcessorClient {
 	@SneakyThrows
 	private static String getModuleUrl() {
 		String script = "";
-		try(InputStream in = PcmProcessorClient.class.getResourceAsStream(MODULE_PATH)){
-			if(in != null) {
+		try (InputStream in = PcmProcessorClient.class.getResourceAsStream(MODULE_PATH)) {
+			if (in != null) {
 				byte[] data = in.readAllBytes();
 				script = new String(data);
 			}
@@ -173,17 +171,14 @@ public class PcmProcessorClient {
 		return "data:text/javascript;charset=utf-8," + Window.encodeURIComponent(script);
 	}
 
-	private static AudioContext createContext(int sr){
+	private static AudioContext createContext(int sr) {
 		AudioContextOptions opts = JSObjects.create();
 		opts.setSampleRate(sr);
 		return createContext(opts);
 	}
 
-	@JSBody(params= {"port", "handler"}, script = "port.onmessage = handler")
+	@JSBody(params = {"port", "handler"}, script = "port.onmessage = handler")
 	private static native void setOnMessage(MessagePort port, EventListener<MessageEvent> handler);
-
-	@JSBody(params = "arr", script = "return arr;")
-	private static native Float32Array unwrap(@JSByRef float[] arr);
 
 	@JSBody(params = {"options"}, script = "return new AudioContext(options)")
 	private static native AudioContext createContext(AudioContextOptions options);
@@ -192,7 +187,7 @@ public class PcmProcessorClient {
 	@JSBody(params = {"context", "module"}, script = "return context.audioWorklet.addModule(module);")
 	private static native JSPromise<JSUndefined> addAudioModule(AudioContext context, String module);
 
-	public interface AudioContextOptions extends JSObject{
+	public interface AudioContextOptions extends JSObject {
 		@JSProperty("sampleRate")
 		void setSampleRate(int sr);
 	}

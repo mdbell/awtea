@@ -1,20 +1,18 @@
-package me.mdbell.awtea.sound.pcm;
+package me.mdbell.awtea.classlib.javax.sound.sampled;
 
-import me.mdbell.awtea.sound.AbstractDataLine;
 import me.mdbell.awtea.monitor.LineMonitor;
+import me.mdbell.awtea.sound.pcm.PcmProcessorClient;
 import org.teavm.jso.core.JSPromise;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.LineUnavailableException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class AudioWorkletLine extends AbstractDataLine {
+public class TAudioWorkletSourceDataLine extends TAbstractSourceDataLine {
 
 	private PcmProcessorClient backend;
 	private int maxQueuedFrames;
 
-	public AudioWorkletLine(AudioFormat fmt) throws LineUnavailableException {
-		super(fmt);
+	public TAudioWorkletSourceDataLine(TDataLine.Info info) throws TLineUnavailableException {
+		super(info);
 	}
 
 	@Override
@@ -79,7 +77,7 @@ public class AudioWorkletLine extends AbstractDataLine {
 				return;
 			}
 
-			if(framesToDrain < 0) {
+			if (framesToDrain < 0) {
 				backend.addDrainListener((framesDrained, framesRemaining) -> {
 					if (framesRemaining == 0) {
 						resolve.accept(initialQueued);

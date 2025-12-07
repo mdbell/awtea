@@ -3,10 +3,13 @@ package me.mdbell.awtea.monitor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import me.mdbell.awtea.sound.AbstractDataLine;
 
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.SourceDataLine;
 
+@Setter
+@Getter
 public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 	LineMonitor.Snapshot> {
 
@@ -16,11 +19,11 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 		return INSTANCE;
 	}
 
-	/** How much "slack" we want in the buffer, in ms, for backlog calculation. */
-	public static final int DEFAULT_TARGET_SLACK_MS = 100;
+	/**
+	 * How much "slack" we want in the buffer, in ms, for backlog calculation.
+	 */
+	public static final int DEFAULT_TARGET_SLACK_MS = 800;
 
-	@Getter
-	@Setter
 	private int targetSlackMs = DEFAULT_TARGET_SLACK_MS;
 
 	@Getter
@@ -67,9 +70,13 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 		private final double writeRateBytesPerSec;
 		private final double drainRateBytesPerSec;
 
-		/** How many bytes above the "target slack" we are. */
+		/**
+		 * How many bytes above the "target slack" we are.
+		 */
 		private final int backlogBytes;
-		/** Target slack in bytes (for given format). */
+		/**
+		 * Target slack in bytes (for given format).
+		 */
 		private final int targetSlackBytes;
 
 		Snapshot(Entry entry, int backlogBytes, int targetSlackBytes) {
@@ -101,28 +108,34 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 		}
 	}
 
-	private LineMonitor() {}
+	private LineMonitor() {
+	}
 
-	public synchronized void registerOutputLine(AbstractDataLine line) {
+	public synchronized void registerOutputLine(Object target) {
+		DataLine line = (DataLine) target;
 		Entry info = ensureEntry(line);
-		info.setOutput(true);
+		info.setOutput(line instanceof SourceDataLine);
 		info.setFormat(line.getFormat());
 		info.setOpen(line.isOpen());
 		info.setRunning(line.isActive());
-		info.setBufferSizeBytes(line.getBufferSize());
+		int bufferSize = line.getBufferSize();
+		int available = line.available();
+		info.setAvailable(available);
+		info.setBufferSizeBytes(bufferSize);
+		info.setLastFreeBytes(bufferSize - available);
 	}
 
-	public void onStart(Object line) {
-		Entry e = ensureEntry(line);
+	public void onStart(Object target) {
+		Entry e = ensureEntry(target);
 		e.setRunning(true);
 	}
 
-	public void onStop(Object line) {
-		Entry e = ensureEntry(line);
+	public void onStop(Object target) {
+		Entry e = ensureEntry(target);
 		e.setRunning(false);
 	}
 
-	public void onAvailable(AbstractDataLine abstractDataLine, int available) {
+	public void onAvailable(Object abstractDataLine, int available) {
 		Entry info = ensureEntry(abstractDataLine);
 		info.setAvailable(available);
 	}
@@ -134,8 +147,10 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 		e.drainRateBytesPerSec = 0;
 	}
 
-	public synchronized void onWrite(AbstractDataLine line, int bytesPushed) {
-		Entry info = ensureEntry(line);
+	public synchronized void onWrite(Object target, int bytesPushed) {
+		Entry info = ensureEntry(target);
+
+		DataLine line = (DataLine) target;
 
 		info.totalWrittenBytes += bytesPushed;
 
@@ -163,9 +178,9 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 		}
 	}
 
-	/** Optional: call from backend when bytes are actually drained. */
-	public synchronized void onDrain(AbstractDataLine line, int bytesDrained) {
-		Entry info = ensureEntry(line);
+	public synchronized void onDrain(Object target, int bytesDrained) {
+		Entry info = ensureEntry(target);
+		DataLine line = (DataLine) target;
 
 		long now = System.currentTimeMillis();
 		if (info.lastDrainTimeMs != 0 && bytesDrained > 0) {
@@ -200,19 +215,15 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 	protected Snapshot buildSnapshot(Entry info) {
 
 		AudioFormat fmt = info.getFormat();
-		int bufferSize = 0;
+		int bufferSize = info.getBufferSizeBytes();
 		int used = info.lastUsedBytes;
 		int free = info.lastFreeBytes;
 
-		try {
-			bufferSize = info.getBufferSizeBytes();
-			// If lastUsedBytes/lastFreeBytes are 0, we can lazily compute:
-			if (bufferSize > 0 && used == 0 && free == 0) {
-				free = info.getAvailable();
-				if (free < 0) free = 0;
-				used = Math.max(0, bufferSize - free);
-			}
-		} catch (Throwable ignored) {
+
+		if (bufferSize > 0 && used == 0 && free == 0) {
+			free = info.getAvailable();
+			if (free < 0) free = 0;
+			used = Math.max(0, bufferSize - free);
 		}
 
 		// Compute target slack in bytes from format

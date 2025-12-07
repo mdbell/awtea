@@ -1,15 +1,15 @@
-package me.mdbell.awtea.sound;
+package me.mdbell.awtea.classlib.javax.sound.sampled;
 
 import lombok.Getter;
 import me.mdbell.awtea.monitor.LineMonitor;
 import me.mdbell.awtea.monitor.PcmMonitor;
-import org.teavm.interop.Async;
-import org.teavm.interop.AsyncCallback;
-import org.teavm.jso.browser.Window;
+import me.mdbell.awtea.sound.AudioConstants;
+import me.mdbell.awtea.sound.AudioUtils;
 
-import javax.sound.sampled.*;
+import java.util.HashSet;
+import java.util.Set;
 
-public abstract class AbstractDataLine implements SourceDataLine, AudioConstants {
+public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioConstants {
 
 	protected int channels;
 	protected int sampleRate;
@@ -20,7 +20,10 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 	protected float floatScale;
 
 	@Getter
-	private AudioFormat format;
+	private final TLine.Info lineInfo;
+
+	@Getter
+	private TAudioFormat format;
 
 	@Getter
 	private boolean running = false;
@@ -30,14 +33,26 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 
 	private float[] sampleScratch;
 
-	protected AbstractDataLine(AudioFormat fmt) throws LineUnavailableException {
-		open(fmt);
+	private final Set<TLineListener> lineListeners = new HashSet<>();
+
+	private long currentFramePosition = 0;
+
+	protected TAbstractSourceDataLine(TDataLine.Info info) throws TLineUnavailableException {
+		this.lineInfo = info;
+		TAudioFormat format = info.getFormats()[0];
+		int bufferSize = info.getMinBufferSize();
+		open(format, bufferSize);
+	}
+
+	protected void dispatchLineEvent(TLineEvent.Type type) {
+		TLineEvent event = new TLineEvent(this, type, getFramePosition());
+		lineListeners.forEach(l -> l.update(event));
 	}
 
 	/**
 	 * Called from open() after basic format fields are initialized. bufferFrames is a hint/capacity.
 	 */
-	protected abstract void openBackend(int bufferFrames) throws LineUnavailableException;
+	protected abstract void openBackend(int bufferFrames) throws TLineUnavailableException;
 
 	/**
 	 * How many frames can be queued *now* without blocking?
@@ -66,7 +81,20 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 	protected abstract int drainInternal(int framesToDrain);
 
 	@Override
-	public void open(AudioFormat format, int bufferSize) throws LineUnavailableException {
+	public void open() throws TLineUnavailableException {
+		TDataLine.Info lineInfo = (TDataLine.Info) getLineInfo();
+		TAudioFormat format = lineInfo.getFormats()[0];
+		open(format, lineInfo.getMaxBufferSize());
+	}
+
+	@Override
+	public final void open(TAudioFormat format) throws TLineUnavailableException {
+		TDataLine.Info lineInfo = (TDataLine.Info) getLineInfo();
+		open(format, lineInfo.getMaxBufferSize());
+	}
+
+	@Override
+	public void open(TAudioFormat format, int bufferSize) throws TLineUnavailableException {
 		this.format = format;
 		this.channels = format.getChannels();
 		this.sampleRate = (int) format.getSampleRate();
@@ -78,6 +106,7 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 
 		int framesHint = bufferSize / this.channels;
 		if (framesHint <= 0) {
+			System.out.println("Warning: invalid buffer size hint " + bufferSize + " bytes; using default");
 			framesHint = (int) (sampleRate * 0.1); // ~100ms as a fallback
 		}
 
@@ -86,34 +115,35 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 		if (sampleScratch == null || sampleScratch.length < scratchFrames * channels) {
 			sampleScratch = new float[scratchFrames * channels];
 		}
+		currentFramePosition = 0;
+
+		System.out.println("Opening AbstractDataLine with buffer size hint: " + framesHint + " frames");
+
+		try {
+			openBackend(framesHint);
+		} catch (Throwable t) {
+			throw new TLineUnavailableException("Failed to open backend: " + t.getMessage());
+		}
 
 		open = true;
 		running = false;
 
-		System.out.println("Opening AbstractDataLine with buffer size hint: " + framesHint + " frames");
-
-		openBackend(framesHint);
-
 		LineMonitor.get().registerOutputLine(this);
-	}
-
-	@Override
-	public final void open(AudioFormat format) throws LineUnavailableException {
-		// use ~100ms as default buffer
-		int bufferSize = (int) (format.getSampleRate() * format.getChannels() * 0.1);
-		open(format, bufferSize);
+		dispatchLineEvent(TLineEvent.Type.OPEN);
 	}
 
 	@Override
 	public void start() {
 		running = true;
 		LineMonitor.get().onStart(this);
+		dispatchLineEvent(TLineEvent.Type.START);
 	}
 
 	@Override
 	public void stop() {
 		running = false;
 		LineMonitor.get().onStop(this);
+		dispatchLineEvent(TLineEvent.Type.STOP);
 	}
 
 	@Override
@@ -127,11 +157,12 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 		running = false;
 		LineMonitor.get().unregister(this);
 		PcmMonitor.get().unregister(this);
+		dispatchLineEvent(TLineEvent.Type.CLOSE);
 	}
 
 	@Override
 	public void drain() {
-		if (!open || !running) {
+		if (!open) {
 			return;
 		}
 		drainInternal(-1);
@@ -171,12 +202,12 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 
 	@Override
 	public int getFramePosition() {
-		return 0;
+		return (int) currentFramePosition;
 	}
 
 	@Override
 	public long getLongFramePosition() {
-		return 0;
+		return currentFramePosition;
 	}
 
 	@Override
@@ -185,50 +216,43 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 	}
 
 	@Override
-	public Line.Info getLineInfo() {
-		return null;
+	public TControl[] getControls() {
+		return new TControl[0];
 	}
 
 	@Override
-	public void open() throws LineUnavailableException {
-	}
-
-	@Override
-	public Control[] getControls() {
-		return new Control[0];
-	}
-
-	@Override
-	public boolean isControlSupported(Control.Type control) {
+	public boolean isControlSupported(TControl.Type control) {
 		return false;
 	}
 
 	@Override
-	public Control getControl(Control.Type control) {
+	public TControl getControl(TControl.Type control) {
 		return null;
 	}
 
 	@Override
-	public void addLineListener(LineListener listener) {
+	public void addLineListener(TLineListener listener) {
+		lineListeners.add(listener);
 	}
 
 	@Override
-	public void removeLineListener(LineListener listener) {
+	public void removeLineListener(TLineListener listener) {
+		lineListeners.remove(listener);
 	}
 
 	@Override
-	public final int write(byte[] b, int off, int len){
+	public final int write(byte[] b, int off, int len) {
 
 		if (!open || getMaxFrames() <= 0) {
 			return 0;
 		}
 
 		final int frameSizeBytes = this.frameSizeBytes;
-		final int channels       = this.channels;
-		final int sampleBytes    = this.sampleSizeBytes;
-		final int bits           = this.sampleSizeBits;
-		final boolean be         = this.bigEndian;
-		final float scale        = this.floatScale;
+		final int channels = this.channels;
+		final int sampleBytes = this.sampleSizeBytes;
+		final int bits = this.sampleSizeBits;
+		final boolean be = this.bigEndian;
+		final float scale = this.floatScale;
 
 		int framesRequested = len / frameSizeBytes;
 		if (framesRequested == 0) {
@@ -243,7 +267,7 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 				break;
 			}
 
-			int remainingBytes  = bytesRequested - writtenBytes;
+			int remainingBytes = bytesRequested - writtenBytes;
 			int remainingFrames = remainingBytes / frameSizeBytes;
 			if (remainingFrames <= 0) {
 				break;
@@ -261,8 +285,8 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 			}
 
 			int maxScratchFrames = sampleScratch.length / channels;
-			int framesToConvert  = Math.min(remainingFrames, maxScratchFrames);
-			framesToConvert      = Math.min(framesToConvert, freeFrames);
+			int framesToConvert = Math.min(remainingFrames, maxScratchFrames);
+			framesToConvert = Math.min(framesToConvert, freeFrames);
 			if (framesToConvert <= 0) {
 				// Shouldn't happen, but be defensive
 				int drained = drainInternal(remainingFrames);
@@ -273,14 +297,14 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 			}
 
 			int start = off + writtenBytes;
-			int end   = start + framesToConvert * frameSizeBytes;
-			int si    = 0;
+			int end = start + framesToConvert * frameSizeBytes;
+			int si = 0;
 
 			// Convert bytes -> float samples (interleaved)
 			for (int i = start; i < end; i += frameSizeBytes) {
 				for (int ch = 0; ch < channels; ch++) {
 					int sampleOffset = i + ch * sampleBytes;
-					int sample       = AudioUtils.getSample(b, sampleOffset, bits, be);
+					int sample = AudioUtils.getSample(b, sampleOffset, bits, be);
 					sampleScratch[si++] = sample * scale;
 				}
 			}
@@ -295,6 +319,7 @@ public abstract class AbstractDataLine implements SourceDataLine, AudioConstants
 				}
 				continue;
 			}
+			currentFramePosition += framesEnqueued;
 
 			int bytesPushed = framesEnqueued * frameSizeBytes;
 			writtenBytes += bytesPushed;

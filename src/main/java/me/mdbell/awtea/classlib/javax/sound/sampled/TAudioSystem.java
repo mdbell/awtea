@@ -1,27 +1,21 @@
 package me.mdbell.awtea.classlib.javax.sound.sampled;
 
-import me.mdbell.awtea.impl.Debug;
-import me.mdbell.awtea.sound.AbstractDataLine;
-import me.mdbell.awtea.sound.pcm.AudioWorkletLine;
-
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.Line;
-import javax.sound.sampled.LineUnavailableException;
 
 public class TAudioSystem {
 
-    public static Line getLine(Line.Info info) throws LineUnavailableException {
-        DataLine.Info dataInfo = (DataLine.Info) info;
-		AudioFormat format = dataInfo.getFormats()[0];
-		return createLine(format);
-    }
+	public static final int NOT_SPECIFIED = -1;
 
-	public static TSourceDataLine getSourceDataLine(AudioFormat format) throws LineUnavailableException {
-		return (TSourceDataLine) createLine(format);
+	public static TLine getLine(TLine.Info info) throws TLineUnavailableException {
+		TDataLine.Info dataInfo = (TDataLine.Info) info;
+		Class<?> lineClass = info.getLineClass();
+		if (!lineClass.isAssignableFrom(dataInfo.getLineClass())) {
+			throw new TLineUnavailableException("Unsupported line class: " + lineClass.getName());
+		}
+		return new TAudioWorkletSourceDataLine(dataInfo);
 	}
 
-	private static AbstractDataLine createLine(AudioFormat format) throws LineUnavailableException {
-		return new AudioWorkletLine(format);
+	public static TSourceDataLine getSourceDataLine(TAudioFormat format) throws TLineUnavailableException {
+		TDataLine.Info info = new TDataLine.Info(TSourceDataLine.class, format);
+		return (TSourceDataLine) getLine(info);
 	}
 }

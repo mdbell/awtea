@@ -15,7 +15,7 @@ public abstract class AudioWorkletNode implements JSObject, AudioNode {
 	@JSProperty
 	public native MessagePort getPort();
 
-	public interface Options extends JSObject{
+	public interface Options extends JSObject {
 
 		@JSProperty("numberOfInputs")
 		void setNumberOfInputs(int inputs);

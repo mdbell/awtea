@@ -6,7 +6,7 @@ import lombok.Setter;
 import me.mdbell.awtea.detour.NoDetours;
 
 @NoDetours // Prevent detouring of monitor itself - could cause infinite recursion
-public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, ThreadMonitor.ThreadSnapshot> {
+public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, ThreadMonitor.Snapshot> {
 
 	public enum State {
 		NEW,
@@ -40,7 +40,7 @@ public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, Th
 	}
 
 	@Getter
-	public static final class ThreadSnapshot extends MonitorSnapshot<Entry> {
+	public static final class Snapshot extends MonitorSnapshot<Entry> {
 		private final int id;
 		private final String name;
 		private final String groupName;
@@ -48,7 +48,7 @@ public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, Th
 		private final int priority;
 		private final State state;
 
-		public ThreadSnapshot(Entry e) {
+		public Snapshot(Entry e) {
 			super(e);
 			this.id = e.getId();
 			this.name = e.name;
@@ -71,7 +71,7 @@ public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, Th
 
 	@Override
 	protected String defaultLabelFor(Object target, int id) {
-		if(!(target instanceof Thread)) {
+		if (!(target instanceof Thread)) {
 			throw new IllegalArgumentException("ThreadMonitor can only monitor Thread instances");
 		}
 		Thread thread = (Thread) target;
@@ -86,8 +86,8 @@ public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, Th
 	}
 
 	@Override
-	protected ThreadSnapshot buildSnapshot(Entry entry) {
-		return new ThreadSnapshot(entry);
+	protected Snapshot buildSnapshot(Entry entry) {
+		return new Snapshot(entry);
 	}
 
 	public void register(Thread t) {

@@ -1,11 +1,14 @@
 package me.mdbell.awtea.classlib.javax.sound.sampled;
 
+/**
+ * @see javax.sound.sampled.SourceDataLine
+ */
 public interface TSourceDataLine extends TDataLine {
 
-    void start();
+	void open(TAudioFormat format, int bufferSize) throws TLineUnavailableException;
 
-    int available();
+	void open(TAudioFormat format) throws TLineUnavailableException;
 
-    int write(byte[] b, int off, int len);
+	int write(byte[] b, int off, int len);
 
 }

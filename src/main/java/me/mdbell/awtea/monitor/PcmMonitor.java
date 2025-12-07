@@ -1,9 +1,10 @@
 package me.mdbell.awtea.monitor;
 
 import lombok.Getter;
-import me.mdbell.awtea.sound.AbstractDataLine;
 
-public class PcmMonitor extends AbstractMonitor<PcmMonitor.Entry, PcmMonitor.Snapshot>{
+import javax.sound.sampled.DataLine;
+
+public class PcmMonitor extends AbstractMonitor<PcmMonitor.Entry, PcmMonitor.Snapshot> {
 
 	private static PcmMonitor instance = new PcmMonitor();
 
@@ -20,13 +21,13 @@ public class PcmMonitor extends AbstractMonitor<PcmMonitor.Entry, PcmMonitor.Sna
 		entry.push(peaks);
 	}
 
-	public void onClose(AbstractDataLine line) {
+	public void onClose(Object line) {
 		unregister(line);
 	}
 
 	@Override
 	protected Entry createEntry(int id, Object target, String label) {
-		AbstractDataLine line = (AbstractDataLine) target;
+		DataLine line = (DataLine) target;
 		boolean output = true; //line instanceof TSourceDataLine;
 		int channels = line.getFormat().getChannels();
 		// For now, we fix the capacity to 256 frames
