@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import me.mdbell.awtea.detour.NoDetours;
 
+import java.lang.ref.WeakReference;
+
 @NoDetours // Prevent detouring of monitor itself - could cause infinite recursion
 public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, ThreadMonitor.Snapshot> {
 
@@ -16,26 +18,36 @@ public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, Th
 		TERMINATED
 	}
 
-	@Getter
-	@Setter(AccessLevel.PACKAGE)
 	public static final class Entry extends MonitorEntry {
-		private String name;
-		private String groupName;
-		private boolean daemon;
-		private State state;
-		private int priority;
 
-		Entry(int id, String label) {
-			this(id, label, null, null, 0, false);
+		private final WeakReference<Thread> threadRef;
+		@Setter(AccessLevel.PACKAGE)
+		private State state;
+
+		Entry(int id, String label, Thread t) {
+			super(id, label);
+			this.state = State.NEW;
+			this.threadRef = new WeakReference<>(t);
 		}
 
-		Entry(int id, String label, String name, String groupName, int priority, boolean daemon) {
-			super(id, label);
-			this.name = name;
-			this.groupName = groupName;
-			this.daemon = daemon;
-			this.priority = priority;
-			this.state = State.NEW;
+		public String getName() {
+			Thread t = threadRef.get();
+			return t != null ? t.getName() : null;
+		}
+
+		public String getGroupName() {
+			// TeaVM doesn't support ThreadGroup yet
+			return null;
+		}
+
+		public boolean isDaemon() {
+			Thread t = threadRef.get();
+			return t != null && t.isDaemon();
+		}
+
+		public int getPriority() {
+			Thread t = threadRef.get();
+			return t != null ? t.getPriority() : Thread.NORM_PRIORITY;
 		}
 	}
 
@@ -51,10 +63,10 @@ public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, Th
 		public Snapshot(Entry e) {
 			super(e);
 			this.id = e.getId();
-			this.name = e.name;
-			this.groupName = e.groupName;
-			this.daemon = e.daemon;
-			this.priority = e.priority;
+			this.name = e.getName();
+			this.groupName = e.getGroupName();
+			this.daemon = e.isDaemon();
+			this.priority = e.getPriority();
 			this.state = e.state;
 		}
 	}
@@ -81,8 +93,7 @@ public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, Th
 
 	@Override
 	protected Entry createEntry(int id, Object target, String label) {
-		Thread t = (Thread) target;
-		return new Entry(id, label);
+		return new Entry(id, label, (Thread) target);
 	}
 
 	@Override
@@ -92,22 +103,7 @@ public final class ThreadMonitor extends AbstractMonitor<ThreadMonitor.Entry, Th
 
 	public void register(Thread t) {
 		Entry e = ensureEntry(t);
-		e.setName(t.getName());
-		//TeaVM doesn't support ThreadGroup yet
-//		ThreadGroup g = t.getThreadGroup();
-//		e.setGroupName(g != null ? g.getName() : null);
-		e.setDaemon(t.isDaemon());
-		e.setPriority(t.getPriority());
-	}
-
-	public void onSetPriority(Thread thread, int newPriority) {
-		Entry e = ensureEntry(thread);
-		e.setPriority(newPriority);
-	}
-
-	public void onSetDaemon(Thread thread, boolean on) {
-		Entry e = ensureEntry(thread);
-		e.setDaemon(on);
+		e.setState(State.NEW);
 	}
 
 	public void onStart(Thread t) {
