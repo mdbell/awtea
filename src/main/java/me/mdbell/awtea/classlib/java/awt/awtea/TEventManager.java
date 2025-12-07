@@ -8,7 +8,6 @@ import me.mdbell.awtea.classlib.java.awt.event.TFocusEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseWheelEvent;
-import me.mdbell.awtea.impl.Debug;
 import me.mdbell.awtea.input.MouseEventType;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.dom.events.*;
@@ -52,6 +51,9 @@ public final class TEventManager implements AutoCloseable {
 	 */
 	public TEventManager withMouse() {
 		for (MouseEventType type : MouseEventType.values()) {
+			if (type == MouseEventType.WHEEL) {
+				continue; // Handled separately
+			}
 			element.onEvent(type.getType(), e -> {
 				MouseEvent me = (MouseEvent) e;
 				TAWTEvent awt = TMouseEvent.adapt(component, (HTMLCanvasElement) element, me, type.getType());
@@ -80,7 +82,7 @@ public final class TEventManager implements AutoCloseable {
 		for (TKeyEvent.KeyEvent type : TKeyEvent.KeyEvent.values()) {
 			element.onEvent(type.getType(), e -> {
 				KeyboardEvent ke = (KeyboardEvent) e;
-				TAWTEvent awt = TKeyEvent.adapt(component, ke);
+				TKeyEvent awt = TKeyEvent.adapt(component, ke);
 				post(awt);
 			}).track(registrations);
 		}
@@ -108,7 +110,6 @@ public final class TEventManager implements AutoCloseable {
 
 	@Override
 	public void close() throws Exception {
-		Debug.trigger();
 		detach();
 	}
 
