@@ -139,15 +139,37 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 		HTMLElement td = createElement("td");
 		td.setClassName("monitor-rate-cell");
 		td.setTextContent(formatRate(bytesPerSec));
-
 		row.appendChild(td);
 	}
 
-	private String formatRate(double bytesPerSec) {
+	protected void addDurationCell(HTMLElement row, long ms) {
+		HTMLElement td = createElement("td");
+		td.setClassName("monitor-data-cell");
+		td.setTextContent(ms < 0 ? "?" : formatDuration(ms));
+		row.appendChild(td);
+	}
+
+	protected String formatRate(double bytesPerSec) {
 		if (bytesPerSec <= 0.0) {
 			return "-";
 		}
 		return Theme.humanReadableSize(bytesPerSec) + "/s";
+	}
+
+	protected String formatDuration(long ms) {
+		if (ms < 0) return "?";
+		long seconds = ms / 1000;
+		if (seconds < 60) {
+			return seconds + "s";
+		}
+		long minutes = seconds / 60;
+		if (minutes < 60) {
+			long rem = seconds % 60;
+			return minutes + "m " + rem + "s";
+		}
+		long hours = minutes / 60;
+		long remMin = minutes % 60;
+		return hours + "h " + remMin + "m";
 	}
 
 	static {

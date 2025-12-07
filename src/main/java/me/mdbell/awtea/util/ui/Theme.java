@@ -144,7 +144,7 @@ public class Theme {
 			return "?";
 		}
 		if (bytes < 1024) {
-			return bytes + " B";
+			return ((int)bytes) + " B";
 		}
 
 		int unit = 1024;

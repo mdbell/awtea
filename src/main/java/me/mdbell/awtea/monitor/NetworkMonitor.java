@@ -4,7 +4,7 @@ package me.mdbell.awtea.monitor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, NetworkMonitor.ConnectionSnapshot> {
+public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, NetworkMonitor.Snapshot> {
 
 
 	public enum State {
@@ -45,7 +45,7 @@ public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, 
 	}
 
 	@Getter
-	public static final class ConnectionSnapshot extends MonitorSnapshot<Entry> {
+	public static final class Snapshot extends MonitorSnapshot<Entry> {
 		private final String host;
 		private final int port;
 		private final String route;   // js5 / game / null
@@ -58,7 +58,7 @@ public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, 
 		private final int inBufferSize;
 		private final int outBufferSize;
 
-		public ConnectionSnapshot(Entry e) {
+		public Snapshot(Entry e) {
 			super(e);
 			this.host = e.host;
 			this.port = e.port;
@@ -153,7 +153,7 @@ public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, 
 	}
 
 	@Override
-	protected ConnectionSnapshot buildSnapshot(Entry entry) {
+	protected Snapshot buildSnapshot(Entry entry) {
 		long now = System.currentTimeMillis();
 		long dt = now - entry.prevTimeMillis;
 		if (dt <= 0) {
@@ -173,6 +173,6 @@ public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, 
 		entry.prevBytesIn = entry.bytesIn;
 		entry.prevBytesOut = entry.bytesOut;
 		entry.prevTimeMillis = now;
-		return new ConnectionSnapshot(entry);
+		return new Snapshot(entry);
 	}
 }

@@ -1,18 +1,17 @@
 package me.mdbell.awtea.classlib.java.net;
 
-import lombok.Getter;
 import lombok.experimental.ExtensionMethod;
-import me.mdbell.awtea.impl.Debug;
 import me.mdbell.awtea.monitor.NetworkMonitor;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.jso.JSRecord;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.function.JSConsumer;
+import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import org.teavm.jso.websocket.WebSocket;
-import me.mdbell.awtea.util.jso.JSRecord;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -178,7 +177,7 @@ public class TSocket {
 			wakeWaiter();
 		}
 
-		private void wakeWaiter() {
+		private synchronized void wakeWaiter() {
 			if (pendingResolve != null || pendingReject != null) {
 				var r = pendingResolve;
 				var rej = pendingReject;
@@ -201,14 +200,14 @@ public class TSocket {
 		}
 
 		@Override
-		public int read() throws IOException {
+		public synchronized int read() throws IOException {
 			byte[] one = new byte[1];
 			int n = read(one, 0, 1);
 			return (n == -1) ? -1 : (one[0] & 0xFF);
 		}
 
 		@Override
-		public int read(byte[] b, int off, int len) throws IOException {
+		public synchronized int read(byte[] b, int off, int len) throws IOException {
 			if (b == null) {
 				throw new NullPointerException();
 			}
@@ -227,14 +226,11 @@ public class TSocket {
 					return n;
 				}
 
-				// No data currently available
-				synchronized (this) {
-					if (failure != null) {
-						throw new IOException("Socket read failed", failure);
-					}
-					if (eof && buffers.isEmpty() && (curr == null || index >= curr.length)) {
-						return -1;
-					}
+				if (failure != null) {
+					throw new IOException("Socket read failed", failure);
+				}
+				if (eof && buffers.isEmpty() && (curr == null || index >= curr.length)) {
+					return -1;
 				}
 
 				// Wait for more data or closure
@@ -264,24 +260,21 @@ public class TSocket {
 			return count;
 		}
 
-		private JSPromise<Void> waitForData() {
-			synchronized (this) {
-				// If we already have data or are at EOF/failure, don't actually wait
-				if (failure != null ||
-					!buffers.isEmpty() ||
-					(curr != null && index < curr.length) ||
-					eof) {
-					return JSPromise.resolve(null);
-				}
-
-				return new JSPromise<>((resolve, reject) -> {
-					pendingResolve = resolve;
-					pendingReject = reject;
-				});
+		private synchronized JSPromise<Void> waitForData() {
+			// If we already have data or are at EOF/failure, don't actually wait
+			if (failure != null ||
+				!buffers.isEmpty() ||
+				(curr != null && index < curr.length) ||
+				eof) {
+				return JSPromise.resolve(null);
 			}
+
+			return new JSPromise<>((resolve, reject) -> {
+				pendingResolve = resolve;
+				pendingReject = reject;
+			});
 		}
 	}
-
 
 	class SocketOutputStream extends OutputStream {
 
@@ -295,17 +288,19 @@ public class TSocket {
 
 		@Override
 		public void write(byte[] b) throws IOException {
-			write(b, 0, b.length);
+			write(Int8Array.fromJavaArray(b));
 		}
 
 		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
 			Int8Array nativeArr = Int8Array.fromJavaArray(b);
-			Uint8ClampedArray view = new Uint8ClampedArray(nativeArr.getBuffer().slice(off, off + len));
+			Uint8ClampedArray view = new Uint8ClampedArray(nativeArr.getBuffer(),
+				nativeArr.getByteOffset() + off,
+				len);
 			write(view);
 		}
 
-		private void write(Uint8ClampedArray arr) throws IOException {
+		private void write(ArrayBufferView arr) throws IOException {
 			if (socket == null || socket.getReadyState() > 1) {  // Add null check
 				throw new IOException("Closed socket");
 			}
