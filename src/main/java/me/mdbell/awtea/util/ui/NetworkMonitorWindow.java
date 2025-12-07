@@ -110,7 +110,9 @@ public final class NetworkMonitorWindow extends FloatingWindow {
 			"Port",
 			"State",
 			"Bytes In",
+			"In Buffer",
 			"Bytes Out",
+			"Out Buffer",
 			"In Rate",
 			"Out Rate",
 			"Age",
@@ -121,7 +123,7 @@ public final class NetworkMonitorWindow extends FloatingWindow {
 			HTMLElement th = createElement("th");
 			th.setClassName("net-monitor-header-cell");
 			th.setTextContent(headers[i]);
-			if (i >= 7 && i <= 8) {
+			if (i >= 9 && i <= 10) {
 				th.getStyle().setProperty("text-align", "right");
 			}
 			headerRow.appendChild(th);
@@ -151,7 +153,10 @@ public final class NetworkMonitorWindow extends FloatingWindow {
 			addCell(row, state.toString().toLowerCase());
 
 			addCell(row, Theme.humanReadableSize(c.getBytesIn()));
+			addCell(row, Theme.humanReadableSize(c.getInBufferSize()));
+
 			addCell(row, Theme.humanReadableSize(c.getBytesOut()));
+			addCell(row, Theme.humanReadableSize(c.getOutBufferSize()));
 
 			addRateCell(row, c.getInRateBytesPerSec());
 			addRateCell(row, c.getOutRateBytesPerSec());

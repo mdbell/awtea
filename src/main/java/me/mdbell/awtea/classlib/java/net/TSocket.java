@@ -1,10 +1,15 @@
 package me.mdbell.awtea.classlib.java.net;
 
+import lombok.Getter;
+import lombok.experimental.ExtensionMethod;
+import me.mdbell.awtea.impl.Debug;
 import me.mdbell.awtea.monitor.NetworkMonitor;
-import org.teavm.interop.Async;
-import org.teavm.interop.AsyncCallback;
+import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.browser.Window;
-import org.teavm.jso.typedarrays.Uint8Array;
+import org.teavm.jso.core.JSPromise;
+import org.teavm.jso.dom.events.Registration;
+import org.teavm.jso.function.JSConsumer;
+import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import org.teavm.jso.websocket.WebSocket;
 import me.mdbell.awtea.util.jso.JSRecord;
@@ -13,10 +18,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+@ExtensionMethod({JSObjectsExtensions.class})
 public class TSocket {
 
 	private static final JSRecord PORT_TO_ROUTE_MAPPING = JSRecord.create();
@@ -28,25 +34,42 @@ public class TSocket {
 
 	private final String host;
 	private final int port;
-	private final String route;
 
-	private WebSocket socket;
-	private SocketInputStream in;
-	private SocketOutputStream out;
-	private boolean connected = false;
+	private final WebSocket socket;
+	private final SocketInputStream inputStream;
+	private final SocketOutputStream outputStream;
+
+	private final List<Registration> registrations = new ArrayList<>();
 
 	public TSocket(TInetAddress address, int port) throws TUnknownHostException {
 		this.host = address.getHost();
 		this.port = port;
-		this.route = PORT_TO_ROUTE_MAPPING.has(port) ? PORT_TO_ROUTE_MAPPING.get(port) : null;
-
-		this.in = new SocketInputStream();
-		this.out = new SocketOutputStream();
+		String route = PORT_TO_ROUTE_MAPPING.has(port) ? PORT_TO_ROUTE_MAPPING.get(port) : null;
 
 		// register with monitor in "connecting" state
 		NetworkMonitor.get().register(this, host, port, route);
 
-		this.connect(host, port);
+		this.socket = this.connect(host, port).await();
+
+		// cleanup on close
+		registrations.cleanup();
+
+		this.inputStream = new SocketInputStream();
+		this.outputStream = new SocketOutputStream();
+
+		socket.onMessage(evt -> {
+			Int8Array arr = new Int8Array(evt.getDataAsArray());
+			inputStream.pushBuffer(arr);
+			NetworkMonitor.get().onUpdateBufferSizes(this, inputStream.available(), 0);
+		}).track(registrations);
+
+		socket.onError(event -> {
+			try {
+				NetworkMonitor.get().onError(TSocket.this, event.toString());
+				close();
+			} catch (IOException ignored) {
+			}
+		}).track(registrations);
 	}
 
 	public void setSoTimeout(int timeout) throws SocketException {
@@ -56,64 +79,45 @@ public class TSocket {
 	}
 
 	public InputStream getInputStream() throws IOException {
-		return this.in;
+		return inputStream;
 	}
 
 	public OutputStream getOutputStream() throws IOException {
-		return this.out;
+		return outputStream;
 	}
 
 	public void close() throws IOException {
+		NetworkMonitor.get().onClosing(this);
 		if (socket != null && socket.getReadyState() <= 1) {
-			NetworkMonitor.get().onClosing(this);
-
 			socket.close();
-			NetworkMonitor.get().onClosed(this);
 		}
+		registrations.cleanup();
+		inputStream.close();
+		NetworkMonitor.get().onClosed(this);
 	}
 
-	@Async
-	private native void connect(String server, int port);
+	private JSPromise<WebSocket> connect(String server, int port) {
+		return new JSPromise<>((resolve, reject) -> {
+			//String url = createWebsocketUrl(server, port);
+			String url = "wss://play.fifthage.io/js5";
+			System.out.println("Connecting to " + server + ":" + port + "(" + url + ") via WebSocket");
+			WebSocket ws = new WebSocket(url, "binary");
+			ws.setBinaryType("arraybuffer");
 
-	private void connect(String server, int port, AsyncCallback<Void> callback) {
-		String url = "wss://play.fifthage.io/js5";//createWebsocketUrl(server, port);
+			NetworkMonitor.get().onConnecting(TSocket.this);
+			ws.onOpen(e -> {
+				NetworkMonitor.get().onOpen(TSocket.this);
+				resolve.accept(ws);
+			}).track(registrations);
 
-		System.out.println("Connecting to " + url);
-		WebSocket ws = new WebSocket(url, "binary");
-		ws.setBinaryType("arraybuffer");
-
-		ws.onOpen(e -> {
-			this.socket = ws;  // Set socket after connection opens
-			this.connected = true;
-
-			NetworkMonitor.get().onOpen(TSocket.this);
-
-
-			// Set up handlers AFTER socket is assigned
-			socket.onMessage(evt -> {
-				Uint8ClampedArray arr = new Uint8ClampedArray(evt.getDataAsArray());
-				in.buffers.add(arr);
-				NetworkMonitor.get().onBytesIn(TSocket.this, arr.getLength());
-				in.completeAndDelete(CallbackResult.READ);
-			});
-
-			socket.onError(event -> {
-				try {
-					close();
-				} catch (IOException ignored) {
-				}
-			});
-
-			callback.complete(null);
-		});
-
-		ws.onError(e -> {
-			NetworkMonitor.get().onError(TSocket.this, "connect error");
-			callback.error(new IOException("Unable to open socket"));
+			ws.onError(e -> {
+				NetworkMonitor.get().onError(TSocket.this, e.toString());
+				reject.accept(new IOException("WebSocket error during connect"));
+			}).track(registrations);
 		});
 	}
 
-	private static String createWebsocketUrl(String server, int port) {
+	private String createWebsocketUrl(String server, int port) {
 		String protocol = Window.current().getLocation().getProtocol();
 //		if (protocol.equals("https:") || Settings.SECURE) {
 //			protocol = "wss";
@@ -132,119 +136,181 @@ public class TSocket {
 	}
 
 	class SocketInputStream extends InputStream {
-		private final List<Uint8ClampedArray> buffers = new LinkedList<>();
-		private Uint8ClampedArray curr = null;
+		private final List<byte[]> buffers = new LinkedList<>();
+		private byte[] curr = null;
 		private int index = 0;
-		AsyncCallback<CallbackResult> callback = null;
 
-		public int available() throws IOException {
-			if (socket == null || socket.getReadyState() > 1) {  // Add null check
+		private boolean eof = false;
+		private Throwable failure;
+
+		// A single waiter for "new data or closed"
+		private JSConsumer<Void> pendingResolve;
+		private JSConsumer<Object> pendingReject;
+
+		private int availableBytes = 0;
+
+		public synchronized void pushBuffer(Int8Array buf) {
+			if (eof || failure != null) {
+				return; // ignore if already closed/failed
+			}
+			availableBytes += buf.getLength();
+			buffers.add(buf.toJavaArray());
+			NetworkMonitor.get().onUpdateInBuffer(TSocket.this, availableBytes);
+			wakeWaiter();
+		}
+
+		@Override
+		public void close() throws IOException {
+			super.close();
+			signalClosed();
+			this.buffers.clear();
+			this.curr = null;
+			availableBytes = 0;
+		}
+
+		public synchronized void signalClosed() {
+			eof = true;
+			wakeWaiter();
+		}
+
+		public synchronized void fail(Throwable t) {
+			failure = t;
+			wakeWaiter();
+		}
+
+		private void wakeWaiter() {
+			if (pendingResolve != null || pendingReject != null) {
+				var r = pendingResolve;
+				var rej = pendingReject;
+				pendingResolve = null;
+				pendingReject = null;
+				if (failure != null && rej != null) {
+					rej.accept(failure);
+				} else if (r != null) {
+					r.accept(null);
+				}
+			}
+		}
+
+		@Override
+		public synchronized int available() {
+			if (failure != null || eof && buffers.isEmpty() && (curr == null || index >= curr.length)) {
 				return 0;
 			}
-			int i = curr != null ? curr.getLength() - index : 0;
-			for (int j = 0; j < buffers.size(); j++) {
-				i += buffers.get(j).getLength();
-			}
-			return i;
+			return availableBytes;
 		}
 
 		@Override
 		public int read() throws IOException {
-			if (socket == null || socket.getReadyState() > 1) {  // Add null check
-				return -1;
-			}
-			if (curr != null && index < curr.getLength()) {
-				return curr.get(index++);
-			}
-			if (!buffers.isEmpty()) {
-				curr = buffers.remove(0);
-				index = 0;
-				return read();
-			}
-			CallbackResult result = awaitBuffer();
-			if (result == CallbackResult.READ) {
-				return read();
-			}
-			return -1;
+			byte[] one = new byte[1];
+			int n = read(one, 0, 1);
+			return (n == -1) ? -1 : (one[0] & 0xFF);
 		}
 
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
-			if (socket == null || socket.getReadyState() > 1) {  // Add null check
-				return -1;
+			if (b == null) {
+				throw new NullPointerException();
 			}
-			if (curr != null && index < curr.getLength()) {
-				int count = Math.min(curr.getLength() - index, len);
-				for (int i = 0; i < count; i++) {
-					b[i + off] = (byte) curr.get(index++);
+			if (off < 0 || len < 0 || off + len > b.length) {
+				throw new IndexOutOfBoundsException();
+			}
+			if (len == 0) {
+				return 0;
+			}
+
+			while (true) {
+				int n = drainInto(b, off, len);
+				if (n > 0) {
+					availableBytes -= n;
+					NetworkMonitor.get().onBytesIn(TSocket.this, n);
+					return n;
 				}
-				return count;
+
+				// No data currently available
+				synchronized (this) {
+					if (failure != null) {
+						throw new IOException("Socket read failed", failure);
+					}
+					if (eof && buffers.isEmpty() && (curr == null || index >= curr.length)) {
+						return -1;
+					}
+				}
+
+				// Wait for more data or closure
+				waitForData().await();
+				// loop back and try again
 			}
-			if (!buffers.isEmpty()) {
+		}
+
+		private synchronized int drainInto(byte[] b, int off, int len) {
+			if (failure != null) {
+				return 0;
+			}
+			// Ensure we have a current buffer
+			if (curr == null || index >= curr.length) {
+				if (buffers.isEmpty()) {
+					return 0;
+				}
 				curr = buffers.remove(0);
 				index = 0;
-				return read(b, off, len);
 			}
-			CallbackResult result = awaitBuffer();
-			if (result == CallbackResult.READ) {
-				return read(b, off, len);
-			}
-			return -1;
+
+			int count = Math.min(len, curr.length - index);
+
+			System.arraycopy(curr, index, b, off, count);
+
+			index += count;
+			return count;
 		}
 
-		@Async
-		private native CallbackResult awaitBuffer() throws IOException;
+		private JSPromise<Void> waitForData() {
+			synchronized (this) {
+				// If we already have data or are at EOF/failure, don't actually wait
+				if (failure != null ||
+					!buffers.isEmpty() ||
+					(curr != null && index < curr.length) ||
+					eof) {
+					return JSPromise.resolve(null);
+				}
 
-		private void awaitBuffer(AsyncCallback<CallbackResult> callback) {
-			this.callback = callback;
-		}
-
-		private void errorAndDelete(Throwable t) {
-			AsyncCallback<CallbackResult> c = this.callback;
-			if (c != null) {
-				this.callback = null;
-				c.error(t);
-			}
-		}
-
-		private void completeAndDelete(CallbackResult res) {
-			AsyncCallback<CallbackResult> c = this.callback;
-			if (c != null) {
-				this.callback = null;
-				c.complete(res);
+				return new JSPromise<>((resolve, reject) -> {
+					pendingResolve = resolve;
+					pendingReject = reject;
+				});
 			}
 		}
 	}
 
+
 	class SocketOutputStream extends OutputStream {
+
+		private final Uint8ClampedArray singleByteArray = new Uint8ClampedArray(1);
 
 		@Override
 		public void write(int b) throws IOException {
-			write(new byte[]{(byte) b});
+			singleByteArray.set(0, (b & 0xFF));
+			write(singleByteArray);
 		}
 
 		@Override
 		public void write(byte[] b) throws IOException {
-			if (socket == null || socket.getReadyState() > 1) {  // Add null check
-				throw new IOException("Closed socket");
-			}
-			Uint8Array arr = new Uint8Array(b.length);
-			arr.set(b);
-			socket.send(arr);
-
-			NetworkMonitor.get().onBytesOut(TSocket.this, b.length);
+			write(b, 0, b.length);
 		}
 
 		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
-
-			NetworkMonitor.get().onBytesOut(TSocket.this, len);
-
-			write(Arrays.copyOfRange(b, off, len + off));
+			Int8Array nativeArr = Int8Array.fromJavaArray(b);
+			Uint8ClampedArray view = new Uint8ClampedArray(nativeArr.getBuffer().slice(off, off + len));
+			write(view);
 		}
-	}
 
-	private enum CallbackResult {
-		READ, CLOSED
+		private void write(Uint8ClampedArray arr) throws IOException {
+			if (socket == null || socket.getReadyState() > 1) {  // Add null check
+				throw new IOException("Closed socket");
+			}
+			NetworkMonitor.get().onBytesOut(TSocket.this, arr.getLength());
+			socket.send(arr);
+		}
 	}
 }

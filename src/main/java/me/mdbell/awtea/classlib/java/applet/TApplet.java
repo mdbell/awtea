@@ -1,6 +1,7 @@
 package me.mdbell.awtea.classlib.java.applet;
 
 import lombok.experimental.ExtensionMethod;
+import me.mdbell.awtea.impl.Debug;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.KeyboardEvent;
@@ -16,6 +17,7 @@ import me.mdbell.awtea.classlib.java.awt.event.TMouseEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseWheelEvent;
 import me.mdbell.awtea.input.MouseEventType;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import org.teavm.jso.json.JSON;
 
 import java.net.URL;
 
@@ -47,6 +49,8 @@ public class TApplet extends TContainer {
 
     private void registerEventHandlers() {
         HTMLCanvasElement canvasElement = stub.getCanvas();
+
+		canvasElement.focus();
 
         // stops the right click menu from opening on the canvas
         canvasElement.onEvent("contextmenu", Event::preventDefault);

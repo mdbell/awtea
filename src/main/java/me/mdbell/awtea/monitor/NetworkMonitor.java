@@ -4,10 +4,11 @@ package me.mdbell.awtea.monitor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-
 public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, NetworkMonitor.ConnectionSnapshot> {
 
+
 	public enum State {
+		NEW,
 		CONNECTING,
 		OPEN,
 		CLOSING,
@@ -33,9 +34,12 @@ public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, 
 		private double inRate;
 		private double outRate;
 
+		private int inBufferSize;
+		private int outBufferSize;
+
 		Entry(int id, String label) {
 			super(id, label);
-			this.state = State.CONNECTING;
+			this.state = State.NEW;
 			this.prevTimeMillis = System.currentTimeMillis();
 		}
 	}
@@ -51,6 +55,9 @@ public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, 
 		private final double inRateBytesPerSec;
 		private final double outRateBytesPerSec;
 
+		private final int inBufferSize;
+		private final int outBufferSize;
+
 		public ConnectionSnapshot(Entry e) {
 			super(e);
 			this.host = e.host;
@@ -61,6 +68,8 @@ public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, 
 			this.bytesOut = e.bytesOut;
 			this.inRateBytesPerSec = e.inRate;
 			this.outRateBytesPerSec = e.outRate;
+			this.outBufferSize = e.outBufferSize;
+			this.inBufferSize = e.inBufferSize;
 		}
 	}
 
@@ -81,6 +90,11 @@ public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, 
 		e.setRoute(route);
 	}
 
+	public void onConnecting(Object socket) {
+		Entry e = ensureEntry(socket);
+		e.setState(State.CONNECTING);
+	}
+
 	public void onOpen(Object socket) {
 		Entry e = ensureEntry(socket);
 		e.setState(State.OPEN);
@@ -99,6 +113,22 @@ public final class NetworkMonitor extends AbstractMonitor<NetworkMonitor.Entry, 
 	public void onError(Object socket, String message) {
 		Entry e = ensureEntry(socket);
 		e.setState(State.ERROR);
+	}
+
+	public void onUpdateBufferSizes(Object target, int inBuffered, int outBuffered) {
+		Entry e = ensureEntry(target);
+		e.inBufferSize = inBuffered;
+		e.outBufferSize = outBuffered;
+	}
+
+	public void onUpdateInBuffer(Object target, int availableBytes) {
+		Entry e = ensureEntry(target);
+		e.inBufferSize = availableBytes;
+	}
+
+	public void onUpdateOutBuffer(Object target, int bufferedBytes) {
+		Entry e = ensureEntry(target);
+		e.outBufferSize = bufferedBytes;
 	}
 
 	public void onBytesIn(Object socket, int len) {

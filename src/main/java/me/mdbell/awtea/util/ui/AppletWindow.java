@@ -25,6 +25,9 @@ public class AppletWindow extends FloatingWindow {
 		setSize(0, 0); // auto-size to content
 		canvasElement = createElement("canvas");
 
+		canvasElement.setAttribute("tabindex", "0"); // make canvas focusable
+		canvasElement.getStyle().setProperty("outline", "none"); // remove focus outline
+
 		applet.setStub(stub = new TeaAppletStub(canvasElement, props){
 			@Override
 			public URL getCodeBase() {
