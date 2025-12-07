@@ -48,8 +48,11 @@ public abstract class TComponent {
 		if (event.isConsumed()) {
 			return;
 		}
+
 		if (event instanceof TKeyEvent) {
 			dispatchKeyEvent((TKeyEvent) event);
+		} else if (event instanceof TMouseWheelEvent) {
+			dispatchMouseWheelEvent((TMouseWheelEvent) event);
 		} else if (event instanceof TMouseEvent) {
 			dispatchMouseEvent((TMouseEvent) event);
 		} else if (event instanceof TFocusEvent) {
@@ -57,6 +60,10 @@ public abstract class TComponent {
 		} else {
 			//System.err.println("Unhandled event type:" + event.getClass().getName());
 		}
+	}
+
+	public void dispatchMouseWheelEvent(TMouseWheelEvent e) {
+		dispatchEvent(e, mouseWheelListeners, TMouseWheelListener::mouseWheelMoved);
 	}
 
 	public void dispatchKeyEvent(TKeyEvent e) {
@@ -102,9 +109,6 @@ public abstract class TComponent {
 				break;
 			case TMouseEvent.MOUSE_EXITED:
 				dispatchEvent(e, mouseListeners, TMouseListener::mouseExited);
-				break;
-			case TMouseEvent.MOUSE_WHEEL:
-				dispatchEvent((TMouseWheelEvent) e, mouseWheelListeners, TMouseWheelListener::mouseWheelMoved);
 				break;
 			default:
 				System.err.println("Unhandled mouse event:" + id);
