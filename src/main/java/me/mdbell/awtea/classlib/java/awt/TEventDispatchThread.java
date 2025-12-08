@@ -9,8 +9,6 @@ class TEventDispatchThread {
 	private TEventQueue eventQueue;
 	private boolean running = true;
 
-	protected final Object lock = new Object();
-
 	protected TEventDispatchThread(String name, TEventQueue queue) {
 		this.thread = new Thread(this::run, name);
 		this.thread.setPriority(Thread.NORM_PRIORITY + 1);

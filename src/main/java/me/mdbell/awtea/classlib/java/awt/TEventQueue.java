@@ -227,7 +227,7 @@ public class TEventQueue {
 		}
 	}
 
-	public TAWTEvent getNextEvent() throws InterruptedException {
+	TAWTEvent getNextEvent() throws InterruptedException {
 		synchronized (lock) {
 			for (; ; ) {
 				if (nextQueue != null) {

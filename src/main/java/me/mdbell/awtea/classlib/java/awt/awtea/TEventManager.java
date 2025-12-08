@@ -2,7 +2,7 @@ package me.mdbell.awtea.classlib.java.awt.awtea;
 
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.TAWTEvent;
-import me.mdbell.awtea.classlib.java.awt.TComponent;
+import me.mdbell.awtea.classlib.java.awt.TContainer;
 import me.mdbell.awtea.classlib.java.awt.TToolkit;
 import me.mdbell.awtea.classlib.java.awt.event.TFocusEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
@@ -28,13 +28,13 @@ import java.util.List;
 public final class TEventManager implements AutoCloseable {
 
 	private final HTMLElement element;
-	private final TComponent component;
+	private final TContainer container;
 
 	private final List<Registration> registrations;
 
-	public TEventManager(HTMLElement element, TComponent component) {
+	public TEventManager(HTMLElement element, TContainer container) {
 		this.element = element;
-		this.component = component;
+		this.container = container;
 		this.registrations = new LinkedList<>();
 	}
 
@@ -56,7 +56,8 @@ public final class TEventManager implements AutoCloseable {
 			}
 			element.onEvent(type.getType(), e -> {
 				MouseEvent me = (MouseEvent) e;
-				TAWTEvent awt = TMouseEvent.adapt(component, (HTMLCanvasElement) element, me, type.getType());
+				TAWTEvent awt = TMouseEvent.adapt(container,
+					(HTMLCanvasElement) element, me, type.getType());
 				post(awt);
 			}).track(registrations);
 		}
@@ -69,7 +70,8 @@ public final class TEventManager implements AutoCloseable {
 	public TEventManager withMouseWheel() {
 		element.onEvent("wheel", e -> {
 			WheelEvent we = (WheelEvent) e;
-			TAWTEvent awt = TMouseWheelEvent.adapt(component, (HTMLCanvasElement) element, we, "wheel");
+			TAWTEvent awt = TMouseWheelEvent.adapt(container,
+				(HTMLCanvasElement) element, we, "wheel");
 			post(awt);
 		}).track(registrations);
 		return this;
@@ -82,7 +84,7 @@ public final class TEventManager implements AutoCloseable {
 		for (TKeyEvent.KeyEvent type : TKeyEvent.KeyEvent.values()) {
 			element.onEvent(type.getType(), e -> {
 				KeyboardEvent ke = (KeyboardEvent) e;
-				TKeyEvent awt = TKeyEvent.adapt(component, ke);
+				TKeyEvent awt = TKeyEvent.adapt(container, ke);
 				post(awt);
 			}).track(registrations);
 		}
@@ -95,11 +97,11 @@ public final class TEventManager implements AutoCloseable {
 	public TEventManager withFocus() {
 
 		element.onEvent("focus", e -> {
-			post(new TFocusEvent(component, TFocusEvent.FOCUS_GAINED));
+			post(new TFocusEvent(container, TFocusEvent.FOCUS_GAINED));
 		}).track(registrations);
 
 		element.onEvent("blur", e -> {
-			post(new TFocusEvent(component, TFocusEvent.FOCUS_LOST));
+			post(new TFocusEvent(container, TFocusEvent.FOCUS_LOST));
 		}).track(registrations);
 		return this;
 	}

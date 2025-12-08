@@ -1,65 +1,102 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
 import me.mdbell.awtea.classlib.java.awt.event.TWindowListener;
+import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
+import me.mdbell.awtea.peer.FrameFloatingPeer;
 
 import java.awt.*;
 import java.awt.event.ComponentListener;
 
-public class TFrame {
+public class TFrame extends TContainer {
 
-    private boolean resizable = true;
-    private String title = "";
-    private boolean visible = false;
+	private final FrameFloatingPeer peer;
 
-    // Constructor
-    public TFrame() {
-        // Initialization logic, if needed
-    }
+	private final TCanvas2DGraphics graphics;
 
-    // Set the title of the frame
-    public void setTitle(String title) {
-        this.title = title;
-    }
+	private final TEventManager eventManager;
 
-    // Set whether the frame is resizable
-    public void setResizable(boolean resizable) {
-        this.resizable = resizable;
-    }
+	private TBufferedImage offscreenBuffer;
 
-    // Add a window listener
-    public void addWindowListener(TWindowListener l) {
-        // Implement event listener logic
-    }
+	// Constructor
+	public TFrame() {
+		peer = new FrameFloatingPeer();
+		graphics = new TCanvas2DGraphics(peer.getCanvasContext());
 
-    // Set the frame visible
-    public void setVisible(boolean b) {
-        this.visible = b;
-    }
+		eventManager = new TEventManager(peer.getCanvas(), this);
 
-    // Bring the frame to the front (this doesn't make sense in the browser, but you can log or simulate this)
-    public void toFront() {
-        // In TeaVM (web environment), there is no direct "toFront". We can log it or just assume the frame is on top
-    }
+		eventManager.disableContextMenu()
+			.withFocus()
+			.withKeyboard()
+			.withMouse()
+			.withMouseWheel();
 
-    // Get Insets, using the TInsets class
-    public TInsets getInsets() {
-        // We return default values or simulate behavior; in most cases, margins can be hardcoded.
-        return new TInsets(0, 0, 0, 0); // Assuming padding of 10px for all sides.
-    }
+		offscreenBuffer = new TBufferedImage(1, 1);
+	}
 
-    public void setSize(int width, int height) {
+	public TGraphics getGraphics() {
+		return graphics;
+	}
 
-    }
+	public void update(TGraphics g) {
+		paint(g);
+	}
 
-    public void setPreferredSize(Dimension dim) {
-        // No-op mock
-    }
+	@Override
+	public void paint(TGraphics g) {
+		TGraphics offscreenGfx = offscreenBuffer.getGraphics();
+		super.paint(offscreenGfx);
+		g.drawImage(offscreenBuffer, 0, 0, null);
+	}
 
-    public void setMinimumSize(Dimension dim) {
-        // No-op mock
-    }
+	// Set the title of the frame
+	public void setTitle(String title) {
+		peer.setTitle(title);
+	}
 
-    public void addComponentListener(ComponentListener l) {
+	// Set whether the frame is resizable
+	public void setResizable(boolean resizable) {
+		peer.setResizeable(resizable);
+	}
 
-    }
+	// Add a window listener
+	public void addWindowListener(TWindowListener l) {
+		// Implement event listener logic
+	}
+
+	// Set the frame visible
+	public void setVisible(boolean b) {
+		peer.setVisible(b);
+	}
+
+	public void toFront() {
+		peer.bringToFront();
+	}
+
+	// Get Insets, using the TInsets class
+	public TInsets getInsets() {
+		return new TInsets(0, 0, 0, 0);
+	}
+
+	public void setSize(int width, int height) {
+		if (width == getWidth() && height == getHeight()) {
+			return;
+		}
+		super.setSize(width, height);
+		offscreenBuffer = new TBufferedImage(width, height);
+		peer.setSize(width, height);
+		repaint();
+	}
+
+	public void setPreferredSize(Dimension dim) {
+		// No-op mock
+	}
+
+	public void setMinimumSize(Dimension dim) {
+		// No-op mock
+	}
+
+	public void addComponentListener(ComponentListener l) {
+
+	}
 }

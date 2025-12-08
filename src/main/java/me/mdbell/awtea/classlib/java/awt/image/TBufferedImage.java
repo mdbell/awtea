@@ -2,16 +2,17 @@ package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import org.teavm.classlib.java.awt.TPoint;
-import org.teavm.jso.canvas.ImageData;
-import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.TImage;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
 import me.mdbell.awtea.support.ImageDataConsumer;
 import me.mdbell.awtea.support.ImageDataProvider;
 import me.mdbell.awtea.util.GlyphRasterizer;
+import org.teavm.classlib.java.awt.TPoint;
+import org.teavm.jso.canvas.ImageData;
+import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
+import java.awt.*;
 import java.util.Hashtable;
 
 /**
@@ -25,9 +26,9 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	public static final int TYPE_INT_ARGB = 2;
 	public static final int TYPE_INT_ARGB_PRE = 3;
 
-	private static final int DCM_RED_MASK   = 0x00FF0000;
+	private static final int DCM_RED_MASK = 0x00FF0000;
 	private static final int DCM_GREEN_MASK = 0x0000FF00;
-	private static final int DCM_BLUE_MASK  = 0x000000FF;
+	private static final int DCM_BLUE_MASK = 0x000000FF;
 	private static final int DCM_ALPHA_MASK = 0xFF000000;
 
 
@@ -50,7 +51,11 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	@Getter(AccessLevel.NONE)
 	private boolean dirty = true;
 
-	public TBufferedImage(int width, int height){
+	static {
+		new Color(255, 0, 0); // Force Color class to initialize
+	}
+
+	public TBufferedImage(int width, int height) {
 		this(width, height, TYPE_INT_RGB);
 	}
 
@@ -231,7 +236,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	}
 
 
-
 	public int getRGB(int x, int y) {
 		// Fast path for our int-packed case:
 		Object data = raster.getDataElements(x, y, null);
@@ -363,9 +367,9 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	@Override
 	public ImageData getImageData() {
 		//TODO: dirty check (likely need to propagate from the raster, since it can be modified directly)
-		if(cachedImageData == null) {
+		if (cachedImageData == null) {
 			cachedImageData = getImageData(0, 0, width, height);
-		}else {
+		} else {
 			copyToImageData(0, 0, width, height, cachedImageData);
 		}
 		dirty = false;

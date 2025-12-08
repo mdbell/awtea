@@ -3,6 +3,7 @@ package me.mdbell.awtea.classlib.java.awt.event;
 import lombok.Getter;
 import lombok.ToString;
 import me.mdbell.awtea.classlib.java.awt.TComponent;
+import me.mdbell.awtea.classlib.java.awt.TContainer;
 import me.mdbell.awtea.input.MouseButtonType;
 import me.mdbell.awtea.input.MouseEventType;
 import me.mdbell.awtea.util.ElementUtils;
@@ -168,12 +169,17 @@ public class TMouseEvent extends TInputEvent {
 		p.scale(xScale, yScale);
 	}
 
-	public static TMouseEvent adapt(TComponent component, HTMLCanvasElement src, org.teavm.jso.dom.events.MouseEvent event, String type) {
+	public static TMouseEvent adapt(TContainer container, HTMLCanvasElement src, org.teavm.jso.dom.events.MouseEvent event, String type) {
 		MouseEventType source = MouseEventType.fromHtml(type);
 
 		Point point = new Point(event.getClientX(), event.getClientY());
 
 		translatePoint(point, src);
+
+		TComponent component = container.getComponentAt(point.getX(), point.getY());
+		if (component == null) {
+			component = container;
+		}
 
 		MouseButtonType button = MouseButtonType.fromHtml(event.getButton());
 		return new TMouseEvent(component, source.getId(), point.getX(), point.getY(),

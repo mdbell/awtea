@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+/**
+ * @see java.awt.Component
+ */
 public abstract class TComponent implements TImageObserver {
 
 	@Getter
@@ -29,19 +32,55 @@ public abstract class TComponent implements TImageObserver {
 	@Getter
 	private boolean valid = true;
 
+	private Color background;
+
+	private Color foreground;
+
 	protected List<TMouseListener> mouseListeners = new ArrayList<>();
 	protected List<TMouseMotionListener> mouseMotionListeners = new ArrayList<>();
 	protected List<TMouseWheelListener> mouseWheelListeners = new ArrayList<>();
 	protected List<TKeyListener> keyListeners = new ArrayList<>();
 	protected List<TFocusListener> focusListeners = new ArrayList<>();
 
+	// used in the event queue for caching
+	// we shouldn't touch this directly, and leave it to TEventQueue
+	TEventQueue.EventQueueItem[] eventCache;
+
 	public TFontMetrics getFontMetrics(TFont font) {
 		return getGraphics().measureText(font);
 	}
 
-	// used in the event queue for caching
-	// we shouldn't touch this directly, and leave it to TEventQueue
-	TEventQueue.EventQueueItem[] eventCache;
+	public Color getBackground() {
+		if (this.background != null) {
+			return this.background;
+		} else if (this.parent != null) {
+			return this.parent.getBackground();
+		} else {
+			return null;
+		}
+	}
+
+	public void setBackground(Color c) {
+		Color old = this.background;
+		this.background = c;
+		firePropertyChange("background", old, c);
+	}
+
+	public Color getForeground() {
+		if (this.foreground != null) {
+			return this.foreground;
+		} else if (this.parent != null) {
+			return this.parent.getForeground();
+		} else {
+			return null;
+		}
+	}
+
+	public void setForeground(Color c) {
+		Color old = this.foreground;
+		this.foreground = c;
+		firePropertyChange("foreground", old, c);
+	}
 
 	public void dispatchEvent(TAWTEvent event) {
 		if (event.isConsumed()) {
@@ -328,5 +367,10 @@ public abstract class TComponent implements TImageObserver {
 
 	public boolean prepareImage(TImage image, int width, int height, TImageObserver observer) {
 		return true;
+	}
+
+	protected void firePropertyChange(String propertyName,
+									  Object oldValue, Object newValue) {
+		//TODO: implement property change listeners
 	}
 }

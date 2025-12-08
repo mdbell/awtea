@@ -6,6 +6,9 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @see java.awt.Container
+ */
 public class TContainer extends TComponent {
 
 	private List<TComponent> children = new ArrayList<>();
@@ -33,6 +36,10 @@ public class TContainer extends TComponent {
 		return false;
 	}
 
+	public void update(TGraphics g) {
+		paint(g);
+	}
+
 	@Override
 	public void paint(TGraphics g) {
 		for (TComponent component : children) {
@@ -44,13 +51,29 @@ public class TContainer extends TComponent {
 		}
 	}
 
-	@Override
-	public void dispatchEvent(TAWTEvent event) {
+	public TComponent getComponentAt(int x, int y) {
 		for (TComponent child : children) {
-			if (event.isConsumed()) {
-				break;
+			if (x >= child.getX() && x < child.getX() + child.getWidth()
+				&& y >= child.getY() && y < child.getY() + child.getHeight()) {
+				if (child instanceof TContainer) {
+					TComponent deeper = ((TContainer) child).getComponentAt(x - child.getX(), y - child.getY());
+					if (deeper != null) {
+						return deeper;
+					}
+				}
+				return child;
 			}
-			child.dispatchEvent(event);
 		}
+		return this;
 	}
+
+//	@Override
+//	public void dispatchEvent(TAWTEvent event) {
+//		for (TComponent child : children) {
+//			if (event.isConsumed()) {
+//				break;
+//			}
+//			child.dispatchEvent(event);
+//		}
+//	}
 }

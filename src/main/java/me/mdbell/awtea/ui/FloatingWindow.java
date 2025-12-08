@@ -23,8 +23,8 @@ import java.util.Objects;
 @ExtensionMethod({JSObjectsExtensions.class})
 public abstract class FloatingWindow {
 
-	protected final HTMLDocument document;
-	protected final HTMLElement container;
+	protected HTMLDocument document;
+	protected HTMLElement container;
 
 	// shell elements
 	protected HTMLElement bodyEl;
@@ -38,8 +38,8 @@ public abstract class FloatingWindow {
 	@Getter(AccessLevel.PROTECTED)
 	private final String windowId;
 
-	private final String storagePosLeftKey;
-	private final String storagePosRightKey;
+	private String storagePosLeftKey;
+	private String storagePosRightKey;
 
 	// drag
 	private boolean dragging = false;
@@ -202,6 +202,14 @@ public abstract class FloatingWindow {
 			.inject();
 	}
 
+	protected FloatingWindow(String windowId) {
+		this.windowId = windowId;
+		this.refreshIntervalMs = 0;
+		init();
+		buildShell();
+		Taskbar.get().registerWindow(this);
+	}
+
 	protected FloatingWindow(String windowId,
 							 String titleText,
 							 int widthPx,
@@ -211,6 +219,17 @@ public abstract class FloatingWindow {
 		this.refreshIntervalMs = refreshIntervalMs;
 		this.title = titleText;
 
+
+		init();
+		buildShell();
+
+		setTitle(titleText);
+		setSize(widthPx, heightPx);
+
+		Taskbar.get().registerWindow(this);
+	}
+
+	private void init() {
 		storagePosLeftKey = windowId + ".left";
 		storagePosRightKey = windowId + ".top";
 
@@ -220,11 +239,6 @@ public abstract class FloatingWindow {
 		container.setClassName("aw-window");
 
 		restorePersistentData();
-
-		setSize(widthPx, heightPx);
-		buildShell();
-
-		Taskbar.get().registerWindow(this);
 	}
 
 	public void setScrollable(boolean scrollable) {
@@ -647,7 +661,6 @@ public abstract class FloatingWindow {
 
 		titleEl = document.createElement("div");
 		titleEl.setClassName("aw-window-title");
-		titleEl.setTextContent("AWTea - " + title);
 		header.appendChild(titleEl);
 
 		headerControlsEl = document.createElement("div");
@@ -701,6 +714,13 @@ public abstract class FloatingWindow {
 			int scrollBottom = bodyEl.getScrollHeight() - (bodyEl.getScrollTop() + bodyEl.getClientHeight());
 			stickToBottom = scrollBottom < 20; // threshold
 		});
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+		if (titleEl != null) {
+			titleEl.setTextContent("AWTea - " + title);
+		}
 	}
 
 	// ----- Dragging -----

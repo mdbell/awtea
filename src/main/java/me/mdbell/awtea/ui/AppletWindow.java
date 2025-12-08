@@ -1,13 +1,10 @@
 package me.mdbell.awtea.ui;
 
 import me.mdbell.awtea.impl.TeaAppletStub;
-import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLElement;
 
 import java.applet.Applet;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Properties;
 
 public class AppletWindow extends FloatingWindow {
@@ -27,26 +24,13 @@ public class AppletWindow extends FloatingWindow {
 		canvasElement.setAttribute("tabindex", "0"); // make canvas focusable
 		canvasElement.getStyle().setProperty("outline", "none"); // remove focus outline
 
-		applet.setStub(stub = new TeaAppletStub(canvasElement, props) {
-			@Override
-			public URL getCodeBase() {
-				String url = getParameter("codebase");
-				if (url == null) {
-					url = Window.current().getLocation().getFullURL();
-				}
-				try {
-					return new URL(url);
-				} catch (MalformedURLException e) {
-					throw new RuntimeException(e);
-				}
-			}
-
-			@Override
-			public void appletResize(int width, int height) {
-				canvasElement.setWidth(width);
-				canvasElement.setHeight(height);
-			}
-		});
+//		applet.setStub(stub = new TeaAppletStub(canvasElement, props) {
+//			@Override
+//			public void appletResize(int width, int height) {
+//				canvasElement.setWidth(width);
+//				canvasElement.setHeight(height);
+//			}
+//		});
 	}
 
 	@Override

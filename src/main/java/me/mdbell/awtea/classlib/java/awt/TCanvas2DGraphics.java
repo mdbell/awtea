@@ -1,24 +1,24 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.ExtensionMethod;
-import org.teavm.jso.canvas.CanvasRenderingContext2D;
-import org.teavm.jso.canvas.ImageData;
-import org.teavm.jso.dom.html.HTMLCanvasElement;
+import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.support.ImageDataProvider;
 import me.mdbell.awtea.util.ColorUtil;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import org.teavm.jso.canvas.CanvasRenderingContext2D;
+import org.teavm.jso.canvas.ImageData;
+import org.teavm.jso.dom.html.HTMLCanvasElement;
 
-import java.awt.Color;
+import java.awt.*;
 
 @Getter
 @ExtensionMethod({JSObjectsExtensions.class, ColorUtil.class})
 public class TCanvas2DGraphics extends TCanvasGraphics {
 
-    private final CanvasRenderingContext2D context;
+	private final CanvasRenderingContext2D context;
 
 	private final TAffineTransform transform = new TAffineTransform();
 
@@ -37,21 +37,21 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 		this(context, true);
 	}
 
-    private TCanvas2DGraphics(CanvasRenderingContext2D context, boolean initReset) {
-        super(context.getCanvas());
-        this.context = context;
-		if(initReset) {
+	private TCanvas2DGraphics(CanvasRenderingContext2D context, boolean initReset) {
+		super(context.getCanvas());
+		this.context = context;
+		if (initReset) {
 			initContext();
 		}
-    }
+	}
 
-    private void initContext() {
-        this.context.setImageSmoothingEnabled(false);
-        this.context.setLineJoin("miter");
-        this.context.setLineCap("butt");
+	private void initContext() {
+		this.context.setImageSmoothingEnabled(false);
+		this.context.setLineJoin("miter");
+		this.context.setLineCap("butt");
 		setClipBounds(new TRectangle(context.getCanvas().getWidth(), context.getCanvas().getHeight()));
 		reset();
-    }
+	}
 
 	@Override
 	public TGraphics create() {
@@ -64,14 +64,15 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 		return gfx;
 	}
 
-    @Override
-    public void setColor(Color c) {
-		this.color = c;
-        String color = c.toCSS();
-        context.setFillStyle(color);
-        context.setStrokeStyle(color);
-        context.setShadowColor("transparent");
-    }
+	@Override
+	public void setColor(Color c) {
+		//TODO: resolve why the fuck teavm colors aren't working
+//		this.color = c;
+//		String color = c.toCSS();
+//		context.setFillStyle(color);
+//		context.setStrokeStyle(color);
+//		context.setShadowColor("transparent");
+	}
 
 	@Override
 	public TFontMetrics getFontMetrics(TFont f) {
@@ -93,28 +94,28 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	}
 
 	@Override
-    public void drawString(String str, int x, int y) {
+	public void drawString(String str, int x, int y) {
 		//TODO: get font from native renderer
-        //TFontRenderer.getRenderer(this.getFont()).drawString(context, str, x + translateX, y + translateY);
-    }
+		//TFontRenderer.getRenderer(this.getFont()).drawString(context, str, x + translateX, y + translateY);
+	}
 
-    @Override
-    public void drawRect(int x, int y, int width, int height) {
-        context.beginPath();
-        context.rect(x, y, width, height);
-        context.stroke();
-    }
+	@Override
+	public void drawRect(int x, int y, int width, int height) {
+		context.beginPath();
+		context.rect(x, y, width, height);
+		context.stroke();
+	}
 
-    @Override
-    public void fillRect(int x, int y, int width, int height) {
-        context.beginPath();
-        context.rect(x, y, width, height);
-        context.fill();
-    }
+	@Override
+	public void fillRect(int x, int y, int width, int height) {
+		context.beginPath();
+		context.rect(x, y, width, height);
+		context.fill();
+	}
 
 	@Override
 	public void clearRect(int x, int y, int width, int height) {
-		context.clearRect(x, y, width, height);
+		//context.clearRect(x, y, width, height);
 	}
 
 	private void roundRectPath(int x, int y, int width, int height, int arcWidth, int arcHeight) {
@@ -195,7 +196,7 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 		double ry = height / 2.0;
 
 		double startRad = Math.toRadians(startAngle);
-		double endRad   = Math.toRadians(startAngle + arcAngle);
+		double endRad = Math.toRadians(startAngle + arcAngle);
 		boolean anticlockwise = arcAngle < 0;
 		context.beginPath();
 		context.save();
@@ -207,30 +208,30 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	}
 
 	@Override
-    public boolean drawImage(TImage img, int x, int y,
-                             int width, int height,
-                             TImageObserver observer) {
+	public boolean drawImage(TImage img, int x, int y,
+							 int width, int height,
+							 TImageObserver observer) {
 		return drawImage(img, x, y, observer);
-    }
+	}
 
-    @Override
-    public boolean drawImage(TImage img, int x, int y,
-                             TImageObserver observer) {
-		if(img instanceof ImageDataProvider) {
+	@Override
+	public boolean drawImage(TImage img, int x, int y,
+							 TImageObserver observer) {
+		if (img instanceof ImageDataProvider) {
 			ImageData data = ((ImageDataProvider) img).getImageData();
-			if(data != null) {
+			if (data != null) {
 				context.putImageData(data, x, y);
 				return true;
 			}
 		}
-        //img.drawTo(context, x + translateX, y + translateY);
-        return false;
-    }
+		//img.drawTo(context, x + translateX, y + translateY);
+		return false;
+	}
 
-    @Override
-    public TFontMetrics measureText(TFont font) {
-        return new TFontMetrics(font);
-    }
+	@Override
+	public TFontMetrics measureText(TFont font) {
+		return new TFontMetrics(font);
+	}
 
 	@Override
 	public TShape getClip() {
@@ -274,30 +275,31 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 		// are tracked and can be queried via getClip().
 	}
 
-    @Override
-    public void reset() {
-        setColor(Color.WHITE);
+	@Override
+	public void reset() {
+		//Debug.trigger();
+		//setColor(Color.WHITE);
 
 		this.transform.setToIdentity();
 		syncTransform();
 
-        HTMLCanvasElement canvas = getCanvas();
-        this.context.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-    }
+		HTMLCanvasElement canvas = getCanvas();
+		this.context.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+	}
 
 	// transform operations
 
 	@Override
 	public void translate(int deltaX, int deltaY) {
-		this.transform.translate(deltaX,  deltaY);
+		this.transform.translate(deltaX, deltaY);
 		syncTransform();
 	}
 
-	private void syncTransform(){
+	private void syncTransform() {
 		this.context.setTransform(
-				this.transform.getScaleX(), this.transform.getShearY(),
-				this.transform.getShearX(), this.transform.getScaleY(),
-				this.transform.getTranslateX(), this.transform.getTranslateY()
+			this.transform.getScaleX(), this.transform.getShearY(),
+			this.transform.getShearX(), this.transform.getScaleY(),
+			this.transform.getTranslateX(), this.transform.getTranslateY()
 		);
 	}
 }

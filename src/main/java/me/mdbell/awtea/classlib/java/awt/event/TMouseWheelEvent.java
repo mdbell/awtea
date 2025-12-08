@@ -3,6 +3,7 @@ package me.mdbell.awtea.classlib.java.awt.event;
 import lombok.Getter;
 import lombok.ToString;
 import me.mdbell.awtea.classlib.java.awt.TComponent;
+import me.mdbell.awtea.classlib.java.awt.TContainer;
 import me.mdbell.awtea.input.MouseButtonType;
 import me.mdbell.awtea.input.MouseEventType;
 import me.mdbell.awtea.util.Point;
@@ -37,7 +38,7 @@ public class TMouseWheelEvent extends TMouseEvent {
 		return null;
 	}
 
-	public static TMouseWheelEvent adapt(TComponent component, HTMLCanvasElement src,
+	public static TMouseWheelEvent adapt(TContainer container, HTMLCanvasElement src,
 										 org.teavm.jso.dom.events.WheelEvent event, String type) {
 		MouseEventType source = MouseEventType.fromHtml(type);
 
@@ -51,6 +52,12 @@ public class TMouseWheelEvent extends TMouseEvent {
 		int unitsToScroll = wheelRotation * SCROLL_AMOUNT;
 
 		MouseButtonType button = MouseButtonType.fromHtml(event.getButton());
+
+		TComponent component = container.getComponentAt(point.getX(), point.getY());
+		if (component == null) {
+			component = container;
+		}
+
 		return new TMouseWheelEvent(component, source.getId(), point.getX(), point.getY(),
 			button, event.getMetaKey(), deltaY, SCROLL_AMOUNT, scollType, unitsToScroll, wheelRotation);
 	}
