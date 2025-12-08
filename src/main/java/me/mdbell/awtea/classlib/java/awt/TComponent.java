@@ -49,6 +49,8 @@ public abstract class TComponent {
 			return;
 		}
 
+		TEventQueue.setCurrentEventAndMostRecentTime(event);
+
 		if (event instanceof TKeyEvent) {
 			dispatchKeyEvent((TKeyEvent) event);
 		} else if (event instanceof TMouseWheelEvent) {

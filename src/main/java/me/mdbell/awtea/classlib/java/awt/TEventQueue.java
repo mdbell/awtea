@@ -1,13 +1,14 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import me.mdbell.awtea.classlib.java.awt.event.TActionEvent;
-import me.mdbell.awtea.classlib.java.awt.event.TActiveEvent;
-import me.mdbell.awtea.classlib.java.awt.event.TInvocationEvent;
+import me.mdbell.awtea.classlib.java.awt.event.*;
 import me.mdbell.awtea.monitor.EventQueueMonitor;
 import me.mdbell.awtea.monitor.EventTypeMonitor;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
+import java.util.EmptyStackException;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @see java.awt.EventQueue
@@ -23,9 +24,26 @@ public class TEventQueue {
 
 	private static final int NUM_PRIORITIES = ULTIMATE_PRIORITY + 1;
 
-	private static TEventDispatchThread eventDispatchThread;
-
 	protected static final Object lock = new Object();
+
+	private static final AtomicInteger threadCounter = new AtomicInteger(0);
+
+	private final String name = "AWTea-EventQueue-" + threadCounter.getAndIncrement();
+
+	private TEventDispatchThread eventDispatchThread;
+
+	private TEventQueue nextQueue;
+	private TEventQueue prevQueue;
+
+	private WeakReference<TAWTEvent> currentEvent;
+
+	private long mostRecentEventTime = System.currentTimeMillis();
+
+	private long mostRecentKeyEventTime = System.currentTimeMillis();
+
+	private static Runnable DUMMY = () -> {
+		// do nothing, used to wake up the EDT when a new queue is pushed
+	};
 
 	public TEventQueue() {
 		for (int i = 0; i < NUM_PRIORITIES; i++) {
@@ -34,7 +52,18 @@ public class TEventQueue {
 	}
 
 	public void postEvent(TAWTEvent event) {
-		postEventInternal(getPriorityForEvent(event), event);
+
+		if (nextQueue != null) {
+			nextQueue.postEvent(event);
+			return;
+		}
+
+		int priority = getPriorityForEvent(event);
+
+		// monitor: after enqueue, compute pending counts
+		EventQueueMonitor.get().onPost(this, priority, snapshotPendingCounts());
+		EventTypeMonitor.get().onPost(event);
+		postEventInternal(priority, event);
 	}
 
 	private int getPriorityForEvent(TAWTEvent event) {
@@ -53,11 +82,6 @@ public class TEventQueue {
 		synchronized (lock) {
 			priorityQueues[priority].offer(event);
 			initEventDispatchThread();
-
-			// monitor: after enqueue, compute pending counts
-			EventQueueMonitor.get().onPost(this, priority, snapshotPendingCounts());
-			EventTypeMonitor.get().onPost(event);
-
 			lock.notifyAll();
 		}
 	}
@@ -77,7 +101,7 @@ public class TEventQueue {
 
 	private void initEventDispatchThread() {
 		if (eventDispatchThread == null) {
-			eventDispatchThread = new TEventDispatchThread("AWTea-EventDispatcher", this);
+			eventDispatchThread = new TEventDispatchThread(name, this);
 			eventDispatchThread.start();
 		}
 	}
@@ -165,8 +189,45 @@ public class TEventQueue {
 	}
 
 	public static boolean isDispatchThread() {
-		return eventDispatchThread != null && Thread.currentThread() == eventDispatchThread.getThread();
+		TEventQueue queue = TToolkit.getEventQueue();
+		return queue.isDispatchThreadImpl();
 	}
+
+	private boolean isDispatchThreadImpl() {
+		TEventQueue eq = getTailEventQueue();
+		return eq.eventDispatchThread != null &&
+			Thread.currentThread() == eq.eventDispatchThread.getThread();
+	}
+
+	static void setCurrentEventAndMostRecentTime(TAWTEvent event) {
+		TToolkit.getEventQueue().setCurrentEventAndMostRecentTimeImpl(event);
+	}
+
+	private void setCurrentEventAndMostRecentTimeImpl(TAWTEvent event) {
+		this.currentEvent = new WeakReference<>(event);
+
+		long mostRecentTime = resolveWhen(event);
+
+		if (mostRecentTime > mostRecentEventTime) {
+			mostRecentEventTime = mostRecentTime;
+		}
+	}
+
+	private long resolveWhen(TAWTEvent event) {
+		if (event instanceof TInputEvent) {
+			long when = ((TInputEvent) event).getWhen();
+			if (event instanceof TKeyEvent) {
+				mostRecentKeyEventTime = when;
+			}
+			return when;
+		} else if (event instanceof TActionEvent) {
+			return ((TActionEvent) event).getWhen();
+		} else if (event instanceof TInvocationEvent) {
+			return ((TInvocationEvent) event).getWhen();
+		}
+		return Long.MIN_VALUE;
+	}
+
 
 	public static void invokeLater(Runnable runnable) {
 		TToolkit.getEventQueue().postEvent(
@@ -198,20 +259,72 @@ public class TEventQueue {
 		}
 	}
 
-	/**
-	 * Pushes a new EventQueue onto the dispatch thread.
-	 * Stubbed for TeaVM as we use a simple single-queue model.
-	 */
-	public void push(TEventQueue newEventQueue) {
-		// Stubbed - not typically needed in browser environment
+	public static TAWTEvent getCurrentEvent() {
+		TEventQueue queue = TToolkit.getEventQueue();
+		return queue.getCurrentEventImpl();
 	}
 
-	/**
-	 * Removes this EventQueue from the dispatch thread.
-	 * Stubbed for TeaVM as we use a simple single-queue model.
-	 */
-	protected void pop() throws java.util.EmptyStackException {
-		// Stubbed - not typically needed in browser environment
+	private TAWTEvent getCurrentEventImpl() {
+		if (!isDispatchThread()) {
+			return null;
+		}
+		return currentEvent.get();
+	}
+
+	public void push(TEventQueue newEventQueue) {
+		TEventQueue tail = getTailEventQueue();
+
+		// Transfer the event dispatch thread to the new queue
+		newEventQueue.eventDispatchThread = tail.eventDispatchThread;
+		if (tail.eventDispatchThread != null && tail.eventDispatchThread.getEventQueue() == this) {
+			tail.eventDispatchThread.setEventQueue(newEventQueue);
+			// ensures the thread isn't waiting on us to post events
+			lock.notifyAll();
+		}
+
+		// drain all events from the old queue into the new one
+		while (tail.peekEvent() != null) {
+			for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
+				Queue queue = tail.priorityQueues[i];
+				TAWTEvent event;
+				while ((event = queue.poll()) != null) {
+					newEventQueue.postEventInternal(i, event);
+				}
+			}
+		}
+
+		// Wake up the event dispatch thread if it's waiting
+		newEventQueue.postEventInternal(ULTIMATE_PRIORITY, new TInvocationEvent(tail, DUMMY));
+
+		// Link the queues
+		tail.nextQueue = newEventQueue;
+		newEventQueue.prevQueue = tail;
+	}
+
+	protected void pop() throws EmptyStackException {
+		if (prevQueue == null) {
+			throw new EmptyStackException();
+		}
+
+		// Transfer the event dispatch thread back to the previous queue
+		if (eventDispatchThread != null) {
+			prevQueue.eventDispatchThread = eventDispatchThread;
+			eventDispatchThread.setEventQueue(prevQueue);
+			eventDispatchThread = null;
+			// ensures the thread isn't waiting on us to post events
+			lock.notifyAll();
+		}
+
+		prevQueue.nextQueue = null;
+		this.prevQueue = null;
+	}
+
+	private TEventQueue getTailEventQueue() {
+		TEventQueue eq = this;
+		while (eq.nextQueue != null) {
+			eq = eq.nextQueue;
+		}
+		return eq;
 	}
 
 	static class Queue implements Iterable<TAWTEvent> {
