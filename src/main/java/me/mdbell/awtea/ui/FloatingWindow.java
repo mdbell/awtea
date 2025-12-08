@@ -565,6 +565,16 @@ public abstract class FloatingWindow {
 				live.removeAttribute(name);
 			}
 		}
+
+		// remove any old attributes not in fresh
+		var liveAttributes = live.getAttributes();
+		for (int i = 0; i < liveAttributes.getLength(); i++) {
+			var attr = liveAttributes.item(i);
+			String name = attr.getName();
+			if (fresh.getAttribute(name) == null) {
+				live.removeAttribute(name);
+			}
+		}
 	}
 
 	private void patchChildren(HTMLElement live, HTMLElement fresh) {

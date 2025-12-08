@@ -31,15 +31,6 @@ public final class PcmDockWindow extends FloatingWindow {
 			.prop("font-size", "12px")
 			.prop("color", Theme.Var.META_FOREGROUND)
 
-//			.createClass("pcm-dock-select")
-//			.prop("padding", "2px 4px")
-//			.prop("background", Theme.Var.BACKGROUND)
-//			.prop("color", Theme.Var.FOREGROUND)
-//			.prop("border")
-//			.value("1px solid")
-//			.value(Theme.Var.BORDER)
-//			.end()
-//			.prop("border-radius", "3px")
 
 			.createClass("pcm-dock-wave-container")
 			.prop("flex", "1")
@@ -127,7 +118,6 @@ public final class PcmDockWindow extends FloatingWindow {
 		header.appendChild(label);
 
 		HTMLInputElement select = createElement("select");
-		select.setClassName("pcm-dock-select");
 
 		for (PcmMonitor.Snapshot snap : snaps) {
 			int id = snap.getId();

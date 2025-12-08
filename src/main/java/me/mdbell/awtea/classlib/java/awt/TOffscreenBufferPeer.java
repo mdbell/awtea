@@ -28,7 +28,7 @@ public class TOffscreenBufferPeer implements TSurfacePeer {
 		g.fillRect(0, 0, buffer.getWidth(), buffer.getHeight());
 		root.superPaint(g);
 		g.dispose();
-
+		System.out.println("Offscreen buffer painted.");
 		// now we need to draw the buffer to the screen
 		TGraphics screenG = root.getSurfaceGraphics();
 		screenG.drawImage(buffer, 0, 0, null);

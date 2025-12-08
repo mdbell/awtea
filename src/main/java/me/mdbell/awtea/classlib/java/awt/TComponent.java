@@ -119,6 +119,12 @@ public abstract class TComponent implements TImageObserver {
 	}
 
 	protected void dispatchPaintEvent(TPaintEvent event) {
+		// paint events are dispatched to the parent container for clipping and double-buffering
+		// so we just forward it up the chain
+		if (parent != null) {
+			parent.dispatchPaintEvent(event);
+			return;
+		}
 		TGraphics graphics = this.getGraphics();
 		if (event.getID() == TPaintEvent.PAINT) {
 			//TODO: clip rect

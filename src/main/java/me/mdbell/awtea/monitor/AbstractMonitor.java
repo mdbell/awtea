@@ -2,10 +2,7 @@ package me.mdbell.awtea.monitor;
 
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -16,18 +13,30 @@ import java.util.concurrent.atomic.AtomicInteger;
  * At first glance Entries and Snapshots may seem redundant, but they serve different purposes:
  * - Entries represent live objects being monitored, maintaining state and allowing updates.
  * - Snapshots are immutable representations of an entry's state at a specific point in time,
- *  useful for reporting and analysis without affecting the live state.
- *  In addition, we can in theory have different snapshot types for the same entry type,
- *  e.g a lightweight snapshot for frequent polling, and a detailed snapshot for in-depth analysis.
+ * useful for reporting and analysis without affecting the live state.
+ * In addition, we can in theory have different snapshot types for the same entry type,
+ * e.g a lightweight snapshot for frequent polling, and a detailed snapshot for in-depth analysis.
  *
  * @param <E> the type of monitor entries
  * @param <S> the type of monitor snapshots
  */
 public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorSnapshot<E>> {
 
-	private final WeakHashMap<Object, E> entries = new WeakHashMap<>();
+	private final Map<Object, E> entries;
 
 	private final AtomicInteger nextId = new AtomicInteger(1);
+
+	protected AbstractMonitor() {
+		this(true);
+	}
+
+	protected AbstractMonitor(boolean weak) {
+		if (weak) {
+			this.entries = new WeakHashMap<>();
+		} else {
+			this.entries = new HashMap<>();
+		}
+	}
 
 	@Getter
 	private long revision = 0;
@@ -37,6 +46,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 * If an entry already exists, it is returned after updating its last touched time.
 	 * If no entry exists, a new one is created with a default label,
 	 * registered, and returned.
+	 *
 	 * @param target the target object to monitor
 	 * @return the existing or newly created monitor entry
 	 */
@@ -49,8 +59,9 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 * If an entry already exists, it is returned after updating its last touched time.
 	 * If no entry exists, a new one is created with the provided label (or a default label if null),
 	 * registered, and returned.
+	 *
 	 * @param target the target object to monitor
-	 * @param label an optional label for the entry; if null, a default label is generated
+	 * @param label  an optional label for the entry; if null, a default label is generated
 	 * @return the existing or newly created monitor entry
 	 */
 	protected synchronized E ensureEntry(Object target, String label) {
@@ -61,7 +72,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 		}
 		int id = nextId.getAndIncrement();
 
-		if(label == null) {
+		if (label == null) {
 			label = defaultLabelFor(target, id);
 		}
 
@@ -120,6 +131,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 			touch(entry);
 		}
 	}
+
 	/**
 	 * Update the last touched time of the given monitor entry and bump the revision.
 	 *
@@ -181,9 +193,9 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	/**
 	 * Create a new monitor entry for the given target object.
 	 *
-	 * @param id the assigned ID
+	 * @param id     the assigned ID
 	 * @param target the target object
-	 * @param label the label for the entry
+	 * @param label  the label for the entry
 	 * @return the newly created monitor entry
 	 */
 	protected abstract E createEntry(int id, Object target, String label);

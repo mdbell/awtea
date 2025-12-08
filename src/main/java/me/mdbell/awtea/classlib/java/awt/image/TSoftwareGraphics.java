@@ -31,22 +31,19 @@ public class TSoftwareGraphics extends TGraphics {
 
 	@Override
 	public TGraphics create() {
-		return new TSoftwareGraphics(image);
+		return new TSoftwareGraphics(this.image);
 	}
 
 	@Override
 	public void setClip(int x, int y, int width, int height) {
-
 	}
 
 	@Override
 	public void setXORMode(Color c1) {
-
 	}
 
 	@Override
 	public void setPaintMode() {
-
 	}
 
 	@Override

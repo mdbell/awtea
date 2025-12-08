@@ -19,14 +19,14 @@ public class OperationsMonitor extends AbstractMonitor<OperationsMonitor.Entry, 
 	// Note: OperationMonitor is not a singleton - multiple instances can be created as needed.
 	private static final WeakHashMap<Object, OperationsMonitor> monitors = new WeakHashMap<>();
 
-	private final AtomicInteger monitorIdGenerator = new AtomicInteger(0);
+	private static final AtomicInteger monitorIdGenerator = new AtomicInteger(0);
 
 	private final String name;
 
 	private final int id;
 
-	private OperationsMonitor(String name) {
-		super();
+	private OperationsMonitor(String name, boolean weak) {
+		super(weak);
 		this.name = name;
 		this.id = monitorIdGenerator.incrementAndGet();
 	}
@@ -36,7 +36,11 @@ public class OperationsMonitor extends AbstractMonitor<OperationsMonitor.Entry, 
 	}
 
 	public static synchronized OperationsMonitor get(Object baseTarget, String name) {
-		return monitors.computeIfAbsent(baseTarget, k -> new OperationsMonitor(name));
+		return get(baseTarget, name, true);
+	}
+
+	public static synchronized OperationsMonitor get(Object baseTarget, String name, boolean weak) {
+		return monitors.computeIfAbsent(baseTarget, k -> new OperationsMonitor(name, weak));
 	}
 
 	@Override
@@ -61,7 +65,7 @@ public class OperationsMonitor extends AbstractMonitor<OperationsMonitor.Entry, 
 		op.setLastEntryTimeMs(System.currentTimeMillis());
 	}
 
-	public void onOperationExited(Object target, String operationName) {
+	public void onOperationLeft(Object target, String operationName) {
 		Entry entry = ensureEntry(target);
 
 		Operation op = entry.getOperations().stream()

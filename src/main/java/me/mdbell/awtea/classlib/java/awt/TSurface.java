@@ -42,8 +42,6 @@ abstract class TSurface extends TContainer {
 	protected void dispatchPaintEvent(TPaintEvent event) {
 		if (surfacePeer != null) {
 			surfacePeer.paintAll();
-		} else {
-			super.dispatchPaintEvent(event);
 		}
 	}
 
