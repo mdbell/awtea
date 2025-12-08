@@ -1,20 +1,13 @@
-package me.mdbell.awtea.polyfill.java.awt;
+package org.teavm.classlib.java.awt;
 
-import me.mdbell.awtea.classlib.java.awt.geom.TDimension2D;
 import lombok.*;
+import me.mdbell.awtea.classlib.java.awt.geom.TDimension2D;
 
-/**
- * Not actually deprecated, but marked so to remind
- * us to use the base awt.Dimension.
- *
- * @see java.awt.Dimension
- */
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode(callSuper = false)
-@Deprecated
 public class TDimension extends TDimension2D {
 
 	public int width;

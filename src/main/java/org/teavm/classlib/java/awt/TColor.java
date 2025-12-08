@@ -1,20 +1,13 @@
-package me.mdbell.awtea.polyfill.java.awt;
+package org.teavm.classlib.java.awt;
 
+import lombok.Getter;
 import me.mdbell.awtea.classlib.java.awt.*;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.geom.TRectangle2D;
 import me.mdbell.awtea.classlib.java.awt.image.TColorModel;
-import lombok.Getter;
 
 
-/**
- * Not actually deprecated, but marked so to remind
- * us to use the base awt.Color.
- *
- * @see java.awt.Color
- */
-@Deprecated
 public class TColor implements TPaint {
 
 	// shades
@@ -68,14 +61,14 @@ public class TColor implements TPaint {
 	}
 
 	public TColor(float r, float g, float b, float a) {
-		this((int)(r * 255 + 0.5), (int)(g * 255 + 0.5), (int)(b * 255 + 0.5), (int)(a * 255 + 0.5));
+		this((int) (r * 255 + 0.5), (int) (g * 255 + 0.5), (int) (b * 255 + 0.5), (int) (a * 255 + 0.5));
 	}
 
-	public TColor(int rgb){
+	public TColor(int rgb) {
 		this(rgb, false);
 	}
 
-	public TColor(int rgba, boolean hasalpha){
+	public TColor(int rgba, boolean hasalpha) {
 		if (hasalpha) {
 			value = rgba;
 		} else {
@@ -83,12 +76,12 @@ public class TColor implements TPaint {
 		}
 	}
 
-	public TColor(TColorSpace cspace, float[] components, float alpha){
+	public TColor(TColorSpace cspace, float[] components, float alpha) {
 		this.colorSpace = cspace;
-		int r = (int)(components[0] * 255 + 0.5);
-		int g = (int)(components[1] * 255 + 0.5);
-		int b = (int)(components[2] * 255 + 0.5);
-		int a = (int)(alpha * 255 + 0.5);
+		int r = (int) (components[0] * 255 + 0.5);
+		int g = (int) (components[1] * 255 + 0.5);
+		int b = (int) (components[2] * 255 + 0.5);
+		int a = (int) (alpha * 255 + 0.5);
 		value = ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
 	}
 
@@ -107,9 +100,9 @@ public class TColor implements TPaint {
 			this.colorSpace = TColorSpace.getInstance(TColorSpace.CS_sRGB);
 		}
 		float[] f = new float[]{
-			((float)getRed())/255f,
-			((float)getGreen())/255f,
-			((float)getBlue())/255f
+			((float) getRed()) / 255f,
+			((float) getGreen()) / 255f,
+			((float) getBlue()) / 255f
 		};
 		float[] tmp = this.colorSpace.toCIEXYZ(f);
 		float[] tmpout = cspace.fromCIEXYZ(tmp);
@@ -138,9 +131,9 @@ public class TColor implements TPaint {
 			this.colorSpace = TColorSpace.getInstance(TColorSpace.CS_sRGB);
 		}
 		float[] f = new float[]{
-			((float)getRed())/255f,
-			((float)getGreen())/255f,
-			((float)getBlue())/255f
+			((float) getRed()) / 255f,
+			((float) getGreen()) / 255f,
+			((float) getBlue()) / 255f
 		};
 
 		float[] tmp = this.colorSpace.toCIEXYZ(f);
@@ -150,7 +143,7 @@ public class TColor implements TPaint {
 			compArray = new float[tmpout.length + 1];
 		}
 		System.arraycopy(tmpout, 0, compArray, 0, tmpout.length);
-		compArray[tmpout.length] = ((float)getAlpha())/255f;
+		compArray[tmpout.length] = ((float) getAlpha()) / 255f;
 
 		return compArray;
 	}
@@ -200,23 +193,23 @@ public class TColor implements TPaint {
 		int r = getRed();
 		int g = getGreen();
 		int b = getBlue();
-		int i = (int)(1.0 / (1.0 - 0.7));
-		if ( r == 0 && g == 0 && b == 0) {
+		int i = (int) (1.0 / (1.0 - 0.7));
+		if (r == 0 && g == 0 && b == 0) {
 			return new TColor(i, i, i);
 		}
-		if ( r > 0 && r < i ) r = i;
-		if ( g > 0 && g < i ) g = i;
-		if ( b > 0 && b < i ) b = i;
+		if (r > 0 && r < i) r = i;
+		if (g > 0 && g < i) g = i;
+		if (b > 0 && b < i) b = i;
 
-		return new TColor(Math.min((int)(r / 0.7), 255),
-				Math.min((int)(g / 0.7), 255),
-				Math.min((int)(b / 0.7), 255));
+		return new TColor(Math.min((int) (r / 0.7), 255),
+			Math.min((int) (g / 0.7), 255),
+			Math.min((int) (b / 0.7), 255));
 	}
 
 	public TColor darker() {
-		return new TColor(Math.max((int)(getRed() * 0.7), 0),
-				Math.max((int)(getGreen() * 0.7), 0),
-				Math.max((int)(getBlue() * 0.7), 0));
+		return new TColor(Math.max((int) (getRed() * 0.7), 0),
+			Math.max((int) (getGreen() * 0.7), 0),
+			Math.max((int) (getBlue() * 0.7), 0));
 	}
 
 	@Override
@@ -227,7 +220,7 @@ public class TColor implements TPaint {
 	@Override
 	public int getTransparency() {
 		int alpha = getAlpha();
-		if(alpha == 255) {
+		if (alpha == 255) {
 			return TTransparency.OPAQUE;
 		} else if (alpha == 0) {
 			return TTransparency.BITMASK;
@@ -266,7 +259,7 @@ public class TColor implements TPaint {
 
 	public static TColor getColor(String str, TColor defaultColor) {
 		Integer value = Integer.getInteger(str);
-		if(value == null) {
+		if (value == null) {
 			return defaultColor;
 		}
 		return new TColor(value >> 16 & 0xFF, value >> 8 & 0xFF, value & 0xFF);
@@ -274,7 +267,7 @@ public class TColor implements TPaint {
 
 	public static TColor getColor(String str, int defaultValue) {
 		Integer value = Integer.getInteger(str);
-		if(value == null) {
+		if (value == null) {
 			value = defaultValue;
 		}
 		return new TColor(value >> 16 & 0xFF, value >> 8 & 0xFF, value & 0xFF);
