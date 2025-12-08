@@ -3,7 +3,7 @@ package me.mdbell.awtea.monitor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import me.mdbell.awtea.detour.NoDetours;
+import me.mdbell.awtea.instrument.NoDetours;
 
 import java.lang.ref.WeakReference;
 

@@ -4,7 +4,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.ExtensionMethod;
-import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.ElementUtils;
 import me.mdbell.awtea.util.ThreadUtils;
 import org.teavm.jso.browser.Storage;
 import org.teavm.jso.browser.Window;
@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-@ExtensionMethod({JSObjectsExtensions.class})
+@ExtensionMethod({ElementUtils.class})
 public abstract class FloatingWindow {
 
 	protected HTMLDocument document;

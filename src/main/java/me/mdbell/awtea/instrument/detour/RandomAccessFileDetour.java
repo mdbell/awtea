@@ -1,4 +1,8 @@
-package me.mdbell.awtea.detour;
+package me.mdbell.awtea.instrument.detour;
+
+import me.mdbell.awtea.instrument.DetourMethod;
+import me.mdbell.awtea.instrument.DetourReceiver;
+import me.mdbell.awtea.instrument.NoDetours;
 
 import java.io.RandomAccessFile;
 

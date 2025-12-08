@@ -1,4 +1,4 @@
-package me.mdbell.awtea.detour;
+package me.mdbell.awtea.instrument;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

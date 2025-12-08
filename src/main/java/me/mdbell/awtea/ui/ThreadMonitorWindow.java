@@ -70,16 +70,16 @@ public final class ThreadMonitorWindow extends AbstractMonitorWindow<
 	static {
 		AwCss.sheet()
 			.createClass("thread-row-new")
-			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND)
+			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND.important())
 
 			.createClass("thread-row-running")
-			.prop("background", Theme.Var.ROW_STATUS_OK_BACKGROUND)
+			.prop("background", Theme.Var.ROW_STATUS_OK_BACKGROUND.important())
 
 			.createClass("thread-row-sleeping")
-			.prop("background", Theme.Var.ROW_STATUS_WARN_BACKGROUND)
+			.prop("background", Theme.Var.ROW_STATUS_WARN_BACKGROUND.important())
 
 			.createClass("thread-row-terminated")
-			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND)
+			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND.important())
 
 			.end()
 			.inject();
