@@ -21,7 +21,7 @@ class TEventDispatchThread {
 	void setEventQueue(TEventQueue queue) {
 		this.eventQueue = queue;
 	}
-	
+
 	synchronized TEventQueue getEventQueue() {
 		return eventQueue;
 	}
@@ -42,6 +42,11 @@ class TEventDispatchThread {
 				TEventQueue queue = getEventQueue();
 				// This will BLOCK until an event is posted
 				TAWTEvent event = queue.getNextEvent();
+
+				if (event == null) {
+					continue;
+				}
+
 				// eventQueue.getNextEvent() returns only when it has a real event
 				eventQueue.dispatchEvent(event);
 			}

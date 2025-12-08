@@ -1,11 +1,18 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class TContainer extends TComponent {
 
 	private List<TComponent> children = new ArrayList<>();
+
+	@Getter
+	@Setter
+	private boolean focusCycleRoot = false;
 
 	public TComponent add(TComponent component) {
 		this.children.add(component);
@@ -22,8 +29,8 @@ public class TContainer extends TComponent {
 		this.children.remove(comp);
 	}
 
-	public void setFocusCycleRoot(boolean focusCycleRoot) {
-		// do nothing
+	public boolean isValidateRoot() {
+		return false;
 	}
 
 	@Override

@@ -14,6 +14,7 @@ public final class EventTypeMonitorWindow
 		"Avg ms",
 		"Total Posted",
 		"Total Dispatched",
+		"Total Coalesced",
 		"Last ID"
 	};
 
@@ -47,15 +48,16 @@ public final class EventTypeMonitorWindow
 	protected void fillRow(HTMLElement row, EventTypeMonitor.Snapshot snap, int rowIndex) {
 
 		addCell(row, snap.getLabel()); // Type (class simple name)
-		addCell(row, String.valueOf(snap.getPending()));
+		addCell(row, snap.getPending());
 
 		addCell(row, formatItemsPerSec(snap.getPostRatePerSec()));
 		addCell(row, formatItemsPerSec(snap.getDispatchRatePerSec()));
 
 		addCell(row, formatMs(snap.getAvgDispatchTimeMs()));
 
-		addCell(row, String.valueOf(snap.getTotalPosted()));
-		addCell(row, String.valueOf(snap.getTotalDispatched()));
+		addCell(row, snap.getTotalPosted());
+		addCell(row, snap.getTotalDispatched());
+		addCell(row, snap.getCoalescedCount());
 
 		addCell(row, snap.getLastEventId() > 0 ? String.valueOf(snap.getLastEventId()) : "-");
 	}

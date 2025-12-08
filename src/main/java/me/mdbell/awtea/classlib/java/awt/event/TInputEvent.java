@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.ToString;
 import me.mdbell.awtea.classlib.java.awt.TComponent;
 
+/**
+ * @see java.awt.event.InputEvent
+ */
 @Getter
 @ToString(callSuper = true)
 public abstract class TInputEvent extends TComponentEvent {

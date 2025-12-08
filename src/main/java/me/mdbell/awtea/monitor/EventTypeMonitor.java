@@ -33,6 +33,7 @@ public final class EventTypeMonitor
 
 		private long totalPosted;
 		private long totalDispatched;
+		private long coalescedCount;
 
 		private long lastPostTimeMs;
 		private long lastDispatchTimeMs;
@@ -62,6 +63,7 @@ public final class EventTypeMonitor
 
 		private final long totalPosted;
 		private final long totalDispatched;
+		private final long coalescedCount;
 
 		private final double postRatePerSec;
 		private final double dispatchRatePerSec;
@@ -79,6 +81,7 @@ public final class EventTypeMonitor
 			this.dispatchRatePerSec = e.getDispatchRatePerSec();
 			this.avgDispatchTimeMs = e.getAvgDispatchTimeMs();
 			this.lastEventId = e.getLastEventId();
+			this.coalescedCount = e.getCoalescedCount();
 		}
 
 		/**
@@ -91,7 +94,9 @@ public final class EventTypeMonitor
 	}
 
 	public synchronized void onPost(Object event) {
-		if (event == null) return;
+		if (event == null) {
+			return;
+		}
 		Class<?> type = event.getClass();
 
 		Entry e = ensureEntry(type);
@@ -101,6 +106,16 @@ public final class EventTypeMonitor
 		long now = System.currentTimeMillis();
 		updateRate(e, now, true);
 		e.setLastPostTimeMs(now);
+	}
+
+	public synchronized void onCoalesce(Object event) {
+		if (event == null) {
+			return;
+		}
+		Class<?> type = event.getClass();
+
+		Entry e = ensureEntry(type);
+		e.coalescedCount++;
 	}
 
 	public synchronized void onDispatch(Object target, long dispatchTimeMs) {

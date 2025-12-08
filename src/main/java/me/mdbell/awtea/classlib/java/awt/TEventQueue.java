@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TEventQueue {
 
-	private final Queue[] priorityQueues = new Queue[NUM_PRIORITIES];
+	private final Queue[] queues = new Queue[NUM_PRIORITIES];
 
 	private static final int LOW_PRIORITY = 0;
 	private static final int NORM_PRIORITY = 1;
@@ -45,25 +45,114 @@ public class TEventQueue {
 		// do nothing, used to wake up the EDT when a new queue is pushed
 	};
 
+	private static final int PAINT_CACHE_IDX = 0;
+	private static final int UPDATE_CACHE_IDX = 1;
+	private static final int MOVE_CACHE_IDX = 2;
+	private static final int DRAG_CACHE_IDX = 3;
+	private static final int PEER_CACHE_IDX = 4;
+	private static final int CACHE_LENGTH = PEER_CACHE_IDX + 1;
+
 	public TEventQueue() {
 		for (int i = 0; i < NUM_PRIORITIES; i++) {
-			priorityQueues[i] = new Queue();
+			queues[i] = new Queue();
 		}
 	}
 
 	public void postEvent(TAWTEvent event) {
-
 		if (nextQueue != null) {
 			nextQueue.postEvent(event);
 			return;
 		}
-
 		int priority = getPriorityForEvent(event);
 
-		// monitor: after enqueue, compute pending counts
-		EventQueueMonitor.get().onPost(this, priority, snapshotPendingCounts());
-		EventTypeMonitor.get().onPost(event);
-		postEventInternal(priority, event);
+		synchronized (lock) {
+
+			// attempt to coalesce events
+			if (coalesceEvent(event)) {
+				EventTypeMonitor.get().onCoalesce(event);
+				return;
+			}
+
+			// monitor: after enqueue, compute pending counts
+			EventQueueMonitor.get().onPost(this, priority, snapshotPendingCounts());
+			EventTypeMonitor.get().onPost(event);
+			postEventInternal(priority, event);
+		}
+	}
+
+	private boolean coalesceEvent(TAWTEvent event) {
+		if (!(event.getSource() instanceof TComponent)) {
+			return false;
+		}
+		int cacheIdx = eventToCacheIndex(event);
+		if (cacheIdx == -1) {
+			return false;
+		}
+
+		TComponent source = (TComponent) event.getSource();
+		if (source.eventCache == null) {
+			return false;
+		}
+
+		switch (event.getID()) {
+			case TPaintEvent.PAINT:
+			case TPaintEvent.UPDATE:
+				return coalescePaintEvent(source, (TPaintEvent) event);
+			case TMouseEvent.MOUSE_MOVED:
+				return coalesceMouseMoveEvent(source, (TMouseEvent) event);
+			default:
+				return false;
+		}
+	}
+
+	private boolean coalescePaintEvent(TComponent source, TPaintEvent event) {
+		// if we're an UPDATE event, and there's a PAINT event pending, we can discard the paint
+		// since UPDATE is a full repaint
+		if (event.getID() == TPaintEvent.UPDATE) {
+			if (source.eventCache[PAINT_CACHE_IDX] != null) {
+				source.eventCache[PAINT_CACHE_IDX].unlinkFrom(queues[getPriorityForEvent(source.eventCache[PAINT_CACHE_IDX].event)]);
+				source.eventCache[PAINT_CACHE_IDX] = null;
+			}
+
+			EventQueueItem cachedUpdate = source.eventCache[UPDATE_CACHE_IDX];
+			if (cachedUpdate != null) {
+				cachedUpdate.event = event; // or merge rectangles here
+				return true; // don't enqueue a new one
+			}
+			// else, let it be enqueued by the main code path
+			return false;
+		}
+
+		// PAINT event: if there's an UPDATE event pending, discard this PAINT
+		if (source.eventCache[UPDATE_CACHE_IDX] != null) {
+			return true;
+		}
+
+		EventQueueItem cachedPaint = source.eventCache[PAINT_CACHE_IDX];
+		if (cachedPaint != null) {
+			// merge rectangles
+			TPaintEvent cachedEvent = (TPaintEvent) cachedPaint.event;
+			TRectangle r1 = cachedEvent.getUpdateRect();
+			TRectangle r2 = event.getUpdateRect();
+			int x = Math.min(r1.x, r2.x);
+			int y = Math.min(r1.y, r2.y);
+			int right = Math.max(r1.x + r1.width, r2.x + r2.width);
+			int bottom = Math.max(r1.y + r1.height, r2.y + r2.height);
+			TRectangle merged = new TRectangle(x, y, right - x, bottom - y);
+			cachedEvent.setUpdateRect(merged);
+			return true;
+		}
+		return false;
+	}
+
+	private boolean coalesceMouseMoveEvent(TComponent source, TMouseEvent event) {
+		TEventQueue.EventQueueItem cachedItem = source.eventCache[MOVE_CACHE_IDX];
+		if (cachedItem != null) {
+			// update the coordinates of the cached event
+			cachedItem.event = event;
+			return true;
+		}
+		return false;
 	}
 
 	private int getPriorityForEvent(TAWTEvent event) {
@@ -71,26 +160,25 @@ public class TEventQueue {
 			return ULTIMATE_PRIORITY;
 		} else if (event instanceof TActiveEvent) {
 			return HIGH_PRIORITY;
-		} else if (event instanceof TActionEvent) {
-			return LOW_PRIORITY;
+		} else if (event instanceof TPaintEvent) {
+			return LOW_PRIORITY; // Paint events need to be low priority to avoid starving input events
 		} else {
 			return NORM_PRIORITY;
 		}
 	}
 
 	private void postEventInternal(int priority, TAWTEvent event) {
-		synchronized (lock) {
-			priorityQueues[priority].offer(event);
-			initEventDispatchThread();
-			lock.notifyAll();
-		}
+		EventQueueItem item = queues[priority].offer(event);
+		cacheItem(item);
+		initEventDispatchThread();
+		lock.notifyAll();
 	}
 
 	private int[] snapshotPendingCounts() {
 		int[] counts = new int[NUM_PRIORITIES];
 		for (int i = 0; i < NUM_PRIORITIES; i++) {
 			int n = 0;
-			Queue q = priorityQueues[i];
+			Queue q = queues[i];
 			for (TAWTEvent ignored : q) {
 				n++;
 			}
@@ -100,7 +188,7 @@ public class TEventQueue {
 	}
 
 	private void initEventDispatchThread() {
-		if (eventDispatchThread == null) {
+		if (eventDispatchThread == null || !eventDispatchThread.getThread().isAlive()) {
 			eventDispatchThread = new TEventDispatchThread(name, this);
 			eventDispatchThread.start();
 		}
@@ -112,7 +200,7 @@ public class TEventQueue {
 	public TAWTEvent peekEvent() {
 		synchronized (lock) {
 			for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
-				Queue queue = priorityQueues[i];
+				Queue queue = queues[i];
 				TAWTEvent event = queue.peek();
 				if (event != null) {
 					return event;
@@ -128,7 +216,7 @@ public class TEventQueue {
 	public TAWTEvent peekEvent(int id) {
 		synchronized (lock) {
 			for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
-				Queue queue = priorityQueues[i];
+				Queue queue = queues[i];
 				for (TAWTEvent event : queue) {
 					if (event.getID() == id) {
 						return event;
@@ -139,20 +227,20 @@ public class TEventQueue {
 		}
 	}
 
-	/**
-	 * Removes and returns the next event from the queue.
-	 * In TeaVM, this processes events synchronously.
-	 * Note: wait() is not supported in browser environment, so this returns immediately.
-	 */
 	public TAWTEvent getNextEvent() throws InterruptedException {
 		synchronized (lock) {
 			for (; ; ) {
+				if (nextQueue != null) {
+					// us essentially telling the EDT to re-query the next queue
+					return null;
+				}
 				// check all priorities, highest first
 				for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
-					Queue queue = priorityQueues[i];
-					TAWTEvent event = queue.poll();
-					if (event != null) {
-						return event; // lock is released when we exit this block
+					Queue queue = queues[i];
+					EventQueueItem item = queue.poll();
+					if (item != null) {
+						uncacheItem(item);
+						return item.event;
 					}
 				}
 
@@ -272,33 +360,34 @@ public class TEventQueue {
 	}
 
 	public void push(TEventQueue newEventQueue) {
-		TEventQueue tail = getTailEventQueue();
+		synchronized (lock) {
+			TEventQueue tail = getTailEventQueue();
 
-		// Transfer the event dispatch thread to the new queue
-		newEventQueue.eventDispatchThread = tail.eventDispatchThread;
-		if (tail.eventDispatchThread != null && tail.eventDispatchThread.getEventQueue() == this) {
-			tail.eventDispatchThread.setEventQueue(newEventQueue);
-			// ensures the thread isn't waiting on us to post events
-			lock.notifyAll();
-		}
-
-		// drain all events from the old queue into the new one
-		while (tail.peekEvent() != null) {
-			for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
-				Queue queue = tail.priorityQueues[i];
-				TAWTEvent event;
-				while ((event = queue.poll()) != null) {
-					newEventQueue.postEventInternal(i, event);
-				}
+			// Transfer the event dispatch thread to the new queue
+			newEventQueue.eventDispatchThread = tail.eventDispatchThread;
+			if (tail.eventDispatchThread != null && tail.eventDispatchThread.getEventQueue() == this) {
+				tail.eventDispatchThread.setEventQueue(newEventQueue);
+				// ensures the thread isn't waiting on us to post events
+				lock.notifyAll();
 			}
+
+			// drain all events from the old queue into the new one
+			for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
+				Queue queue = tail.queues[i];
+				EventQueueItem item = queue.head;
+				if (item == null) {
+					continue;
+				}
+				newEventQueue.queues[i].adopt(queue);
+			}
+
+			// Wake up the event dispatch thread if it's waiting
+			newEventQueue.postEventInternal(ULTIMATE_PRIORITY, new TInvocationEvent(tail, DUMMY));
+
+			// Link the queues
+			tail.nextQueue = newEventQueue;
+			newEventQueue.prevQueue = tail;
 		}
-
-		// Wake up the event dispatch thread if it's waiting
-		newEventQueue.postEventInternal(ULTIMATE_PRIORITY, new TInvocationEvent(tail, DUMMY));
-
-		// Link the queues
-		tail.nextQueue = newEventQueue;
-		newEventQueue.prevQueue = tail;
 	}
 
 	protected void pop() throws EmptyStackException {
@@ -306,17 +395,32 @@ public class TEventQueue {
 			throw new EmptyStackException();
 		}
 
-		// Transfer the event dispatch thread back to the previous queue
-		if (eventDispatchThread != null) {
-			prevQueue.eventDispatchThread = eventDispatchThread;
-			eventDispatchThread.setEventQueue(prevQueue);
-			eventDispatchThread = null;
-			// ensures the thread isn't waiting on us to post events
-			lock.notifyAll();
-		}
+		synchronized (lock) {
 
-		prevQueue.nextQueue = null;
-		this.prevQueue = null;
+			// Transfer the event dispatch thread back to the previous queue
+			if (eventDispatchThread != null) {
+				prevQueue.eventDispatchThread = eventDispatchThread;
+				eventDispatchThread.setEventQueue(prevQueue);
+				eventDispatchThread = null;
+				// ensures the thread isn't waiting on us to post events
+				lock.notifyAll();
+			}
+
+			// transfer any remaining events back to the previous queue
+			for (int i = NUM_PRIORITIES - 1; i >= 0; i--) {
+				Queue queue = queues[i];
+				EventQueueItem item = queue.head;
+				if (item == null) {
+					continue;
+				}
+				prevQueue.queues[i].adopt(queue);
+			}
+
+			// Unlink the queues
+			prevQueue.nextQueue = null;
+			prevQueue = null;
+
+		}
 	}
 
 	private TEventQueue getTailEventQueue() {
@@ -327,30 +431,93 @@ public class TEventQueue {
 		return eq;
 	}
 
+	private boolean noEvents() {
+		for (int i = 0; i < NUM_PRIORITIES; i++) {
+			if (queues[i].head != null) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private void cacheItem(EventQueueItem item) {
+		TAWTEvent event = item.event;
+		if (!(event.getSource() instanceof TComponent)) {
+			return;
+		}
+		int cacheIdx = eventToCacheIndex(event);
+		if (cacheIdx == -1) {
+			return;
+		}
+		TComponent source = (TComponent) event.getSource();
+		if (source.eventCache == null) {
+			source.eventCache = new TEventQueue.EventQueueItem[CACHE_LENGTH];
+		}
+		source.eventCache[cacheIdx] = item;
+	}
+
+	private void uncacheItem(EventQueueItem item) {
+		TAWTEvent event = item.event;
+		if (!(event.getSource() instanceof TComponent)) {
+			return;
+		}
+		int cacheIdx = eventToCacheIndex(event);
+		if (cacheIdx == -1) {
+			return;
+		}
+		TComponent source = (TComponent) event.getSource();
+		if (source.eventCache == null) {
+			return;
+		}
+		source.eventCache[cacheIdx] = null;
+	}
+
+	private static int eventToCacheIndex(TAWTEvent event) {
+		switch (event.getID()) {
+			case TPaintEvent.UPDATE:
+				return UPDATE_CACHE_IDX;
+			case TPaintEvent.PAINT:
+				return PAINT_CACHE_IDX;
+			// update events (TODO)
+			case TMouseEvent.MOUSE_MOVED:
+				return MOVE_CACHE_IDX;
+			// drag events - we presently do not support drag events at all
+			// peer events (TODO) - currently not used
+			default:
+				return -1;
+		}
+	}
+
 	static class Queue implements Iterable<TAWTEvent> {
 		EventQueueItem head;
 		EventQueueItem tail;
 
-		void offer(TAWTEvent event) {
+		EventQueueItem offer(TAWTEvent event) {
 			EventQueueItem item = new EventQueueItem(event);
 			if (tail != null) {
+				item.prev = tail;
 				tail.next = item;
 				tail = item;
 			} else {
 				head = tail = item;
 			}
+			return item;
 		}
 
-		TAWTEvent poll() {
+		EventQueueItem poll() {
 			if (head == null) {
 				return null;
 			}
-			TAWTEvent event = head.event;
+			EventQueueItem item = head;
 			head = head.next;
 			if (head == null) {
 				tail = null;
+			} else {
+				head.prev = null;
 			}
-			return event;
+			item.next = null;
+			return item;
 		}
 
 		TAWTEvent peek() {
@@ -359,6 +526,22 @@ public class TEventQueue {
 			}
 			return head.event;
 		}
+
+		public void adopt(Queue queue) {
+			if (queue.head == null) {
+				return;
+			}
+			if (this.tail != null) {
+				this.tail.next = queue.head;
+				queue.head.prev = this.tail;
+			} else {
+				this.head = queue.head;
+			}
+			this.tail = queue.tail;
+			queue.head = null;
+			queue.tail = null;
+		}
+
 
 		@Override
 		public Iterator<TAWTEvent> iterator() {
@@ -382,10 +565,26 @@ public class TEventQueue {
 
 	static class EventQueueItem {
 		TAWTEvent event;
+		EventQueueItem prev;
 		EventQueueItem next;
 
 		EventQueueItem(TAWTEvent event) {
 			this.event = event;
+		}
+
+		void unlinkFrom(Queue owner) {
+			if (prev != null) {
+				prev.next = next;
+			} else {
+				owner.head = next;   // we were head
+			}
+			if (next != null) {
+				next.prev = prev;
+			} else {
+				owner.tail = prev;   // we were tail
+			}
+			prev = null;
+			next = null;
 		}
 	}
 }

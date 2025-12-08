@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-public abstract class TComponent {
+public abstract class TComponent implements TImageObserver {
 
 	@Getter
 	@Setter
@@ -26,6 +26,9 @@ public abstract class TComponent {
 	@Getter
 	private Dimension preferredSize;
 
+	@Getter
+	private boolean valid = true;
+
 	protected List<TMouseListener> mouseListeners = new ArrayList<>();
 	protected List<TMouseMotionListener> mouseMotionListeners = new ArrayList<>();
 	protected List<TMouseWheelListener> mouseWheelListeners = new ArrayList<>();
@@ -36,13 +39,9 @@ public abstract class TComponent {
 		return getGraphics().measureText(font);
 	}
 
-	public TImage createImage(int width, int height) {
-		return new TBufferedImage(width, height);
-	}
-
-	public TImage createImage(TImageProducer producer) {
-		return TAWTeaToolkit.getDefaultToolkit().createImage(producer);
-	}
+	// used in the event queue for caching
+	// we shouldn't touch this directly, and leave it to TEventQueue
+	TEventQueue.EventQueueItem[] eventCache;
 
 	public void dispatchEvent(TAWTEvent event) {
 		if (event.isConsumed()) {
@@ -59,8 +58,22 @@ public abstract class TComponent {
 			dispatchMouseEvent((TMouseEvent) event);
 		} else if (event instanceof TFocusEvent) {
 			dispatchFocusEvent((TFocusEvent) event);
+		} else if (event instanceof TPaintEvent) {
+			dispatchPaintEvent((TPaintEvent) event);
+		} else if ((!(event instanceof TActionEvent))) {
+			// action events are handled at higher level component directly, so we should
+			// be ignoring them here to avoid noisy logs.
+			System.err.println("Unhandled event type: " + event.getClass().getName());
+		}
+	}
+
+	private void dispatchPaintEvent(TPaintEvent event) {
+		if (event.getID() == TPaintEvent.PAINT) {
+			paint(getGraphics());
+		} else if (event.getID() == TPaintEvent.UPDATE) {
+			update(getGraphics());
 		} else {
-			//System.err.println("Unhandled event type:" + event.getClass().getName());
+			System.err.println("Unhandled paint event id: " + event.getID());
 		}
 	}
 
@@ -193,12 +206,25 @@ public abstract class TComponent {
 		return parent.getGraphics();
 	}
 
-	public abstract void paint(TGraphics g);
+	public void paint(TGraphics g) {
+		g.clearRect(0, 0, width, height);
+	}
+
+	public void update(TGraphics g) {
+		g.clearRect(0, 0, width, height);
+		paint(g);
+	}
 
 	public void repaint() {
-		TGraphics gfx = getGraphics();
-		gfx.reset();
-		paint(gfx);
+		repaint(0, 0, width, height);
+	}
+
+	public void repaint(int x, int y, int width, int height) {
+		repaint(0L, x, y, width, height);
+	}
+
+	public void repaint(long tm, int x, int y, int width, int height) {
+		postEvent(new TPaintEvent(this, TPaintEvent.PAINT, new TRectangle(x, y, width, height)));
 	}
 
 	public final boolean contains(int px, int py) {
@@ -222,12 +248,77 @@ public abstract class TComponent {
 	}
 
 	public void setSize(int width, int height) {
-		this.width = width;
-		this.height = height;
+		if (this.width != width || this.height != height) {
+			this.width = width;
+			this.height = height;
+			repaint();
+		}
+	}
+
+	public void revalidate() {
+		TContainer root = this.getParent();
+		if (root == null) {
+			// no parent, so we only validate self
+			validate();
+		} else {
+			// find the top-most validate root
+			while (!root.isValidateRoot()) {
+				root = root.getParent();
+				if (root.getParent() == null) {
+					break;
+				}
+			}
+			root.validate();
+		}
+	}
+
+	public void validate() {
+		boolean wasValid = this.isValid();
+		valid = true;
+		if (!wasValid) {
+			repaint();
+		}
+	}
+
+	public void invalidate() {
+		valid = false;
+		if (parent != null) {
+			parent.invalidate();
+		}
+	}
+
+	protected void postEvent(TAWTEvent event) {
+		TToolkit.getEventQueue().postEvent(event);
+	}
+
+	public boolean imageUpdate(TImage img, int infoflags, int x, int y, int width, int height) {
+		int rate = -1;
+		if ((infoflags & (FRAMEBITS | ALLBITS)) != 0) {
+			rate = 0;
+		} else if ((infoflags & SOMEBITS) != 0) {
+			rate = 100; // semi-arbitrary value, the JVM hides this behind a flag +  system property
+		}
+		if (rate >= 0) {
+			repaint(rate, 0, 0, width, height);
+		}
+		return (infoflags & (ALLBITS | ABORT)) == 0;
+	}
+
+	public TImage createImage(TImageProducer producer) {
+		return TToolkit.getDefaultToolkit().createImage(producer);
+	}
+
+	public TImage createImage(int width, int height) {
+		// normally a peer would be involved here, but we just create a buffered image directly
+		return new TBufferedImage(width, height);
+	}
+
+	public int checkImage(TImage image, TImageObserver observer) {
+		return checkImage(image, -1, -1, observer);
 	}
 
 	//TODO: we already load images kinda sync, so we just stub these for now.
-	public int checkImage(TImage image, int width, int height, Object o) {
+	public int checkImage(TImage image, int width, int height, TImageObserver o) {
 		return TImageObserver.ALLBITS;
 	}
 

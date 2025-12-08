@@ -134,6 +134,14 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 		return "No data.";
 	}
 
+	protected final void addCell(HTMLElement row, double value) {
+		addCell(row, String.valueOf(value));
+	}
+
+	protected final void addCell(HTMLElement row, int value) {
+		addCell(row, String.valueOf(value));
+	}
+
 	protected void addCell(HTMLElement row, String text) {
 		HTMLElement td = createElement("td");
 		td.setClassName("monitor-data-cell");
