@@ -26,7 +26,7 @@ public class EventTestApplet extends Applet
 
 	@Override
 	public void paint(Graphics g) {
-		g.setColor(new Color(255, 255, 255));
+		g.setColor(Color.LIGHT_GRAY);
 		g.fillRect(0, 0, getWidth(), getHeight());
 		g.setColor(new Color(209, 19, 19));
 		g.drawString("Clicks: " + clickCount, 20, 20);

@@ -463,6 +463,7 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 
 			if (packedInt) {
 				int[] pixels = ((TDataBufferInt) db).getData();
+
 				int scanlineStride = ((TSinglePixelPackedSampleModel) sm).getScanlineStride();
 
 				for (int row = 0; row < h; row++) {

@@ -1,7 +1,7 @@
 package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
-import me.mdbell.awtea.polyfill.java.awt.TColor;
+import org.teavm.classlib.java.awt.TColor;
 
 import java.awt.*;
 import java.text.AttributedCharacterIterator;
@@ -11,7 +11,7 @@ import java.text.AttributedCharacterIterator;
  */
 public abstract class TGraphics2D extends TGraphics {
 
-	protected TGraphics2D(){
+	protected TGraphics2D() {
 
 	}
 
@@ -67,7 +67,7 @@ public abstract class TGraphics2D extends TGraphics {
 
 	// public abstract void drawGlyphVector(TGlyphVector g, float x, float y);
 
-    // public abstract void drawImage(java.awt.image.BufferedImage, java.awt.image.BufferedImageOp, int, int)
+	// public abstract void drawImage(java.awt.image.BufferedImage, java.awt.image.BufferedImageOp, int, int)
 
 	public abstract void drawLine(int x1, int y1, int x2, int y2);
 
