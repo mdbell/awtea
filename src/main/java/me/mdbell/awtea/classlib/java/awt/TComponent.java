@@ -118,7 +118,7 @@ public abstract class TComponent implements TImageObserver {
 		}
 	}
 
-	private void dispatchPaintEvent(TPaintEvent event) {
+	protected void dispatchPaintEvent(TPaintEvent event) {
 		TGraphics graphics = this.getGraphics();
 		if (event.getID() == TPaintEvent.PAINT) {
 			//TODO: clip rect
@@ -128,13 +128,14 @@ public abstract class TComponent implements TImageObserver {
 		} else {
 			System.err.println("Unhandled paint event id: " + event.getID());
 		}
+		graphics.dispose();
 	}
 
-	public void dispatchMouseWheelEvent(TMouseWheelEvent e) {
+	protected void dispatchMouseWheelEvent(TMouseWheelEvent e) {
 		dispatchEvent(e, mouseWheelListeners, TMouseWheelListener::mouseWheelMoved);
 	}
 
-	public void dispatchKeyEvent(TKeyEvent e) {
+	protected void dispatchKeyEvent(TKeyEvent e) {
 		int id = e.getID();
 		switch (id) {
 			case TKeyEvent.KEY_PRESSED:
@@ -151,7 +152,7 @@ public abstract class TComponent implements TImageObserver {
 		}
 	}
 
-	public void dispatchMouseEvent(TMouseEvent e) {
+	protected void dispatchMouseEvent(TMouseEvent e) {
 		int id = e.getID();
 		switch (id) {
 			case TMouseEvent.MOUSE_MOVED:
@@ -181,7 +182,7 @@ public abstract class TComponent implements TImageObserver {
 		}
 	}
 
-	public void dispatchFocusEvent(TFocusEvent e) {
+	protected void dispatchFocusEvent(TFocusEvent e) {
 
 		if (!this.isFocusable()) {
 			return;

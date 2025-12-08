@@ -268,6 +268,8 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 			.subClass(":hover")
 			.prop("background", Theme.Var.TABLE_ROW_HOVER_BACKGROUND)
 
-			.end().inject();
+			.end()
+			
+			.inject();
 	}
 }

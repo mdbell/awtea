@@ -85,16 +85,16 @@ public final class NetworkMonitorWindow extends AbstractMonitorWindow<NetworkMon
 	static {
 		AwCss.sheet()
 			.createClass("net-row-open")
-			.prop("background", Theme.Var.ROW_STATUS_OK_BACKGROUND)
+			.prop("background", Theme.Var.ROW_STATUS_OK_BACKGROUND.important())
 
 			.createClass("net-row-connecting")
-			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND)
+			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND.important())
 
 			.createClass("net-row-error")
-			.prop("background", Theme.Var.ROW_STATUS_ERROR_BACKGROUND)
+			.prop("background", Theme.Var.ROW_STATUS_ERROR_BACKGROUND.important())
 
 			.createClass("net-row-closed")
-			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND)
+			.prop("background", Theme.Var.ROW_STATUS_MUTED_BACKGROUND.important())
 
 			.end()
 			.inject();

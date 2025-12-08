@@ -199,6 +199,65 @@ public abstract class FloatingWindow {
 			.end()
 			.prop("pointer-events", "none")
 			.end()
+
+			// input styling (for filter boxes, selects, etc)
+			.createClass("aw-window  select, .aw-window input[type=\"text\"], .aw-window  input[type=\"number\"]")
+			.prop("padding", "2px 4px")
+			.prop("background", Theme.Var.BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
+			.prop("border")
+			.value("1px solid")
+			.value(Theme.Var.BORDER)
+			.end()
+			.prop("border-radius", "3px")
+			.end()
+
+			// table styling
+			.createClass("aw-window table")
+			.prop("width", "100%")
+			.prop("border-collapse", "collapse")
+			.prop("font-size", "12px")
+			.prop("background", Theme.Var.BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
+
+			// table headers
+			.createClass("aw-window th")
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.TABLE_HEADER_BORDER)
+			.end()
+			.prop("padding", "2px 4px")
+			.prop("text-align", "left")
+			.prop("background", Theme.Var.TABLE_HEADER_BACKGROUND)
+			.prop("color", Theme.Var.FOREGROUND)
+
+			// table data cells
+
+			.createClass("aw-window td")
+			.prop("padding", "2px 4px")
+			.prop("white-space", "nowrap")
+			.prop("color", Theme.Var.FOREGROUND)
+
+			// table rows (alternating colors)
+			.createClass("aw-window tr")
+			.prop("border-bottom")
+			.value("1px solid")
+			.value(Theme.Var.TABLE_HEADER_BORDER)
+			.end()
+			.prop("cursor", "default")
+			.subClass(":hover")
+			.prop("background", Theme.Var.TABLE_ROW_HOVER_BACKGROUND)
+			.end()
+
+			.createClass("aw-window tr:nth-child(odd)")
+			.prop("background", Theme.Var.TABLE_ROW_BACKGROUND)
+			.end()
+
+			.createClass("aw-window tr:nth-child(even)")
+			.prop("background", Theme.Var.TABLE_ROW_ALT_BACKGROUND)
+			.end()
+
+
 			.inject();
 	}
 

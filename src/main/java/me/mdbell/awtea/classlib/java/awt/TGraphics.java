@@ -1,9 +1,9 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import lombok.ToString;
+import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 
-import java.awt.Color;
+import java.awt.*;
 
 /**
  * @see java.awt.Graphics
@@ -17,9 +17,9 @@ public abstract class TGraphics {
 
 	public abstract TGraphics create();
 
-	public TGraphics create(int x, int y, int width, int height){
+	public TGraphics create(int x, int y, int width, int height) {
 		TGraphics g = create();
-		if(g == null) {
+		if (g == null) {
 			return null;
 		}
 		g.translate(x, y);
@@ -88,5 +88,9 @@ public abstract class TGraphics {
 	public abstract void clipRect(int x, int y, int width, int height);
 
 	public abstract void setClip(TShape clip);
+
+	public void dispose() {
+
+	}
 
 }

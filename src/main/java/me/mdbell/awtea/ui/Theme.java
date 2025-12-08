@@ -65,6 +65,8 @@ public class Theme {
 			.prop(Var.METER_WARN, "#ffb300")   // amber
 			.prop(Var.METER_BAD, "#f44336")    // red
 			.end()
+
+
 			.createClass(DARK_MODE_CLASS)
 			.prop(Var.BACKGROUND, "#1e1e1e")
 			.prop(Var.FOREGROUND, "#eee")
@@ -271,6 +273,10 @@ public class Theme {
 		@Override
 		public String toCssValue() {
 			return AwCss.var(this.cssVarName);
+		}
+
+		public String important() {
+			return AwCss.varImportant(this.cssVarName);
 		}
 	}
 }

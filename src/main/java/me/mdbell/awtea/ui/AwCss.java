@@ -22,6 +22,10 @@ public final class AwCss {
 		return "var(" + cssVarName + ")";
 	}
 
+	public static String varImportant(String cssVarName) {
+		return "var(" + cssVarName + ") !important";
+	}
+
 	// ================== internal types ==================
 
 	public interface CssValue {

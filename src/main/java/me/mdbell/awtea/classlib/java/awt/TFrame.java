@@ -2,27 +2,23 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.awtea.peer.TFrameFloatingPeer;
 import me.mdbell.awtea.classlib.java.awt.event.TWindowListener;
-import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 
 import java.awt.*;
 import java.awt.event.ComponentListener;
 
-public class TFrame extends TContainer {
+public class TFrame extends TSurface {
 
 	private final TFrameFloatingPeer peer;
-
-	private TBufferedImage offscreenBuffer;
 
 	// Constructor
 	public TFrame() {
 		peer = new TFrameFloatingPeer(this);
-		offscreenBuffer = new TBufferedImage(1, 1);
+		this.surfacePeer = new TOffscreenBufferPeer(this, 1, 1);
 	}
 
 	@Override
-	public TGraphics getGraphics() {
-		peer.getGraphics().drawImage(offscreenBuffer, 0, 0, null);
-		return offscreenBuffer.getGraphics();
+	public TGraphics getSurfaceGraphics() {
+		return peer.getGraphics();
 	}
 
 	// Set the title of the frame
@@ -60,7 +56,6 @@ public class TFrame extends TContainer {
 		}
 		super.setSize(width, height);
 		peer.setSize(width, height);
-		offscreenBuffer = new TBufferedImage(width, height);
 		repaint();
 	}
 
