@@ -1,5 +1,7 @@
 package me.mdbell.awtea.transform;
 
+import me.mdbell.awtea.instrument.ArrayHacks;
+import me.mdbell.awtea.instrument.DetourHacks;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 

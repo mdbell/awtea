@@ -1,8 +1,5 @@
-package me.mdbell.awtea.transform;
+package me.mdbell.awtea.instrument;
 
-import me.mdbell.awtea.instrument.DetourMethod;
-import me.mdbell.awtea.instrument.DetourReceiver;
-import me.mdbell.awtea.instrument.NoDetours;
 import org.teavm.model.*;
 import org.teavm.model.instructions.InvokeInstruction;
 
