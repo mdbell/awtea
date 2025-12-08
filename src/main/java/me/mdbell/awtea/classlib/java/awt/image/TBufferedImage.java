@@ -2,7 +2,6 @@ package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.TImage;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
 import me.mdbell.awtea.support.ImageDataConsumer;
@@ -342,7 +341,7 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	}
 
 	@Override
-	public TGraphics getGraphics() {
+	public TSoftwareGraphics getGraphics() {
 		if (this.gfx == null) {
 			this.gfx = new TSoftwareGraphics(this);
 		}

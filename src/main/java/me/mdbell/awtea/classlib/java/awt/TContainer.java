@@ -36,10 +36,6 @@ public class TContainer extends TComponent {
 		return false;
 	}
 
-	public void update(TGraphics g) {
-		paint(g);
-	}
-
 	@Override
 	public void paint(TGraphics g) {
 		for (TComponent component : children) {
@@ -51,10 +47,13 @@ public class TContainer extends TComponent {
 		}
 	}
 
+	public TComponent[] getComponents() {
+		return children.toArray(TComponent[]::new);
+	}
+
 	public TComponent getComponentAt(int x, int y) {
 		for (TComponent child : children) {
-			if (x >= child.getX() && x < child.getX() + child.getWidth()
-				&& y >= child.getY() && y < child.getY() + child.getHeight()) {
+			if (child.contains(x, y)) {
 				if (child instanceof TContainer) {
 					TComponent deeper = ((TContainer) child).getComponentAt(x - child.getX(), y - child.getY());
 					if (deeper != null) {

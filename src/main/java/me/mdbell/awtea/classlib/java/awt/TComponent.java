@@ -2,13 +2,14 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import lombok.Getter;
 import lombok.Setter;
+import me.mdbell.awtea.classlib.java.awt.awtea.TFocusManager;
 import me.mdbell.awtea.classlib.java.awt.event.*;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.classlib.java.awt.image.TImageProducer;
 
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -30,21 +31,25 @@ public abstract class TComponent implements TImageObserver {
 	private Dimension preferredSize;
 
 	@Getter
+	private boolean focusable = true;
+
+	@Getter
 	private boolean valid = true;
 
 	private Color background;
 
 	private Color foreground;
 
-	protected List<TMouseListener> mouseListeners = new ArrayList<>();
-	protected List<TMouseMotionListener> mouseMotionListeners = new ArrayList<>();
-	protected List<TMouseWheelListener> mouseWheelListeners = new ArrayList<>();
-	protected List<TKeyListener> keyListeners = new ArrayList<>();
-	protected List<TFocusListener> focusListeners = new ArrayList<>();
+	protected List<TMouseListener> mouseListeners = new LinkedList<>();
+	protected List<TMouseMotionListener> mouseMotionListeners = new LinkedList<>();
+	protected List<TMouseWheelListener> mouseWheelListeners = new LinkedList<>();
+	protected List<TKeyListener> keyListeners = new LinkedList<>();
+	protected List<TFocusListener> focusListeners = new LinkedList<>();
 
 	// used in the event queue for caching
 	// we shouldn't touch this directly, and leave it to TEventQueue
 	TEventQueue.EventQueueItem[] eventCache;
+
 
 	public TFontMetrics getFontMetrics(TFont font) {
 		return getGraphics().measureText(font);
@@ -59,6 +64,13 @@ public abstract class TComponent implements TImageObserver {
 			return null;
 		}
 	}
+
+	public void setFocusable(boolean focusable) {
+		boolean oldFocusable = this.focusable;
+		this.focusable = focusable;
+		firePropertyChange("focusable", oldFocusable, focusable);
+	}
+
 
 	public void setBackground(Color c) {
 		Color old = this.background;
@@ -107,10 +119,12 @@ public abstract class TComponent implements TImageObserver {
 	}
 
 	private void dispatchPaintEvent(TPaintEvent event) {
+		TGraphics graphics = this.getGraphics();
 		if (event.getID() == TPaintEvent.PAINT) {
-			paint(getGraphics());
+			//TODO: clip rect
+			paint(graphics);
 		} else if (event.getID() == TPaintEvent.UPDATE) {
-			update(getGraphics());
+			update(graphics);
 		} else {
 			System.err.println("Unhandled paint event id: " + event.getID());
 		}
@@ -138,9 +152,6 @@ public abstract class TComponent implements TImageObserver {
 	}
 
 	public void dispatchMouseEvent(TMouseEvent e) {
-		if (!this.contains(e.getX(), e.getY())) {
-			return; //TODO maybe do this in the parent?
-		}
 		int id = e.getID();
 		switch (id) {
 			case TMouseEvent.MOUSE_MOVED:
@@ -153,6 +164,7 @@ public abstract class TComponent implements TImageObserver {
 				dispatchEvent(e, mouseListeners, TMouseListener::mouseClicked);
 				break;
 			case TMouseEvent.MOUSE_PRESSED:
+				requestFocus();
 				dispatchEvent(e, mouseListeners, TMouseListener::mousePressed);
 				break;
 			case TMouseEvent.MOUSE_RELEASED:
@@ -170,6 +182,11 @@ public abstract class TComponent implements TImageObserver {
 	}
 
 	public void dispatchFocusEvent(TFocusEvent e) {
+
+		if (!this.isFocusable()) {
+			return;
+		}
+
 		int id = e.getID();
 		switch (id) {
 			case TFocusEvent.FOCUS_GAINED:
@@ -194,47 +211,77 @@ public abstract class TComponent implements TImageObserver {
 	}
 
 	public void addKeyListener(TKeyListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.keyListeners.add(l);
 	}
 
 	public void addMouseListener(TMouseListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.mouseListeners.add(l);
 	}
 
 	public void removeKeyListener(TKeyListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.keyListeners.remove(l);
 	}
 
 	public void removeMouseListener(TMouseListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.mouseListeners.add(l);
 	}
 
 	public void addFocusListener(TFocusListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.focusListeners.add(l);
 	}
 
 	public void addMouseMotionListener(TMouseMotionListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.mouseMotionListeners.add(l);
 	}
 
 	public void removeFocusListener(TFocusListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.focusListeners.remove(l);
 	}
 
 	public void removeMouseMotionListener(TMouseMotionListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.mouseMotionListeners.remove(l);
 	}
 
 	public void addMouseWheelListener(TMouseWheelListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.mouseWheelListeners.add(l);
 	}
 
 	public void removeMouseWheelListener(TMouseWheelListener l) {
+		if (l == null) {
+			return; // special case to match AWT behavior
+		}
 		this.mouseWheelListeners.remove(l);
 	}
 
 	public void requestFocus() {
-
+		TFocusManager.get().setGlobalFocusOwner(this);
 	}
 
 	public void setFocusTraversalKeysEnabled(boolean focusTraversalKeysEnabled) {
@@ -372,5 +419,25 @@ public abstract class TComponent implements TImageObserver {
 	protected void firePropertyChange(String propertyName,
 									  Object oldValue, Object newValue) {
 		//TODO: implement property change listeners
+	}
+
+	public Point getLocationOnScreen() {
+		int absX = this.x;
+		int absY = this.y;
+		TContainer p = this.parent;
+		while (p != null) {
+			absX += p.getX();
+			absY += p.getY();
+			p = p.getParent();
+		}
+		return new Point(absX, absY);
+	}
+
+	public void fireFocusLost() {
+		TToolkit.getEventQueue().postEvent(new TFocusEvent(this, TFocusEvent.FOCUS_LOST));
+	}
+
+	public void fireFocusGained() {
+		TToolkit.getEventQueue().postEvent(new TFocusEvent(this, TFocusEvent.FOCUS_GAINED));
 	}
 }

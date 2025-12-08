@@ -1,52 +1,28 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
+import me.mdbell.awtea.classlib.java.awt.awtea.peer.TFrameFloatingPeer;
 import me.mdbell.awtea.classlib.java.awt.event.TWindowListener;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
-import me.mdbell.awtea.peer.FrameFloatingPeer;
 
 import java.awt.*;
 import java.awt.event.ComponentListener;
 
 public class TFrame extends TContainer {
 
-	private final FrameFloatingPeer peer;
-
-	private final TCanvas2DGraphics graphics;
-
-	private final TEventManager eventManager;
+	private final TFrameFloatingPeer peer;
 
 	private TBufferedImage offscreenBuffer;
 
 	// Constructor
 	public TFrame() {
-		peer = new FrameFloatingPeer();
-		graphics = new TCanvas2DGraphics(peer.getCanvasContext());
-
-		eventManager = new TEventManager(peer.getCanvas(), this);
-
-		eventManager.disableContextMenu()
-			.withFocus()
-			.withKeyboard()
-			.withMouse()
-			.withMouseWheel();
-
+		peer = new TFrameFloatingPeer(this);
 		offscreenBuffer = new TBufferedImage(1, 1);
 	}
 
-	public TGraphics getGraphics() {
-		return graphics;
-	}
-
-	public void update(TGraphics g) {
-		paint(g);
-	}
-
 	@Override
-	public void paint(TGraphics g) {
-		TGraphics offscreenGfx = offscreenBuffer.getGraphics();
-		super.paint(offscreenGfx);
-		g.drawImage(offscreenBuffer, 0, 0, null);
+	public TGraphics getGraphics() {
+		peer.getGraphics().drawImage(offscreenBuffer, 0, 0, null);
+		return offscreenBuffer.getGraphics();
 	}
 
 	// Set the title of the frame
@@ -83,8 +59,22 @@ public class TFrame extends TContainer {
 			return;
 		}
 		super.setSize(width, height);
-		offscreenBuffer = new TBufferedImage(width, height);
 		peer.setSize(width, height);
+		offscreenBuffer = new TBufferedImage(width, height);
+		repaint();
+	}
+
+	// this is _technically_ part of Window, but whatever
+	public void pack() {
+		int minWidth = 0;
+		int minHeight = 0;
+		TComponent[] components = this.getComponents();
+		for (TComponent child : components) {
+			minWidth = Math.max(minWidth, child.getX() + child.getWidth());
+			minHeight = Math.max(minHeight, child.getY() + child.getHeight());
+		}
+
+		setSize(minWidth, minHeight);
 		repaint();
 	}
 

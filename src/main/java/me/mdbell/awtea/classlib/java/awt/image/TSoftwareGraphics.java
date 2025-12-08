@@ -1,20 +1,22 @@
 package me.mdbell.awtea.classlib.java.awt.image;
 
+import lombok.*;
 import me.mdbell.awtea.classlib.java.awt.*;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.geom.TPoint2D;
-import lombok.*;
-import org.teavm.jso.canvas.ImageData;
 import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.impl.Debug;
 import me.mdbell.awtea.support.ImageDataProvider;
 import me.mdbell.awtea.util.GlyphRasterizer;
+import org.teavm.jso.canvas.ImageData;
 
 import java.awt.*;
 
-@RequiredArgsConstructor(access=AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+@ToString
 public class TSoftwareGraphics extends TGraphics {
 
+	@ToString.Exclude
 	private final TBufferedImage image;
 
 	@Getter
@@ -115,7 +117,7 @@ public class TSoftwareGraphics extends TGraphics {
 		// Clamp to surface bounds
 		int x0 = Math.max(x, 0);
 		int y0 = Math.max(y, 0);
-		int x1 = Math.min(x + width,  image.getWidth());
+		int x1 = Math.min(x + width, image.getWidth());
 		int y1 = Math.min(y + height, image.getHeight());
 		if (x0 >= x1 || y0 >= y1) {
 			return;
@@ -249,9 +251,9 @@ public class TSoftwareGraphics extends TGraphics {
 		x = (int) pt.getX();
 		y = (int) pt.getY();
 
-		if(img instanceof ImageDataProvider) {
+		if (img instanceof ImageDataProvider) {
 			ImageData data = ((ImageDataProvider) img).getImageData();
-			if(data != null) {
+			if (data != null) {
 				image.putImageData(x, y, width, height, data);
 				return true;
 			}
@@ -266,9 +268,9 @@ public class TSoftwareGraphics extends TGraphics {
 		x = (int) pt.getX();
 		y = (int) pt.getY();
 
-		if(img instanceof ImageDataProvider) {
+		if (img instanceof ImageDataProvider) {
 			ImageData data = ((ImageDataProvider) img).getImageData();
-			if(data != null) {
+			if (data != null) {
 				image.putImageData(x, y, data);
 				return true;
 			}

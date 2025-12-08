@@ -67,11 +67,11 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	@Override
 	public void setColor(Color c) {
 		//TODO: resolve why the fuck teavm colors aren't working
-//		this.color = c;
-//		String color = c.toCSS();
-//		context.setFillStyle(color);
-//		context.setStrokeStyle(color);
-//		context.setShadowColor("transparent");
+		this.color = c;
+		String color = c.toCSS();
+		context.setFillStyle(color);
+		context.setStrokeStyle(color);
+		context.setShadowColor("transparent");
 	}
 
 	@Override

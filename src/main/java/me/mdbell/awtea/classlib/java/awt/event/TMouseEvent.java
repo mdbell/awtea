@@ -3,14 +3,7 @@ package me.mdbell.awtea.classlib.java.awt.event;
 import lombok.Getter;
 import lombok.ToString;
 import me.mdbell.awtea.classlib.java.awt.TComponent;
-import me.mdbell.awtea.classlib.java.awt.TContainer;
 import me.mdbell.awtea.input.MouseButtonType;
-import me.mdbell.awtea.input.MouseEventType;
-import me.mdbell.awtea.util.ElementUtils;
-import me.mdbell.awtea.util.NormalizedPoint;
-import me.mdbell.awtea.util.Point;
-import org.teavm.jso.dom.html.HTMLCanvasElement;
-import org.teavm.jso.dom.html.TextRectangle;
 
 /**
  * @see java.awt.event.MouseEvent
@@ -113,7 +106,7 @@ public class TMouseEvent extends TInputEvent {
 
 	private final MouseButtonType mouseButton;
 
-	private boolean meta;
+	private final boolean meta;
 
 	public TMouseEvent(TComponent component, int id, int x, int y, MouseButtonType button, boolean meta) {
 		super(component, id, System.currentTimeMillis(), 0);
@@ -133,57 +126,6 @@ public class TMouseEvent extends TInputEvent {
 
 	public boolean isMetaDown() {
 		return meta;
-	}
-
-	protected static void translatePoint(Point p, HTMLCanvasElement element) {
-		TextRectangle rect = element.getBoundingClientRect();
-		if (ElementUtils.isFullscreen(element)) {
-
-
-			// the client is scaled based on the hight of the element, and the element gets set to the screen size
-			// However the browser _also_ inserts padding to preserve the aspect ratio, so we need to account for that
-
-			double scale = rect.getHeight();
-			scale /= element.getHeight();
-
-			double xPadding = (rect.getWidth() - element.getWidth() * scale) / 2;
-			double yPadding = (rect.getHeight() - element.getHeight() * scale) / 2;
-
-			p.translate((int) -xPadding, (int) -yPadding);
-
-			NormalizedPoint point = p.normalize((int) (rect.getWidth() - xPadding * 2), (int) (rect.getHeight() - yPadding * 2));
-
-			p.setX(point.getX(element.getWidth()));
-			p.setY(point.getY(element.getHeight()));
-			return;
-		}
-
-		p.translate(-rect.getLeft(), -rect.getTop());
-		double xScale = element.getWidth();
-		xScale /= rect.getWidth();
-
-		double yScale = element.getHeight();
-		yScale /= rect.getHeight();
-
-
-		p.scale(xScale, yScale);
-	}
-
-	public static TMouseEvent adapt(TContainer container, HTMLCanvasElement src, org.teavm.jso.dom.events.MouseEvent event, String type) {
-		MouseEventType source = MouseEventType.fromHtml(type);
-
-		Point point = new Point(event.getClientX(), event.getClientY());
-
-		translatePoint(point, src);
-
-		TComponent component = container.getComponentAt(point.getX(), point.getY());
-		if (component == null) {
-			component = container;
-		}
-
-		MouseButtonType button = MouseButtonType.fromHtml(event.getButton());
-		return new TMouseEvent(component, source.getId(), point.getX(), point.getY(),
-			button, event.getMetaKey());
 	}
 
 }

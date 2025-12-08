@@ -10,10 +10,12 @@ public class EventTestApplet extends Applet
 	private int clickCount = 0;
 	private int motionCount = 0;
 
+	private int lastMouseX = -1;
+	private int lastMouseY = -1;
+
 	@Override
 	public void init() {
 		System.out.println("init()");
-//		setBackground(Color.WHITE);
 
 		addMouseListener(this);
 		addMouseMotionListener(this);
@@ -24,10 +26,15 @@ public class EventTestApplet extends Applet
 
 	@Override
 	public void paint(Graphics g) {
-//		System.out.println("PAINT event");
-		g.setColor(Color.BLACK);
+		g.setColor(new Color(255, 255, 255));
+		g.fillRect(0, 0, getWidth(), getHeight());
+		g.setColor(new Color(209, 19, 19));
 		g.drawString("Clicks: " + clickCount, 20, 20);
 		g.drawString("Moves:  " + motionCount, 20, 40);
+
+		if (lastMouseX >= 0 && lastMouseY >= 0) {
+			g.fillRect(lastMouseX - 3, lastMouseY - 3, 6, 6);
+		}
 	}
 
 	// --------------------------------------------------------
@@ -60,6 +67,8 @@ public class EventTestApplet extends Applet
 	// --------------------------------------------------------
 	public void mouseMoved(MouseEvent e) {
 		motionCount++;
+		lastMouseX = e.getX();
+		lastMouseY = e.getY();
 		System.out.println("mouseMoved: " + e.getX() + "," + e.getY());
 		repaint(); // flood test: move around and watch coalescing
 	}
