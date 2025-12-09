@@ -3,6 +3,7 @@ package me.mdbell.awtea.util;
 import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 
 public class EventTestApplet extends Applet
 	implements MouseListener, MouseMotionListener, KeyListener, MouseWheelListener {
@@ -16,6 +17,24 @@ public class EventTestApplet extends Applet
 	private long frameCount = 0;
 	private long startTime = System.currentTimeMillis();
 
+	public static final BufferedImage A_RED = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+	public static final BufferedImage A_GREEN = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+	public static final BufferedImage A_BLUE = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+
+	public static final BufferedImage RED = new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB);
+	public static final BufferedImage GREEN = new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB);
+	public static final BufferedImage BLUE = new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB);
+
+	static {
+		fillImage(A_RED, new Color(255, 0, 0, 255));
+		fillImage(A_GREEN, new Color(0, 255, 0, 255));
+		fillImage(A_BLUE, new Color(0, 0, 255, 255));
+
+		fillImage(RED, new Color(255, 0, 0));
+		fillImage(GREEN, new Color(0, 255, 0));
+		fillImage(BLUE, new Color(0, 0, 255));
+	}
+
 	@Override
 	public void init() {
 		System.out.println("init()");
@@ -25,26 +44,30 @@ public class EventTestApplet extends Applet
 		addMouseListener(this);
 		addKeyListener(this);
 
+
 		requestFocus(); // ensure we receive key events
+	}
+
+	private static void fillImage(BufferedImage img, Color color) {
+		Graphics g = img.getGraphics();
+		g.setColor(color);
+		g.fillRect(0, 0, img.getWidth(), img.getHeight());
+		g.dispose();
 	}
 
 	@Override
 	public void paint(Graphics g) {
+		g = getGraphics(); // force us to use the surface gfx
 		g.setColor(Color.LIGHT_GRAY);
 		g.fillRect(0, 0, getWidth(), getHeight());
-		g.setColor(new Color(209, 19, 19));
-		g.drawString("Clicks: " + clickCount, 20, 20);
-		g.drawString("Moves:  " + motionCount, 20, 40);
 
-		if (lastMouseX >= 0 && lastMouseY >= 0) {
-			g.fillRect(lastMouseX - 3, lastMouseY - 3, 6, 6);
-		}
-		frameCount++;
-		long currentTime = System.currentTimeMillis();
-		if (currentTime - startTime >= 1000) {
-			long fps = frameCount * 1000 / (currentTime - startTime);
-			g.drawString("FPS: " + fps, 20, 60);
-		}
+		g.drawImage(A_RED, 10, 10, null);
+		g.drawImage(A_GREEN, 40, 10, null);
+		g.drawImage(A_BLUE, 70, 10, null);
+
+		g.drawImage(RED, 10, 40, null);
+		g.drawImage(GREEN, 40, 40, null);
+		g.drawImage(BLUE, 70, 40, null);
 	}
 
 	// --------------------------------------------------------

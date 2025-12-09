@@ -46,6 +46,16 @@ abstract class TSurface extends TContainer {
 	}
 
 	@Override
+	public void update(TGraphics g) {
+		paint(g);
+	}
+
+	@Override
+	public void paint(TGraphics g) {
+		// Do nothing - painting is handled by the surface peer
+	}
+
+	@Override
 	public void setSize(int width, int height) {
 		super.setSize(width, height);
 		if (surfacePeer != null) {

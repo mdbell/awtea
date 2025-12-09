@@ -2,6 +2,7 @@ package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import org.teavm.jso.typedarrays.Int32Array;
 
 
 /**
@@ -30,7 +31,9 @@ public abstract class TDataBuffer {
 
 	protected int[] offsets;
 
-	private static final int[] dataTypeSize = {8,16,16,32,32,64};
+	private static final int[] dataTypeSize = {8, 16, 16, 32, 32, 64};
+
+	public abstract Int32Array getJsArray();
 
 	protected TDataBuffer(int dataType, int size) {
 		// omit the initial state stuff for now
@@ -72,7 +75,7 @@ public abstract class TDataBuffer {
 		this.offsets = offsets.clone();
 	}
 
-	public int[] getOffsets(){
+	public int[] getOffsets() {
 		return this.offsets.clone();
 	}
 
@@ -86,8 +89,8 @@ public abstract class TDataBuffer {
 
 	public abstract int getElem(int bank, int index);
 
-	public void  setElem(int index, int value) {
-		setElem(0,index,value);
+	public void setElem(int index, int value) {
+		setElem(0, index, value);
 	}
 
 	public abstract void setElem(int bank, int index, int value);
@@ -100,11 +103,11 @@ public abstract class TDataBuffer {
 		return (float) getElem(bank, index);
 	}
 
-	public void setElemFloat(int index, float value){
+	public void setElemFloat(int index, float value) {
 		setElem(index, (int) value);
 	}
 
-	public void setElemFloat(int bank, int index, float value){
+	public void setElemFloat(int bank, int index, float value) {
 		setElem(bank, index, (int) value);
 	}
 
@@ -116,15 +119,15 @@ public abstract class TDataBuffer {
 		return getElem(bank, index);
 	}
 
-	public void setElemDouble(int index, double value){
-		setElem(index, (int)value);
+	public void setElemDouble(int index, double value) {
+		setElem(index, (int) value);
 	}
 
-	public void setElemDouble(int bank, int index, double value){
+	public void setElemDouble(int bank, int index, double value) {
 		setElem(bank, index, (int) value);
 	}
 
-	public static int getDataTypeSize(int type){
+	public static int getDataTypeSize(int type) {
 		if (type < TYPE_BYTE || type > TYPE_DOUBLE) {
 			throw new IllegalArgumentException("Unknown data type: " + type);
 		}

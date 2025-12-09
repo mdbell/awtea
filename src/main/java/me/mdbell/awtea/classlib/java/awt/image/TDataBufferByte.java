@@ -1,6 +1,8 @@
 package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.Getter;
+import org.teavm.jso.typedarrays.Int32Array;
+import org.teavm.jso.typedarrays.Int8Array;
 
 /**
  * @see java.awt.image.DataBufferByte
@@ -8,6 +10,7 @@ import lombok.Getter;
 @Getter
 public class TDataBufferByte extends TDataBuffer {
 	protected byte[][] bankData;
+	private Int32Array jsArray;
 
 	public TDataBufferByte(int size) {
 		super(TYPE_BYTE, size);
@@ -20,13 +23,13 @@ public class TDataBufferByte extends TDataBuffer {
 	}
 
 	public TDataBufferByte(byte[] data, int size) {
-		super(TYPE_BYTE, size);
-		this.bankData = new byte[][] { data };
+		this(data, size, 0);
 	}
 
 	public TDataBufferByte(byte[] data, int size, int offset) {
 		super(TYPE_BYTE, size, 1, offset);
-		this.bankData = new byte[][] { data };
+		this.bankData = new byte[][]{data};
+		this.jsArray = new Int32Array(Int8Array.fromJavaArray(data).getBuffer(), offset, size);
 	}
 
 	public TDataBufferByte(byte[][] dataArray, int size) {

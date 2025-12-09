@@ -1,6 +1,8 @@
 package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.Getter;
+import org.teavm.jso.typedarrays.Int16Array;
+import org.teavm.jso.typedarrays.Int32Array;
 
 /**
  * @see java.awt.image.DataBufferUShort
@@ -8,6 +10,7 @@ import lombok.Getter;
 @Getter
 public class TDataBufferUShort extends TDataBuffer {
 	protected short[][] bankData;
+	private Int32Array jsArray;
 
 	public TDataBufferUShort(int size) {
 		super(TYPE_USHORT, size);
@@ -20,13 +23,13 @@ public class TDataBufferUShort extends TDataBuffer {
 	}
 
 	public TDataBufferUShort(short[] data, int size) {
-		super(TYPE_USHORT, size);
-		this.bankData = new short[][] { data };
+		this(data, size, 0);
 	}
 
 	public TDataBufferUShort(short[] data, int size, int offset) {
 		super(TYPE_USHORT, size, 1, offset);
-		this.bankData = new short[][] { data };
+		this.bankData = new short[][]{data};
+		this.jsArray = new Int32Array(Int16Array.fromJavaArray(data).getBuffer(), offset, size);
 	}
 
 	public TDataBufferUShort(short[][] dataArray, int size) {

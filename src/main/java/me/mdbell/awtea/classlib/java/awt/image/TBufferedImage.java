@@ -2,6 +2,7 @@ package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.TImage;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
@@ -13,6 +14,7 @@ import org.teavm.classlib.java.awt.TPoint;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
+import org.teavm.jso.webgl.WebGLTexture;
 
 import java.util.Hashtable;
 
@@ -20,6 +22,7 @@ import java.util.Hashtable;
  * @see java.awt.image.BufferedImage
  */
 @Getter
+@Monitored.AllMethods
 public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarget, ImageDataProvider, ImageDataConsumer {
 
 	public static final int TYPE_CUSTOM = 0;
@@ -52,6 +55,9 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 
 	@Getter(AccessLevel.NONE)
 	private ImageData underlyingImageData;
+
+	@Setter
+	WebGLTexture webglTexture;
 
 	private static final boolean useImageDataDirectly = System.getProperty("awtea.bufferedimage.useimagedata",
 		"false").equals("true");
@@ -387,6 +393,14 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 		if (this.underlyingImageData != null) {
 			return this.underlyingImageData;
 		}
+		if (useImageDataDirectly) {
+			System.out.println("Creating underlying ImageData for TBufferedImage");
+			// we want to construct an ImageData that directly maps to the underlying buffer
+			Int32Array arr = ((TDataBufferInt) this.raster.getBuffer()).getJSArray();
+			Uint8ClampedArray byteArr = new Uint8ClampedArray(arr.getBuffer());
+			this.underlyingImageData = new ImageData(byteArr, width, height);
+			return this.underlyingImageData;
+		}
 		//TODO: dirty check (likely need to propagate from the raster, since it can be modified directly)
 		if (cachedImageData == null) {
 			cachedImageData = getImageData(0, 0, width, height);
@@ -437,6 +451,24 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 		TSampleModel sm = raster.getSampleModel();
 		TDataBuffer db = raster.getBuffer();
 		Uint8ClampedArray dst = dest.getData();
+
+		if (useImageDataDirectly) {
+			// for _all_ images (not just imagedata backed ones) we want to skip the swizzling, and
+			// copy directly from the underlying int buffer to the Uint8ClampedArray
+			Int32Array srcInt = new Int32Array(((TDataBufferInt) db).getJSArray().getBuffer());
+			Int32Array dstInt = new Int32Array(dest.getData().getBuffer());
+			for (int row = 0; row < h; row++) {
+				int srcY = y + row;
+				int srcBase = srcY * this.width;
+				int dstBase = row * w;
+				for (int col = 0; col < w; col++) {
+					int srcX = x + col;
+					int pixel = srcInt.get(srcBase + srcX);
+					dstInt.set(dstBase + col, pixel);
+				}
+			}
+			return;
+		}
 
 		// --------------------------------------------------------------------
 		// FAST PATH: packed int pixels (TYPE_INT_RGB / TYPE_INT_ARGB / PRE)

@@ -4,10 +4,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
+import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.support.ImageDataProvider;
 import me.mdbell.awtea.util.ColorUtil;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
@@ -308,5 +310,24 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	@Override
 	public void putImageData(int x, int y, ImageData imageData) {
 		this.context.putImageData(imageData, x, y);
+	}
+
+	@Override
+	protected void scheduleBlit() {
+
+		Window.requestAnimationFrame(time -> {
+			notifyScheduled();
+
+			if (!needsBlit) {
+				return; // nothing new to draw
+			}
+
+			// do the actual upload here
+			for (TBufferedImage buffer : dirtyImages) {
+				ImageData data = buffer.getImageData();
+				putImageData(0, 0, data);
+			}
+			clearBlitRequest();
+		});
 	}
 }

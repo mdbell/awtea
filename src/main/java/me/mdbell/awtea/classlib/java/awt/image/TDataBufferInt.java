@@ -2,7 +2,6 @@ package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.Getter;
 import org.teavm.jso.canvas.ImageData;
-import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int32Array;
 
 import java.awt.image.DataBufferInt;
@@ -19,19 +18,17 @@ public class TDataBufferInt extends TDataBuffer {
 	TDataBufferInt(ImageData imgData) {
 		super(TYPE_INT, imgData.getWidth() * imgData.getHeight());
 		this.jsArray = new Int32Array(imgData.getData().getBuffer());
-		this.bankData = new int[][]{jsArray.toJavaArray()};
-	}
-
-	TDataBufferInt(ArrayBuffer buffer, int offset, int size) {
-		super(TYPE_INT, size);
-		int numInts = TDataBuffer.getDataTypeSize(TYPE_INT) / 8;
-		this.jsArray = new Int32Array(buffer, offset, numInts);
-		this.bankData = new int[][]{jsArray.toJavaArray()};
+		this.bankData = new int[][]{this.jsArray.toJavaArray()};
 	}
 
 	public TDataBufferInt(int size) {
 		super(TYPE_INT, size);
 		this.bankData = new int[1][size];
+	}
+
+	@Override
+	public Int32Array getJsArray() {
+		return jsArray;
 	}
 
 	public TDataBufferInt(int size, int numBanks) {
@@ -40,13 +37,13 @@ public class TDataBufferInt extends TDataBuffer {
 	}
 
 	public TDataBufferInt(int[] data, int size) {
-		super(TYPE_INT, size);
-		this.bankData = new int[][]{data};
+		this(data, size, 0);
 	}
 
 	public TDataBufferInt(int[] data, int size, int offset) {
 		super(TYPE_INT, size, 1, offset);
 		this.bankData = new int[][]{data};
+		this.jsArray = new Int32Array(Int32Array.fromJavaArray(data).getBuffer(), offset, size);
 	}
 
 	public TDataBufferInt(int[][] dataArray, int size) {

@@ -1,15 +1,17 @@
 package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
+import me.mdbell.awtea.classlib.java.awt.image.TDataBufferInt;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
+import me.mdbell.awtea.instrument.Monitored;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
-import org.teavm.jso.typedarrays.ArrayBuffer;
-import org.teavm.jso.typedarrays.Float32Array;
+import org.teavm.jso.typedarrays.*;
 import org.teavm.jso.webgl.*;
 
 import java.awt.*;
 
+@Monitored.AllMethods
 public class TWebGLGraphics extends TCanvasGraphics {
 
 	private final WebGL2RenderingContext gl;
@@ -26,6 +28,7 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	private final int aPositionLocColor;
 
 	// uniforms / attribs for texture program
+	private final WebGLUniformLocation uSwizzleModeLoc;
 	private final WebGLUniformLocation uResolutionLocTex;
 	private final WebGLUniformLocation uTranslationLocTex;
 	private final int aPositionLocTex;
@@ -48,6 +51,7 @@ public class TWebGLGraphics extends TCanvasGraphics {
 
 	public TWebGLGraphics(WebGL2RenderingContext gl, HTMLCanvasElement canvas) {
 		super(canvas);
+		this.supportsBlit = false;
 		this.gl = gl;
 
 		// basic GL state
@@ -71,6 +75,7 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		this.aTexCoordLocTex = gl.getAttribLocation(textureProgram, "a_texCoord");
 		this.uResolutionLocTex = gl.getUniformLocation(textureProgram, "u_resolution");
 		this.uTranslationLocTex = gl.getUniformLocation(textureProgram, "u_translation");
+		this.uSwizzleModeLoc = gl.getUniformLocation(textureProgram, "u_swizzleMode");
 
 		// ---- buffers ----
 		// simple rect buffer: two triangles in [0,0]-[1,1] space
@@ -253,10 +258,20 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		float width = data.getWidth();
 		float height = data.getHeight();
 
-		useTextureProgram();
-
-		// TODO: cache textures rather than recreating every time
 		WebGLTexture tex = gl.createTexture();
+
+		drawTexture(data, tex, x, y, (int) width, (int) height);
+
+		gl.deleteTexture(tex);
+	}
+
+	private void drawTexture(ImageData data, WebGLTexture tex, int x, int y, int width, int height) {
+		drawTexture(data.getData(), tex, SwizzleMode.ARGB_TO_RGBA, x, y, width, height);
+	}
+
+	private void drawTexture(ArrayBufferView data, WebGLTexture tex, SwizzleMode swizzleMode, int x, int y, int width, int height) {
+		useTextureProgram(swizzleMode);
+
 		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, tex);
 
 		gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_MIN_FILTER, WebGLRenderingContext.NEAREST);
@@ -267,6 +282,9 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		gl.texImage2D(WebGLRenderingContext.TEXTURE_2D, // target
 			0, // level
 			WebGLRenderingContext.RGBA, // internalformat
+			width, //  width
+			height, // height
+			0, // border
 			WebGLRenderingContext.RGBA, // format
 			WebGLRenderingContext.UNSIGNED_BYTE, // type
 			data); // pixels
@@ -290,11 +308,9 @@ public class TWebGLGraphics extends TCanvasGraphics {
 
 		uploadQuadVertices(verts, uvs);
 
+		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, tex);
+
 		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
-
-		// TODO: cache textures rather than recreating every time
-		gl.deleteTexture(tex);
-
 	}
 
 	@Override
@@ -303,11 +319,40 @@ public class TWebGLGraphics extends TCanvasGraphics {
 			return false;
 		}
 		TBufferedImage bi = (TBufferedImage) img;
-		ImageData data = bi.getImageData();
 
-		putImageData(x, y, data);
+		WebGLTexture tex = bi.getWebglTexture();
+
+		if (tex == null) {
+			tex = gl.createTexture();
+			bi.setWebglTexture(tex);
+			//TODO: handle texture cleanup on image dispose
+		}
+
+		Int32Array pixels = ((TDataBufferInt) bi.getRaster().getDataBuffer()).getJSArray();
+		Uint8Array arr = new Uint8Array(pixels.getBuffer(), pixels.getByteOffset(), pixels.getByteLength());
+
+		SwizzleMode mode = getSwizzleModeForImage(bi);
+
+//		Debug.trigger();
+
+		drawTexture(arr, tex, mode, x, y, width, height);
+
+//		ImageData data = bi.getImageData();
+//
+		//		putImageData(x, y, data);
 
 		return true;
+	}
+
+	private SwizzleMode getSwizzleModeForImage(TBufferedImage img) {
+		switch (img.getImageType()) {
+			case TBufferedImage.TYPE_INT_ARGB:
+				return SwizzleMode.ARGB_TO_RGBA;
+			case TBufferedImage.TYPE_INT_RGB:
+				return SwizzleMode.RGB_TO_RGBA;
+			default:
+				return SwizzleMode.NONE;
+		}
 	}
 
 	@Override
@@ -376,10 +421,12 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		gl.vertexAttribPointer(aPositionLocColor, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
 	}
 
-	private void useTextureProgram() {
+	private void useTextureProgram(SwizzleMode mode) {
 		gl.useProgram(textureProgram);
 		gl.uniform2f(uResolutionLocTex, (float) canvas.getWidth(), (float) canvas.getHeight());
 		gl.uniform2f(uTranslationLocTex, (float) translateX, (float) translateY);
+
+		gl.uniform1i(uSwizzleModeLoc, mode.ordinal());
 
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadBuffer);
 		gl.enableVertexAttribArray(aPositionLocTex);
@@ -431,6 +478,12 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		return shader;
 	}
 
+	private enum SwizzleMode {
+		NONE,
+		ARGB_TO_RGBA,
+		RGB_TO_RGBA
+	}
+
 	// Pixel-space vertex shader with translation + resolution -> NDC
 	private static final String COLOR_VERTEX_SRC =
 		"attribute vec2 a_position;\n" +
@@ -470,7 +523,26 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		"precision mediump float;\n" +
 			"varying vec2 v_texCoord;\n" +
 			"uniform sampler2D u_texture;\n" +
+			"uniform int u_swizzleMode;\n" +
+			"\n" +
 			"void main() {\n" +
-			"  gl_FragColor = texture2D(u_texture, v_texCoord);\n" +
-			"}";
+			"  vec4 tex = texture2D(u_texture, v_texCoord);\n" +
+			"\n" +
+			"  // u_swizzleMode:\n" +
+			"  //   0 = plain RGBA\n" +
+			"  //   1 = ARGB stored as bytes [A,R,G,B], uploaded as RGBA (tex = A,R,G,B)\n" +
+			"  //       want RGBA = (R,G,B,A) = tex.gbar\n" +
+			"  //   2 = INT_RGB with alpha=0 -> bytes [0,R,G,B] uploaded as RGBA\n" +
+			"  //       tex = (0,R,G,B), want (R,G,B,1) = vec4(tex.gba, 1.0)\n" +
+			"  if (u_swizzleMode == 0) {\n" +
+			"    gl_FragColor = tex;\n" +
+			"  } else if (u_swizzleMode == 1) {\n" +
+			"	gl_FragColor = vec4(tex.b, tex.g, tex.r, tex.a);\n" +
+			"  } else if (u_swizzleMode == 2) {\n" +
+			"    gl_FragColor = vec4(tex.bgr, 1.0);\n" +
+			"  } else {\n" +
+			"    gl_FragColor = tex;\n" +
+			"  }\n" +
+			"}\n";
+
 }
