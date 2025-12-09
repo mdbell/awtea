@@ -12,7 +12,6 @@ public class RandomAccessFileDetour {
 
 	@DetourMethod("<init>")
 	public static RandomAccessFile open(java.io.File file, String mode) throws Exception {
-		System.out.println("RandomAccessFileDetour.open called with file: " + file.getAbsolutePath() + ", mode: " + mode);
 		if (mode.contains("w")) {
 			// Ensure the file exists when opened in write mode
 			if (!file.exists() && !file.createNewFile()) {

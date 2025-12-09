@@ -48,7 +48,7 @@ public class OperationsMonitor extends AbstractMonitor<OperationsMonitor.Entry, 
 		return new Entry(id, label);
 	}
 
-	public void onOperationEntered(Object target, String operationName) {
+	public void onEnter(Object target, String operationName) {
 		Entry entry = ensureEntry(target);
 
 		Operation op = entry.getOperations().stream()
@@ -65,7 +65,7 @@ public class OperationsMonitor extends AbstractMonitor<OperationsMonitor.Entry, 
 		op.setLastEntryTimeMs(System.currentTimeMillis());
 	}
 
-	public void onOperationLeft(Object target, String operationName) {
+	public void onLeave(Object target, String operationName) {
 		Entry entry = ensureEntry(target);
 
 		Operation op = entry.getOperations().stream()
@@ -80,6 +80,10 @@ public class OperationsMonitor extends AbstractMonitor<OperationsMonitor.Entry, 
 			op.avgTimeMs = (double) op.totalTimeMs / op.invocationCount;
 			op.setLastExitTimeMs(exitTimeMs);
 		}
+	}
+
+	public void onThrown(Object target, String operationName, Throwable t) {
+		onLeave(target, operationName);
 	}
 
 	@Override

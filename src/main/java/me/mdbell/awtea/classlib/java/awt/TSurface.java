@@ -22,7 +22,7 @@ abstract class TSurface extends TContainer {
 	 *
 	 * @return The graphics context for the surface.
 	 */
-	public abstract TGraphics getSurfaceGraphics();
+	public abstract TCanvasGraphics getSurfaceGraphics();
 
 	/**
 	 * Acts as a fast-path to do rendering, bypassing any offscreen buffers

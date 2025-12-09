@@ -101,7 +101,8 @@ public class ThreadUtils {
 
 				// reschedule
 				synchronized (lock) {
-					task.nextRunTime = System.currentTimeMillis() + task.periodMillis;
+					//task.nextRunTime = System.currentTimeMillis() + task.periodMillis;
+					task.nextRunTime += task.periodMillis;
 					ScheduleTaskMonitor.get().onQueued(task, task.nextRunTime);
 					queue.add(task);
 					lock.notifyAll();

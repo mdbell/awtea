@@ -33,8 +33,10 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	@Setter
 	private TRectangle clipBounds;
 
-	public TCanvas2DGraphics(CanvasRenderingContext2D context) {
-		this(context, true);
+	public TCanvas2DGraphics(HTMLCanvasElement canvasElement) {
+		super(canvasElement);
+		this.context = (CanvasRenderingContext2D) canvasElement.getContext("2d");
+		initContext();
 	}
 
 	private TCanvas2DGraphics(CanvasRenderingContext2D context, boolean initReset) {
@@ -301,5 +303,10 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 			this.transform.getShearX(), this.transform.getScaleY(),
 			this.transform.getTranslateX(), this.transform.getTranslateY()
 		);
+	}
+
+	@Override
+	public void putImageData(int x, int y, ImageData imageData) {
+		this.context.putImageData(imageData, x, y);
 	}
 }

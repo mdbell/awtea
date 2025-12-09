@@ -5,24 +5,24 @@ import org.teavm.classlib.java.awt.TPoint;
 /**
  * @see java.awt.image.WritableRaster
  */
-public class TWritableRaster extends TRaster{
+public class TWritableRaster extends TRaster {
 
 	protected TWritableRaster(TSampleModel sampleModel,
-							 TDataBuffer dataBuffer,
-							 TPoint origin) {
+							  TDataBuffer dataBuffer,
+							  TPoint origin) {
 		super(sampleModel, dataBuffer, origin);
 	}
 
 	protected TWritableRaster(TSampleModel sampleModel,
-							 TDataBuffer dataBuffer,
-							 int minX, int minY,
-							 int width, int height) {
+							  TDataBuffer dataBuffer,
+							  int minX, int minY,
+							  int width, int height) {
 		super(sampleModel, dataBuffer, minX, minY, width, height);
 	}
 
 	public static TWritableRaster createWritableRaster(TSampleModel sm,
-													  TDataBuffer db,
-													  TPoint location) {
+													   TDataBuffer db,
+													   TPoint location) {
 		if (location == null) {
 			location = new TPoint(0, 0);
 		}
@@ -49,14 +49,18 @@ public class TWritableRaster extends TRaster{
 		sampleModel.setDataElements(sx, sy, obj, buffer);
 	}
 
+	public TDataBuffer getDataBuffer() {
+		return buffer;
+	}
+
 	// TODO: Add setSamples/setPixels
 
 	// ---- Writable child rasters ----
 
 	public TWritableRaster createWritableChild(int parentX, int parentY,
-											  int width, int height,
-											  int childMinX, int childMinY,
-											  int[] bandList) {
+											   int width, int height,
+											   int childMinX, int childMinY,
+											   int[] bandList) {
 
 		if (bandList != null) {
 			throw new UnsupportedOperationException("Band selection not implemented yet");
@@ -89,5 +93,5 @@ public class TWritableRaster extends TRaster{
 
 		return child;
 	}
-	
+
 }

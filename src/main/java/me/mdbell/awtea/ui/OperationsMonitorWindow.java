@@ -4,6 +4,7 @@ import me.mdbell.awtea.monitor.OperationsMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLInputElement;
 
+import java.util.Comparator;
 import java.util.List;
 
 // we don't extend AbstractMonitorWindow here
@@ -15,11 +16,16 @@ public class OperationsMonitorWindow extends FloatingWindow {
 
 	public OperationsMonitorWindow() {
 		super("awtea.operations.monitor", "AWTEA Operations Monitor", 800, 400, 500);
+		ensureDelegatedClicks();
 	}
 
 	@Override
 	protected String computeSignature() {
-		return null;
+		long rev = OperationsMonitor.monitors().stream().map(OperationsMonitor::getRevision).reduce(
+			0L,
+			(a, b) -> a + b
+		);
+		return String.valueOf(rev);
 	}
 
 	@Override
@@ -36,7 +42,7 @@ public class OperationsMonitorWindow extends FloatingWindow {
 		label.setTextContent("Select Monitor:");
 		header.appendChild(label);
 
-		List<OperationsMonitor> monitors = List.copyOf(OperationsMonitor.monitors());
+		List<OperationsMonitor> monitors = new java.util.ArrayList<>(OperationsMonitor.monitors());
 
 		if (monitors.isEmpty()) {
 			HTMLElement noMonitors = createElement("div");
@@ -44,6 +50,8 @@ public class OperationsMonitorWindow extends FloatingWindow {
 			header.appendChild(noMonitors);
 			return root;
 		}
+
+		monitors.sort(Comparator.comparingInt(OperationsMonitor::getId));
 
 		HTMLInputElement select = createElement("select");
 
@@ -83,6 +91,18 @@ public class OperationsMonitorWindow extends FloatingWindow {
 			root.appendChild(noSelection);
 			return root;
 		}
+
+		HTMLElement reset = createElement("a");
+		reset.setAttribute("href", "#");
+		reset.setTextContent("Reset Monitor");
+		reset.setAttribute("data-aw-handler", "reset-monitor");
+		header.appendChild(reset);
+
+		registerClickHandler("reset-monitor", () -> {
+			System.out.println("Resetting Operations Monitor...");
+			selectedMonitor.reset();
+		});
+
 
 		HTMLElement container = createElement("div");
 		container.setClassName("operations-monitor-container");

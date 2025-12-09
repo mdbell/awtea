@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class EventTestApplet extends Applet
-	implements MouseListener, MouseMotionListener, KeyListener {
+	implements MouseListener, MouseMotionListener, KeyListener, MouseWheelListener {
 
 	private int clickCount = 0;
 	private int motionCount = 0;
@@ -13,12 +13,16 @@ public class EventTestApplet extends Applet
 	private int lastMouseX = -1;
 	private int lastMouseY = -1;
 
+	private long frameCount = 0;
+	private long startTime = System.currentTimeMillis();
+
 	@Override
 	public void init() {
 		System.out.println("init()");
 
 		addMouseListener(this);
 		addMouseMotionListener(this);
+		addMouseListener(this);
 		addKeyListener(this);
 
 		requestFocus(); // ensure we receive key events
@@ -34,6 +38,12 @@ public class EventTestApplet extends Applet
 
 		if (lastMouseX >= 0 && lastMouseY >= 0) {
 			g.fillRect(lastMouseX - 3, lastMouseY - 3, 6, 6);
+		}
+		frameCount++;
+		long currentTime = System.currentTimeMillis();
+		if (currentTime - startTime >= 1000) {
+			long fps = frameCount * 1000 / (currentTime - startTime);
+			g.drawString("FPS: " + fps, 20, 60);
 		}
 	}
 
@@ -91,5 +101,11 @@ public class EventTestApplet extends Applet
 
 	public void keyTyped(KeyEvent e) {
 		System.out.println("keyTyped: " + e.getKeyChar());
+	}
+
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent e) {
+		System.out.println("mouseWheelMoved: " + e.getWheelRotation());
+		repaint();
 	}
 }

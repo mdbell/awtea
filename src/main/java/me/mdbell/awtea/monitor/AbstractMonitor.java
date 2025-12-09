@@ -90,6 +90,9 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 * @return a default label in the format "ClassName@hashcode"
 	 */
 	protected String defaultLabelFor(Object target, int id) {
+		if (target == null) {
+			return "null@" + Integer.toHexString(0) + "[" + id + "]";
+		}
 		return target.getClass().getSimpleName()
 			+ "@"
 			+ Integer.toHexString(System.identityHashCode(target));
@@ -139,6 +142,15 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 */
 	protected void touch(E entry) {
 		entry.touch();
+		bumpRevision();
+	}
+
+	/**
+	 * Reset the monitor by clearing all entries.
+	 */
+	public synchronized void reset() {
+		System.out.println("Resetting monitor: " + this.getClass().getSimpleName());
+		entries.clear();
 		bumpRevision();
 	}
 
