@@ -5,16 +5,14 @@ import lombok.Setter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
-import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
-import me.mdbell.awtea.support.ImageDataProvider;
 import me.mdbell.awtea.util.ColorUtil;
 import me.mdbell.awtea.util.JSObjectsExtensions;
-import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 
 import java.awt.*;
+import java.util.List;
 
 @Getter
 @ExtensionMethod({JSObjectsExtensions.class, ColorUtil.class})
@@ -23,13 +21,6 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	private final CanvasRenderingContext2D context;
 
 	private final TAffineTransform transform = new TAffineTransform();
-
-	@Getter
-	private Color color = Color.white;
-
-	@Getter
-	@Setter
-	private TFont font = TFont.getDefaultFont();
 
 	@Getter
 	@Setter
@@ -95,12 +86,6 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	@Override
 	public void setPaintMode() {
 
-	}
-
-	@Override
-	public void drawString(String str, int x, int y) {
-		//TODO: get font from native renderer
-		//TFontRenderer.getRenderer(this.getFont()).drawString(context, str, x + translateX, y + translateY);
 	}
 
 	@Override
@@ -212,32 +197,6 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	}
 
 	@Override
-	public boolean drawImage(TImage img, int x, int y,
-							 int width, int height,
-							 TImageObserver observer) {
-		return drawImage(img, x, y, observer);
-	}
-
-	@Override
-	public boolean drawImage(TImage img, int x, int y,
-							 TImageObserver observer) {
-		if (img instanceof ImageDataProvider) {
-			ImageData data = ((ImageDataProvider) img).getImageData();
-			if (data != null) {
-				context.putImageData(data, x, y);
-				return true;
-			}
-		}
-		//img.drawTo(context, x + translateX, y + translateY);
-		return false;
-	}
-
-	@Override
-	public TFontMetrics measureText(TFont font) {
-		return new TFontMetrics(font);
-	}
-
-	@Override
 	public TShape getClip() {
 		return getClipBounds();
 	}
@@ -263,7 +222,7 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	public void setClip(TShape clip) {
 		if (clip == null) {
 			// Clear the clip - reset to full canvas size
-			setClipBounds(new TRectangle(getCanvas().getWidth(), getCanvas().getHeight()));
+			setClipBounds(null);
 		} else if (clip instanceof TRectangle) {
 			// Direct TRectangle - use it directly
 			TRectangle rect = (TRectangle) clip;
@@ -286,9 +245,6 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 
 		this.transform.setToIdentity();
 		syncTransform();
-
-		HTMLCanvasElement canvas = getCanvas();
-		this.context.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 	}
 
 	// transform operations
@@ -307,27 +263,25 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 		);
 	}
 
-	@Override
 	public void putImageData(int x, int y, ImageData imageData) {
 		this.context.putImageData(imageData, x, y);
 	}
 
 	@Override
-	protected void scheduleBlit() {
-
-		Window.requestAnimationFrame(time -> {
-			notifyScheduled();
-
-			if (!needsBlit) {
-				return; // nothing new to draw
+	protected void performBlit(List<BlitOp> ops) {
+		for (BlitOp blit : ops) {
+			if (blit.type != Operation.BLIT_IMAGE) {
+				System.err.println("Unsupported blit operation: " + blit.type);
+				continue;
 			}
+			drawImageImpl(blit);
+		}
+	}
 
-			// do the actual upload here
-			for (TBufferedImage buffer : dirtyImages) {
-				ImageData data = buffer.getImageData();
-				putImageData(0, 0, data);
-			}
-			clearBlitRequest();
-		});
+	private void drawImageImpl(BlitOp op) {
+		TBufferedImage img = (TBufferedImage) op.img;
+		ImageData imageData = img.getImageData();
+		//TODO: implement scaling
+		this.context.putImageData(imageData, op.arg1, op.arg2);
 	}
 }

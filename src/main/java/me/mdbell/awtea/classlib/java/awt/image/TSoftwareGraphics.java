@@ -21,7 +21,7 @@ public class TSoftwareGraphics extends TGraphics {
 
 	@Getter
 	@Setter
-	private Color color = Color.white;
+	private Color color = Color.BLACK;
 
 	@Getter
 	@Setter

@@ -2,14 +2,15 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TDataBufferInt;
-import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
+import me.mdbell.awtea.gl.Shaders;
 import me.mdbell.awtea.instrument.Monitored;
-import org.teavm.jso.canvas.ImageData;
+import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.typedarrays.*;
 import org.teavm.jso.webgl.*;
 
 import java.awt.*;
+import java.util.List;
 
 @Monitored.AllMethods
 public class TWebGLGraphics extends TCanvasGraphics {
@@ -40,18 +41,19 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	private int translateX = 0;
 	private int translateY = 0;
 
-	private Color color = Color.BLACK;
-
 	// simple rectangular clip; null = no clip
 	private TRectangle clip;
 
+	// second copy of color for blit ops, so we don't
+	// mess up the main color state during batching
+	private Color blitColor;
+
 	public TWebGLGraphics(HTMLCanvasElement canvas) {
-		this((WebGL2RenderingContext) canvas.getContext("webgl2"), canvas);
+		this(JSObjectsExtensions.getWebGL2Context(canvas), canvas);
 	}
 
 	public TWebGLGraphics(WebGL2RenderingContext gl, HTMLCanvasElement canvas) {
 		super(canvas);
-		this.supportsBlit = false;
 		this.gl = gl;
 
 		// basic GL state
@@ -142,26 +144,6 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	}
 
 	@Override
-	public TFont getFont() {
-		return null;
-	}
-
-	@Override
-	public void setFont(TFont font) {
-
-	}
-
-	@Override
-	public Color getColor() {
-		return color;
-	}
-
-	@Override
-	public void setColor(Color c) {
-		this.color = c;
-	}
-
-	@Override
 	public TFontMetrics getFontMetrics(TFont f) {
 		return null;
 	}
@@ -174,51 +156,6 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	@Override
 	public void drawString(String str, int x, int y) {
 
-	}
-
-	@Override
-	public void drawRect(int x, int y, int width, int height) {
-		// draw four thin rectangles
-		fillRect(x, y, width, 1);
-		fillRect(x, y + height - 1, width, 1);
-		fillRect(x, y, 1, height);
-		fillRect(x + width - 1, y, 1, height);
-	}
-
-	@Override
-	public void fillRect(int x, int y, int width, int height) {
-		if (width <= 0 || height <= 0) {
-			return;
-		}
-		useColorProgram();
-
-		float[] verts = {
-			x, y,
-			x + width, y,
-			x, y + height,
-			x, y + height,
-			x + width, y,
-			x + width, y + height
-		};
-		uploadRectVertices(verts);
-
-		Color c = this.color != null ? this.color : Color.BLACK;
-		float r = c.getRed() / 255.0f;
-		float g = c.getGreen() / 255.0f;
-		float b = c.getBlue() / 255.0f;
-		float a = c.getAlpha() / 255.0f;
-		gl.uniform4f(uColorLoc, r, g, b, a);
-
-		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
-	}
-
-	@Override
-	public void clearRect(int x, int y, int width, int height) {
-		// clear to transparent in that region: fillRect with alpha 0
-		Color old = color;
-		setColor(new Color(0, 0, 0, 0));
-		fillRect(x, y, width, height);
-		setColor(old);
 	}
 
 	@Override
@@ -253,23 +190,7 @@ public class TWebGLGraphics extends TCanvasGraphics {
 
 	}
 
-	@Override
-	public void putImageData(int x, int y, ImageData data) {
-		float width = data.getWidth();
-		float height = data.getHeight();
-
-		WebGLTexture tex = gl.createTexture();
-
-		drawTexture(data, tex, x, y, (int) width, (int) height);
-
-		gl.deleteTexture(tex);
-	}
-
-	private void drawTexture(ImageData data, WebGLTexture tex, int x, int y, int width, int height) {
-		drawTexture(data.getData(), tex, SwizzleMode.ARGB_TO_RGBA, x, y, width, height);
-	}
-
-	private void drawTexture(ArrayBufferView data, WebGLTexture tex, SwizzleMode swizzleMode, int x, int y, int width, int height) {
+	private void drawTexture(ArrayBufferView data, WebGLTexture tex, TBufferedImage.SwizzleMode swizzleMode, int x, int y, int width, int height) {
 		useTextureProgram(swizzleMode);
 
 		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, tex);
@@ -313,61 +234,6 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
 	}
 
-	@Override
-	public boolean drawImage(TImage img, int x, int y, int width, int height, TImageObserver observer) {
-		if (!(img instanceof TBufferedImage)) {
-			return false;
-		}
-		TBufferedImage bi = (TBufferedImage) img;
-
-		WebGLTexture tex = bi.getWebglTexture();
-
-		if (tex == null) {
-			tex = gl.createTexture();
-			bi.setWebglTexture(tex);
-			//TODO: handle texture cleanup on image dispose
-		}
-
-		Int32Array pixels = ((TDataBufferInt) bi.getRaster().getDataBuffer()).getJSArray();
-		Uint8Array arr = new Uint8Array(pixels.getBuffer(), pixels.getByteOffset(), pixels.getByteLength());
-
-		SwizzleMode mode = getSwizzleModeForImage(bi);
-
-//		Debug.trigger();
-
-		drawTexture(arr, tex, mode, x, y, width, height);
-
-//		ImageData data = bi.getImageData();
-//
-		//		putImageData(x, y, data);
-
-		return true;
-	}
-
-	private SwizzleMode getSwizzleModeForImage(TBufferedImage img) {
-		switch (img.getImageType()) {
-			case TBufferedImage.TYPE_INT_ARGB:
-				return SwizzleMode.ARGB_TO_RGBA;
-			case TBufferedImage.TYPE_INT_RGB:
-				return SwizzleMode.RGB_TO_RGBA;
-			default:
-				return SwizzleMode.NONE;
-		}
-	}
-
-	@Override
-	public boolean drawImage(TImage img, int x, int y, TImageObserver observer) {
-		if (!(img instanceof TBufferedImage)) {
-			return false;
-		}
-		TBufferedImage bi = (TBufferedImage) img;
-		return drawImage(img, x, y, bi.getWidth(null), bi.getHeight(null), observer);
-	}
-
-	@Override
-	public TFontMetrics measureText(TFont font) {
-		return null;
-	}
 
 	@Override
 	public void reset() {
@@ -409,6 +275,97 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	@Override
 	public void dispose() {
 		//TODO: cleanup GL resources?
+		// though we dispose of webgl texture on TBufferedImage finalize
+	}
+
+	@Override
+	protected void performBlit(List<BlitOp> ops) {
+		for (BlitOp op : ops) {
+			System.out.println("Blit op: " + op.type);
+			switch (op.type) {
+				case BLIT_IMAGE:
+					drawImageImpl(op);
+					break;
+				case DRAW_RECT:
+					drawRectImpl(op.arg1, op.arg2, op.arg3, op.arg4);
+					break;
+				case FILL_RECT:
+					fillRectImpl(op.arg1, op.arg2, op.arg3, op.arg4);
+					break;
+				case CLEAR_RECT:
+					clearRectImpl(op.arg1, op.arg2, op.arg3, op.arg4);
+					break;
+				case SET_COLOR:
+					this.blitColor = (Color) op.img;
+					break;
+				default:
+					System.err.println("Unsupported blit operation: " + op.type);
+					break;
+			}
+		}
+	}
+
+	private void drawImageImpl(BlitOp op) {
+		TBufferedImage bi = (TBufferedImage) op.img;
+		int x = op.arg1;
+		int y = op.arg2;
+		int width = op.arg3;
+		int height = op.arg4;
+
+		WebGLTexture tex = bi.getWebglTexture();
+
+		if (tex == null) {
+			tex = gl.createTexture();
+			bi.setWebglTexture(gl, tex);
+		}
+
+		Int32Array pixels = ((TDataBufferInt) bi.getRaster().getDataBuffer()).getJSArray();
+		Uint8Array arr = new Uint8Array(pixels.getBuffer(), pixels.getByteOffset(), pixels.getByteLength());
+
+
+		drawTexture(arr, tex, bi.getSwizzle(), x, y, width, height);
+	}
+
+	private void drawRectImpl(int x, int y, int width, int height) {
+		// draw four thin rectangles
+		fillRectImpl(x, y, width, 1);
+		fillRectImpl(x, y + height - 1, width, 1);
+		fillRectImpl(x, y, 1, height);
+		fillRectImpl(x + width - 1, y, 1, height);
+	}
+
+	private void fillRectImpl(int x, int y, int width, int height) {
+		useColorProgram();
+
+		float[] verts = {
+			x, y,
+			x + width, y,
+			x, y + height,
+			x, y + height,
+			x + width, y,
+			x + width, y + height
+		};
+		uploadRectVertices(verts);
+
+		Color c = this.blitColor != null ? this.blitColor : Color.BLACK;
+		float r = c.getRed() / 255.0f;
+		float g = c.getGreen() / 255.0f;
+		float b = c.getBlue() / 255.0f;
+		float a = c.getAlpha() / 255.0f;
+		gl.uniform4f(uColorLoc, r, g, b, a);
+
+		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+	}
+
+	private void clearRectImpl(int x, int y, int width, int height) {
+		int cx = x + translateX;
+		int cy = y + translateY;
+		int h = canvas.getHeight();
+		gl.enable(WebGLRenderingContext.SCISSOR_TEST);
+		gl.scissor(cx, h - (cy + height), width, height);
+		gl.clearColor(0f, 0f, 0f, 0f);
+		gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
+		applyClip();
 	}
 
 	private void useColorProgram() {
@@ -421,7 +378,7 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		gl.vertexAttribPointer(aPositionLocColor, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
 	}
 
-	private void useTextureProgram(SwizzleMode mode) {
+	private void useTextureProgram(TBufferedImage.SwizzleMode mode) {
 		gl.useProgram(textureProgram);
 		gl.uniform2f(uResolutionLocTex, (float) canvas.getWidth(), (float) canvas.getHeight());
 		gl.uniform2f(uTranslationLocTex, (float) translateX, (float) translateY);
@@ -478,71 +435,14 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		return shader;
 	}
 
-	private enum SwizzleMode {
-		NONE,
-		ARGB_TO_RGBA,
-		RGB_TO_RGBA
-	}
 
 	// Pixel-space vertex shader with translation + resolution -> NDC
-	private static final String COLOR_VERTEX_SRC =
-		"attribute vec2 a_position;\n" +
-			"uniform vec2 u_resolution;\n" +
-			"uniform vec2 u_translation;\n" +
-			"void main() {\n" +
-			"  vec2 pos = a_position + u_translation;\n" +
-			"  vec2 zeroToOne = pos / u_resolution;\n" +
-			"  vec2 zeroToTwo = zeroToOne * 2.0;\n" +
-			"  vec2 clipSpace = zeroToTwo - 1.0;\n" +
-			"  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);\n" +
-			"}";
+	private static final String COLOR_VERTEX_SRC = Shaders.colorVertex();
 
-	private static final String COLOR_FRAGMENT_SRC =
-		"precision mediump float;\n" +
-			"uniform vec4 u_color;\n" +
-			"void main() {\n" +
-			"  gl_FragColor = u_color;\n" +
-			"}";
+	private static final String COLOR_FRAGMENT_SRC = Shaders.colorFragment();
 
-	private static final String TEX_VERTEX_SRC =
-		"attribute vec2 a_position;\n" +
-			"attribute vec2 a_texCoord;\n" +
-			"uniform vec2 u_resolution;\n" +
-			"uniform vec2 u_translation;\n" +
-			"varying vec2 v_texCoord;\n" +
-			"void main() {\n" +
-			"  vec2 pos = a_position + u_translation;\n" +
-			"  vec2 zeroToOne = pos / u_resolution;\n" +
-			"  vec2 zeroToTwo = zeroToOne * 2.0;\n" +
-			"  vec2 clipSpace = zeroToTwo - 1.0;\n" +
-			"  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);\n" +
-			"  v_texCoord = a_texCoord;\n" +
-			"}";
+	private static final String TEX_VERTEX_SRC = Shaders.textureVertex();
 
-	private static final String TEX_FRAGMENT_SRC =
-		"precision mediump float;\n" +
-			"varying vec2 v_texCoord;\n" +
-			"uniform sampler2D u_texture;\n" +
-			"uniform int u_swizzleMode;\n" +
-			"\n" +
-			"void main() {\n" +
-			"  vec4 tex = texture2D(u_texture, v_texCoord);\n" +
-			"\n" +
-			"  // u_swizzleMode:\n" +
-			"  //   0 = plain RGBA\n" +
-			"  //   1 = ARGB stored as bytes [A,R,G,B], uploaded as RGBA (tex = A,R,G,B)\n" +
-			"  //       want RGBA = (R,G,B,A) = tex.gbar\n" +
-			"  //   2 = INT_RGB with alpha=0 -> bytes [0,R,G,B] uploaded as RGBA\n" +
-			"  //       tex = (0,R,G,B), want (R,G,B,1) = vec4(tex.gba, 1.0)\n" +
-			"  if (u_swizzleMode == 0) {\n" +
-			"    gl_FragColor = tex;\n" +
-			"  } else if (u_swizzleMode == 1) {\n" +
-			"	gl_FragColor = vec4(tex.b, tex.g, tex.r, tex.a);\n" +
-			"  } else if (u_swizzleMode == 2) {\n" +
-			"    gl_FragColor = vec4(tex.bgr, 1.0);\n" +
-			"  } else {\n" +
-			"    gl_FragColor = tex;\n" +
-			"  }\n" +
-			"}\n";
+	private static final String TEX_FRAGMENT_SRC = Shaders.textureFragment();
 
 }

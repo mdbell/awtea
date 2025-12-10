@@ -12,6 +12,7 @@ import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.typedarrays.TypedArray;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
+import org.teavm.jso.webgl.WebGL2RenderingContext;
 
 import java.util.List;
 
@@ -46,6 +47,13 @@ public final class JSObjectsExtensions {
 		options.put("alpha", false);
 //        options.put("willReadFrequently", JSBoolean.valueOf(frequentReads));
 		return (CanvasRenderingContext2D) element.getContext("2d", options);
+	}
+
+	public static WebGL2RenderingContext getWebGL2Context(HTMLCanvasElement element) {
+		JSRecord options = JSRecord.create();
+		options.put("alpha", false);
+		options.put("preserveDrawingBuffer", true); // needed for reading pixels/ drawing over itself
+		return (WebGL2RenderingContext) element.getContext("webgl2", options);
 	}
 
 	@JSBody(params = {"blob"}, script = "return (window.URL || window.webkitURL).createObjectURL(blob);")

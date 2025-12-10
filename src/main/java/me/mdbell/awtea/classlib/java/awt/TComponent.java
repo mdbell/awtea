@@ -304,7 +304,7 @@ public abstract class TComponent implements TImageObserver {
 	}
 
 	public void update(TGraphics g) {
-		g.clearRect(0, 0, width, height);
+//		g.clearRect(0, 0, width, height);
 		paint(g);
 	}
 

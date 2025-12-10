@@ -2,7 +2,6 @@ package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.TImage;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
@@ -14,6 +13,7 @@ import org.teavm.classlib.java.awt.TPoint;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
+import org.teavm.jso.webgl.WebGL2RenderingContext;
 import org.teavm.jso.webgl.WebGLTexture;
 
 import java.util.Hashtable;
@@ -56,8 +56,11 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	@Getter(AccessLevel.NONE)
 	private ImageData underlyingImageData;
 
-	@Setter
-	WebGLTexture webglTexture;
+	private WebGLTexture webglTexture;
+
+	private WebGL2RenderingContext gl;
+
+	private SwizzleMode swizzle;
 
 	private static final boolean useImageDataDirectly = System.getProperty("awtea.bufferedimage.useimagedata",
 		"false").equals("true");
@@ -632,5 +635,45 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 				setRGB(dstX, dstY, argb);
 			}
 		}
+	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		disposeWebGLTexture();
+		super.finalize();
+	}
+
+	private void disposeWebGLTexture() {
+		if (this.gl != null && this.webglTexture != null) {
+			this.gl.deleteTexture(this.webglTexture);
+			this.webglTexture = null;
+			this.gl = null;
+		}
+	}
+
+	public void setWebglTexture(WebGL2RenderingContext gl, WebGLTexture tex) {
+		if (this.gl != gl || this.webglTexture != tex) {
+			disposeWebGLTexture();
+		}
+		this.gl = gl;
+		this.webglTexture = tex;
+		this.swizzle = getSwizzleMode();
+	}
+
+	private SwizzleMode getSwizzleMode() {
+		switch (imageType) {
+			case TBufferedImage.TYPE_INT_ARGB:
+				return SwizzleMode.ARGB_TO_RGBA;
+			case TBufferedImage.TYPE_INT_RGB:
+				return SwizzleMode.RGB_TO_RGBA;
+			default:
+				return SwizzleMode.NONE;
+		}
+	}
+
+	public enum SwizzleMode {
+		NONE,
+		ARGB_TO_RGBA,
+		RGB_TO_RGBA
 	}
 }
