@@ -1,12 +1,15 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
-import me.mdbell.awtea.classlib.java.awt.image.TDataBufferInt;
 import me.mdbell.awtea.gl.Shaders;
 import me.mdbell.awtea.instrument.Monitored;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
-import org.teavm.jso.typedarrays.*;
+import org.teavm.jso.typedarrays.ArrayBuffer;
+import org.teavm.jso.typedarrays.ArrayBufferView;
+import org.teavm.jso.typedarrays.Float32Array;
+import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.jso.webgl.*;
 
 import java.awt.*;
@@ -25,24 +28,19 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	// uniforms / attribs for color program
 	private final WebGLUniformLocation uResolutionLocColor;
 	private final WebGLUniformLocation uColorLoc;
-	private final WebGLUniformLocation uTranslationLocColor;
+	private final WebGLUniformLocation uTransformLocColor;
 	private final int aPositionLocColor;
 
 	// uniforms / attribs for texture program
 	private final WebGLUniformLocation uSwizzleModeLoc;
 	private final WebGLUniformLocation uResolutionLocTex;
-	private final WebGLUniformLocation uTranslationLocTex;
+	private final WebGLUniformLocation uTransformLocTex;
+
 	private final int aPositionLocTex;
 	private final int aTexCoordLocTex;
 
 	private final WebGLBuffer quadBuffer;
 	private final WebGLBuffer quadTexCoordBuffer;
-
-	private int translateX = 0;
-	private int translateY = 0;
-
-	// simple rectangular clip; null = no clip
-	private TRectangle clip;
 
 	// second copy of color for blit ops, so we don't
 	// mess up the main color state during batching
@@ -52,6 +50,8 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	private final WebGLTexture backbufferTex;
 	private int backbufferWidth;
 	private int backbufferHeight;
+
+	private transient WebGLProgramType currentProgram = WebGLProgramType.NONE;
 
 	public TWebGLGraphics(HTMLCanvasElement canvas) {
 		this(JSObjectsExtensions.getWebGL2Context(canvas), canvas);
@@ -74,14 +74,14 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		this.aPositionLocColor = gl.getAttribLocation(colorProgram, "a_position");
 		this.uResolutionLocColor = gl.getUniformLocation(colorProgram, "u_resolution");
 		this.uColorLoc = gl.getUniformLocation(colorProgram, "u_color");
-		this.uTranslationLocColor = gl.getUniformLocation(colorProgram, "u_translation");
+		this.uTransformLocColor = gl.getUniformLocation(colorProgram, "u_transform");
 
 		// texture program locations
 		gl.useProgram(textureProgram);
 		this.aPositionLocTex = gl.getAttribLocation(textureProgram, "a_position");
 		this.aTexCoordLocTex = gl.getAttribLocation(textureProgram, "a_texCoord");
 		this.uResolutionLocTex = gl.getUniformLocation(textureProgram, "u_resolution");
-		this.uTranslationLocTex = gl.getUniformLocation(textureProgram, "u_translation");
+		this.uTransformLocTex = gl.getUniformLocation(textureProgram, "u_transform");
 		this.uSwizzleModeLoc = gl.getUniformLocation(textureProgram, "u_swizzleMode");
 
 		// ---- buffers ----
@@ -105,7 +105,7 @@ public class TWebGLGraphics extends TCanvasGraphics {
 			WebGLRenderingContext.RGBA,
 			WebGLRenderingContext.UNSIGNED_BYTE,
 			(ArrayBufferView) null);
-		//TODO: figure out what these mean
+
 		gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_MIN_FILTER, WebGLRenderingContext.NEAREST);
 		gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_MAG_FILTER, WebGLRenderingContext.NEAREST);
 		gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_WRAP_S, WebGLRenderingContext.CLAMP_TO_EDGE);
@@ -120,29 +120,61 @@ public class TWebGLGraphics extends TCanvasGraphics {
 			0);
 
 		gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
-
 		reset();
+	}
+
+	private TWebGLGraphics(TWebGLGraphics other) {
+		super(other);
+		this.gl = other.gl;
+		this.colorProgram = other.colorProgram;
+		this.textureProgram = other.textureProgram;
+		this.rectBuffer = other.rectBuffer;
+		this.quadBuffer = other.quadBuffer;
+		this.quadTexCoordBuffer = other.quadTexCoordBuffer;
+
+		this.uResolutionLocColor = other.uResolutionLocColor;
+		this.uColorLoc = other.uColorLoc;
+		this.uTransformLocColor = other.uTransformLocColor;
+		this.aPositionLocColor = other.aPositionLocColor;
+		this.uSwizzleModeLoc = other.uSwizzleModeLoc;
+		this.uResolutionLocTex = other.uResolutionLocTex;
+		this.uTransformLocTex = other.uTransformLocTex;
+		this.aPositionLocTex = other.aPositionLocTex;
+		this.aTexCoordLocTex = other.aTexCoordLocTex;
+		this.backbufferFbo = other.backbufferFbo;
+		this.backbufferTex = other.backbufferTex;
+		this.backbufferWidth = other.backbufferWidth;
+		this.backbufferHeight = other.backbufferHeight;
+
+		this.blitColor = other.blitColor;
+	}
+
+	@Override
+	public void onCanvasResize(int width, int height) {
+		if (width == this.backbufferWidth && height == this.backbufferHeight) {
+			return;
+		}
+		resizeBackbuffer(width, height);
 	}
 
 	@Override
 	public TGraphics create() {
-		// For now, share underlying GL state; clone transforms/color/clip
-		TWebGLGraphics g = new TWebGLGraphics(gl, canvas);
-		g.translateX = this.translateX;
-		g.translateY = this.translateY;
-		g.color = this.color;
-		g.clip = this.clip;
-		return g;
+		return new TWebGLGraphics(this);
 	}
 
 	@Override
 	public void setClip(int x, int y, int width, int height) {
+		super.setClip(x, y, width, height);
 		if (width <= 0 || height <= 0) {
-			clip = null;
 			gl.disable(WebGLRenderingContext.SCISSOR_TEST);
 			return;
 		}
-		clip = new TRectangle(x, y, width, height);
+		applyClip();
+	}
+
+	@Override
+	public void translate(int deltaX, int deltaY) {
+		super.translate(deltaX, deltaY); // updates the AffineTransform
 		applyClip();
 	}
 
@@ -152,10 +184,14 @@ public class TWebGLGraphics extends TCanvasGraphics {
 			return;
 		}
 		gl.enable(WebGLRenderingContext.SCISSOR_TEST);
-		// WebGL coordinates start at bottom-left, we’re in top-left
-		int cx = clip.x + translateX;
-		int cy = clip.y + translateY;
-		int h = canvas.getHeight();
+
+		int tx = getTx();
+		int ty = getTy();
+		int h = backbufferHeight;
+
+		int cx = clip.x + tx;
+		int cy = clip.y + ty;
+
 		gl.scissor(cx, h - (cy + clip.height), clip.width, clip.height);
 	}
 
@@ -167,14 +203,6 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	@Override
 	public void setPaintMode() {
 
-	}
-
-	@Override
-	public void translate(int deltaX, int deltaY) {
-		this.translateX += deltaX;
-		this.translateY += deltaY;
-		// scissor needs to respect translation
-		applyClip();
 	}
 
 	@Override
@@ -194,13 +222,11 @@ public class TWebGLGraphics extends TCanvasGraphics {
 
 	@Override
 	public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-		// For now, approximate with normal rect
 		drawRect(x, y, width, height);
 	}
 
 	@Override
 	public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-		// For now, approximate with normal rect
 		fillRect(x, y, width, height);
 	}
 
@@ -271,40 +297,31 @@ public class TWebGLGraphics extends TCanvasGraphics {
 
 	@Override
 	public void reset() {
-		translateX = 0;
-		translateY = 0;
-		clip = null;
+		super.reset();
 		gl.disable(WebGLRenderingContext.SCISSOR_TEST);
 	}
 
 	@Override
-	public TShape getClip() {
-		return clip;
-	}
-
-	@Override
 	public void clipRect(int x, int y, int width, int height) {
+		super.clipRect(x, y, width, height);
 		if (clip == null) {
-			setClip(x, y, width, height);
+			gl.disable(WebGLRenderingContext.SCISSOR_TEST);
 		} else {
-			clip = clip.intersection(new TRectangle(x, y, width, height));
 			applyClip();
 		}
 	}
+
 
 	@Override
 	public void setClip(TShape clip) {
-		if (clip instanceof TRectangle) {
-			this.clip = (TRectangle) clip;
-			applyClip();
-		} else if (clip == null) {
-			this.clip = null;
+		super.setClip(clip);
+		if (clip == null) {
 			gl.disable(WebGLRenderingContext.SCISSOR_TEST);
 		} else {
-			// non-rect clips not implemented
-			throw new UnsupportedOperationException("Non-rect clip not supported in WebGL yet");
+			applyClip();
 		}
 	}
+
 
 	@Override
 	public void dispose() {
@@ -350,6 +367,17 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		useTextureProgram(TBufferedImage.SwizzleMode.NONE);
 		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, backbufferTex);
 
+		// identity mat3
+		float[] identity = {
+			1f, 0f, 0f,
+			0f, 1f, 0f,
+			0f, 0f, 1f
+		};
+		gl.uniformMatrix3fv(uTransformLocTex, false,
+			Float32Array.fromJavaArray(identity));
+
+		// full-screen quad
+
 		float[] verts = {
 			0, 0,
 			backbufferWidth, 0,
@@ -381,8 +409,7 @@ public class TWebGLGraphics extends TCanvasGraphics {
 			img.setWebglTexture(gl, tex);
 		}
 
-		Int32Array pixels = ((TDataBufferInt) img.getRaster().getDataBuffer()).getJSArray();
-		Uint8Array arr = new Uint8Array(pixels.getBuffer(), pixels.getByteOffset(), pixels.getByteLength());
+		Uint8Array arr = img.getPixelBytes();
 
 
 		drawTexture(arr, tex, img.getSwizzle(), x, y, width, height);
@@ -420,30 +447,93 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	}
 
 	private void clearRectImpl(int x, int y, int width, int height) {
-		int cx = x + translateX;
-		int cy = y + translateY;
-		int h = canvas.getHeight();
+		int tx = getTx();
+		int ty = getTy();
+		int h = backbufferHeight;
+
+		int cx = x + tx;
+		int cy = y + ty;
+
 		gl.enable(WebGLRenderingContext.SCISSOR_TEST);
 		gl.scissor(cx, h - (cy + height), width, height);
-		gl.clearColor(0f, 0f, 0f, 0f);
+		gl.clearColor(0f, 0f, 0f, 0f); // or background color
 		gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
-		applyClip();
+		applyClip(); // restore previous clip
 	}
 
+	protected void resizeBackbuffer(int width, int height) {
+		this.backbufferWidth = width;
+		this.backbufferHeight = height;
+
+		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, backbufferTex);
+		gl.texImage2D(WebGLRenderingContext.TEXTURE_2D,
+			0,
+			WebGLRenderingContext.RGBA,
+			backbufferWidth,
+			backbufferHeight,
+			0,
+			WebGLRenderingContext.RGBA,
+			WebGLRenderingContext.UNSIGNED_BYTE,
+			(ArrayBufferView) null);
+	}
+
+	private float[] getTransformMatrix3() {
+		TAffineTransform t = transform;
+
+		float m00 = (float) t.getScaleX();
+		float m01 = (float) t.getShearX();
+		float m02 = (float) t.getTranslateX();
+
+		float m10 = (float) t.getShearY();
+		float m11 = (float) t.getScaleY();
+		float m12 = (float) t.getTranslateY();
+
+		// WebGL uses column-major order for mat3 uniforms
+		return new float[]{
+			m00, m10, 0f,
+			m01, m11, 0f,
+			m02, m12, 1f
+		};
+	}
+
+	// WebGL programs
+
 	private void useColorProgram() {
-		gl.useProgram(colorProgram);
-		gl.uniform2f(uResolutionLocColor, (float) canvas.getWidth(), (float) canvas.getHeight());
-		gl.uniform2f(uTranslationLocColor, (float) translateX, (float) translateY);
+
+		if (currentProgram != WebGLProgramType.COLOR) {
+			gl.useProgram(colorProgram);
+			currentProgram = WebGLProgramType.COLOR;
+		}
+
+		gl.uniform2f(uResolutionLocColor,
+			(float) backbufferWidth,
+			(float) backbufferHeight);
+
+		float[] m = getTransformMatrix3();
+		gl.uniformMatrix3fv(uTransformLocColor, false,
+			Float32Array.fromJavaArray(m));
 
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, rectBuffer);
 		gl.enableVertexAttribArray(aPositionLocColor);
-		gl.vertexAttribPointer(aPositionLocColor, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(aPositionLocColor, 2,
+			WebGLRenderingContext.FLOAT,
+			false, 0, 0);
 	}
 
 	private void useTextureProgram(TBufferedImage.SwizzleMode mode) {
-		gl.useProgram(textureProgram);
-		gl.uniform2f(uResolutionLocTex, (float) canvas.getWidth(), (float) canvas.getHeight());
-		gl.uniform2f(uTranslationLocTex, (float) translateX, (float) translateY);
+
+		if (currentProgram != WebGLProgramType.TEXTURE) {
+			gl.useProgram(textureProgram);
+			currentProgram = WebGLProgramType.TEXTURE;
+		}
+
+		gl.uniform2f(uResolutionLocTex,
+			(float) backbufferWidth,
+			(float) backbufferHeight);
+
+		float[] m = getTransformMatrix3();
+		gl.uniformMatrix3fv(uTransformLocTex, false,
+			Float32Array.fromJavaArray(m));
 
 		gl.uniform1i(uSwizzleModeLoc, mode.ordinal());
 
@@ -453,7 +543,9 @@ public class TWebGLGraphics extends TCanvasGraphics {
 
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadTexCoordBuffer);
 		gl.enableVertexAttribArray(aTexCoordLocTex);
-		gl.vertexAttribPointer(aTexCoordLocTex, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(aTexCoordLocTex, 2,
+			WebGLRenderingContext.FLOAT,
+			false, 0, 0);
 	}
 
 	private void uploadRectVertices(float[] verts) {
@@ -495,6 +587,12 @@ public class TWebGLGraphics extends TCanvasGraphics {
 			throw new RuntimeException("Could not compile shader: " + log);
 		}
 		return shader;
+	}
+
+	private enum WebGLProgramType {
+		NONE,
+		COLOR,
+		TEXTURE
 	}
 
 

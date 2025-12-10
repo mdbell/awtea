@@ -12,6 +12,7 @@ import me.mdbell.awtea.util.GlyphRasterizer;
 import org.teavm.classlib.java.awt.TPoint;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.typedarrays.Int32Array;
+import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import org.teavm.jso.webgl.WebGL2RenderingContext;
 import org.teavm.jso.webgl.WebGLTexture;
@@ -59,8 +60,10 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	private WebGLTexture webglTexture;
 
 	private WebGL2RenderingContext gl;
-
 	private SwizzleMode swizzle;
+
+	@Getter(AccessLevel.NONE) // we expose getPixelBytes() instead
+	private Uint8Array cachedBytes;
 
 	private static final boolean useImageDataDirectly = System.getProperty("awtea.bufferedimage.useimagedata",
 		"false").equals("true");
@@ -568,6 +571,17 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 				dst.set(dstIndex++, a);
 			}
 		}
+	}
+
+	public Uint8Array getPixelBytes() {
+		// similar to getImageData, but not doing any swizzling / conversion,
+		// just returning the underlying byte buffer as-is
+		if (cachedBytes == null) {
+			//TODO: handle other data buffer types?
+			Int32Array ints = ((TDataBufferInt) raster.getDataBuffer()).getJSArray();
+			cachedBytes = new Uint8Array(ints.getBuffer(), ints.getByteOffset(), ints.getByteLength());
+		}
+		return cachedBytes;
 	}
 
 	@Override

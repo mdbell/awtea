@@ -37,6 +37,10 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 	public void setSize(int widthPx, int heightPx) {
 		canvasElement.setWidth(widthPx);
 		canvasElement.setHeight(heightPx);
+
+		if (graphics != null) {
+			graphics.onCanvasResize(widthPx, heightPx);
+		}
 	}
 
 	@Override

@@ -3,7 +3,6 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.ExtensionMethod;
-import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.util.ColorUtil;
 import me.mdbell.awtea.util.JSObjectsExtensions;
@@ -19,8 +18,6 @@ import java.util.List;
 public class TCanvas2DGraphics extends TCanvasGraphics {
 
 	private final CanvasRenderingContext2D context;
-
-	private final TAffineTransform transform = new TAffineTransform();
 
 	@Getter
 	@Setter
@@ -251,7 +248,7 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 
 	@Override
 	public void translate(int deltaX, int deltaY) {
-		this.transform.translate(deltaX, deltaY);
+		super.translate(deltaX, deltaY);
 		syncTransform();
 	}
 
