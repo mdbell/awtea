@@ -2,7 +2,7 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
-import me.mdbell.awtea.gl.Shaders;
+import me.mdbell.awtea.gfx.gl.Shaders;
 import me.mdbell.awtea.instrument.Monitored;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.jso.dom.html.HTMLCanvasElement;

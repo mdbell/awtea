@@ -1,4 +1,4 @@
-package me.mdbell.awtea.gl;
+package me.mdbell.awtea.gfx.gl;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

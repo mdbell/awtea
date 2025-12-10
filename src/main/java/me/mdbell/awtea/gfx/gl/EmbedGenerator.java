@@ -1,4 +1,4 @@
-package me.mdbell.awtea.gl;
+package me.mdbell.awtea.gfx.gl;
 
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
