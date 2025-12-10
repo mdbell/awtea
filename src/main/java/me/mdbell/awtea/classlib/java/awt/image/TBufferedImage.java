@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.TImage;
+import me.mdbell.awtea.classlib.java.awt.awtea.gfx.TCachedTexture;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
 import me.mdbell.awtea.instrument.Monitored;
 import me.mdbell.awtea.support.ImageDataConsumer;
@@ -14,8 +15,6 @@ import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
-import org.teavm.jso.webgl.WebGL2RenderingContext;
-import org.teavm.jso.webgl.WebGLTexture;
 
 import java.util.Hashtable;
 
@@ -45,6 +44,8 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	private final TWritableRaster raster;
 	private final boolean alphaPremultiplied;
 
+	public TCachedTexture texture;
+
 	@Getter(AccessLevel.NONE)
 	private TSoftwareGraphics gfx;
 
@@ -56,11 +57,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 
 	@Getter(AccessLevel.NONE)
 	private ImageData underlyingImageData;
-
-	private WebGLTexture webglTexture;
-
-	private WebGL2RenderingContext gl;
-	private SwizzleMode swizzle;
 
 	@Getter(AccessLevel.NONE) // we expose getPixelBytes() instead
 	private Uint8Array cachedBytes;
@@ -651,42 +647,14 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	}
 
 	@Override
-	protected void finalize() throws Throwable {
-		disposeWebGLTexture();
-		super.finalize();
-	}
-
-	private void disposeWebGLTexture() {
-		if (this.gl != null && this.webglTexture != null) {
-			this.gl.deleteTexture(this.webglTexture);
-			this.webglTexture = null;
-			this.gl = null;
+	public void finalize() {
+		if (gfx != null) {
+			gfx.dispose();
+			gfx = null;
 		}
-	}
-
-	public void setWebglTexture(WebGL2RenderingContext gl, WebGLTexture tex) {
-		if (this.gl != gl || this.webglTexture != tex) {
-			disposeWebGLTexture();
+		if (texture != null) {
+			texture.delete();
+			texture = null;
 		}
-		this.gl = gl;
-		this.webglTexture = tex;
-		this.swizzle = getSwizzleMode();
-	}
-
-	private SwizzleMode getSwizzleMode() {
-		switch (imageType) {
-			case TBufferedImage.TYPE_INT_ARGB:
-				return SwizzleMode.ARGB_TO_RGBA;
-			case TBufferedImage.TYPE_INT_RGB:
-				return SwizzleMode.RGB_TO_RGBA;
-			default:
-				return SwizzleMode.NONE;
-		}
-	}
-
-	public enum SwizzleMode {
-		NONE,
-		ARGB_TO_RGBA,
-		RGB_TO_RGBA
 	}
 }

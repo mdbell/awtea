@@ -25,6 +25,8 @@ public class EventTestApplet extends Applet
 	public static final BufferedImage GREEN = new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB);
 	public static final BufferedImage BLUE = new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB);
 
+	public static final BufferedImage RED_BLUE_CHECKERED = new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB);
+
 	static {
 		fillImage(A_RED, new Color(255, 0, 0, 255));
 		fillImage(A_GREEN, new Color(0, 255, 0, 255));
@@ -33,6 +35,8 @@ public class EventTestApplet extends Applet
 		fillImage(RED, new Color(255, 0, 0));
 		fillImage(GREEN, new Color(0, 255, 0));
 		fillImage(BLUE, new Color(0, 0, 255));
+
+		fillCheckeredImage(RED_BLUE_CHECKERED, new Color(255, 0, 0), new Color(0, 0, 255));
 	}
 
 	@Override
@@ -55,19 +59,46 @@ public class EventTestApplet extends Applet
 		g.dispose();
 	}
 
+	private static void fillCheckeredImage(BufferedImage img, Color color1, Color color2) {
+		Graphics g = img.getGraphics();
+		for (int y = 0; y < img.getHeight(); y += 10) {
+			for (int x = 0; x < img.getWidth(); x += 10) {
+				if (((x / 10) + (y / 10)) % 2 == 0) {
+					g.setColor(color1);
+				} else {
+					g.setColor(color2);
+				}
+				g.fillRect(x, y, 10, 10);
+			}
+		}
+		g.dispose();
+	}
+
 	@Override
 	public void paint(Graphics g) {
-		g = getGraphics(); // force us to use the surface gfx
-		g.setColor(Color.LIGHT_GRAY);
-		g.fillRect(0, 0, getWidth(), getHeight());
+//		g = getGraphics(); // force us to use the surface gfx
+//		g.setColor(Color.LIGHT_GRAY);
+//		g.fillRect(0, 0, getWidth(), getHeight());
 
-		g.drawImage(A_RED, 10, 10, null);
-		g.drawImage(A_GREEN, 40, 10, null);
-		g.drawImage(A_BLUE, 70, 10, null);
+//		g.drawImage(A_RED, 10, 10, null);
+		//g.drawImage(A_GREEN, 40, 10, null);
+//		g.drawImage(A_BLUE, 70, 10, null);
 
-		g.drawImage(RED, 10, 40, null);
-		g.drawImage(GREEN, 40, 40, null);
-		g.drawImage(BLUE, 70, 40, null);
+//		g.drawImage(RED, 10, 40, null);
+//		g.drawImage(GREEN, 40, 40, null);
+//		g.drawImage(BLUE, 70, 40, null);
+
+		g.drawImage(RED_BLUE_CHECKERED, 10, 70, null);
+//
+//		g.setColor(Color.BLACK);
+//		g.drawString("Click count: " + clickCount, 10, 120);
+//		g.drawString("Motion count: " + motionCount, 10, 140);
+//		g.drawString("Last mouse: " + lastMouseX + "," + lastMouseY, 10, 160);
+//
+//		frameCount++;
+//		long elapsed = System.currentTimeMillis() - startTime;
+//		double fps = (frameCount * 1000.0) / elapsed;
+//		g.drawString(String.format("Frames: %d  Time: %d ms  FPS: %.2f", frameCount, elapsed, fps), 10, 180);
 	}
 
 	// --------------------------------------------------------

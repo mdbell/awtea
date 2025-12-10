@@ -1,23 +1,31 @@
 package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.Getter;
-import org.teavm.classlib.java.awt.TPoint;
 import me.mdbell.awtea.classlib.java.awt.TRectangle;
+import org.teavm.classlib.java.awt.TPoint;
 
 @Getter
 public class TRaster {
 
-	/** How to interpret the DataBuffer as pixels/bands. */
+	/**
+	 * How to interpret the DataBuffer as pixels/bands.
+	 */
 	protected TSampleModel sampleModel;
 
-	/** The actual storage (backing primitive arrays via DataBuffer*). */
-	protected TDataBuffer buffer;
+	/**
+	 * The actual storage (backing primitive arrays via DataBuffer*).
+	 */
+	public TDataBuffer buffer;
 
-	/** Upper-left corner of this Raster in "image space". */
+	/**
+	 * Upper-left corner of this Raster in "image space".
+	 */
 	protected int minX;
 	protected int minY;
 
-	/** Width and height (in pixels). */
+	/**
+	 * Width and height (in pixels).
+	 */
 	protected int width;
 	protected int height;
 
@@ -29,8 +37,8 @@ public class TRaster {
 	protected int sampleModelTranslateY;
 
 	protected TRaster(TSampleModel sampleModel,
-					 TDataBuffer buffer,
-					 TPoint origin) {
+					  TDataBuffer buffer,
+					  TPoint origin) {
 		this(sampleModel, buffer,
 			origin.x, origin.y,
 			sampleModel.getWidth(),
@@ -38,9 +46,9 @@ public class TRaster {
 	}
 
 	protected TRaster(TSampleModel sampleModel,
-					 TDataBuffer buffer,
-					 int minX, int minY,
-					 int width, int height) {
+					  TDataBuffer buffer,
+					  int minX, int minY,
+					  int width, int height) {
 
 		if (sampleModel == null || buffer == null) {
 			throw new NullPointerException("sampleModel and dataBuffer must not be null");
@@ -98,9 +106,9 @@ public class TRaster {
 	}
 
 	public TRaster createChild(int parentX, int parentY,
-							  int width, int height,
-							  int childMinX, int childMinY,
-							  int[] bandList) {
+							   int width, int height,
+							   int childMinX, int childMinY,
+							   int[] bandList) {
 
 		if (bandList != null) {
 			// For now, you can throw or implement a subset logic later.
@@ -137,8 +145,8 @@ public class TRaster {
 	}
 
 	public static TWritableRaster createWritableRaster(TSampleModel sm,
-													  TDataBuffer db,
-													  TPoint location) {
+													   TDataBuffer db,
+													   TPoint location) {
 		if (sm == null) {
 			throw new NullPointerException("SampleModel is null");
 		}

@@ -2,7 +2,6 @@ package me.mdbell.awtea.classlib.java.awt.awtea.peer;
 
 import me.mdbell.awtea.classlib.java.awt.TCanvasGraphics;
 import me.mdbell.awtea.classlib.java.awt.TFrame;
-import me.mdbell.awtea.classlib.java.awt.TWebGLGraphics;
 import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
 import me.mdbell.awtea.ui.FloatingWindow;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
@@ -56,7 +55,7 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 	public TCanvasGraphics getGraphics() {
 		if (graphics == null) {
 			//graphics = new TCanvas2DGraphics(canvasElement);
-			graphics = new TWebGLGraphics(canvasElement);
+			graphics = new TCanvasGraphics(canvasElement, true);
 		}
 		return graphics;
 	}

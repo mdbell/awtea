@@ -1,4 +1,4 @@
-package me.mdbell.awtea.gfx.gl;
+package me.mdbell.awtea.gl;
 
 import lombok.experimental.UtilityClass;
 import org.teavm.backend.javascript.spi.GeneratedBy;

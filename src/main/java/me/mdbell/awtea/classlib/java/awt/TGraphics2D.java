@@ -1,7 +1,6 @@
 package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
-import org.teavm.classlib.java.awt.TColor;
 
 import java.awt.*;
 import java.text.AttributedCharacterIterator;
@@ -40,8 +39,6 @@ public abstract class TGraphics2D extends TGraphics {
 	public abstract TAffineTransform getTransform();
 
 	public abstract Color getBackground();
-
-	public abstract Color getColor();
 
 	public abstract TFont getFont();
 
@@ -97,11 +94,11 @@ public abstract class TGraphics2D extends TGraphics {
 
 	public abstract void fillRoundRect(int x, int y, int width, int height);
 
-	public abstract void setBackground(TColor color);
+	public abstract void setBackground(Color color);
 
 	public abstract void setClip(int x, int y, int width, int height);
 
-	public abstract void setColor(TColor c);
+	public abstract void setColor(Color c);
 
 	public abstract void setFont(TFont font);
 
@@ -115,7 +112,7 @@ public abstract class TGraphics2D extends TGraphics {
 
 	// public abstract void setStroke(TStroke s);
 
-	public abstract void setXORMode(TColor c1);
+	public abstract void setXORMode(Color c1);
 
 	public boolean hitClip(TRectangle rect) {
 		TShape clip = getClip();

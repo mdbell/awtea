@@ -15,7 +15,7 @@ public class TProducerImage extends TImage {
 
 	protected TBufferedImage bufferedImage = null;
 
-	private int width  = -1;
+	private int width = -1;
 	private int height = -1;
 
 	private boolean productionStarted = false;
@@ -56,7 +56,7 @@ public class TProducerImage extends TImage {
 
 	@Override
 	public TGraphics getGraphics() {
-		if(bufferedImage != null) {
+		if (bufferedImage != null) {
 			return bufferedImage.getGraphics();
 		}
 		return null;
@@ -161,7 +161,7 @@ public class TProducerImage extends TImage {
 					int argb = model.getRGB(pixels[srcIndex++] & 0xFF);
 					raster.setDataElements(x + col, y + row, new int[]{argb});
 				}
-				}
+			}
 		}
 
 		@Override
