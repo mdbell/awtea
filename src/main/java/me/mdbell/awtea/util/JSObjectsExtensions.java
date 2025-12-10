@@ -52,7 +52,6 @@ public final class JSObjectsExtensions {
 	public static WebGL2RenderingContext getWebGL2Context(HTMLCanvasElement element) {
 		JSRecord options = JSRecord.create();
 		options.put("alpha", false);
-		options.put("preserveDrawingBuffer", true); // needed for reading pixels/ drawing over itself
 		return (WebGL2RenderingContext) element.getContext("webgl2", options);
 	}
 

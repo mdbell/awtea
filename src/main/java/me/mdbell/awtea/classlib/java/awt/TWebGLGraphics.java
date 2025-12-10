@@ -48,6 +48,11 @@ public class TWebGLGraphics extends TCanvasGraphics {
 	// mess up the main color state during batching
 	private Color blitColor;
 
+	private final WebGLFramebuffer backbufferFbo;
+	private final WebGLTexture backbufferTex;
+	private int backbufferWidth;
+	private int backbufferHeight;
+
 	public TWebGLGraphics(HTMLCanvasElement canvas) {
 		this(JSObjectsExtensions.getWebGL2Context(canvas), canvas);
 	}
@@ -86,7 +91,36 @@ public class TWebGLGraphics extends TCanvasGraphics {
 		quadBuffer = gl.createBuffer();
 		quadTexCoordBuffer = gl.createBuffer();
 
-		// no persistent data; we’ll stream per draw
+		backbufferWidth = canvas.getWidth();
+		backbufferHeight = canvas.getHeight();
+
+		backbufferTex = gl.createTexture();
+		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, backbufferTex);
+		gl.texImage2D(WebGLRenderingContext.TEXTURE_2D,
+			0,
+			WebGLRenderingContext.RGBA,
+			backbufferWidth,
+			backbufferHeight,
+			0,
+			WebGLRenderingContext.RGBA,
+			WebGLRenderingContext.UNSIGNED_BYTE,
+			(ArrayBufferView) null);
+		//TODO: figure out what these mean
+		gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_MIN_FILTER, WebGLRenderingContext.NEAREST);
+		gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_MAG_FILTER, WebGLRenderingContext.NEAREST);
+		gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_WRAP_S, WebGLRenderingContext.CLAMP_TO_EDGE);
+		gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_WRAP_T, WebGLRenderingContext.CLAMP_TO_EDGE);
+
+		backbufferFbo = gl.createFramebuffer();
+		gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, backbufferFbo);
+		gl.framebufferTexture2D(WebGLRenderingContext.FRAMEBUFFER,
+			WebGLRenderingContext.COLOR_ATTACHMENT0,
+			WebGLRenderingContext.TEXTURE_2D,
+			backbufferTex,
+			0);
+
+		gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
+
 		reset();
 	}
 
@@ -280,11 +314,17 @@ public class TWebGLGraphics extends TCanvasGraphics {
 
 	@Override
 	protected void performBlit(List<BlitOp> ops) {
+
+		// we draw to a framebuffer so we can have incremental updates without
+		// clearing the whole canvas each time
+		gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, backbufferFbo);
+
+		// NOTE: Do _not_ clear the framebuffer here; we want to preserve existing content
+
 		for (BlitOp op : ops) {
-			System.out.println("Blit op: " + op.type);
 			switch (op.type) {
 				case BLIT_IMAGE:
-					drawImageImpl(op);
+					drawImageImpl((TBufferedImage) op.obj, op.arg1, op.arg2, op.arg3, op.arg4);
 					break;
 				case DRAW_RECT:
 					drawRectImpl(op.arg1, op.arg2, op.arg3, op.arg4);
@@ -296,34 +336,56 @@ public class TWebGLGraphics extends TCanvasGraphics {
 					clearRectImpl(op.arg1, op.arg2, op.arg3, op.arg4);
 					break;
 				case SET_COLOR:
-					this.blitColor = (Color) op.img;
+					this.blitColor = (Color) op.obj;
 					break;
 				default:
 					System.err.println("Unsupported blit operation: " + op.type);
 					break;
 			}
 		}
+
+		// unbind framebuffer to render to canvas
+		gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
+
+		useTextureProgram(TBufferedImage.SwizzleMode.NONE);
+		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, backbufferTex);
+
+		float[] verts = {
+			0, 0,
+			backbufferWidth, 0,
+			0, backbufferHeight,
+			0, backbufferHeight,
+			backbufferWidth, 0,
+			backbufferWidth, backbufferHeight
+		};
+
+		float[] uvs = {
+			0f, 1f,
+			1f, 1f,
+			0f, 0f,
+			0f, 0f,
+			1f, 1f,
+			1f, 0f
+		};
+
+		uploadQuadVertices(verts, uvs);
+		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
 	}
 
-	private void drawImageImpl(BlitOp op) {
-		TBufferedImage bi = (TBufferedImage) op.img;
-		int x = op.arg1;
-		int y = op.arg2;
-		int width = op.arg3;
-		int height = op.arg4;
+	private void drawImageImpl(TBufferedImage img, int x, int y, int width, int height) {
 
-		WebGLTexture tex = bi.getWebglTexture();
+		WebGLTexture tex = img.getWebglTexture();
 
 		if (tex == null) {
 			tex = gl.createTexture();
-			bi.setWebglTexture(gl, tex);
+			img.setWebglTexture(gl, tex);
 		}
 
-		Int32Array pixels = ((TDataBufferInt) bi.getRaster().getDataBuffer()).getJSArray();
+		Int32Array pixels = ((TDataBufferInt) img.getRaster().getDataBuffer()).getJSArray();
 		Uint8Array arr = new Uint8Array(pixels.getBuffer(), pixels.getByteOffset(), pixels.getByteLength());
 
 
-		drawTexture(arr, tex, bi.getSwizzle(), x, y, width, height);
+		drawTexture(arr, tex, img.getSwizzle(), x, y, width, height);
 	}
 
 	private void drawRectImpl(int x, int y, int width, int height) {

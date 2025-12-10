@@ -184,7 +184,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	private TDataBufferInt createBuffer(int width, int height) {
 		TDataBufferInt db;
 		if (useImageDataDirectly) {
-			System.out.println("Using ImageData-backed TDataBufferInt for TBufferedImage");
 			this.underlyingImageData = new ImageData(width, height);
 			db = new TDataBufferInt(this.underlyingImageData);
 		} else {

@@ -115,7 +115,7 @@ public abstract class TCanvasGraphics extends TGraphics {
 			if (op.type == Operation.SET_COLOR) {
 				blitOps.remove(blitOps.size() - 1);
 			}
-			if (op.type == Operation.BLIT_IMAGE && previousOp.img == op.img
+			if (op.type == Operation.BLIT_IMAGE && previousOp.obj == op.obj
 				&& previousOp.arg1 == op.arg1 && previousOp.arg2 == op.arg2 // x,y
 				&& previousOp.arg3 == op.arg3 && previousOp.arg4 == op.arg4 // width,height
 			) {
@@ -162,7 +162,7 @@ public abstract class TCanvasGraphics extends TGraphics {
 
 	public static class BlitOp {
 		public final Operation type;
-		public final Object img;
+		public final Object obj;
 		public final int arg1;
 		public final int arg2;
 		public final int arg3;
@@ -178,7 +178,7 @@ public abstract class TCanvasGraphics extends TGraphics {
 
 		BlitOp(Operation type, Object target, int x, int y, int width, int height) {
 			this.type = type;
-			this.img = target;
+			this.obj = target;
 			this.arg1 = x;
 			this.arg2 = y;
 			this.arg3 = width;

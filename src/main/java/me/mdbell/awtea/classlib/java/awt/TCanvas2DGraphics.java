@@ -279,7 +279,7 @@ public class TCanvas2DGraphics extends TCanvasGraphics {
 	}
 
 	private void drawImageImpl(BlitOp op) {
-		TBufferedImage img = (TBufferedImage) op.img;
+		TBufferedImage img = (TBufferedImage) op.obj;
 		ImageData imageData = img.getImageData();
 		//TODO: implement scaling
 		this.context.putImageData(imageData, op.arg1, op.arg2);
