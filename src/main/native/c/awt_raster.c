@@ -102,6 +102,7 @@ static inline float u32_to_float(uint32_t v) {
     return u.f;
 }
 
+
 static inline void transform_point(const Transform2D* t,
                                    float x, float y,
                                    float* outX, float* outY) {
@@ -433,14 +434,14 @@ static inline void draw_rect(Surface* surface,
     int x, int y,
     int width, int height,
     uint32_t color) {
-    // Top edge
-    draw_filled_rect(surface, x, y, width, 1, color);
+    // Top edge: width+1 pixels
+    draw_filled_rect(surface, x,         y,          width + 1, 1,          color);
     // Bottom edge
-    draw_filled_rect(surface, x, y + height - 1, width, 1, color);
-    // Left edge
-    draw_filled_rect(surface, x, y, 1, height, color);
+    draw_filled_rect(surface, x,         y + height, width + 1, 1,          color);
+    // Left edge: height+1 pixels
+    draw_filled_rect(surface, x,         y,          1,         height + 1, color);
     // Right edge
-    draw_filled_rect(surface, x + width - 1, y, 1, height, color);
+    draw_filled_rect(surface, x + width, y,          1,         height + 1, color);
 }
 
 static inline void set_color(Surface* surface, int which, uint32_t argb) {
@@ -589,8 +590,6 @@ static inline void blit_from_view(Surface* dst,
     }
 }
 
-
-
 static inline void blit_image(Surface* dst, int image_id, int x, int y) {
     ImageView* img = lookup_by_id(image_id);
     if (!img || !img->ptr || img->width == 0 || img->height == 0) {
@@ -599,6 +598,59 @@ static inline void blit_image(Surface* dst, int image_id, int x, int y) {
     blit_from_view(dst, img, x, y);
 }
 
+static inline void draw_line(Surface* surf,
+                             int x1, int y1,
+                             int x2, int y2,
+                             uint32_t color) {
+    // Transform endpoints into destination space
+    float fx1 = (float)x1, fy1 = (float)y1;
+    float fx2 = (float)x2, fy2 = (float)y2;
+
+    if (!is_identity_transform(&surf->transform)) {
+        transform_point(&surf->transform, fx1, fy1, &fx1, &fy1);
+        transform_point(&surf->transform, fx2, fy2, &fx2, &fy2);
+    }
+
+    int x0 = (int)fx1;
+    int y0 = (int)fy1;
+    int x1i = (int)fx2;
+    int y1i = (int)fy2;
+
+    int dx = abs(x1i - x0);
+    int sx = x0 < x1i ? 1 : -1;
+    int dy = -abs(y1i - y0);
+    int sy = y0 < y1i ? 1 : -1;
+    int err = dx + dy;
+
+    PixelFormatInfo dstInfo = g_pixel_format_info[surf->format];
+    int hasAlpha = (dstInfo.mask_a != 0);
+
+    SetPixelFunc set_pixel_func = get_set_pixel_func(PIXEL_FORMAT_ARGB,
+                                        surf->format);
+
+    for (;;) {
+        if (x0 >= 0 && x0 < (int)surf->width &&
+            y0 >= 0 && y0 < (int)surf->height) {
+
+            if (hasAlpha) {
+                blend_pixel(surf, x0, y0, PIXEL_FORMAT_ARGB, color);
+            } else {
+                set_pixel_func(surf, x0, y0, PIXEL_FORMAT_ARGB, color);
+            }
+        }
+
+        if (x0 == x1i && y0 == y1i){
+            break;
+        }
+        int e2 = 2 * err;
+        if (e2 >= dy) {
+            err += dy; x0 += sx;
+        }
+        if (e2 <= dx) {
+            err += dx; y0 += sy;
+        }
+    }
+}
 
 
 // Exported functions
@@ -785,6 +837,11 @@ int render_awt(int surface_id, uint32_t cmdPtr, int cmdCount) {
                 break;
             case CMD_CLEAR_RECT:
                 clear_rect(surface, cmd->x, cmd->y, cmd->width, cmd->height);
+                break;
+            case CMD_DRAW_LINE:
+                draw_line(surface, cmd->x, cmd->y,
+                          cmd->width, cmd->height,
+                          surface->argb[COLOR_FG]);
                 break;
 
             // No-op or unknown command

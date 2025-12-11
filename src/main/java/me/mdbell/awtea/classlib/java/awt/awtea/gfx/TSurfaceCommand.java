@@ -2,62 +2,63 @@ package me.mdbell.awtea.classlib.java.awt.awtea.gfx;
 
 public class TSurfaceCommand {
 
-	public Operation type;
-	public Object obj;
-	public int arg1;
-	public int arg2;
-	public int arg3;
-	public int arg4;
+    public Operation type;
+    public Object obj;
+    public int arg1;
+    public int arg2;
+    public int arg3;
+    public int arg4;
 
-	public TSurfaceCommand() {
-		this(Operation.NO_OP, null, 0, 0, 0, 0);
-	}
+    public TSurfaceCommand() {
+        this(Operation.NO_OP, null, 0, 0, 0, 0);
+    }
 
-	public TSurfaceCommand(Operation operation) {
-		this(operation, null, 0, 0, 0, 0);
-	}
+    public TSurfaceCommand(Operation operation) {
+        this(operation, null, 0, 0, 0, 0);
+    }
 
-	public TSurfaceCommand(Operation operation, Object obj) {
-		this(operation, obj, 0, 0, 0, 0);
-	}
+    public TSurfaceCommand(Operation operation, Object obj) {
+        this(operation, obj, 0, 0, 0, 0);
+    }
 
-	public TSurfaceCommand(Operation operation, Object obj, int arg1) {
-		this(operation, obj, arg1, 0, 0, 0);
-	}
+    public TSurfaceCommand(Operation operation, Object obj, int arg1) {
+        this(operation, obj, arg1, 0, 0, 0);
+    }
 
-	public TSurfaceCommand(Operation operation, Object obj, int arg1, int arg2) {
-		this(operation, obj, arg1, arg2, 0, 0);
-	}
+    public TSurfaceCommand(Operation operation, Object obj, int arg1, int arg2) {
+        this(operation, obj, arg1, arg2, 0, 0);
+    }
 
-	public TSurfaceCommand(Operation operation, Object obj, int arg1, int arg2, int arg3) {
-		this(operation, obj, arg1, arg2, arg3, 0);
-	}
+    public TSurfaceCommand(Operation operation, Object obj, int arg1, int arg2, int arg3) {
+        this(operation, obj, arg1, arg2, arg3, 0);
+    }
 
-	public TSurfaceCommand(Operation operation, Object obj, int arg1, int arg2, int arg3, int arg4) {
-		this.type = operation;
-		this.obj = obj;
-		this.arg1 = arg1;
-		this.arg2 = arg2;
-		this.arg3 = arg3;
-		this.arg4 = arg4;
-	}
+    public TSurfaceCommand(Operation operation, Object obj, int arg1, int arg2, int arg3, int arg4) {
+        this.type = operation;
+        this.obj = obj;
+        this.arg1 = arg1;
+        this.arg2 = arg2;
+        this.arg3 = arg3;
+        this.arg4 = arg4;
+    }
 
-	public TSurfaceCommand(Operation operation, int arg1, int arg2, int arg3, int arg4) {
-		this(operation, null, arg1, arg2, arg3, arg4);
-	}
+    public TSurfaceCommand(Operation operation, int arg1, int arg2, int arg3, int arg4) {
+        this(operation, null, arg1, arg2, arg3, arg4);
+    }
 
-	public enum Operation {
-		NO_OP,
+    public enum Operation {
+        NO_OP,
 
-		// State changes
-		SET_COLOR, // arg1: mode (0=normal, 1=bg), obj: Color
-		SET_TRANSFORM,
-		SET_CLIP_RECT, // replace current clip with rect
+        // State changes
+        SET_COLOR, // arg1: mode (0=normal, 1=bg), obj: Color
+        SET_TRANSFORM,
+        SET_CLIP_RECT, // replace current clip with rect
 
-		// Drawing operations
-		BLIT_IMAGE,
-		DRAW_RECT,
-		FILL_RECT,
-		CLEAR_RECT
-	}
+        // Drawing operations
+        BLIT_IMAGE,
+        DRAW_RECT,
+        FILL_RECT,
+        CLEAR_RECT,
+        DRAW_LINE
+    }
 }

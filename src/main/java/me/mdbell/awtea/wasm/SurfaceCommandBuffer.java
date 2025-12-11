@@ -19,8 +19,16 @@ public final class SurfaceCommandBuffer {
     @Getter
     private int count;
 
+    private int surfaceId;
+
     public SurfaceCommandBuffer(WasmAwtRasterizerExports exports,
                                 int maxCommands) {
+        this(-1, exports, maxCommands);
+    }
+
+    public SurfaceCommandBuffer(int surfaceId, WasmAwtRasterizerExports exports,
+                                int maxCommands) {
+        this.surfaceId = surfaceId;
         this.exports = exports;
         this.memoryBuffer = exports.getMemory().getBuffer();
         this.u8 = new Uint8Array(memoryBuffer);
@@ -48,9 +56,29 @@ public final class SurfaceCommandBuffer {
         exports.freePixels(basePtr);
     }
 
+    public void flush() {
+        if (surfaceId == -1) {
+            throw new IllegalStateException("Cannot flush command buffer without associated surface");
+        }
+        if (count == 0) {
+            return; // nothing to do
+        }
+        int rc = exports.renderAwt(surfaceId, basePtr, count);
+        if (rc != 0) {
+            throw new IllegalStateException("renderAwt failed: " + rc);
+        }
+        reset();
+    }
+
     private int ensureSlot() {
         if (count >= maxCommands) {
-            throw new IllegalStateException("Command buffer overflow: " + count + " / " + maxCommands);
+            if (surfaceId == -1) {
+                throw new IllegalStateException("Command buffer overflow: " + count + " / " + maxCommands);
+            } else {
+                // it's not ideal to flush on a non-frame boundary, but
+                // it's better than raising an error.
+                flush();
+            }
         }
         int index = count;
         count++;
@@ -166,7 +194,6 @@ public final class SurfaceCommandBuffer {
         i32.set(wordBase + 6, 0);
     }
 
-    //TODO: other transforms
     public void emitSetTransform(
             float m00, float m01, float m02,
             float m10, float m11, float m12) {
@@ -191,6 +218,22 @@ public final class SurfaceCommandBuffer {
         i32.set(wordBase + 4, i10); // height
         i32.set(wordBase + 5, i11); // args[0]
         i32.set(wordBase + 6, i12); // args[1]
+    }
+
+    public void emitDrawLine(int x0, int y0, int x1, int y1) {
+        int idx = ensureSlot();
+        int baseByte = cmdBaseByte(idx);
+        int wordBase = cmdWordBase(baseByte);
+
+        setOperation(baseByte, TSurfaceCommand.Operation.DRAW_LINE);
+
+        i32.set(wordBase + 1, x0);
+        i32.set(wordBase + 2, y0);
+        i32.set(wordBase + 3, x1);
+        i32.set(wordBase + 4, y1);
+
+        i32.set(wordBase + 5, 0);
+        i32.set(wordBase + 6, 0);
     }
 
     public void emitNoOp() {

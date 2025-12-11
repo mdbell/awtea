@@ -32,6 +32,7 @@ typedef enum {
     CMD_DRAW_RECT,
     CMD_FILL_RECT,
     CMD_CLEAR_RECT,
+    CMD_DRAW_LINE,
 
     CMD_COUNT // last value is reserved for counting
 

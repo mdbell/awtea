@@ -9,14 +9,40 @@ public final class WasmSurface {
     private final WasmAwtRasterizerExports exports;
     private int surfaceId;
     private final ArrayBuffer memoryBuffer;
+    //    private final int layer = 0; // presently unused
+    private final int pixelFormat;
+
+    // Note: commands are 8 * 4 bytes each (see TSurfaceCommand), so 1024 commands = 32KB
+    //       512 = 16KB
+    private static final int MAX_COMMANDS = 512;
+
 
     public WasmSurface(WasmAwtRasterizerExports exports, int surfaceId,
                        int width, int height, int pixelFormat) {
         this.exports = exports;
         this.surfaceId = surfaceId;
+        this.pixelFormat = pixelFormat;
         this.memoryBuffer = exports.getMemory().getBuffer();
 
         // layer is presently unused, so set to 0 - future versions may use it
+        resize(width, height);
+    }
+
+    public SurfaceCommandBuffer createBuffer() {
+        return createBuffer(1024);
+    }
+
+    public SurfaceCommandBuffer createBuffer(int maxCommands) {
+        //TODO: pass this instead of surfaceId, so we can prevent the buffer
+        // from being used after the surface is destroyed
+        return new SurfaceCommandBuffer(this.surfaceId, exports, maxCommands);
+    }
+
+    public void resize(int width, int height) {
+        if (surfaceId == -1) {
+            throw new IllegalStateException("Surface has been destroyed");
+        }
+
         int rc = exports.resetSurface(surfaceId, 0, width, height, pixelFormat);
         if (rc != 0) {
             throw new IllegalStateException("resetSurface failed: " + rc);
