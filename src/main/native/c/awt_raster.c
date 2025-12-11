@@ -5,6 +5,54 @@
 
 // global state
 
+static const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
+    // PIXEL_FORMAT_ARGB: 0xAARRGGBB
+    {
+        .mask_r  = 0x00FF0000,
+        .mask_g  = 0x0000FF00,
+        .mask_b  = 0x000000FF,
+        .mask_a  = 0xFF000000,
+        .shift_r = 16,
+        .shift_g = 8,
+        .shift_b = 0,
+        .shift_a = 24,
+    },
+    // PIXEL_FORMAT_RGB: 0x00RRGGBB (no alpha)
+    {
+        .mask_r  = 0x00FF0000,
+        .mask_g  = 0x0000FF00,
+        .mask_b  = 0x000000FF,
+        .mask_a  = 0x00000000, // no alpha
+        .shift_r = 16,
+        .shift_g = 8,
+        .shift_b = 0,
+        .shift_a = 0,
+    },
+    // PIXEL_FORMAT_RGBA: 0xRRGGBBAA
+    {
+        .mask_r  = 0xFF000000,
+        .mask_g  = 0x00FF0000,
+        .mask_b  = 0x0000FF00,
+        .mask_a  = 0x000000FF,
+        .shift_r = 24,
+        .shift_g = 16,
+        .shift_b = 8,
+        .shift_a = 0,
+    },
+};
+
+
+// function pointer table for pixel setters
+
+static SetPixelFunc g_set_pixel_funcs[PIXEL_FORMAT_COUNT][PIXEL_FORMAT_COUNT] = {
+    // src: ARGB
+    { set_pixel_same_format, set_pixel_generic, set_pixel_generic },
+    // src: RGB
+    { set_pixel_rgb_src,     set_pixel_same_format, set_pixel_rgb_src },
+    // src: RGBA
+    { set_pixel_generic,     set_pixel_generic,     set_pixel_same_format },
+};
+
 ImageData g_images[MAX_IMAGES];
 Surface g_surfaces[NUM_SURFACES];
 
@@ -14,8 +62,8 @@ static void set_pixel_generic(Surface* surface, int x, int y, PixelFormat srcFor
     uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
     uint32_t stride = surface->stride / 4; // in pixels
 
-    PixelFormatInfo* srcInfo = &g_pixel_format_info[srcFormat];
-    PixelFormatInfo* dstInfo = &g_pixel_format_info[surface->pixel_format];
+    const PixelFormatInfo* srcInfo = &g_pixel_format_info[srcFormat];
+    const PixelFormatInfo* dstInfo = &g_pixel_format_info[surface->pixel_format];
 
     uint32_t r = (pixel & srcInfo->mask_r) >> srcInfo->shift_r;
     uint32_t g = (pixel & srcInfo->mask_g) >> srcInfo->shift_g;
@@ -275,7 +323,6 @@ int get_surface_stride(int surface_id) {
     return g_surfaces[surface_id].stride;
 }
 
-
 __attribute__((export_name("register_image")))
 void register_image(int id, uint32_t ptr, int format, int width, int height, int stride) {
     if (id < 0 || id >= MAX_IMAGES) return;
@@ -286,9 +333,6 @@ void register_image(int id, uint32_t ptr, int format, int width, int height, int
     g_images[id].stride = stride;
 }
 
-// pTHe plan is for the JS side to call this to allocate pixel buffers
-// and pass the pointer back to us for rendering.
-// that way we can have shared memory between the two sides.
 __attribute__((export_name("alloc_pixels")))
 uint32_t alloc_pixels(int width, int height) {
     size_t bytes = (size_t)width * (size_t)height * sizeof(uint32_t);
