@@ -7,7 +7,7 @@ import me.mdbell.awtea.classlib.java.awt.TImage;
 import me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics;
 import me.mdbell.awtea.classlib.java.awt.awtea.gfx.TCachedTexture;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
-import me.mdbell.awtea.gfx.MultiSurfaceBackend;
+import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.instrument.Monitored;
 import me.mdbell.awtea.support.ImageDataConsumer;
@@ -88,7 +88,7 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 			throw new IllegalArgumentException("width/height must be > 0");
 		}
 
-		this.surface = MultiSurfaceBackend.getDefault().createCompatibleSurface(width, height, imageType);
+		this.surface = DefaultSurfaceBackend.getDefault().createCompatibleSurface(width, height, imageType);
 		if (this.surface == null) {
 			throw new IllegalArgumentException("Unsupported imageType: " + imageType);
 		}
@@ -192,7 +192,7 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 		this.height = raster.getHeight();
 
 		this.imageType = inferImageType(cm, raster, alphaPremultiplied);
-		this.surface = MultiSurfaceBackend.getDefault().createCompatibleSurface(cm, raster, isRasterPremultiplied, imageType);
+		this.surface = DefaultSurfaceBackend.getDefault().createCompatibleSurface(cm, raster, isRasterPremultiplied, imageType);
 	}
 
 	private static int inferImageType(TColorModel cm,

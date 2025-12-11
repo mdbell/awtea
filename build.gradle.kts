@@ -48,7 +48,7 @@ teavm {
     }
     js {
         moduleType = JSModuleType.ES2015
-        mainClass = "me.mdbell.awtea.WasmTest"
+        mainClass = "me.mdbell.awtea.gfx.wasm.WasmTest"
         optimization = OptimizationLevel.NONE
         obfuscated = false
         debugInformation = true
@@ -79,6 +79,7 @@ tasks.register("buildAwtRasterWasm", Exec::class.java) {
         "emcc", "src/main/native/c/awt_raster.c", "-O2",
         "-s", "STANDALONE_WASM",
         "-s", "WASM_BIGINT=1",
+        "--no-entry",
         "-o", "/src/build/wasm/awt_raster.wasm"
     )
 }

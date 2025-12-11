@@ -7,7 +7,7 @@ import org.teavm.jso.typedarrays.ArrayBuffer;
 /**
  * WebAssembly.Memory wrapper
  */
-public interface WasmMemory extends JSObject {
-    @JSProperty("buffer")
-    ArrayBuffer getBuffer();
+interface WasmMemory extends JSObject {
+	@JSProperty("buffer")
+	ArrayBuffer getBuffer();
 }

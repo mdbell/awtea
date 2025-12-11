@@ -3,31 +3,33 @@ package me.mdbell.awtea.gfx;
 import me.mdbell.awtea.gfx.software.SoftwareSurfaceBackend;
 import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
 
-public class MultiSurfaceBackend implements SurfaceBackend {
+import java.awt.image.BufferedImage;
+
+public class DefaultSurfaceBackend implements SurfaceBackend {
 
 	private final SurfaceBackend[] backends;
 
-	private static MultiSurfaceBackend instance = null;
+	private static DefaultSurfaceBackend instance = null;
 
-	private MultiSurfaceBackend() {
+	private DefaultSurfaceBackend() {
 		this.backends = new SurfaceBackend[]{
 			new WasmSurfaceBackend(),
 			new SoftwareSurfaceBackend(),
 		};
 	}
 
-	public MultiSurfaceBackend(SurfaceBackend[] backends) {
+	public DefaultSurfaceBackend(SurfaceBackend[] backends) {
 		this.backends = backends;
 	}
 
-	public static MultiSurfaceBackend getDefault() {
+	public static DefaultSurfaceBackend getDefault() {
 		if (instance == null) {
-			instance = new MultiSurfaceBackend();
+			instance = new DefaultSurfaceBackend();
 		}
 		return instance;
 	}
 
-	public static void setDefault(MultiSurfaceBackend backend) {
+	public static void setDefault(DefaultSurfaceBackend backend) {
 		instance = backend;
 	}
 
@@ -51,5 +53,18 @@ public class MultiSurfaceBackend implements SurfaceBackend {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Should return a surface where the rasterizer can render directly to the screen.
+	 * <p>
+	 * getPixelData() should return null, and the rasterizer should not attempt to read from it.
+	 *
+	 * @param width  The width of the surface
+	 * @param height The height of the surface
+	 * @return
+	 */
+	public Surface createScreenSurface(int width, int height) {
+		return createCompatibleSurface(width, height, BufferedImage.TYPE_INT_BGR);
 	}
 }
