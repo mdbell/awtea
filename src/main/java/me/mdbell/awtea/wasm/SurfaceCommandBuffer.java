@@ -67,7 +67,7 @@ public final class SurfaceCommandBuffer {
 
     // ---- helpers for specific commands ----
 
-    public void emitSetColor(int rgba, int which) {
+    public void emitSetColor(int argb, int which) {
         int idx = ensureSlot();
         int baseByte = cmdBaseByte(idx);
         int wordBase = cmdWordBase(baseByte);
@@ -81,8 +81,8 @@ public final class SurfaceCommandBuffer {
         i32.set(wordBase + 3, 0); // width
         i32.set(wordBase + 4, 0); // height
 
-        // union.set_color.rgba / which
-        i32.set(wordBase + 5, rgba); // rgba
+        // union.set_color.argb / which
+        i32.set(wordBase + 5, argb); // argb
         i32.set(wordBase + 6, which); // which index (fg/bg)
     }
 
@@ -179,12 +179,16 @@ public final class SurfaceCommandBuffer {
         i32.set(wordBase + 2, 0);
         i32.set(wordBase + 3, 0);
         i32.set(wordBase + 4, 0);
-        
+
         i32.set(wordBase + 5, 0);
         i32.set(wordBase + 6, 0);
     }
 
     private void setOperation(int byteIndex, TSurfaceCommand.Operation op) {
         u8.set(byteIndex, (short) op.ordinal());
+    }
+
+    public void emitDrawSurface(WasmSurface surface, int imgX, int imgY) {
+        emitBlitImage(surface.getId(), imgX, imgY);
     }
 }

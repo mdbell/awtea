@@ -1,8 +1,13 @@
 #include <stdint.h>
 
 #define MAX_IMAGES 1024
-//TODO: figure out a good number here
-#define NUM_SURFACES 20
+#define NUM_SURFACES 1024
+
+#define START_IMAGE_ID 0
+#define END_IMAGE_ID MAX_IMAGES
+
+#define START_SURFACE_ID MAX_IMAGES
+#define END_SURFACE_ID (START_SURFACE_ID + NUM_SURFACES)
 
 #define COLOR_FG 0
 #define COLOR_BG 1
@@ -12,33 +17,6 @@
 
 #define DEFAULT_FG_COLOR 0xFF000000 // opaque black
 #define DEFAULT_BG_COLOR 0xFFFFFFFF // opaque white
-
-#define ASSERT_SURFACE_VALID_RET(surf, ret) \
-    do { \
-        if (!(surf) || !(surf)->ptr) { \
-            return (ret); \
-        } \
-    } while (0)
-
-#define ASSERT_SURFACE_VALID(surf) \
-    ASSERT_SURFACE_VALID_RET(surf, -1)
-
-#define CHECK_SURFACE_ID_RET(sid, err) \
-    do { \
-        if ((sid) < 0 || (sid) >= NUM_SURFACES) { \
-            return (err); \
-        } \
-    } while (0)
-
-#define CHECK_SURFACE_ID(sid) \
-    CHECK_SURFACE_ID_RET(sid, -1)
-
-#define CHECK_SURFACE_ID_VOID(sid) \
-    do { \
-        if ((sid) < 0 || (sid) >= NUM_SURFACES) { \
-            return; \
-        } \
-    } while (0)
 
 // This should mirror the Operation enum in TSurfaceCommand.java
 typedef enum {
@@ -63,6 +41,8 @@ typedef enum {
     PIXEL_FORMAT_ARGB = 0,
     PIXEL_FORMAT_RGB,
     PIXEL_FORMAT_RGBA,
+    PIXEL_FORMAT_ABGR,
+    PIXEL_FORMAT_BGR,
     PIXEL_FORMAT_COUNT // last value is reserved for counting
 } PixelFormat;
 
@@ -74,7 +54,7 @@ typedef struct {
     uint32_t width; // Width parameter
     uint32_t height; // Height parameter
     union {
-        struct { uint32_t rgba, which; } set_color;
+        struct { uint32_t argb, which; } set_color;
         struct { uint32_t image_id; } blit;
         //TODO: figure out how we're going to do transforms
         // struct { uint32_t m00, m01, m10, m11; } transform; 
@@ -83,13 +63,13 @@ typedef struct {
 } SurfaceCommand;
 
 typedef struct {
-    uint32_t ptr; // Pointer to pixel data
-    uint8_t format; // Pixel format (PixelFormat)
-    uint8_t reserved[3]; // Padding for alignment
-    uint32_t width;
-    uint32_t height;
-    uint32_t stride;
-} ImageData;
+    uint32_t    ptr;     // pointer to pixels
+    PixelFormat format;  // same enum as Surface/ImageData
+    uint32_t    width;
+    uint32_t    height;
+    uint32_t    stride;  // in bytes
+} ImageView;
+
 
 typedef struct {
     int x;
@@ -98,15 +78,30 @@ typedef struct {
     int height;
 } ClipRect;
 
+typedef struct {
+    union {
+        struct {
+            float m00, m01;
+            float m10, m11;
+            float tx, ty;
+        };
+        float m[6];
+    };
+} TransformMatrix;
+
 // per-surface context
 typedef struct {
-    uint32_t ptr; // Pointer to pixel data
-    PixelFormat pixel_format;
-    uint32_t width;
-    uint32_t height;
-    uint32_t stride; // in bytes (usually width * 4)
-    uint32_t rgba[COLOR_MAX + 1];
-    float transform[6];
+    // exact same structure as ImageView
+    // it _must_ be at the start of this struct, and match ImageView layout
+    // (we cast between Surface* and ImageView* in some places)
+    uint32_t    ptr;     // pointer to pixels
+    PixelFormat format;  // same enum as Surface/ImageData
+    uint32_t    width;
+    uint32_t    height;
+    uint32_t    stride;  // in bytes
+    // render state
+    uint32_t argb[COLOR_MAX + 1];
+    TransformMatrix transform;
     ClipRect clip;
 } Surface;
 
@@ -121,6 +116,7 @@ typedef struct {
     uint8_t  shift_g;
     uint8_t  shift_b;
     uint8_t  shift_a;
+    PixelFormat alphaVariant; // which format to use for alpha channel operations
 } PixelFormatInfo;
 
 // used for function table for set_pixel
@@ -128,14 +124,36 @@ typedef void (*SetPixelFunc)(Surface*, int, int, PixelFormat, uint32_t);
 
 // function defs
 
+static inline SetPixelFunc get_set_pixel_func(PixelFormat srcFormat, PixelFormat dstFormat);
+
 static void set_pixel_generic(Surface* surface, int x, int y, PixelFormat srcFormat, uint32_t pixel);
 
 static void set_pixel_same_format(Surface* surface, int x, int y, PixelFormat srcFormat, uint32_t pixel);
 
-static void set_pixel_rgb_src(Surface* surface, int x, int y, PixelFormat srcFormat, uint32_t pixel);
+static void set_pixel_no_alpha_src(Surface* surface, int x, int y, PixelFormat srcFormat, uint32_t pixel);
 
 static inline int clamp_int(int v, int lo, int hi);
 
 static inline int clip_x(int x, const Surface* surf);
 
 static inline int clip_y(int y, const Surface* surf);
+
+// helpers
+
+static inline uint32_t pack_pixel(const PixelFormatInfo* info,
+                                  uint8_t r,
+                                  uint8_t g,
+                                  uint8_t b,
+                                  uint8_t a);
+
+static inline void unpack_pixel(const PixelFormatInfo* info,
+                                uint32_t pixel,
+                                uint8_t* r,
+                                uint8_t* g,
+                                uint8_t* b,
+                                uint8_t* a);
+
+static void blend_pixel(Surface* surface,
+                        int x, int y,
+                        PixelFormat srcFormat,
+                        uint32_t srcPixel);

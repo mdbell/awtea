@@ -1,6 +1,10 @@
+import org.teavm.gradle.api.JSModuleType
+import org.teavm.gradle.api.OptimizationLevel
+
 plugins {
     id("java")
     id("maven-publish")
+    id("org.teavm") version "0.13.0"
 }
 
 java {
@@ -24,16 +28,6 @@ publishing {
     }
 }
 
-//
-//teavm {
-//    all {
-//        debugInformation = true
-//    }
-//    js {
-//        moduleType = JSModuleType.ES2015
-//    }
-//}
-
 repositories {
     mavenCentral()
 }
@@ -46,6 +40,20 @@ dependencies {
     implementation("org.teavm:teavm-core:0.13.0")
     implementation("org.teavm:teavm-classlib:0.13.0")
     implementation("org.teavm:teavm-jso-apis:0.13.0")
+}
+
+teavm {
+    all {
+        debugInformation = true
+    }
+    js {
+        moduleType = JSModuleType.ES2015
+        mainClass = "me.mdbell.awtea.WasmTest"
+        optimization = OptimizationLevel.NONE
+        obfuscated = false
+        debugInformation = true
+        sourceMap = true
+    }
 }
 
 var wasmOutputDir = file(layout.buildDirectory.dir("wasm"))

@@ -2,13 +2,16 @@ package me.mdbell.awtea.wasm;
 
 public class WasmAwtEngine {
 
+    private static final String WASM_MODULE_PATH = System.getProperty("me.mdbell.awtea.wasm.module_path",
+            "build/wasm/awt_raster.wasm");
+
     private final WasmAwtRasterizerExports exports;
 
     private WasmAwtEngine() {
-        this.exports = WasmAwtLoader.load("awt_rasterizer.wasm").await();
+        this.exports = WasmAwtLoader.load(WASM_MODULE_PATH).await();
     }
 
-    public WasmSurface createSurface(int width, int height, int pixelFormat) {
+    public WasmSurface createSurface(int width, int height, WasmPixelFormat pixelFormat) {
 
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Width and height must be positive");
@@ -18,7 +21,7 @@ public class WasmAwtEngine {
         if (surfaceId < 0) {
             throw new IllegalStateException("createSurface failed: " + surfaceId);
         }
-        return new WasmSurface(exports, surfaceId, width, height, pixelFormat);
+        return new WasmSurface(exports, surfaceId, width, height, pixelFormat.ordinal());
     }
 
     public SurfaceCommandBuffer createCommandBuffer(int maxCommands) {
