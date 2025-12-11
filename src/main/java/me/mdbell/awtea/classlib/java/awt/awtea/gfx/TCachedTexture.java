@@ -2,5 +2,7 @@ package me.mdbell.awtea.classlib.java.awt.awtea.gfx;
 
 public interface TCachedTexture {
 
-	void delete();
+    //TODO: remove this, it duplicate functionality of Surface
+
+    void delete();
 }

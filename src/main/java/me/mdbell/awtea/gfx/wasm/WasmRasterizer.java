@@ -1,13 +1,13 @@
-package me.mdbell.awtea.wasm;
+package me.mdbell.awtea.gfx.wasm;
 
-import me.mdbell.awtea.classlib.java.awt.awtea.gfx.TRasterizer;
-import me.mdbell.awtea.classlib.java.awt.awtea.gfx.TSurfaceCommand;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
+import me.mdbell.awtea.gfx.Rasterizer;
+import me.mdbell.awtea.gfx.SurfaceCommand;
 
 import java.awt.*;
 import java.util.List;
 
-public class WasmRasterizer implements TRasterizer {
+public class WasmRasterizer implements Rasterizer {
 
     private final WasmSurface surface;
     private transient final SurfaceCommandBuffer commandBuffer;
@@ -24,7 +24,7 @@ public class WasmRasterizer implements TRasterizer {
     }
 
     @Override
-    public TRasterizer create() {
+    public Rasterizer create() {
         return new WasmRasterizer(this);
     }
 
@@ -38,8 +38,8 @@ public class WasmRasterizer implements TRasterizer {
     }
 
     @Override
-    public void rasterizeCommands(List<TSurfaceCommand> cmds) {
-        for (TSurfaceCommand cmd : cmds) {
+    public void rasterizeCommands(List<SurfaceCommand> cmds) {
+        for (SurfaceCommand cmd : cmds) {
             switch (cmd.type) {
                 case DRAW_RECT:
                     commandBuffer.emitDrawRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);

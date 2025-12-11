@@ -1,4 +1,4 @@
-package me.mdbell.awtea.wasm;
+package me.mdbell.awtea.gfx.wasm;
 
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;

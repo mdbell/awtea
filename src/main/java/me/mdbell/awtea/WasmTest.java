@@ -2,7 +2,7 @@ package me.mdbell.awtea;
 
 import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics;
-import me.mdbell.awtea.wasm.*;
+import me.mdbell.awtea.gfx.wasm.*;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
@@ -27,7 +27,7 @@ public class WasmTest {
         HTMLCanvasElement canvasElement = (HTMLCanvasElement) Window.current().getDocument().getElementById(canvasId);
         context2D = (CanvasRenderingContext2D) canvasElement.getContext("2d");
 
-        WasmAwtEngine engine = WasmAwtEngine.get();
+        WasmSurfaceBackend engine = WasmSurfaceBackend.get();
 
         framebuffer = engine.createSurface(canvasElement.getWidth(), canvasElement.getHeight(), WasmPixelFormat.PIXEL_FORMAT_ABGR);
         overlay = engine.createSurface(75, 75, WasmPixelFormat.PIXEL_FORMAT_RGB);

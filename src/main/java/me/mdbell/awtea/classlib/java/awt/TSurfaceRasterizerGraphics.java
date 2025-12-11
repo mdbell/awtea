@@ -2,11 +2,11 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import lombok.Getter;
 import lombok.Setter;
-import me.mdbell.awtea.classlib.java.awt.awtea.gfx.TRasterizer;
-import me.mdbell.awtea.classlib.java.awt.awtea.gfx.TSurfaceCommand;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
+import me.mdbell.awtea.gfx.Rasterizer;
+import me.mdbell.awtea.gfx.SurfaceCommand;
 import org.teavm.jso.browser.Window;
 
 import java.awt.*;
@@ -18,17 +18,17 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     protected transient boolean scheduled = false;
 
-    private final List<TSurfaceCommand> surfaceCommandsA = new ArrayList<>();
-    private final List<TSurfaceCommand> surfaceCommandsB = new ArrayList<>();
+    private final List<SurfaceCommand> surfaceCommandsA = new ArrayList<>();
+    private final List<SurfaceCommand> surfaceCommandsB = new ArrayList<>();
 
     // Which one we are writing to right now
-    private transient List<TSurfaceCommand> writeList = surfaceCommandsA;
+    private transient List<SurfaceCommand> writeList = surfaceCommandsA;
     // Which one we will read from during the blit
-    private transient List<TSurfaceCommand> readList = surfaceCommandsB;
+    private transient List<SurfaceCommand> readList = surfaceCommandsB;
 
-    private transient TSurfaceCommand previous = null;
+    private transient SurfaceCommand previous = null;
 
-    protected final TRasterizer rasterizer;
+    protected final Rasterizer rasterizer;
 
     @Getter
     protected final TAffineTransform transform = new TAffineTransform();
@@ -45,7 +45,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Getter
     protected Color background;
 
-    public TSurfaceRasterizerGraphics(TRasterizer rasterizer) {
+    public TSurfaceRasterizerGraphics(Rasterizer rasterizer) {
         this.rasterizer = rasterizer;
         reset();
     }
@@ -60,7 +60,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
         this.background = other.background;
     }
 
-    public final void pushOp(TSurfaceCommand op) {
+    public final void pushOp(SurfaceCommand op) {
         if (op == null || coalesce(previous, op)) {
             // Coalesced, do not add new op
             return;
@@ -149,7 +149,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
     }
 
     private void pushTransform() {
-        pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.SET_TRANSFORM, new TAffineTransform(transform)));
+        pushOp(new SurfaceCommand(SurfaceCommand.Operation.SET_TRANSFORM, new TAffineTransform(transform)));
     }
 
     @Override
@@ -179,7 +179,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
         if (width <= 0 || height <= 0) {
             return;
         }
-        pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.CLEAR_RECT, x, y, width, height));
+        pushOp(new SurfaceCommand(SurfaceCommand.Operation.CLEAR_RECT, x, y, width, height));
     }
 
     @Override
@@ -208,7 +208,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
             return false;
         }
         if (img instanceof TBufferedImage) {
-            pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.BLIT_IMAGE, img, x, y, width, height));
+            pushOp(new SurfaceCommand(SurfaceCommand.Operation.BLIT_IMAGE, img, x, y, width, height));
             return true;
         }
         return false;
@@ -220,7 +220,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
             return false;
         }
         if (img instanceof TBufferedImage) {
-            pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.BLIT_IMAGE, img, x, y,
+            pushOp(new SurfaceCommand(SurfaceCommand.Operation.BLIT_IMAGE, img, x, y,
                     img.getWidth(null), img.getHeight(null)));
             return true;
         }
@@ -244,7 +244,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
         } else {
             clip = clip.intersection(new TRectangle(x, y, width, height));
             // op gets pushed in setClip, so we only need to push it here
-            pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.SET_CLIP_RECT, this.clip));
+            pushOp(new SurfaceCommand(SurfaceCommand.Operation.SET_CLIP_RECT, this.clip));
         }
     }
 
@@ -252,11 +252,11 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
     public void setClip(int x, int y, int width, int height) {
         if (width <= 0 || height <= 0) {
             this.clip = null;
-            pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.SET_CLIP_RECT));
+            pushOp(new SurfaceCommand(SurfaceCommand.Operation.SET_CLIP_RECT));
             return;
         }
         this.clip = new TRectangle(x, y, width, height);
-        pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.SET_CLIP_RECT, this.clip));
+        pushOp(new SurfaceCommand(SurfaceCommand.Operation.SET_CLIP_RECT, this.clip));
 
     }
 
@@ -270,12 +270,12 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
             // non-rect clips not implemented
             throw new UnsupportedOperationException("Non-rect clip not supported yet");
         }
-        pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.SET_CLIP_RECT, this.clip));
+        pushOp(new SurfaceCommand(SurfaceCommand.Operation.SET_CLIP_RECT, this.clip));
     }
 
     @Override
     public void drawLine(int x1, int y1, int x2, int y2) {
-        pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.DRAW_LINE, null, x1, y1, x2, y2));
+        pushOp(new SurfaceCommand(SurfaceCommand.Operation.DRAW_LINE, null, x1, y1, x2, y2));
     }
 
     @Override
@@ -322,19 +322,19 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void drawRect(int x, int y, int width, int height) {
-        rectInternal(TSurfaceCommand.Operation.DRAW_RECT, x, y, width, height);
+        rectInternal(SurfaceCommand.Operation.DRAW_RECT, x, y, width, height);
     }
 
     @Override
     public void fillRect(int x, int y, int width, int height) {
-        rectInternal(TSurfaceCommand.Operation.FILL_RECT, x, y, width, height);
+        rectInternal(SurfaceCommand.Operation.FILL_RECT, x, y, width, height);
     }
 
-    private void rectInternal(TSurfaceCommand.Operation opType, int x, int y, int width, int height) {
+    private void rectInternal(SurfaceCommand.Operation opType, int x, int y, int width, int height) {
         if (width <= 0 || height <= 0 || (clip != null && !clip.intersects(x, y, width, height))) {
             return;
         }
-        pushOp(new TSurfaceCommand(opType, x, y, width, height));
+        pushOp(new SurfaceCommand(opType, x, y, width, height));
     }
 
     @Override
@@ -360,7 +360,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Override
     public void setBackground(Color bg) {
         this.background = bg;
-        pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.SET_COLOR, bg, 1));
+        pushOp(new SurfaceCommand(SurfaceCommand.Operation.SET_COLOR, bg, 1));
     }
 
     @Override
@@ -369,7 +369,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
             c = Color.WHITE;
         }
         this.color = c;
-        pushOp(new TSurfaceCommand(TSurfaceCommand.Operation.SET_COLOR, c, 0));
+        pushOp(new SurfaceCommand(SurfaceCommand.Operation.SET_COLOR, c, 0));
     }
 
     @Override
@@ -392,7 +392,7 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
     protected final void scheduleRasterize() {
         Window.requestAnimationFrame(time -> {
             // Swap lists
-            List<TSurfaceCommand> temp = readList;
+            List<SurfaceCommand> temp = readList;
             readList = writeList;
             writeList = temp;
 
@@ -405,8 +405,8 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
         });
     }
 
-    private boolean coalesce(TSurfaceCommand previous, TSurfaceCommand requested) {
-        if (requested.type == TSurfaceCommand.Operation.NO_OP) {
+    private boolean coalesce(SurfaceCommand previous, SurfaceCommand requested) {
+        if (requested.type == SurfaceCommand.Operation.NO_OP) {
             return true;
         }
         if (previous == null) {

@@ -1,11 +1,14 @@
-package me.mdbell.awtea.wasm;
+package me.mdbell.awtea.gfx.wasm;
 
+import lombok.Getter;
+import me.mdbell.awtea.gfx.Rasterizer;
+import me.mdbell.awtea.gfx.Surface;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
-public final class WasmSurface {
+public final class WasmSurface implements Surface {
     private final WasmAwtRasterizerExports exports;
     private int surfaceId;
     private final ArrayBuffer memoryBuffer;
@@ -16,6 +19,14 @@ public final class WasmSurface {
     //       512 = 16KB
     private static final int MAX_COMMANDS = 512;
 
+    @Getter
+    private int pixelsPtr = 0;
+    private int width = 0;
+    private int height = 0;
+    @Getter
+    private int stride = 0;
+
+    private Uint8ClampedArray pixelsView = null;
 
     public WasmSurface(WasmAwtRasterizerExports exports, int surfaceId,
                        int width, int height, int pixelFormat) {
@@ -38,6 +49,12 @@ public final class WasmSurface {
         return new SurfaceCommandBuffer(this.surfaceId, exports, maxCommands);
     }
 
+    @Override
+    public Rasterizer createRasterizer() {
+        return new WasmRasterizer(this);
+    }
+
+    @Override
     public void resize(int width, int height) {
         if (surfaceId == -1) {
             throw new IllegalStateException("Surface has been destroyed");
@@ -47,22 +64,41 @@ public final class WasmSurface {
         if (rc != 0) {
             throw new IllegalStateException("resetSurface failed: " + rc);
         }
+
+        // we want to prevent as many calls into wasm as possible, so cache these values
+        // instead of retrieving them each time
+        // TODO: profile, see if this is worthwhile
+
+        this.width = exports.getSurfaceWidth(this.surfaceId);
+        this.height = exports.getSurfaceHeight(this.surfaceId);
+        this.pixelsPtr = exports.getSurfacePixelsPtr(this.surfaceId);
+        this.stride = exports.getSurfaceStride(this.surfaceId);
+
+        pixelsView = new Uint8ClampedArray(this.memoryBuffer, this.pixelsPtr, this.stride * height);
     }
 
-    public int getPixelsPtr() {
-        return exports.getSurfacePixelsPtr(surfaceId);
-    }
-
+    @Override
     public int getWidth() {
-        return exports.getSurfaceWidth(surfaceId);
+        if (surfaceId == -1) {
+            return 0;
+        }
+        return width;
     }
 
+    @Override
     public int getHeight() {
-        return exports.getSurfaceHeight(surfaceId);
+        if (surfaceId == -1) {
+            return 0;
+        }
+        return height;
     }
 
-    public int getStride() {
-        return exports.getSurfaceStride(surfaceId);
+    @Override
+    public Uint8ClampedArray getPixelData() {
+        if (surfaceId == -1) {
+            throw new IllegalStateException("Surface has been destroyed");
+        }
+        return pixelsView;
     }
 
     public Int32Array getPixelsView() {
