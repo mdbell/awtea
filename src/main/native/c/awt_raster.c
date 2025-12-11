@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -69,6 +70,93 @@ static const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
 ImageView g_images[MAX_IMAGES];
 Surface g_surfaces[NUM_SURFACES];
 
+static inline int is_identity_transform(const Transform2D* t) {
+    return  t->m00 == 1.0f && t->m11 == 1.0f &&
+            t->m01 == 0.0f && t->m10 == 0.0f &&
+            t->m02 == 0.0f && t->m12 == 0.0f;
+}
+
+static inline int invert_transform(const Transform2D* t, Transform2D* out) {
+    float det = t->m00 * t->m11 - t->m01 * t->m10;
+    if (det == 0.0f) {
+        return 0; // non-invertible
+    }
+    float invDet = 1.0f / det;
+
+    out->m00 =  t->m11 * invDet;
+    out->m01 = -t->m01 * invDet;
+    out->m10 = -t->m10 * invDet;
+    out->m11 =  t->m00 * invDet;
+
+    // translation part: -R⁻¹ * t
+    out->m02 = -(out->m00 * t->m02 + out->m01 * t->m12);
+    out->m12 = -(out->m10 * t->m02 + out->m11 * t->m12);
+
+    return 1;
+}
+
+
+static inline float u32_to_float(uint32_t v) {
+    union { uint32_t u; float f; } u;
+    u.u = v;
+    return u.f;
+}
+
+static inline void transform_point(const Transform2D* t,
+                                   float x, float y,
+                                   float* outX, float* outY) {
+    *outX = t->m00 * x + t->m01 * y + t->m02;
+    *outY = t->m10 * x + t->m11 * y + t->m12;
+}
+
+
+static inline void transform_rect(
+        const Transform2D* t,
+        int x, int y, int w, int h,
+        int* outX, int* outY,
+        int* outW, int* outH) {
+
+    if (is_identity_transform(t)) {
+        *outX = x;
+        *outY = y;
+        *outW = w;
+        *outH = h;
+        return;
+    }
+
+    float x0 = (float)x;
+    float y0 = (float)y;
+    float x1 = (float)(x + w);
+    float y1 = (float)(y + h);
+
+    // transform four corners
+    float tx0 = t->m00 * x0 + t->m01 * y0 + t->m02;
+    float ty0 = t->m10 * x0 + t->m11 * y0 + t->m12;
+
+    float tx1 = t->m00 * x1 + t->m01 * y0 + t->m02;
+    float ty1 = t->m10 * x1 + t->m11 * y0 + t->m12;
+
+    float tx2 = t->m00 * x1 + t->m01 * y1 + t->m02;
+    float ty2 = t->m10 * x1 + t->m11 * y1 + t->m12;
+
+    float tx3 = t->m00 * x0 + t->m01 * y1 + t->m02;
+    float ty3 = t->m10 * x0 + t->m11 * y1 + t->m12;
+
+    float minX = fminf(fminf(tx0, tx1), fminf(tx2, tx3));
+    float minY = fminf(fminf(ty0, ty1), fminf(ty2, ty3));
+    float maxX = fmaxf(fmaxf(tx0, tx1), fmaxf(tx2, tx3));
+    float maxY = fmaxf(fmaxf(ty0, ty1), fmaxf(ty2, ty3));
+
+    int ix = (int)floorf(minX);
+    int iy = (int)floorf(minY);
+    int iw = (int)ceilf(maxX) - ix;
+    int ih = (int)ceilf(maxY) - iy;
+
+    *outX = ix;
+    *outY = iy;
+    *outW = iw;
+    *outH = ih;
+}
 
 static void set_pixel_generic(Surface* surface, int x, int y, PixelFormat srcFormat,
     uint32_t pixel) {
@@ -238,43 +326,102 @@ static inline ImageView* lookup_by_id(int id) {
 
 // render functions
 
-static inline void draw_filled_rect(Surface* surface, int x, int y, int width, int height, uint32_t color) {
+static inline void draw_filled_rect(Surface* surface,
+                                    int x, int y,
+                                    int width, int height,
+                                    uint32_t color) {
 
-    int x0 = clip_x(x, surface);
-    int y0 = clip_y(y, surface);
-    int x1 = clip_x(x + width, surface);
-    int y1 = clip_y(y + height, surface);
+    if (is_identity_transform(&surface->transform)) {
+        int x0 = clip_x(x, surface);
+        int y0 = clip_y(y, surface);
+        int x1 = clip_x(x + width, surface);
+        int y1 = clip_y(y + height, surface);
 
-    if (x0 >= x1 || y0 >= y1) {
-        return;
-    }
+        if (x0 >= x1 || y0 >= y1) {
+            return;
+        }
 
-    uint32_t stride = surface->stride / 4; // in pixels
+        PixelFormat format = surface->format;
+        const PixelFormatInfo* dstInfo = &g_pixel_format_info[format];
 
-    // destination has no alpha -> use fast path
-    PixelFormat format = surface->format;
-    PixelFormatInfo info = g_pixel_format_info[format];
-    if(info.mask_a == 0) {
-        SetPixelFunc set_pixel_func = get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
+        // destination has no alpha -> convert/write directly
+        if (dstInfo->mask_a == 0) {
+            SetPixelFunc set_pixel_func =
+                get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
 
-        uint32_t stride = surface->stride / 4; // in pixels
+            uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
+            uint32_t stride = surface->stride / 4;
 
-        uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
+            for (int j = y0; j < y1; j++) {
+                for (int i = x0; i < x1; i++) {
+                    set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, color);
+                }
+            }
+            return;
+        }
+
+        // destination has alpha -> blend
         for (int j = y0; j < y1; j++) {
             for (int i = x0; i < x1; i++) {
-                set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, color);
+                blend_pixel(surface, i, j, PIXEL_FORMAT_ARGB, color);
             }
         }
         return;
     }
 
-    // destination has alpha -> blend
-    for (int j = y0; j < y1; j++) {
-        for (int i = x0; i < x1; i++) {
-            blend_pixel(surface, i, j, PIXEL_FORMAT_ARGB, color);
+    // Compute bounding box of transformed rect
+    int tx, ty, tw, th;
+    transform_rect(&surface->transform, x, y, width, height,
+                   &tx, &ty, &tw, &th);
+
+    int x0 = clip_x(tx, surface);
+    int y0 = clip_y(ty, surface);
+    int x1 = clip_x(tx + tw, surface);
+    int y1 = clip_y(ty + th, surface);
+
+    if (x0 >= x1 || y0 >= y1) {
+        return;
+    }
+
+    // Invert the transform
+    Transform2D inv;
+    if (!invert_transform(&surface->transform, &inv)) {
+        return; // non-invertible
+    }
+
+    const PixelFormatInfo* dstInfo = &g_pixel_format_info[surface->format];
+    int dstHasAlpha = (dstInfo->mask_a != 0);
+
+    uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
+    uint32_t stride = surface->stride / 4;
+
+    for (int dy = y0; dy < y1; ++dy) {
+        for (int dx = x0; dx < x1; ++dx) {
+            // center of dest pixel in device coords
+            float fx = (float)dx + 0.5f;
+            float fy = (float)dy + 0.5f;
+
+            // map back to user space via inverse transform
+            float ux = inv.m00 * fx + inv.m01 * fy + inv.m02;
+            float uy = inv.m10 * fx + inv.m11 * fy + inv.m12;
+
+            // check if that user-space point lies inside the original rect
+            if (ux < (float)x || uy < (float)y ||
+                ux >= (float)(x + width) || uy >= (float)(y + height)) {
+                continue;
+            }
+
+            if (!dstHasAlpha) {
+                // opaque dst: just convert+write color
+                set_pixel_generic(surface, dx, dy, PIXEL_FORMAT_ARGB, color);
+            } else {
+                // alpha dst: reuse existing blending logic
+                blend_pixel(surface, dx, dy, PIXEL_FORMAT_ARGB, color);
+            }
         }
     }
 }
+
 
 static inline void clear_rect(Surface* surface,
     int x, int y,
@@ -324,59 +471,124 @@ static inline void blit_from_view(Surface* dst,
     }
 
     const PixelFormatInfo* srcInfo = &g_pixel_format_info[src->format];
-
-    // Compute clipped region in destination coords
-    int startX = clip_x(x, dst);
-    int startY = clip_y(y, dst);
-    int endX   = clip_x(x + (int)src->width, dst);
-    int endY   = clip_y(y + (int)src->height, dst);
-
-    if (startX >= endX || startY >= endY) {
-        return; // fully clipped
-    }
-
     uint32_t* src_pixels = (uint32_t*)(uintptr_t)src->ptr;
     uint32_t  src_stride = src->stride / 4; // in pixels
 
-    // If source has no alpha at all -> copy (old behavior), keep your memcpy fast path
-    if (srcInfo->mask_a == 0) {
-        SetPixelFunc set_pixel_func = get_set_pixel_func(src->format, dst->format);
+    // Idenity transform blit: simple copy
+    if (is_identity_transform(&dst->transform)) {
 
-        if (set_pixel_func == set_pixel_same_format) {
-            uint32_t* dst_pixels = (uint32_t*)(uintptr_t)dst->ptr;
-            uint32_t  dst_stride = dst->stride / 4;
+        int startX = clip_x(x, dst);
+        int startY = clip_y(y, dst);
+        int endX   = clip_x(x + (int)src->width, dst);
+        int endY   = clip_y(y + (int)src->height, dst);
+
+        if (startX >= endX || startY >= endY) {
+            return; // fully clipped
+        }
+
+        // If source has no alpha at all -> copy (old behavior)
+        if (srcInfo->mask_a == 0) {
+            SetPixelFunc set_pixel_func = get_set_pixel_func(src->format, dst->format);
+
+            if (set_pixel_func == set_pixel_same_format) {
+                // memcpy row fast path
+                uint32_t* dst_pixels = (uint32_t*)(uintptr_t)dst->ptr;
+                uint32_t  dst_stride = dst->stride / 4;
+                for (int dst_y = startY; dst_y < endY; ++dst_y) {
+                    int src_y = dst_y - y;
+                    uint32_t* src_row = &src_pixels[src_y * src_stride + (startX - x)];
+                    uint32_t* dst_row = &dst_pixels[dst_y * dst_stride + startX];
+                    size_t row_bytes = (size_t)(endX - startX) * sizeof(uint32_t);
+                    memcpy(dst_row, src_row, row_bytes);
+                }
+                return;
+            }
+
+            // non-alpha, non-same-format
             for (int dst_y = startY; dst_y < endY; ++dst_y) {
                 int src_y = dst_y - y;
-                uint32_t* src_row = &src_pixels[src_y * src_stride + (startX - x)];
-                uint32_t* dst_row = &dst_pixels[dst_y * dst_stride + startX];
-                size_t row_bytes = (size_t)(endX - startX) * sizeof(uint32_t);
-                memcpy(dst_row, src_row, row_bytes);
+                for (int dst_x = startX; dst_x < endX; ++dst_x) {
+                    int src_x = dst_x - x;
+                    uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
+                    set_pixel_func(dst, dst_x, dst_y, src->format, srcPixel);
+                }
             }
             return;
         }
 
-        // non-alpha, non-same-format
+        // Source *has* alpha → blend
         for (int dst_y = startY; dst_y < endY; ++dst_y) {
             int src_y = dst_y - y;
             for (int dst_x = startX; dst_x < endX; ++dst_x) {
                 int src_x = dst_x - x;
                 uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
-                set_pixel_func(dst, dst_x, dst_y, src->format, srcPixel);
+                blend_pixel(dst, dst_x, dst_y, src->format, srcPixel);
             }
         }
         return;
     }
 
-    // Source *has* alpha → do blending
-    for (int dst_y = startY; dst_y < endY; ++dst_y) {
-        int src_y = dst_y - y;
-        for (int dst_x = startX; dst_x < endX; ++dst_x) {
-            int src_x = dst_x - x;
-            uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
-            blend_pixel(dst, dst_x, dst_y, src->format, srcPixel);
+    // Compute bounding box of transformed image in dest coords
+    int tx, ty, tw, th;
+    transform_rect(&dst->transform, x, y, (int)src->width, (int)src->height,
+                   &tx, &ty, &tw, &th);
+
+    int startX = clip_x(tx, dst);
+    int startY = clip_y(ty, dst);
+    int endX   = clip_x(tx + tw, dst);
+    int endY   = clip_y(ty + th, dst);
+
+    if (startX >= endX || startY >= endY) {
+        return; // fully clipped
+    }
+
+    // Invert the transform
+    Transform2D inv;
+    if (!invert_transform(&dst->transform, &inv)) {
+        return; // non-invertible, nothing to draw
+    }
+
+    // We will sample source per destination pixel
+    int hasAlpha = (srcInfo->mask_a != 0);
+
+    for (int dy = startY; dy < endY; ++dy) {
+        for (int dx = startX; dx < endX; ++dx) {
+
+            // Center of the destination pixel in device space
+            float fx = (float)dx + 0.5f;
+            float fy = (float)dy + 0.5f;
+
+            // Map back into user space
+            float ux = inv.m00 * fx + inv.m01 * fy + inv.m02;
+            float uy = inv.m10 * fx + inv.m11 * fy + inv.m12;
+
+            // Convert user-space → source pixel coordinates
+            float sx = ux - (float)x;
+            float sy = uy - (float)y;
+
+            if (sx < 0.0f || sy < 0.0f ||
+                sx >= (float)src->width || sy >= (float)src->height) {
+                continue; // outside source
+            }
+
+            // Nearest neighbor
+            int isx = (int)floorf(sx);
+            int isy = (int)floorf(sy);
+
+            uint32_t srcPixel = src_pixels[isy * src_stride + isx];
+
+            if (!hasAlpha) {
+                // no alpha in src -> direct write/convert
+                SetPixelFunc set_pixel_func = get_set_pixel_func(src->format, dst->format);
+                set_pixel_func(dst, dx, dy, src->format, srcPixel);
+            } else {
+                // has alpha -> blend
+                blend_pixel(dst, dx, dy, src->format, srcPixel);
+            }
         }
     }
 }
+
 
 
 static inline void blit_image(Surface* dst, int image_id, int x, int y) {
@@ -407,7 +619,7 @@ int find_free_surface() {
 }
 
 __attribute__((export_name("reset_surface")))
-int reset_surface(int surface_id, int width, int height, PixelFormat format) {
+int reset_surface(int surface_id, int layer, int width, int height, PixelFormat format) {
 
     if (surface_id < START_SURFACE_ID || surface_id >= END_SURFACE_ID)
     {
@@ -425,14 +637,16 @@ int reset_surface(int surface_id, int width, int height, PixelFormat format) {
     }
 
     memset(surface, 0, sizeof(Surface));
+
+    if(width == 0 || height == 0 || layer < 0) {
+        return 0; // zero-sized surface (freeing the surface)
+    }
+
+    surface->layer = (uint32_t)layer;
     surface->width = width;
     surface->height = height;
     surface->stride = width * sizeof(uint32_t);
     surface->format = format;
-
-    if(width == 0 || height == 0) {
-        return 0; // zero-sized surface (freeing the surface)
-    }
 
     size_t bytes = (size_t)width * (size_t)height * sizeof(uint32_t);
     void* p = malloc(bytes);
@@ -449,7 +663,12 @@ int reset_surface(int surface_id, int width, int height, PixelFormat format) {
 
     // identity transform
     surface->transform.m00 = 1.0f;
+    surface->transform.m01 = 0.0f;
+    surface->transform.m02 = 0.0f;
+    surface->transform.m10 = 0.0f;
     surface->transform.m11 = 1.0f;
+    surface->transform.m12 = 0.0f;
+
     // clip_rect to full surface
     surface->clip.x = 0;
     surface->clip.y = 0;
@@ -537,7 +756,14 @@ int render_awt(int surface_id, uint32_t cmdPtr, int cmdCount) {
             case CMD_SET_COLOR:
                  set_color(surface, cmd->set_color.which, cmd->set_color.argb);
                 break;
-            // case CMD_SET_TRANSFORM:
+            case CMD_SET_TRANSFORM:
+                surface->transform.m00 = u32_to_float(cmd->x);
+                surface->transform.m01 = u32_to_float(cmd->y);
+                surface->transform.m02 = u32_to_float(cmd->width);
+                surface->transform.m10 = u32_to_float(cmd->height);
+                surface->transform.m11 = u32_to_float(cmd->args[0]);
+                surface->transform.m12 = u32_to_float(cmd->args[1]);
+                break;
             case CMD_SET_CLIP_RECT:
                 surface->clip.x = cmd->x;
                 surface->clip.y = cmd->y;

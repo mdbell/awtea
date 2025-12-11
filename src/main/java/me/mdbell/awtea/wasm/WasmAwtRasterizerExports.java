@@ -20,9 +20,9 @@ public interface WasmAwtRasterizerExports extends JSObject {
     @JSMethod("get_command_size")
     int getSurfaceCommandSize();
 
-    // int reset_surface(int surface_id, int width, int height, int pixel_format);
+    // int reset_surface(int surface_id, int layer, int width, int height, int pixel_format);
     @JSMethod("reset_surface")
-    int resetSurface(int surfaceId, int width, int height, int pixelFormat);
+    int resetSurface(int surfaceId, int layer, int width, int height, int pixelFormat);
 
     // uint32_t get_surface_pixels_ptr(int surface_id);
     @JSMethod("get_surface_pixels_ptr")

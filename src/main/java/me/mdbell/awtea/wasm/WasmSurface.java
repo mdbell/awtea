@@ -16,7 +16,8 @@ public final class WasmSurface {
         this.surfaceId = surfaceId;
         this.memoryBuffer = exports.getMemory().getBuffer();
 
-        int rc = exports.resetSurface(surfaceId, width, height, pixelFormat);
+        // layer is presently unused, so set to 0 - future versions may use it
+        int rc = exports.resetSurface(surfaceId, 0, width, height, pixelFormat);
         if (rc != 0) {
             throw new IllegalStateException("resetSurface failed: " + rc);
         }
@@ -76,7 +77,7 @@ public final class WasmSurface {
     public void destroy() {
         if (surfaceId != -1) {
             // surfaces with a width & height of 0 are considered free
-            exports.resetSurface(this.surfaceId, 0, 0, 0);
+            exports.resetSurface(this.surfaceId, 0, 0, 0, 0);
             surfaceId = -1;
 
         }

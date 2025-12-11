@@ -32,14 +32,24 @@ public class WasmTest {
 
         buffer = engine.createCommandBuffer(1024);
 
-        // Fill the BGR image with a gradient
-        //clear to yellow
+        // note: colors are always argb in command buffer, irrespective of surface pixel format
         buffer.emitSetColor(0x00FF0000, 0); // Red
         buffer.emitFillRect(0, 0, 10, 10);
         buffer.emitSetColor(0x000000FF, 0); // Blue
         buffer.emitFillRect(10, 0, 10, 10);
+
         buffer.emitSetColor(0x0000FF00, 0); // Green
         buffer.emitFillRect(20, 0, 10, 10);
+
+        float sx = 2.0f;
+        float sy = 2.0f;
+        buffer.emitSetTransform(
+                sx, 0, 0,   // row 1: scale X, no shear, no translation
+                0, sy, 0    // row 2: no shear, scale Y, no translation
+        );
+
+        buffer.emitSetColor(0x7F0000FF, 0); // Semi-transparent Blue
+        buffer.emitDrawRect(10, 10, 10, 10);
         overlay.renderCommands(buffer.getBasePtr(), buffer.getCount());
 
         buffer.reset();
@@ -74,6 +84,7 @@ public class WasmTest {
         // bounce the BGR image around the screen
         int imgX = 50 + (int) ((Math.sin(time * 0.0015) * 0.5 + 0.5) * (framebuffer.getWidth() - overlay.getWidth() - 50));
         int imgY = 50 + (int) ((Math.cos(time * 0.0015) * 0.5 + 0.5) * (framebuffer.getHeight() - overlay.getHeight() - 50));
+
         buffer.emitDrawSurface(overlay, imgX, imgY);
 
         framebuffer.renderCommands(buffer.getBasePtr(), buffer.getCount());
@@ -81,7 +92,6 @@ public class WasmTest {
         context2D.putImageData(framebuffer.asImageData(), 0, 0);
 
         // Request the next frame
-        Window.current();
         Window.requestAnimationFrame(WasmTest::animateFrame);
     }
 }

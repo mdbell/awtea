@@ -79,15 +79,9 @@ typedef struct {
 } ClipRect;
 
 typedef struct {
-    union {
-        struct {
-            float m00, m01;
-            float m10, m11;
-            float tx, ty;
-        };
-        float m[6];
-    };
-} TransformMatrix;
+    float m00, m01, m02; // first row: x' = m00*x + m01*y + m02
+    float m10, m11, m12; // second row: y' = m10*x + m11*y + m12
+} Transform2D;
 
 // per-surface context
 typedef struct {
@@ -100,9 +94,10 @@ typedef struct {
     uint32_t    height;
     uint32_t    stride;  // in bytes
     // render state
-    uint32_t argb[COLOR_MAX + 1];
-    TransformMatrix transform;
-    ClipRect clip;
+    uint32_t    layer; // not used yet, reserved for future use
+    uint32_t    argb[COLOR_MAX + 1];
+    Transform2D transform;
+    ClipRect    clip;
 } Surface;
 
 // pixel format LUT for masks & shifts

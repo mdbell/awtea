@@ -160,13 +160,37 @@ public final class SurfaceCommandBuffer {
 
         i32.set(wordBase + 1, x);
         i32.set(wordBase + 2, y);
-        // width/height: let C side use the ImageData metadata; leave 0
-        // (eventually could extend to support sub-region blits)
         i32.set(wordBase + 3, 0);
         i32.set(wordBase + 4, 0);
-
-        i32.set(wordBase + 5, imageId); // union.blit.image_id
+        i32.set(wordBase + 5, imageId);
         i32.set(wordBase + 6, 0);
+    }
+
+    //TODO: other transforms
+    public void emitSetTransform(
+            float m00, float m01, float m02,
+            float m10, float m11, float m12) {
+        int idx = ensureSlot();
+        int baseByte = cmdBaseByte(idx);
+        int wordBase = cmdWordBase(baseByte);
+
+        // operation
+        setOperation(baseByte, TSurfaceCommand.Operation.SET_TRANSFORM);
+
+        // reinterpret float->uint32
+        int i00 = Float.floatToIntBits(m00);
+        int i01 = Float.floatToIntBits(m01);
+        int i02 = Float.floatToIntBits(m02);
+        int i10 = Float.floatToIntBits(m10);
+        int i11 = Float.floatToIntBits(m11);
+        int i12 = Float.floatToIntBits(m12);
+
+        i32.set(wordBase + 1, i00); // x
+        i32.set(wordBase + 2, i01); // y
+        i32.set(wordBase + 3, i02); // width
+        i32.set(wordBase + 4, i10); // height
+        i32.set(wordBase + 5, i11); // args[0]
+        i32.set(wordBase + 6, i12); // args[1]
     }
 
     public void emitNoOp() {
