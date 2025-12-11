@@ -58,30 +58,46 @@ teavm {
 
 var wasmOutputDir = file(layout.buildDirectory.dir("wasm"))
 
-var nativeSrcDir = file("${projectDir}/src/main/native/c")
+var nativeSrcDir = file("${projectDir}/src/main/native/")
 
-tasks.register("buildAwtRasterWasm", Exec::class.java) {
-    group = "build"
-    description = "Builds the AWT raster C code into WebAssembly using Emscripten in Docker."
+tasks.register("buildAwtRasterWasm") {
 
-    inputs.file("$nativeSrcDir/awt_raster.c")
-    outputs.file("$wasmOutputDir/awt_raster.wasm")
+    // 1. Collect all .c files
+    val cSources = fileTree(nativeSrcDir) {
+        include("**/*.c")
+    }.files
 
-    doFirst {
-        wasmOutputDir.mkdirs()
+    val headerFiles = fileTree(nativeSrcDir) {
+        include("**/*.h")
+    }.files
+
+    // 2. Declare inputs
+    inputs.files(cSources)
+    inputs.files(headerFiles)
+
+    // 3. Declare output
+    outputs.file("$projectDir/build/wasm/awt_raster.wasm")
+
+    doLast {
+        val sourceList = cSources.map { "src/main/native/${it.name}" }
+
+        exec {
+            commandLine(
+                "docker", "run", "--rm",
+                "-v", "${projectDir}:/src",
+                "-w", "/src",
+                "emscripten/emsdk",
+                "emcc",
+                "-Isrc/main/native",
+                * sourceList.toTypedArray(),   // ← all .c sources here
+                "-O2",
+                "-s", "STANDALONE_WASM",
+                "-s", "WASM_BIGINT=1",
+                "--no-entry",
+                "-o", "build/wasm/awt_raster.wasm"
+            )
+        }
     }
-
-    commandLine(
-        "docker", "run", "--rm",
-        "-v", "${projectDir}:/src",
-        "-w", "/src",
-        "emscripten/emsdk",
-        "emcc", "src/main/native/c/awt_raster.c", "-O2",
-        "-s", "STANDALONE_WASM",
-        "-s", "WASM_BIGINT=1",
-        "--no-entry",
-        "-o", "/src/build/wasm/awt_raster.wasm"
-    )
 }
 
 tasks.named<ProcessResources>("processResources") {
