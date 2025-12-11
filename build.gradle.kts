@@ -1,7 +1,6 @@
-
 plugins {
-    id ("java")
-    id ("maven-publish")
+    id("java")
+    id("maven-publish")
 }
 
 java {
@@ -47,4 +46,40 @@ dependencies {
     implementation("org.teavm:teavm-core:0.13.0")
     implementation("org.teavm:teavm-classlib:0.13.0")
     implementation("org.teavm:teavm-jso-apis:0.13.0")
+}
+
+var wasmOutputDir = file(layout.buildDirectory.dir("wasm"))
+
+var nativeSrcDir = file("${projectDir}/src/main/native/c")
+
+tasks.register("buildAwtRasterWasm", Exec::class.java) {
+    group = "build"
+    description = "Builds the AWT raster C code into WebAssembly using Emscripten in Docker."
+
+    inputs.file("$nativeSrcDir/awt_raster.c")
+    outputs.file("$wasmOutputDir/awt_raster.wasm")
+
+    doFirst {
+        wasmOutputDir.mkdirs()
+    }
+
+    commandLine(
+        "docker", "run", "--rm",
+        "-v", "${projectDir}:/src",
+        "-w", "/src",
+        "emscripten/emsdk",
+        "emcc", "src/main/native/c/awt_raster.c", "-O2",
+        "-s", "STANDALONE_WASM",
+        "-s", "WASM_BIGINT=1",
+        "-o", "/src/build/wasm/awt_raster.wasm"
+    )
+}
+
+tasks.named<ProcessResources>("processResources") {
+    dependsOn("buildAwtRasterWasm")
+
+    from(wasmOutputDir) {
+        include("awt_raster.wasm")
+        into("") // root of resources
+    }
 }
