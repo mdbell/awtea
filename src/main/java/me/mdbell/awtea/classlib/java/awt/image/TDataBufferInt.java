@@ -3,6 +3,7 @@ package me.mdbell.awtea.classlib.java.awt.image;
 import lombok.Getter;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.typedarrays.Int32Array;
+import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.awt.image.DataBufferInt;
 
@@ -12,83 +13,87 @@ import java.awt.image.DataBufferInt;
 @Getter
 public class TDataBufferInt extends TDataBuffer {
 
-	protected int[][] bankData;
-	private Int32Array jsArray;
+    protected int[][] bankData;
+    private Int32Array jsArray;
 
-	TDataBufferInt(ImageData imgData) {
-		super(TYPE_INT, imgData.getWidth() * imgData.getHeight());
-		this.jsArray = new Int32Array(imgData.getData().getBuffer());
-		this.bankData = new int[][]{this.jsArray.toJavaArray()};
-	}
+    TDataBufferInt(ImageData imgData) {
+        this(imgData.getData(), imgData.getWidth(), imgData.getHeight());
+    }
 
-	public TDataBufferInt(int size) {
-		super(TYPE_INT, size);
-		this.bankData = new int[1][size];
-	}
+    TDataBufferInt(Uint8ClampedArray pixelData, int width, int height) {
+        super(TYPE_INT, width * height);
+        this.jsArray = new Int32Array(pixelData.getBuffer());
+        this.bankData = new int[][]{this.jsArray.toJavaArray()};
+    }
 
-	@Override
-	public Int32Array getJsArray() {
-		return jsArray;
-	}
+    public TDataBufferInt(int size) {
+        super(TYPE_INT, size);
+        this.bankData = new int[1][size];
+    }
 
-	public TDataBufferInt(int size, int numBanks) {
-		super(TYPE_INT, size, numBanks);
-		this.bankData = new int[numBanks][size];
-	}
+    @Override
+    public Int32Array getJsArray() {
+        return jsArray;
+    }
 
-	public TDataBufferInt(int[] data, int size) {
-		this(data, size, 0);
-	}
+    public TDataBufferInt(int size, int numBanks) {
+        super(TYPE_INT, size, numBanks);
+        this.bankData = new int[numBanks][size];
+    }
 
-	public TDataBufferInt(int[] data, int size, int offset) {
-		super(TYPE_INT, size, 1, offset);
-		this.bankData = new int[][]{data};
-		this.jsArray = new Int32Array(Int32Array.fromJavaArray(data).getBuffer(), offset, size);
-	}
+    public TDataBufferInt(int[] data, int size) {
+        this(data, size, 0);
+    }
 
-	public TDataBufferInt(int[][] dataArray, int size) {
-		super(TYPE_INT, size, dataArray.length);
-		this.bankData = dataArray;
-	}
+    public TDataBufferInt(int[] data, int size, int offset) {
+        super(TYPE_INT, size, 1, offset);
+        this.bankData = new int[][]{data};
+        this.jsArray = new Int32Array(Int32Array.fromJavaArray(data).getBuffer(), offset, size);
+    }
 
-	public TDataBufferInt(int[][] dataArray, int size, int[] offsets) {
-		super(TYPE_INT, size, dataArray.length, offsets);
-		this.bankData = dataArray;
-	}
+    public TDataBufferInt(int[][] dataArray, int size) {
+        super(TYPE_INT, size, dataArray.length);
+        this.bankData = dataArray;
+    }
 
-	public Int32Array getJSArray() {
-		return jsArray;
-	}
+    public TDataBufferInt(int[][] dataArray, int size, int[] offsets) {
+        super(TYPE_INT, size, dataArray.length, offsets);
+        this.bankData = dataArray;
+    }
 
-	public int[] getData() {
-		return bankData[0];
-	}
+    public Int32Array getJSArray() {
+        return jsArray;
+    }
 
-	public int[] getData(int bank) {
-		return bankData[bank];
-	}
+    public int[] getData() {
+        return bankData[0];
+    }
 
-	@Override
-	public int getElem(int i) {
-		int idx = offsets[0] + i;
-		return bankData[0][idx];
-	}
+    public int[] getData(int bank) {
+        return bankData[bank];
+    }
 
-	@Override
-	public int getElem(int bank, int i) {
-		int idx = offsets[bank] + i;
-		return bankData[bank][idx];
-	}
+    @Override
+    public int getElem(int i) {
+        int idx = offsets[0] + i;
+        return bankData[0][idx];
+    }
 
-	@Override
-	public void setElem(int i, int val) {
-		int idx = offsets[0] + i;
-		bankData[0][idx] = val;
-	}
+    @Override
+    public int getElem(int bank, int i) {
+        int idx = offsets[bank] + i;
+        return bankData[bank][idx];
+    }
 
-	@Override
-	public void setElem(int bank, int i, int val) {
-		int idx = offsets[bank] + i;
-		bankData[bank][idx] = val;
-	}
+    @Override
+    public void setElem(int i, int val) {
+        int idx = offsets[0] + i;
+        bankData[0][idx] = val;
+    }
+
+    @Override
+    public void setElem(int bank, int i, int val) {
+        int idx = offsets[bank] + i;
+        bankData[bank][idx] = val;
+    }
 }

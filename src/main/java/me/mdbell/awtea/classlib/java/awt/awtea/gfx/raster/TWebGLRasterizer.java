@@ -14,7 +14,7 @@ import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Float32Array;
-import org.teavm.jso.typedarrays.Uint8Array;
+import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import org.teavm.jso.webgl.*;
 
 import java.awt.*;
@@ -297,7 +297,7 @@ public class TWebGLRasterizer implements Rasterizer {
         }
         WebGLTexture tex = gl.createTexture();
         SwizzleMode swizzleMode = getSwizzleMode(img);
-        Uint8Array pixels = img.getPixelBytes();
+        Uint8ClampedArray pixels = img.getPixelBytes();
         return (WebGLTextureWrapper) (img.texture = new WebGLTextureWrapper(pixels, tex, swizzleMode, img.getWidth(), img.getHeight()));
     }
 
@@ -305,7 +305,7 @@ public class TWebGLRasterizer implements Rasterizer {
 
         WebGLTexture tex = wrapper.texture;
         SwizzleMode swizzleMode = wrapper.swizzleMode;
-        Uint8Array data = wrapper.arr;
+        Uint8ClampedArray data = wrapper.arr;
 
         useTextureProgram(swizzleMode);
 
@@ -563,11 +563,11 @@ public class TWebGLRasterizer implements Rasterizer {
     public class WebGLTextureWrapper implements TCachedTexture {
         public WebGLTexture texture;
         private final SwizzleMode swizzleMode;
-        private final Uint8Array arr;
+        private final Uint8ClampedArray arr;
         private final int width;
         private final int height;
 
-        public WebGLTextureWrapper(Uint8Array pixels, WebGLTexture texture, SwizzleMode mode, int width, int height) {
+        public WebGLTextureWrapper(Uint8ClampedArray pixels, WebGLTexture texture, SwizzleMode mode, int width, int height) {
             this.arr = pixels;
             this.texture = texture;
             this.swizzleMode = mode;

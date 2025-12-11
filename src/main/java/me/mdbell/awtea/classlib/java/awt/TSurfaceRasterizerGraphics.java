@@ -14,7 +14,7 @@ import java.text.AttributedCharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
+public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     protected transient boolean scheduled = false;
 
@@ -58,6 +58,10 @@ public abstract class TSurfaceRasterizerGraphics extends TGraphics2D {
         this.clip = other.clip;
         this.color = other.color;
         this.background = other.background;
+    }
+
+    public TGraphics create() {
+        return new TSurfaceRasterizerGraphics(this);
     }
 
     public final void pushOp(SurfaceCommand op) {

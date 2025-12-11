@@ -27,7 +27,7 @@ public class WasmTest {
         HTMLCanvasElement canvasElement = (HTMLCanvasElement) Window.current().getDocument().getElementById(canvasId);
         context2D = (CanvasRenderingContext2D) canvasElement.getContext("2d");
 
-        WasmSurfaceBackend engine = WasmSurfaceBackend.get();
+        WasmSurfaceBackend engine = new WasmSurfaceBackend();
 
         framebuffer = engine.createSurface(canvasElement.getWidth(), canvasElement.getHeight(), WasmPixelFormat.PIXEL_FORMAT_ABGR);
         overlay = engine.createSurface(75, 75, WasmPixelFormat.PIXEL_FORMAT_RGB);

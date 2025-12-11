@@ -12,7 +12,7 @@ public class WasmSurfaceBackend implements SurfaceBackend {
 
     private final WasmAwtRasterizerExports exports;
 
-    private WasmSurfaceBackend() {
+    public WasmSurfaceBackend() {
         this.exports = WasmAwtLoader.load(WASM_MODULE_PATH).await();
     }
 
@@ -27,10 +27,6 @@ public class WasmSurfaceBackend implements SurfaceBackend {
             throw new IllegalStateException("createSurface failed: " + surfaceId);
         }
         return new WasmSurface(exports, surfaceId, width, height, pixelFormat.ordinal());
-    }
-
-    public static WasmSurfaceBackend get() {
-        return new WasmSurfaceBackend();
     }
 
     @Override

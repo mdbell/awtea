@@ -45,6 +45,17 @@ public interface Surface {
     Uint8ClampedArray getPixelData();
 
     /**
+     * Indicates whether the surface has been modified since the last check.
+     * This can be used to determine if the surface needs to be re-uploaded
+     * to a texture or otherwise updated in rendering.
+     *
+     * @return true if the surface is dirty (modified), false otherwise.
+     */
+    default boolean isDirty() {
+        return true;
+    }
+
+    /**
      * Frees any resources associated with this surface.
      */
     void destroy();
