@@ -62,25 +62,19 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
 };
 
 void set_pixel_generic(Surface* surface, int x, int y, PixelFormat srcFormat,
-    uint32_t pixel) {
+    uint32_t srcPixel) {
     uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
     uint32_t stride = surface->stride / 4; // in pixels
 
     const PixelFormatInfo* srcInfo = &g_pixel_format_info[srcFormat];
     const PixelFormatInfo* dstInfo = &g_pixel_format_info[surface->format];
 
-    uint32_t r = (pixel & srcInfo->mask_r) >> srcInfo->shift_r;
-    uint32_t g = (pixel & srcInfo->mask_g) >> srcInfo->shift_g;
-    uint32_t b = (pixel & srcInfo->mask_b) >> srcInfo->shift_b;
-    uint32_t a = (pixel & srcInfo->mask_a) >> srcInfo->shift_a;
+    uint8_t srcR, srcG, srcB, srcA;
+    unpack_pixel(srcInfo, srcPixel, &srcR, &srcG, &srcB, &srcA);
 
-    uint32_t dst_pixel = 
-        ((r << dstInfo->shift_r) & dstInfo->mask_r) |
-        ((g << dstInfo->shift_g) & dstInfo->mask_g) |
-        ((b << dstInfo->shift_b) & dstInfo->mask_b) |
-        ((a << dstInfo->shift_a) & dstInfo->mask_a);
+    uint32_t dstPixel = pack_pixel(dstInfo, srcR, srcG, srcB, srcA);
+    framebuffer[y * stride + x] = dstPixel;
 
-    framebuffer[y * stride + x] = dst_pixel;
 }
 
 void set_pixel_same_format(Surface* surface, int x, int y, PixelFormat srcFormat,
@@ -94,10 +88,17 @@ void set_pixel_same_format(Surface* surface, int x, int y, PixelFormat srcFormat
 void set_pixel_no_alpha_src(Surface* surface, int x, int y, PixelFormat srcFormat,
     uint32_t pixel) {
 
-        PixelFormat alphaVariant = g_pixel_format_info[srcFormat].alphaVariant;
-        pixel |= g_pixel_format_info[alphaVariant].mask_a; // set alpha to opaque
+    uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
+    uint32_t stride = surface->stride / 4; // in pixels
 
-        set_pixel_generic(surface, x, y, alphaVariant, pixel);
+    const PixelFormatInfo* srcInfo = &g_pixel_format_info[srcFormat];
+    const PixelFormatInfo* dstInfo = &g_pixel_format_info[surface->format];
+
+    uint8_t srcR, srcG, srcB, srcA;
+    unpack_pixel(srcInfo, pixel, &srcR, &srcG, &srcB, &srcA);
+
+    uint32_t dstPixel = pack_pixel(dstInfo, srcR, srcG, srcB, 0xFF);
+    framebuffer[y * stride + x] = dstPixel;
 }
 
 void unpack_pixel(const PixelFormatInfo* info,

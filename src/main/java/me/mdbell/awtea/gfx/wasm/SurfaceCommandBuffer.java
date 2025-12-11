@@ -64,10 +64,11 @@ final class SurfaceCommandBuffer {
 			return; // nothing to do
 		}
 		int rc = exports.renderAwt(surfaceId, basePtr, count);
-		if (rc != 0) {
-			throw new IllegalStateException("renderAwt failed: " + rc);
+		if (rc == 0) {
+			reset();
+		} else {
+			System.err.println("SurfaceCommandBuffer.flush: renderAwt failed: " + rc);
 		}
-		reset();
 	}
 
 	private int ensureSlot() {

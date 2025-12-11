@@ -32,6 +32,7 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	public static final int TYPE_INT_RGB = 1;
 	public static final int TYPE_INT_ARGB = 2;
 	public static final int TYPE_INT_ARGB_PRE = 3;
+	public static final int TYPE_INT_BGR = 4;
 
 	private static final int DCM_RED_MASK = 0x00FF0000;
 	private static final int DCM_GREEN_MASK = 0x0000FF00;
@@ -141,6 +142,40 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 					0x00FF0000, // R
 					0x0000FF00, // G
 					0x000000FF  // B
+				};
+
+				TSinglePixelPackedSampleModel sm =
+					new TSinglePixelPackedSampleModel(
+						TDataBuffer.TYPE_INT,
+						width,
+						height,
+						width,
+						masks
+					);
+
+				TDataBufferInt db = new TDataBufferInt(surface.getPixelData(), width, height);
+
+				this.raster = TWritableRaster.createWritableRaster(sm, db, new TPoint(0, 0));
+
+				// Alpha mask = 0 → no alpha
+				this.colorModel = new TDirectColorModel(
+					32,
+					masks[0],
+					masks[1],
+					masks[2],
+					0           // no alpha mask
+				);
+
+				this.alphaPremultiplied = false;
+				break;
+			}
+
+			case TYPE_INT_BGR: {
+				// No alpha; treat as opaque RGB
+				int[] masks = {
+					0x000000FF, // R
+					0x0000FF00, // G
+					0x00FF0000  // B
 				};
 
 				TSinglePixelPackedSampleModel sm =

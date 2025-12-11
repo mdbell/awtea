@@ -11,6 +11,7 @@ void main() {
     // 0 - RGBA
     // 1 - BGRA
     // 2 - BGR (alpha set to 1.0)
+    // 3 - RGB (alpha set to 1.0)
 
     if (u_swizzleMode == 0) {
         gl_FragColor = tex; // RGBA
@@ -18,6 +19,8 @@ void main() {
         gl_FragColor = vec4(tex.b, tex.g, tex.r, tex.a); // BGRA
     } else if (u_swizzleMode == 2) {
         gl_FragColor = vec4(tex.bgr, 1.0); // BGR
+    } else if (u_swizzleMode == 3) {
+        gl_FragColor = vec4(tex.rgb, 1.0); // RGB
     } else {
         gl_FragColor = tex; // Default to RGBA
     }
