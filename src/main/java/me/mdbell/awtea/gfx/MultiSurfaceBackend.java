@@ -1,7 +1,5 @@
 package me.mdbell.awtea.gfx;
 
-import me.mdbell.awtea.classlib.java.awt.image.TColorModel;
-import me.mdbell.awtea.classlib.java.awt.image.TWritableRaster;
 import me.mdbell.awtea.gfx.software.SoftwareSurfaceBackend;
 import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
 
@@ -45,7 +43,7 @@ public class MultiSurfaceBackend implements SurfaceBackend {
     }
 
     @Override
-    public Surface createCompatibleSurface(TColorModel cm, TWritableRaster raster, boolean isRasterPremultiplied) {
+    public Surface createCompatibleSurface(Object cm, Object raster, boolean isRasterPremultiplied) {
         for (SurfaceBackend backend : backends) {
             Surface surface = backend.createCompatibleSurface(cm, raster, isRasterPremultiplied);
             if (surface != null) {

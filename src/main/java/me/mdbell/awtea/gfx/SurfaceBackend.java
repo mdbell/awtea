@@ -1,8 +1,5 @@
 package me.mdbell.awtea.gfx;
 
-import me.mdbell.awtea.classlib.java.awt.image.TColorModel;
-import me.mdbell.awtea.classlib.java.awt.image.TWritableRaster;
-
 public interface SurfaceBackend {
 
     /**
@@ -23,7 +20,7 @@ public interface SurfaceBackend {
      * @param isRasterPremultiplied Whether the raster is premultiplied
      * @return The created surface, or null if the type is not supported
      */
-    Surface createCompatibleSurface(TColorModel cm,
-                                    TWritableRaster raster,
+    Surface createCompatibleSurface(Object cm,
+                                    Object raster,
                                     boolean isRasterPremultiplied);
 }

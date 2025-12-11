@@ -1,7 +1,5 @@
 package me.mdbell.awtea.gfx.wasm;
 
-import me.mdbell.awtea.classlib.java.awt.image.TColorModel;
-import me.mdbell.awtea.classlib.java.awt.image.TWritableRaster;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
 
@@ -39,7 +37,7 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     }
 
     @Override
-    public Surface createCompatibleSurface(TColorModel cm, TWritableRaster raster,
+    public Surface createCompatibleSurface(Object cm, Object raster,
                                            boolean isRasterPremultiplied) {
         // Not supported in Wasm backend - we need to allocate surface memory in the WASM module
         return null;
