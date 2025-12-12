@@ -376,6 +376,7 @@ public class ApiDiff {
 		try (ScanResult scanResult = new ClassGraph()
 				.overrideClassLoaders(loader)
 				.acceptPackages(pkg)
+				.rejectJars()  // Only scan classes from file system (source), not from JARs
 				.scan()) {
 			
 			for (ClassInfo classInfo : scanResult.getAllClasses()) {
