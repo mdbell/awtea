@@ -11,6 +11,7 @@ public class SoftwareSurface implements Surface {
 	private WritableRaster raster;
 	private ColorModel cm; // not really needed here yet, maybe in software rasterizer?
 	private int format;
+	private boolean dirty = true;
 
 	private Uint8ClampedArray pixelData;
 
@@ -26,6 +27,15 @@ public class SoftwareSurface implements Surface {
 	@Override
 	public int getFormat() {
 		return format;
+	}
+
+	void markDirty() {
+		this.dirty = true;
+	}
+
+	@Override
+	public boolean isDirty() {
+		return dirty;
 	}
 
 	private Uint8ClampedArray getPixelDataFromBuffer(DataBuffer dataBuffer) {
