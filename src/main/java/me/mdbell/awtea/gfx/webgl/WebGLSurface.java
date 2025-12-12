@@ -15,21 +15,22 @@ class WebGLSurface implements Surface {
 	private int width;
 	private int height;
 	WebGLTexture texture;
-	WebGLSurfaceBackend.SwizzleMode swizzleMode = WebGLSurfaceBackend.SwizzleMode.ARGB_TO_RGBA; //TODO: determine swizzle mode based on texture format
 	WebGLFramebuffer framebuffer;
+	private boolean forScreen;
 
 	WebGLSurface(WebGLSurfaceBackend backend, int width, int height, boolean forScreen) {
 		this.backend = backend;
 		this.texture = backend.gl.createTexture();
 
-		this.framebuffer = forScreen ? null : backend.gl.createFramebuffer();
+		this.framebuffer = backend.gl.createFramebuffer();
+		this.forScreen = forScreen;
 
 		resize(width, height);
 	}
 
 	@Override
 	public Rasterizer createRasterizer() {
-		return new WebGLRasterizer(backend, this);
+		return new WebGLRasterizer(backend, this, forScreen);
 	}
 
 	@Override

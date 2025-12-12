@@ -76,11 +76,8 @@ public class EventTestApplet extends Applet
 
 	@Override
 	public void paint(Graphics g) {
-		g = getGraphics(); // force us to use the surface gfx
-		g.setColor(Color.LIGHT_GRAY);
+		g.setColor(Color.YELLOW);
 		g.fillRect(0, 0, getWidth(), getHeight());
-
-		g.clearRect(10, 10, 20, 20);
 
 		g.drawImage(A_RED, 10, 10, null);
 		g.drawImage(A_GREEN, 40, 10, null);
@@ -91,6 +88,14 @@ public class EventTestApplet extends Applet
 		g.drawImage(BLUE, 70, 40, null);
 
 		g.drawImage(RED_BLUE_CHECKERED, 10, 70, null);
+
+		g.setColor(Color.BLACK);
+
+		int mx = lastMouseX >= 0 ? lastMouseX : 0;
+		int my = lastMouseY >= 0 ? lastMouseY : 0;
+
+		g.drawLine(mx - 10, my - 10, mx + 10, my + 10);
+		g.drawLine(mx - 10, my + 10, mx + 10, my - 10);
 
 //
 //		g.setColor(Color.BLACK);

@@ -35,6 +35,9 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 
 		setSize(0, 0); // auto-size to content
 
+		canvasElement.setWidth(10);
+		canvasElement.setHeight(10);
+
 		surface = DefaultSurfaceBackend.getDefault().createScreenSurface(
 			canvasElement.getWidth(),
 			canvasElement.getHeight(),

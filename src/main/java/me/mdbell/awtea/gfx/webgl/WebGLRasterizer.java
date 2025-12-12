@@ -4,7 +4,7 @@ import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import me.mdbell.awtea.gfx.SurfaceContainer;
-import me.mdbell.awtea.impl.Debug;
+import me.mdbell.awtea.instrument.Monitored;
 import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import org.teavm.jso.webgl.WebGL2RenderingContext;
@@ -16,6 +16,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.List;
 
+@Monitored.AllMethods
 class WebGLRasterizer implements Rasterizer {
 
 	private final WebGLSurfaceBackend backend;
@@ -30,7 +31,16 @@ class WebGLRasterizer implements Rasterizer {
 	private Color foreground = Color.WHITE;
 	private Color background = Color.BLACK;
 
-	WebGLRasterizer(WebGLSurfaceBackend backend, WebGLSurface surface) {
+	private boolean pushToScreen = false;
+
+	// identity transform array for pushing to screen
+	private static final Float32Array identityTransformArray = Float32Array.fromJavaArray(new float[]{
+		1f, 0f, 0f,
+		0f, 1f, 0f,
+		0f, 0f, 1f
+	});
+
+	WebGLRasterizer(WebGLSurfaceBackend backend, WebGLSurface surface, boolean pushToScreen) {
 		this.backend = backend;
 		this.framebuffer = surface.framebuffer;
 		this.gl = backend.gl;
@@ -38,6 +48,7 @@ class WebGLRasterizer implements Rasterizer {
 		transform.setToIdentity();
 		updateTransformFloats(transform);
 		this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
+		this.pushToScreen = pushToScreen;
 	}
 
 	private WebGLRasterizer(WebGLRasterizer other) {
@@ -184,9 +195,9 @@ class WebGLRasterizer implements Rasterizer {
 
 	private void drawWebGLSurface(WebGLSurface img, int x, int y, int width, int height) {
 		WebGLTexture other = img.texture;
-		WebGLSurfaceBackend.SwizzleMode mode = img.swizzleMode;
 
-		drawTexture(other, mode, x, y, img.getWidth(), img.getHeight(), width, height, null);
+		// no swizzling needed when drawing from one WebGLSurface to another
+		drawTexture(other, WebGLSurfaceBackend.SwizzleMode.NONE, x, y, img.getWidth(), img.getHeight(), width, height, null);
 	}
 
 	private void drawSurface(Surface surface, int x, int y, int width, int height) {
@@ -207,12 +218,10 @@ class WebGLRasterizer implements Rasterizer {
 		//TODO: determine swizzle mode based on surface pixel format
 		WebGLSurfaceBackend.SwizzleMode mode = WebGLSurfaceBackend.SwizzleMode.RGB_TO_RGBA;
 		try {
-			System.out.println("Uploading surface pixel data to temporary texture for drawing - swizzle mode: " + mode);
-			System.out.println("Framebuffer: " + framebuffer);
-			Debug.trigger();
 			drawTexture(tmp, mode, x, y, surface.getWidth(), surface.getHeight(), width, height, surface.getPixelData());
 		} finally {
 			// clean up temporary texture
+			gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
 			gl.deleteTexture(tmp);
 		}
 	}
@@ -259,6 +268,8 @@ class WebGLRasterizer implements Rasterizer {
 		}
 
 		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+
+		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
 	}
 
 	@Override
@@ -266,6 +277,8 @@ class WebGLRasterizer implements Rasterizer {
 
 		gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, framebuffer);
 		gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+		gl.framebufferTexture2D(WebGLRenderingContext.FRAMEBUFFER, WebGLRenderingContext.COLOR_ATTACHMENT0,
+			WebGLRenderingContext.TEXTURE_2D, this.surface.texture, 0);
 
 		gl.enable(WebGLRenderingContext.BLEND);
 		gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
@@ -291,7 +304,7 @@ class WebGLRasterizer implements Rasterizer {
 					updateTransformFloats(this.transform);
 					break;
 				case SET_CLIP_RECT:
-					//setClip((Shape) cmd.obj);
+					setClip((Shape) cmd.obj);
 					break;
 				case BLIT_IMAGE:
 					Surface s = ((SurfaceContainer) cmd.obj).getSurface();
@@ -317,6 +330,47 @@ class WebGLRasterizer implements Rasterizer {
 			}
 		}
 
+		if (pushToScreen) {
+			pushToScreen();
+		}
+	}
+
+	private void pushToScreen() {
+		int width = gl.getCanvas().getWidth();
+		int height = gl.getCanvas().getHeight();
+
+
 		gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, null);
+
+		gl.viewport(0, 0, width, height);
+
+		gl.activeTexture(WebGLRenderingContext.TEXTURE0);
+		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, surface.texture);
+		// no swizzling when pushing to screen, as the surface texture is already in RGBA format
+		backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.NONE, surface.getWidth(), surface.getHeight(),
+			identityTransformArray);
+
+		// full-screen quad
+
+		float[] verts = {
+			0, 0,
+			width, 0,
+			0, height,
+			0, height,
+			width, 0,
+			width, height
+		};
+
+		float[] uvs = {
+			0f, 1f,
+			1f, 1f,
+			0f, 0f,
+			0f, 0f,
+			1f, 1f,
+			1f, 0f
+		};
+
+		backend.uploadQuadVertices(verts, uvs);
+		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
 	}
 }

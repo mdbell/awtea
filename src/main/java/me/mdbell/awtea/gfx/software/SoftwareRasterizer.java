@@ -5,6 +5,7 @@ import me.mdbell.awtea.gfx.SurfaceCommand;
 
 import java.util.List;
 
+
 public class SoftwareRasterizer implements Rasterizer {
 
 	private final SoftwareSurface surface;

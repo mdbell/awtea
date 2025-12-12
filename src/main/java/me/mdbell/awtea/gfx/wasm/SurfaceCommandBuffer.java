@@ -196,8 +196,8 @@ final class SurfaceCommandBuffer {
 	}
 
 	public void emitSetTransform(
-		float m00, float m01, float m02,
-		float m10, float m11, float m12) {
+		float m00, float m10, float m01,
+		float m11, float m02, float m12) {
 		int idx = ensureSlot();
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
