@@ -137,3 +137,22 @@ tasks.register("generateDocs") {
         println("✓ Generated Markdown report: docs/coverage/report.md")
     }
 }
+
+tasks.register("findMissingClasses") {
+    group = "documentation"
+    description = "Find missing public classes in java.awt.* packages"
+    
+    dependsOn("classes")
+    
+    doLast {
+        val classpath = sourceSets["main"].runtimeClasspath.asPath
+        
+        exec {
+            commandLine(
+                "java", "-cp", classpath,
+                "me.mdbell.awtea.util.ApiDiff",
+                "--missing-classes"
+            )
+        }
+    }
+}
