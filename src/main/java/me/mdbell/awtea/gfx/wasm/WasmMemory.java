@@ -1,0 +1,13 @@
+package me.mdbell.awtea.gfx.wasm;
+
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.typedarrays.ArrayBuffer;
+
+/**
+ * WebAssembly.Memory wrapper
+ */
+interface WasmMemory extends JSObject {
+	@JSProperty("buffer")
+	ArrayBuffer getBuffer();
+}

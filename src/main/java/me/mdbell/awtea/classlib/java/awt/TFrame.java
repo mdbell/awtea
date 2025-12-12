@@ -17,7 +17,7 @@ public class TFrame extends TSurface {
 	}
 
 	@Override
-	public TCanvasGraphics getSurfaceGraphics() {
+	public TGraphics getSurfaceGraphics() {
 		return peer.getGraphics();
 	}
 

@@ -3,6 +3,7 @@ package me.mdbell.awtea.classlib.java.awt.image;
 import lombok.Getter;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.typedarrays.Int32Array;
+import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.awt.image.DataBufferInt;
 
@@ -16,8 +17,12 @@ public class TDataBufferInt extends TDataBuffer {
 	private Int32Array jsArray;
 
 	TDataBufferInt(ImageData imgData) {
-		super(TYPE_INT, imgData.getWidth() * imgData.getHeight());
-		this.jsArray = new Int32Array(imgData.getData().getBuffer());
+		this(imgData.getData(), imgData.getWidth(), imgData.getHeight());
+	}
+
+	TDataBufferInt(Uint8ClampedArray pixelData, int width, int height) {
+		super(TYPE_INT, width * height);
+		this.jsArray = new Int32Array(pixelData.getBuffer(), pixelData.getByteOffset(), pixelData.getLength() / 4);
 		this.bankData = new int[][]{this.jsArray.toJavaArray()};
 	}
 
