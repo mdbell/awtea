@@ -25,7 +25,7 @@ class WebGLRasterizer implements Rasterizer {
 	private final WebGLFramebuffer framebuffer;
 
 	private final AffineTransform transform = new AffineTransform();
-	private transient final Float32Array transformArray = Float32Array.create(9);
+	private transient final Float32Array transformArray = new Float32Array(9);
 	private Rectangle clip = null;
 
 	private Color foreground = Color.WHITE;

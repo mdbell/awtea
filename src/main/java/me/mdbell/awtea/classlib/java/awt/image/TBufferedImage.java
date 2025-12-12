@@ -5,7 +5,6 @@ import lombok.Getter;
 import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.TImage;
 import me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics;
-import me.mdbell.awtea.classlib.java.awt.awtea.gfx.TCachedTexture;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
 import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Surface;
@@ -44,8 +43,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	private final TColorModel colorModel;
 	private final TWritableRaster raster;
 	private final boolean alphaPremultiplied;
-
-	public TCachedTexture texture;
 
 	@Getter(AccessLevel.NONE)
 	private TSurfaceRasterizerGraphics gfx;
@@ -448,9 +445,9 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 			gfx.dispose();
 			gfx = null;
 		}
-		if (texture != null) {
-			texture.delete();
-			texture = null;
+		if (surface != null) {
+			surface.destroy();
+			surface = null;
 		}
 	}
 }
