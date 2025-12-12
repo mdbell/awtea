@@ -6,7 +6,7 @@ import org.teavm.jso.JSProperty;
 
 /**
  * Low-level view of the AWT rasterizer WASM exports.
- * This should mirror the C exports in awt_raster.c
+ * This should mirror the C exports in awt_image.c and awt_surface.c
  */
 interface WasmAwtRasterizerExports extends JSObject {
 
