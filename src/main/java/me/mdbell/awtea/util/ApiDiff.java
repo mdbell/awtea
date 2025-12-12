@@ -345,16 +345,18 @@ public class ApiDiff {
 						.invoke(module);
 					
 					if (packages.contains(pkgName)) {
-						// Manually enumerate known public classes since module system doesn't provide
-						// a direct way to list all classes in a package
-						enumerateKnownPublicClasses(pkgName, classes);
+						// Module system doesn't provide a direct way to list all classes,
+						// so we need an alternative approach
+						System.err.println("Error: Cannot enumerate classes in package " + pkgName);
+						System.err.println("Module system does not provide class enumeration API.");
+						System.exit(1);
 					}
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Warning: Failed to scan modules: " + e.getMessage());
-			// Fall back to manual enumeration
-			enumerateKnownPublicClasses(pkgName, classes);
+			System.err.println("Error: Failed to scan modules: " + e.getMessage());
+			e.printStackTrace();
+			System.exit(1);
 		}
 	}
 	
@@ -384,108 +386,17 @@ public class ApiDiff {
 					}
 				}
 			} catch (IOException e) {
-				System.err.println("Warning: Failed to read rt.jar: " + e.getMessage());
-				enumerateKnownPublicClasses(pkgName, classes);
+				System.err.println("Error: Failed to read rt.jar: " + e.getMessage());
+				e.printStackTrace();
+				System.exit(1);
 			}
 		} else {
-			// rt.jar not found, fall back to known classes
-			enumerateKnownPublicClasses(pkgName, classes);
+			System.err.println("Error: rt.jar not found at " + rtJar.getAbsolutePath());
+			System.err.println("Cannot enumerate classes without rt.jar or module system support.");
+			System.exit(1);
 		}
 	}
 	
-	private static void enumerateKnownPublicClasses(String pkgName, Set<String> classes) {
-		// Fallback: curated list of known public AWT classes
-		// This ensures we have coverage even if scanning fails
-		if (pkgName.equals("java.awt")) {
-			classes.addAll(Arrays.asList(
-				"java.awt.AWTError", "java.awt.AWTEvent", "java.awt.AWTEventMulticaster",
-				"java.awt.AWTException", "java.awt.AWTKeyStroke", "java.awt.AWTPermission",
-				"java.awt.ActiveEvent", "java.awt.Adjustable", "java.awt.AlphaComposite",
-				"java.awt.BasicStroke", "java.awt.BorderLayout", "java.awt.BufferCapabilities",
-				"java.awt.Button", "java.awt.Canvas", "java.awt.CardLayout",
-				"java.awt.Checkbox", "java.awt.CheckboxGroup", "java.awt.CheckboxMenuItem",
-				"java.awt.Choice", "java.awt.Color", "java.awt.Component",
-				"java.awt.ComponentOrientation", "java.awt.Composite", "java.awt.Container",
-				"java.awt.ContainerOrderFocusTraversalPolicy", "java.awt.Cursor", "java.awt.DefaultFocusTraversalPolicy",
-				"java.awt.DefaultKeyboardFocusManager", "java.awt.Desktop", "java.awt.Dialog",
-				"java.awt.Dimension", "java.awt.DisplayMode", "java.awt.EventQueue",
-				"java.awt.FileDialog", "java.awt.FlowLayout", "java.awt.FocusTraversalPolicy",
-				"java.awt.Font", "java.awt.FontFormatException", "java.awt.FontMetrics",
-				"java.awt.Frame", "java.awt.GradientPaint", "java.awt.Graphics",
-				"java.awt.Graphics2D", "java.awt.GraphicsConfiguration", "java.awt.GraphicsConfigTemplate",
-				"java.awt.GraphicsDevice", "java.awt.GraphicsEnvironment", "java.awt.GridBagConstraints",
-				"java.awt.GridBagLayout", "java.awt.GridBagLayoutInfo", "java.awt.GridLayout",
-				"java.awt.HeadlessException", "java.awt.IllegalComponentStateException", "java.awt.Image",
-				"java.awt.ImageCapabilities", "java.awt.Insets", "java.awt.ItemSelectable",
-				"java.awt.JobAttributes", "java.awt.KeyEventDispatcher", "java.awt.KeyEventPostProcessor",
-				"java.awt.KeyboardFocusManager", "java.awt.Label", "java.awt.LayoutManager",
-				"java.awt.LayoutManager2", "java.awt.LinearGradientPaint", "java.awt.List",
-				"java.awt.MediaTracker", "java.awt.Menu", "java.awt.MenuBar",
-				"java.awt.MenuComponent", "java.awt.MenuContainer", "java.awt.MenuItem",
-				"java.awt.MenuShortcut", "java.awt.ModalEventFilter", "java.awt.ModalExclusionType",
-				"java.awt.MouseInfo", "java.awt.MultipleGradientPaint", "java.awt.PageAttributes",
-				"java.awt.Paint", "java.awt.PaintContext", "java.awt.Panel",
-				"java.awt.Point", "java.awt.PointerInfo", "java.awt.Polygon",
-				"java.awt.PopupMenu", "java.awt.PrintGraphics", "java.awt.PrintJob",
-				"java.awt.RadialGradientPaint", "java.awt.Rectangle", "java.awt.RenderingHints",
-				"java.awt.Robot", "java.awt.ScrollPane", "java.awt.ScrollPaneAdjustable",
-				"java.awt.Scrollbar", "java.awt.SecondaryLoop", "java.awt.SequencedEvent",
-				"java.awt.Shape", "java.awt.SplashScreen", "java.awt.Stroke",
-				"java.awt.SystemColor", "java.awt.SystemTray", "java.awt.TextArea",
-				"java.awt.TextComponent", "java.awt.TextField", "java.awt.TexturePaint",
-				"java.awt.Toolkit", "java.awt.Transparency", "java.awt.TrayIcon",
-				"java.awt.Window"
-			));
-		} else if (pkgName.equals("java.awt.event")) {
-			classes.addAll(Arrays.asList(
-				"java.awt.event.ActionEvent", "java.awt.event.ActionListener", "java.awt.event.AdjustmentEvent",
-				"java.awt.event.AdjustmentListener", "java.awt.event.ComponentAdapter", "java.awt.event.ComponentEvent",
-				"java.awt.event.ComponentListener", "java.awt.event.ContainerAdapter", "java.awt.event.ContainerEvent",
-				"java.awt.event.ContainerListener", "java.awt.event.FocusAdapter", "java.awt.event.FocusEvent",
-				"java.awt.event.FocusListener", "java.awt.event.HierarchyBoundsAdapter", "java.awt.event.HierarchyBoundsListener",
-				"java.awt.event.HierarchyEvent", "java.awt.event.HierarchyListener", "java.awt.event.InputEvent",
-				"java.awt.event.InputMethodEvent", "java.awt.event.InputMethodListener", "java.awt.event.InvocationEvent",
-				"java.awt.event.ItemEvent", "java.awt.event.ItemListener", "java.awt.event.KeyAdapter",
-				"java.awt.event.KeyEvent", "java.awt.event.KeyListener", "java.awt.event.MouseAdapter",
-				"java.awt.event.MouseEvent", "java.awt.event.MouseListener", "java.awt.event.MouseMotionAdapter",
-				"java.awt.event.MouseMotionListener", "java.awt.event.MouseWheelEvent", "java.awt.event.MouseWheelListener",
-				"java.awt.event.PaintEvent", "java.awt.event.TextEvent", "java.awt.event.TextListener",
-				"java.awt.event.WindowAdapter", "java.awt.event.WindowEvent", "java.awt.event.WindowFocusListener",
-				"java.awt.event.WindowListener", "java.awt.event.WindowStateListener"
-			));
-		} else if (pkgName.equals("java.awt.geom")) {
-			classes.addAll(Arrays.asList(
-				"java.awt.geom.AffineTransform", "java.awt.geom.Arc2D", "java.awt.geom.Area",
-				"java.awt.geom.CubicCurve2D", "java.awt.geom.Dimension2D", "java.awt.geom.Ellipse2D",
-				"java.awt.geom.FlatteningPathIterator", "java.awt.geom.GeneralPath", "java.awt.geom.IllegalPathStateException",
-				"java.awt.geom.Line2D", "java.awt.geom.NoninvertibleTransformException", "java.awt.geom.Path2D",
-				"java.awt.geom.PathIterator", "java.awt.geom.Point2D", "java.awt.geom.QuadCurve2D",
-				"java.awt.geom.Rectangle2D", "java.awt.geom.RectangularShape", "java.awt.geom.RoundRectangle2D"
-			));
-		} else if (pkgName.equals("java.awt.image")) {
-			classes.addAll(Arrays.asList(
-				"java.awt.image.AffineTransformOp", "java.awt.image.AreaAveragingScaleFilter", "java.awt.image.BandCombineOp",
-				"java.awt.image.BandedSampleModel", "java.awt.image.BufferStrategy", "java.awt.image.BufferedImage",
-				"java.awt.image.BufferedImageFilter", "java.awt.image.BufferedImageOp", "java.awt.image.ByteLookupTable",
-				"java.awt.image.ColorConvertOp", "java.awt.image.ColorModel", "java.awt.image.ComponentColorModel",
-				"java.awt.image.ComponentSampleModel", "java.awt.image.ConvolveOp", "java.awt.image.CropImageFilter",
-				"java.awt.image.DataBuffer", "java.awt.image.DataBufferByte", "java.awt.image.DataBufferDouble",
-				"java.awt.image.DataBufferFloat", "java.awt.image.DataBufferInt", "java.awt.image.DataBufferShort",
-				"java.awt.image.DataBufferUShort", "java.awt.image.DirectColorModel", "java.awt.image.FilteredImageSource",
-				"java.awt.image.ImageConsumer", "java.awt.image.ImageFilter", "java.awt.image.ImageObserver",
-				"java.awt.image.ImageProducer", "java.awt.image.ImagingOpException", "java.awt.image.IndexColorModel",
-				"java.awt.image.Kernel", "java.awt.image.LookupOp", "java.awt.image.LookupTable",
-				"java.awt.image.MemoryImageSource", "java.awt.image.MultiPixelPackedSampleModel", "java.awt.image.PackedColorModel",
-				"java.awt.image.PixelGrabber", "java.awt.image.PixelInterleavedSampleModel", "java.awt.image.Raster",
-				"java.awt.image.RasterFormatException", "java.awt.image.RasterOp", "java.awt.image.RenderedImage",
-				"java.awt.image.ReplicateScaleFilter", "java.awt.image.RescaleOp", "java.awt.image.RGBImageFilter",
-				"java.awt.image.SampleModel", "java.awt.image.ShortLookupTable", "java.awt.image.SinglePixelPackedSampleModel",
-				"java.awt.image.TileObserver", "java.awt.image.VolatileImage", "java.awt.image.WritableRaster",
-				"java.awt.image.WritableRenderedImage"
-			));
-		}
-	}
-
 	private static void generateReport(String format, String outputPath) {
 		Path path;
 		if (outputPath == null) {

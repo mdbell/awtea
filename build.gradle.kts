@@ -106,31 +106,26 @@ tasks.named<ProcessResources>("processResources") {
     }
 }
 
-tasks.register("generateDocs") {
+tasks.register<JavaExec>("generateDocs") {
     group = "documentation"
     description = "Generate API coverage reports in HTML and Markdown formats"
     
     dependsOn("classes")
     
-    doLast {
-        val classpath = sourceSets["main"].runtimeClasspath.asPath
-        
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("me.mdbell.awtea.util.ApiDiff")
+    
+    doFirst {
         // Generate HTML report
-        exec {
-            commandLine(
-                "java", "-cp", classpath,
-                "me.mdbell.awtea.util.ApiDiff",
-                "--format", "html"
-            )
-        }
-        
-        // Generate Markdown report
-        exec {
-            commandLine(
-                "java", "-cp", classpath,
-                "me.mdbell.awtea.util.ApiDiff",
-                "--format", "markdown"
-            )
+        args("--format", "html")
+    }
+    
+    doLast {
+        // Generate Markdown report in a separate execution
+        project.javaexec {
+            classpath = sourceSets["main"].runtimeClasspath
+            mainClass.set("me.mdbell.awtea.util.ApiDiff")
+            args("--format", "markdown")
         }
         
         println("✓ Generated HTML report: docs/coverage/report.html")
@@ -138,21 +133,13 @@ tasks.register("generateDocs") {
     }
 }
 
-tasks.register("findMissingClasses") {
+tasks.register<JavaExec>("findMissingClasses") {
     group = "documentation"
     description = "Find missing public classes in java.awt.* packages"
     
     dependsOn("classes")
     
-    doLast {
-        val classpath = sourceSets["main"].runtimeClasspath.asPath
-        
-        exec {
-            commandLine(
-                "java", "-cp", classpath,
-                "me.mdbell.awtea.util.ApiDiff",
-                "--missing-classes"
-            )
-        }
-    }
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("me.mdbell.awtea.util.ApiDiff")
+    args("--missing-classes")
 }
