@@ -97,6 +97,15 @@ typedef struct {
     int height;
 } ClipRect;
 
+
+// ===================================================================================
+// | Note: Conceptually Surface and ImageView are very similar                       |
+// |       They differ in that Surface has rendering state (clip, transform, colors) |
+// |       whereas ImageView is intended to represent external image data            |
+// |       However, they share the same initial memory layout for pixel data         |
+// |       Thus, we can cast between Surface* and ImageView* in some places          |
+// ===================================================================================
+
 typedef struct {
     // exact same structure as ImageView
     // it _must_ be at the start of this struct, and match ImageView layout

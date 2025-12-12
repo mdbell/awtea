@@ -199,8 +199,8 @@ void blit_image(Surface* dst, int image_id, int x, int y) {
 }
 
 void blit_from_view(Surface* dst,
-                                  const ImageView* src,
-                                  int x, int y) {
+                    const ImageView* src,
+                    int x, int y) {
     if (!src || !src->ptr || src->width == 0 || src->height == 0) {
         return;
     }
