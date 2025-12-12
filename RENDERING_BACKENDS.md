@@ -128,11 +128,11 @@ All backends support the following rendering operations through the command patt
 |--------|-------|------|----------|
 | FORMAT_INT_ARGB | ✗ | ✓ | ✓ |
 | FORMAT_INT_RGB | ✗ | ✓ | ✓ |
-| FORMAT_INT_RGBA | ✓ | ✗ | ✗ |
-| FORMAT_INT_ABGR | ✗ | ✗ | ✗ |
+| FORMAT_INT_RGBA | ✓ | ✗ | ✓ |
+| FORMAT_INT_ABGR | ✗ | ✗ | ✓ |
 | FORMAT_INT_BGR | ✗ | ✓ | ✓ |
 
-**Note**: The Software backend includes format conversion logic to handle blitting between surfaces with different pixel formats.
+**Note**: The Software backend includes format conversion logic to handle blitting between surfaces with different pixel formats, so it can read and write all pixel formats even though surface creation only supports INT_ARGB, INT_RGB, and INT_BGR.
 
 ## Performance Considerations
 
