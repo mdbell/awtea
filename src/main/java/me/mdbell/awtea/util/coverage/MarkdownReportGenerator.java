@@ -12,7 +12,9 @@ import java.util.Map;
 public class MarkdownReportGenerator {
 
 	public void generate(CoverageData data, Path outputPath) throws IOException {
-		Files.createDirectories(outputPath.getParent());
+		if (outputPath.getParent() != null) {
+			Files.createDirectories(outputPath.getParent());
+		}
 		try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(outputPath))) {
 			writeMarkdown(data, writer);
 		}

@@ -12,7 +12,9 @@ import java.util.Map;
 public class HtmlReportGenerator {
 
 	public void generate(CoverageData data, Path outputPath) throws IOException {
-		Files.createDirectories(outputPath.getParent());
+		if (outputPath.getParent() != null) {
+			Files.createDirectories(outputPath.getParent());
+		}
 		try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(outputPath))) {
 			writeHtml(data, writer);
 		}
