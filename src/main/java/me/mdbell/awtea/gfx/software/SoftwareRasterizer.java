@@ -162,9 +162,7 @@ public class SoftwareRasterizer implements Rasterizer {
 
 	private void clearRect(int x, int y, int width, int height) {
 		Color oldFg = foreground;
-		// Use background color if set, otherwise use transparent black
-		// The null check is defensive programming even though background is initialized to BLACK
-		foreground = background != null ? background : new Color(0, 0, 0, 0);
+		foreground = background;
 		fillRect(x, y, width, height);
 		foreground = oldFg;
 	}
@@ -238,7 +236,7 @@ public class SoftwareRasterizer implements Rasterizer {
 		int srcFormat = srcSurface.getFormat();
 		int destFormat = surface.getFormat();
 
-		// If no explicit dest width/height provided, use source dimensions
+		// If dest dimensions are 0, use source dimensions (no scaling)
 		if (destWidth == 0) destWidth = srcWidth;
 		if (destHeight == 0) destHeight = srcHeight;
 
@@ -253,17 +251,22 @@ public class SoftwareRasterizer implements Rasterizer {
 			return;
 		}
 
-		// Simple blit (no scaling if dimensions match)
+		// Calculate scaling factors as floats for better precision
+		float scaleX = (float) srcWidth / destWidth;
+		float scaleY = (float) srcHeight / destHeight;
+
+		// Simple nearest-neighbor blit with improved rounding
 		for (int destRow = y0; destRow < y1; destRow++) {
 			if (destRow < 0 || destRow >= destSurfaceHeight) continue;
 
-			int srcRow = (destRow - ty) * srcHeight / destHeight;
+			// Use proper rounding for better nearest-neighbor sampling
+			int srcRow = (int) ((destRow - ty) * scaleY + 0.5f);
 			if (srcRow < 0 || srcRow >= srcHeight) continue;
 
 			for (int destCol = x0; destCol < x1; destCol++) {
 				if (destCol < 0 || destCol >= destSurfaceWidth) continue;
 
-				int srcCol = (destCol - tx) * srcWidth / destWidth;
+				int srcCol = (int) ((destCol - tx) * scaleX + 0.5f);
 				if (srcCol < 0 || srcCol >= srcWidth) continue;
 
 				int srcColor = getPixel(srcPixels, srcCol, srcRow, srcWidth, srcFormat);
