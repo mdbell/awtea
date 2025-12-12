@@ -11,6 +11,7 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_g = 8,
         .shift_b = 0,
         .shift_a = 24,
+        .alphaVariant = PIXEL_FORMAT_ARGB, // self
     },
     // PIXEL_FORMAT_RGB: 0x00RRGGBB (no alpha)
     {
@@ -22,7 +23,7 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_g = 8,
         .shift_b = 0,
         .shift_a = 0,
-        .alphaVariant = PIXEL_FORMAT_ARGB,
+        .alphaVariant = PIXEL_FORMAT_ARGB, // use ARGB for alpha operations
     },
     // PIXEL_FORMAT_RGBA: 0xRRGGBBAA
     {
@@ -34,6 +35,7 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_g = 16,
         .shift_b = 8,
         .shift_a = 0,
+        .alphaVariant = PIXEL_FORMAT_RGBA, // self
     },
 
     // PIXEL_FORMAT_ABGR: 0xAABBGGRR
@@ -46,6 +48,7 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_g = 8,
         .shift_b = 16,
         .shift_a = 24,
+        .alphaVariant = PIXEL_FORMAT_ABGR, // self
     },
     // PIXEL_FORMAT_BGR: 0x00BBGGRR (no alpha)
     {
@@ -57,7 +60,7 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_g = 8,
         .shift_b = 16,
         .shift_a = 0,
-        .alphaVariant = PIXEL_FORMAT_ABGR,
+        .alphaVariant = PIXEL_FORMAT_ABGR, // use ABGR for alpha operations
     }
 };
 
