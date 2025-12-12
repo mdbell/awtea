@@ -12,39 +12,43 @@ import java.util.Map;
  */
 public class MarkdownReportGenerator extends ReportGenerator {
 
-private Path outputDir;
-private Path mdDir;
-private CoverageData data;
+	private Path outputDir;
+	private Path mdDir;
+	private CoverageData data;
+	
+	public MarkdownReportGenerator(Path outputPath) {
+		super(outputPath);
+	}
 
-@Override
-public void generate(CoverageData data, Path outputPath) throws IOException {
-this.data = data;
-
-// outputPath is the root index file path
-// We'll use its parent as the output directory
-if (outputPath.getParent() != null) {
-this.outputDir = outputPath.getParent();
-Files.createDirectories(outputDir);
-} else {
-this.outputDir = Path.of(".");
-}
-
-// Create md subdirectory for organized structure
-this.mdDir = outputDir.resolve("md");
-Files.createDirectories(mdDir);
-
-// Generate index file
-try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(outputPath))) {
-writeIndex(data, writer);
-}
-
-// Generate package index files and class files
-for (Map.Entry<String, PackageCoverage> entry : data.getPackages().entrySet()) {
-String pkgName = entry.getKey();
-PackageCoverage pkg = entry.getValue();
-generatePackageFiles(pkgName, pkg);
-}
-}
+	@Override
+	protected void generate(CoverageData data) throws IOException {
+		this.data = data;
+		
+		// outputPath is the root index file path
+		// We'll use its parent as the output directory
+		if (outputPath.getParent() != null) {
+			this.outputDir = outputPath.getParent();
+			Files.createDirectories(outputDir);
+		} else {
+			this.outputDir = Path.of(".");
+		}
+		
+		// Create md subdirectory for organized structure
+		this.mdDir = outputDir.resolve("md");
+		Files.createDirectories(mdDir);
+		
+		// Generate index file
+		try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(outputPath))) {
+			writeIndex(data, writer);
+		}
+		
+		// Generate package index files and class files
+		for (Map.Entry<String, PackageCoverage> entry : data.getPackages().entrySet()) {
+			String pkgName = entry.getKey();
+			PackageCoverage pkg = entry.getValue();
+			generatePackageFiles(pkgName, pkg);
+		}
+	}
 
 private void writeIndex(CoverageData data, PrintWriter out) {
 out.println("# AWT API Coverage Report");

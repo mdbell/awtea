@@ -15,10 +15,19 @@ public class ClassCoverage {
 	private final List<String> missingFields = new ArrayList<>();
 	private final List<String> implementedConstructors = new ArrayList<>();
 	private final List<String> missingConstructors = new ArrayList<>();
+	private boolean isMissingClass = false;
 
 	public ClassCoverage(String teavmClassName, String runtimeClassName) {
 		this.teavmClassName = teavmClassName;
 		this.runtimeClassName = runtimeClassName;
+	}
+	
+	public void setMissingClass(boolean missing) {
+		this.isMissingClass = missing;
+	}
+	
+	public boolean isMissingClass() {
+		return isMissingClass;
 	}
 
 	public void addImplementedMethod(String method) {

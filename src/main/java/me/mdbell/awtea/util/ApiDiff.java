@@ -1,6 +1,7 @@
 package me.mdbell.awtea.util;
 
 import me.mdbell.awtea.util.coverage.ClassCoverage;
+import me.mdbell.awtea.util.coverage.ConsoleReportGenerator;
 import me.mdbell.awtea.util.coverage.CoverageData;
 import me.mdbell.awtea.util.coverage.HtmlReportGenerator;
 import me.mdbell.awtea.util.coverage.MarkdownReportGenerator;
@@ -72,7 +73,7 @@ public class ApiDiff {
 		}
 		
 		if (checkMissingClasses) {
-			findMissingClasses(packagesToScan, loader);
+			findMissingClasses(packagesToScan, loader, outputFormat, outputPath);
 			return;
 		}
 		
@@ -120,17 +121,13 @@ public class ApiDiff {
 			}
 		}
 
-		// Print console summary if not generating a report
+		// Generate report or print to console
 		if (outputFormat == null) {
-			System.out.println("======================================================");
-			System.out.println("Global API Coverage Summary:");
-			System.out.printf("Total covered: %d / %d (%.1f%%)%n",
-				globalImplementedTotal,
-				globalRuntimeTotal,
-				globalRuntimeTotal == 0 ? 100.0 : (100.0 * globalImplementedTotal / globalRuntimeTotal));
-			System.out.println("======================================================");
+			// Use console generator with visitor pattern
+			ConsoleReportGenerator consoleGen = new ConsoleReportGenerator();
+			coverageData.accept(consoleGen);
 		} else {
-			// Generate report
+			// Generate report using visitor pattern
 			generateReport(outputFormat, outputPath);
 		}
 
@@ -151,10 +148,11 @@ public class ApiDiff {
 		System.out.println("  ApiDiff --format html                      # Generate HTML report");
 		System.out.println("  ApiDiff --format markdown --output out.md  # Generate Markdown report");
 		System.out.println("  ApiDiff --missing-classes                  # Find missing classes in java.awt.*");
+		System.out.println("  ApiDiff --missing-classes --format html    # Missing classes report in docs/coverage/missing/");
 		System.out.println("  ApiDiff --missing-classes --packages javax.swing,javax.sound.sampled");
 	}
 
-	private static void findMissingClasses(List<String> packagesToScan, ClassLoader loader) {
+	private static void findMissingClasses(List<String> packagesToScan, ClassLoader loader, String outputFormat, String outputPath) {
 		System.out.println("Searching for missing public classes in packages:");
 		for (String pkg : packagesToScan) {
 			System.out.println("  - " + pkg);
@@ -177,6 +175,14 @@ public class ApiDiff {
 		int totalMissing = 0;
 		int totalFound = 0;
 		
+		// Create coverage data for missing classes if format is specified
+		CoverageData missingCoverageData = null;
+		if (outputFormat != null) {
+			missingCoverageData = new CoverageData();
+			missingCoverageData.setTimestamp(LocalDateTime.now()
+				.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+		}
+		
 		for (String pkgToScan : packagesToScan) {
 			List<String> missingInPackage = new ArrayList<>();
 			
@@ -197,6 +203,14 @@ public class ApiDiff {
 							if (!implementedClasses.contains(className)) {
 								missingInPackage.add(className);
 								totalMissing++;
+								
+								// Add to coverage data if generating report
+								if (missingCoverageData != null) {
+									ClassCoverage classCov = new ClassCoverage(className, className);
+									// Mark all members as missing since the class itself is missing
+									classCov.setMissingClass(true);
+									missingCoverageData.addClassCoverage(pkgToScan, classCov);
+								}
 							}
 						}
 					} catch (ClassNotFoundException e) {
@@ -235,6 +249,11 @@ public class ApiDiff {
 					System.out.println("  - " + className);
 				}
 				System.out.println();
+			}
+			
+			// Generate reports if format specified
+			if (outputFormat != null && missingCoverageData != null) {
+				generateMissingClassReports(outputFormat, outputPath, missingCoverageData);
 			}
 		} else {
 			System.out.println("✓ All public classes are implemented!");
@@ -339,28 +358,52 @@ public class ApiDiff {
 	}
 
 	private static void generateReport(String format, String outputPath) {
-		try {
-			Path path;
-			if (outputPath == null) {
-				String ext = format.equals("html") ? "html" : "md";
-				path = Paths.get("docs/coverage/report." + ext);
-			} else {
-				path = Paths.get(outputPath);
-			}
-			
-			if (format.equalsIgnoreCase("html")) {
-				new HtmlReportGenerator().generate(coverageData, path);
-				System.out.println("HTML report generated: " + path.toAbsolutePath());
-			} else if (format.equalsIgnoreCase("markdown")) {
-				new MarkdownReportGenerator().generate(coverageData, path);
-				System.out.println("Markdown report generated: " + path.toAbsolutePath());
-			} else {
-				System.err.println("Unknown format: " + format);
-				System.err.println("Supported formats: html, markdown");
-			}
-		} catch (IOException e) {
-			System.err.println("Failed to generate report: " + e.getMessage());
-			e.printStackTrace();
+		Path path;
+		if (outputPath == null) {
+			String ext = format.equals("html") ? "html" : "md";
+			path = Paths.get("docs/coverage/report." + ext);
+		} else {
+			path = Paths.get(outputPath);
+		}
+		
+		if (format.equalsIgnoreCase("html")) {
+			HtmlReportGenerator gen = new HtmlReportGenerator(path);
+			coverageData.accept(gen);
+			System.out.println("HTML report generated: " + path.toAbsolutePath());
+		} else if (format.equalsIgnoreCase("markdown")) {
+			MarkdownReportGenerator gen = new MarkdownReportGenerator(path);
+			coverageData.accept(gen);
+			System.out.println("Markdown report generated: " + path.toAbsolutePath());
+		} else {
+			System.err.println("Unknown format: " + format);
+			System.err.println("Supported formats: html, markdown");
+		}
+	}
+	
+	private static void generateMissingClassReports(String format, String outputPath, CoverageData missingData) {
+		Path path;
+		if (outputPath == null) {
+			String ext = format.equals("html") ? "html" : "md";
+			path = Paths.get("docs/coverage/missing/report." + ext);
+		} else {
+			// Place in missing subdirectory
+			Path originalPath = Paths.get(outputPath);
+			Path parent = originalPath.getParent();
+			String fileName = originalPath.getFileName().toString();
+			path = (parent != null ? parent : Paths.get(".")).resolve("missing").resolve(fileName);
+		}
+		
+		if (format.equalsIgnoreCase("html")) {
+			HtmlReportGenerator gen = new HtmlReportGenerator(path);
+			missingData.accept(gen);
+			System.out.println("Missing classes HTML report generated: " + path.toAbsolutePath());
+		} else if (format.equalsIgnoreCase("markdown")) {
+			MarkdownReportGenerator gen = new MarkdownReportGenerator(path);
+			missingData.accept(gen);
+			System.out.println("Missing classes Markdown report generated: " + path.toAbsolutePath());
+		} else {
+			System.err.println("Unknown format: " + format);
+			System.err.println("Supported formats: html, markdown");
 		}
 	}
 

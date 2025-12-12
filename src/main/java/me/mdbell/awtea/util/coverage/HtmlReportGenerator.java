@@ -10,9 +10,13 @@ import java.util.Map;
  * Generates HTML coverage reports
  */
 public class HtmlReportGenerator extends ReportGenerator {
+	
+	public HtmlReportGenerator(Path outputPath) {
+		super(outputPath);
+	}
 
 	@Override
-	public void generate(CoverageData data, Path outputPath) throws IOException {
+	protected void generate(CoverageData data) throws IOException {
 		if (outputPath.getParent() != null) {
 			Files.createDirectories(outputPath.getParent());
 		}

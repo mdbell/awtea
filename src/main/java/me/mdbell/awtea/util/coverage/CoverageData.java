@@ -44,4 +44,12 @@ public class CoverageData {
 	public void setTimestamp(String timestamp) {
 		this.timestamp = timestamp;
 	}
+	
+	/**
+	 * Accept a visitor to process this coverage data
+	 * @param visitor The report generator visitor
+	 */
+	public void accept(ReportGenerator visitor) {
+		visitor.visit(this);
+	}
 }
