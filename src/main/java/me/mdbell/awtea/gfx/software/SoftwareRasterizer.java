@@ -10,7 +10,19 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.List;
 
-
+/**
+ * Pure Java software rasterizer implementation.
+ * 
+ * This rasterizer supports all standard SurfaceCommand operations and can read/write
+ * all pixel formats (ARGB, RGB, RGBA, ABGR, BGR) through format conversion logic.
+ * 
+ * Note: The parent SoftwareSurface can only be created with ARGB, RGB, or BGR formats,
+ * but this rasterizer can blit from surfaces with any format via automatic conversion.
+ * 
+ * Transform support: Currently only translation is implemented. Full affine transforms
+ * (scale, rotation, shear) would require more complex scan conversion and are deferred
+ * as a future enhancement for this software fallback renderer.
+ */
 public class SoftwareRasterizer implements Rasterizer {
 
 	private final SoftwareSurface surface;

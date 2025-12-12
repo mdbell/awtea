@@ -42,7 +42,8 @@ public class SoftwareSurfaceBackend implements SurfaceBackend {
 				break;
 			}
 			case java.awt.image.BufferedImage.TYPE_INT_BGR: {
-				int[] masks = {0x000000FF, 0x0000FF00, 0x00FF0000}; // R, G, B masks for 0x00BBGGRR (B in MSB, R in LSB)
+				// R, G, B masks for 0x00BBGGRR format (B in bits 16-23, G in bits 8-15, R in bits 0-7)
+				int[] masks = {0x000000FF, 0x0000FF00, 0x00FF0000};
 				SinglePixelPackedSampleModel sm = new SinglePixelPackedSampleModel(
 					DataBuffer.TYPE_INT, width, height, masks);
 				DataBufferInt db = new DataBufferInt(width * height);

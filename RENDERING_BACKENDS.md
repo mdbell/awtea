@@ -52,10 +52,12 @@ The awtea project implements a flexible rendering system that supports multiple 
 - Direct pixel buffer manipulation
 - No external dependencies
 
-**Supported Pixel Formats**:
-- `FORMAT_INT_ARGB`
-- `FORMAT_INT_RGB`
-- `FORMAT_INT_BGR`
+**Supported Surface Creation Formats**:
+- `FORMAT_INT_ARGB` (via TYPE_INT_ARGB)
+- `FORMAT_INT_RGB` (via TYPE_INT_RGB)
+- `FORMAT_INT_BGR` (via TYPE_INT_BGR)
+
+**Note**: The SoftwareRasterizer can read and write all pixel formats (including RGBA and ABGR) through its format conversion logic when blitting between surfaces. However, only ARGB, RGB, and BGR formats can be used when creating new surfaces.
 
 ## Backend Selection
 
