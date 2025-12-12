@@ -9,7 +9,7 @@ ImageView* get_image_data(int id) {
 
 int find_free_image_slot() {
     for (int i = 0; i < MAX_IMAGES; i++) {
-        if (g_images[i - START_IMAGE_ID].ptr == 0) {
+        if (g_images[START_IMAGE_ID - i].ptr == 0) {
             return i + START_IMAGE_ID;
         }
     }
@@ -59,7 +59,7 @@ int free_image(int id) {
 
 uint32_t alloc_pixels(int width, int height) {
     // we allocate an extra stride bytes to avoid doing 0 allocs when width or height is 0
-    size_t bytes = ((size_t)width * (size_t)height);
+    size_t bytes = (size_t)width * (size_t)height * sizeof(uint32_t);
     void* p = malloc(bytes);
     if (!p){
         return 0;
