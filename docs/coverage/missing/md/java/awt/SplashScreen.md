@@ -1,12 +1,24 @@
-# Class: `SplashScreen` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+# Class: `SplashScreen` ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Full Name:** `java.awt.SplashScreen`
 
-**Coverage:** 0 / 0 (100.0%)
+**Coverage:** 0 / 9 (0.0%)
 
 ```
-[██████████████████████████████████████████████████] 100.0%
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
+
+## ✗ Missing Methods
+
+- `public void update()`
+- `public java.awt.Rectangle getBounds()`
+- `public void close()`
+- `public java.awt.Dimension getSize()`
+- `public boolean isVisible()`
+- `public java.awt.Graphics2D createGraphics()`
+- `public static java.awt.SplashScreen getSplashScreen()`
+- `public void setImageURL(java.net.URL)`
+- `public java.net.URL getImageURL()`
 
 
 [← Back to Package](index.md)

@@ -1,12 +1,36 @@
-# Class: `MemoryImageSource` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+# Class: `MemoryImageSource` ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Full Name:** `java.awt.image.MemoryImageSource`
 
-**Coverage:** 0 / 0 (100.0%)
+**Coverage:** 0 / 18 (0.0%)
 
 ```
-[██████████████████████████████████████████████████] 100.0%
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
+
+## ✗ Missing Methods
+
+- `public void requestTopDownLeftRightResend(java.awt.image.ImageConsumer)`
+- `public void startProduction(java.awt.image.ImageConsumer)`
+- `public void removeConsumer(java.awt.image.ImageConsumer)`
+- `public void addConsumer(java.awt.image.ImageConsumer)`
+- `public boolean isConsumer(java.awt.image.ImageConsumer)`
+- `public void newPixels(int, int, int, int)`
+- `public void newPixels(int[], java.awt.image.ColorModel, int, int)`
+- `public void newPixels(byte[], java.awt.image.ColorModel, int, int)`
+- `public void newPixels()`
+- `public void newPixels(int, int, int, int, boolean)`
+- `public void setAnimated(boolean)`
+- `public void setFullBufferUpdates(boolean)`
+
+## ✗ Missing Constructors
+
+- `public java.awt.image.MemoryImageSource(int, int, int[], int, int)`
+- `public java.awt.image.MemoryImageSource(int, int, int[], int, int, java.util.Hashtable)`
+- `public java.awt.image.MemoryImageSource(int, int, java.awt.image.ColorModel, int[], int, int, java.util.Hashtable)`
+- `public java.awt.image.MemoryImageSource(int, int, java.awt.image.ColorModel, int[], int, int)`
+- `public java.awt.image.MemoryImageSource(int, int, java.awt.image.ColorModel, byte[], int, int, java.util.Hashtable)`
+- `public java.awt.image.MemoryImageSource(int, int, java.awt.image.ColorModel, byte[], int, int)`
 
 
 [← Back to Package](index.md)

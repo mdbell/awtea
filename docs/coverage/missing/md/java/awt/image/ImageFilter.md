@@ -1,12 +1,33 @@
-# Class: `ImageFilter` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+# Class: `ImageFilter` ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Full Name:** `java.awt.image.ImageFilter`
 
-**Coverage:** 0 / 0 (100.0%)
+**Coverage:** 0 / 12 (0.0%)
 
 ```
-[██████████████████████████████████████████████████] 100.0%
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
+
+## ✗ Missing Methods
+
+- `public java.lang.Object clone()`
+- `public void setProperties(java.util.Hashtable)`
+- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)`
+- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)`
+- `public void setColorModel(java.awt.image.ColorModel)`
+- `public void setDimensions(int, int)`
+- `public void setHints(int)`
+- `public void imageComplete(int)`
+- `public java.awt.image.ImageFilter getFilterInstance(java.awt.image.ImageConsumer)`
+- `public void resendTopDownLeftRight(java.awt.image.ImageProducer)`
+
+## ✗ Missing Fields
+
+- `protected java.awt.image.ImageConsumer consumer`
+
+## ✗ Missing Constructors
+
+- `public java.awt.image.ImageFilter()`
 
 
 [← Back to Package](index.md)

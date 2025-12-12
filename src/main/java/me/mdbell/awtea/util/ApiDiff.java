@@ -207,8 +207,30 @@ public class ApiDiff {
 								// Add to coverage data if generating report
 								if (missingCoverageData != null) {
 									ClassCoverage classCov = new ClassCoverage(className, className);
-									// Mark all members as missing since the class itself is missing
 									classCov.setMissingClass(true);
+									
+									// Scan the runtime class to get all its members that are missing
+									// Methods
+									for (Method m : runtimeClass.getDeclaredMethods()) {
+										if (!filterModifiers(m.getModifiers(), runtimeClass.getModifiers())) {
+											classCov.addMissingMethod(methodKey(runtimeClass, m));
+										}
+									}
+									
+									// Fields
+									for (Field f : runtimeClass.getDeclaredFields()) {
+										if (!filterModifiers(f.getModifiers(), runtimeClass.getModifiers())) {
+											classCov.addMissingField(fieldKey(runtimeClass, f));
+										}
+									}
+									
+									// Constructors
+									for (Constructor<?> c : runtimeClass.getDeclaredConstructors()) {
+										if (!filterModifiers(c.getModifiers(), runtimeClass.getModifiers())) {
+											classCov.addMissingConstructor(constructorKey(runtimeClass, c));
+										}
+									}
+									
 									missingCoverageData.addClassCoverage(pkgToScan, classCov);
 								}
 							}
