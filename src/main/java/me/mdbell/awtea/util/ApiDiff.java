@@ -263,8 +263,117 @@ public class ApiDiff {
 	private static Set<String> getKnownClassesInPackage(String pkgName) {
 		Set<String> classes = new HashSet<>();
 		
-		// This is a curated list of known public AWT classes
-		// In a real implementation, you'd scan rt.jar or use ClassGraph library
+		// Scan for classes in the package using the ClassLoader
+		String path = pkgName.replace('.', '/');
+		
+		try {
+			// Get the system class loader which has access to JDK classes
+			ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
+			
+			// For JDK 9+, use module system to find classes
+			// For JDK 8 and earlier, scan rt.jar
+			if (isModularJDK()) {
+				scanModuleClasses(pkgName, classes);
+			} else {
+				scanClasspathForClasses(pkgName, systemLoader, classes);
+			}
+		} catch (Exception e) {
+			System.err.println("Warning: Failed to scan for classes in " + pkgName + ": " + e.getMessage());
+			// Fall back to empty set - will show 100% coverage for this package
+		}
+		
+		return classes;
+	}
+	
+	private static boolean isModularJDK() {
+		// Check if we're running on JDK 9+ by trying to access the Module class
+		try {
+			Class.forName("java.lang.Module");
+			return true;
+		} catch (ClassNotFoundException e) {
+			return false;
+		}
+	}
+	
+	private static void scanModuleClasses(String pkgName, Set<String> classes) {
+		try {
+			// Use ModuleLayer to find classes in system modules
+			// This works for JDK 9+
+			Object moduleLayer = Class.forName("java.lang.ModuleLayer")
+				.getMethod("boot")
+				.invoke(null);
+			
+			// Get all modules
+			@SuppressWarnings("unchecked")
+			Set<Object> modules = (Set<Object>) moduleLayer.getClass()
+				.getMethod("modules")
+				.invoke(moduleLayer);
+			
+			for (Object module : modules) {
+				String moduleName = (String) module.getClass()
+					.getMethod("getName")
+					.invoke(module);
+				
+				// Only scan java.desktop module for AWT classes
+				if (moduleName.equals("java.desktop")) {
+					// Get packages from module
+					@SuppressWarnings("unchecked")
+					Set<String> packages = (Set<String>) module.getClass()
+						.getMethod("getPackages")
+						.invoke(module);
+					
+					if (packages.contains(pkgName)) {
+						// Manually enumerate known public classes since module system doesn't provide
+						// a direct way to list all classes in a package
+						enumerateKnownPublicClasses(pkgName, classes);
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("Warning: Failed to scan modules: " + e.getMessage());
+			// Fall back to manual enumeration
+			enumerateKnownPublicClasses(pkgName, classes);
+		}
+	}
+	
+	private static void scanClasspathForClasses(String pkgName, ClassLoader loader, Set<String> classes) {
+		// For JDK 8 and earlier, try to find rt.jar
+		String javaHome = System.getProperty("java.home");
+		File rtJar = new File(javaHome, "lib/rt.jar");
+		
+		if (rtJar.exists()) {
+			try (JarFile jar = new JarFile(rtJar)) {
+				String prefix = pkgName.replace('.', '/') + "/";
+				Enumeration<JarEntry> entries = jar.entries();
+				
+				while (entries.hasMoreElements()) {
+					JarEntry entry = entries.nextElement();
+					String name = entry.getName();
+					
+					if (name.startsWith(prefix) && name.endsWith(".class")) {
+						// Convert to class name
+						String className = name.replace('/', '.')
+							.substring(0, name.length() - 6);
+						
+						// Only include classes directly in this package (not subpackages)
+						if (className.lastIndexOf('.') == pkgName.length()) {
+							classes.add(className);
+						}
+					}
+				}
+			} catch (IOException e) {
+				System.err.println("Warning: Failed to read rt.jar: " + e.getMessage());
+				enumerateKnownPublicClasses(pkgName, classes);
+			}
+		} else {
+			// rt.jar not found, fall back to known classes
+			enumerateKnownPublicClasses(pkgName, classes);
+		}
+	}
+	
+	private static void enumerateKnownPublicClasses(String pkgName, Set<String> classes) {
+		// Fallback: curated list of known public AWT classes
+		// This ensures we have coverage even if scanning fails
 		if (pkgName.equals("java.awt")) {
 			classes.addAll(Arrays.asList(
 				"java.awt.AWTError", "java.awt.AWTEvent", "java.awt.AWTEventMulticaster",
@@ -353,8 +462,6 @@ public class ApiDiff {
 				"java.awt.image.WritableRenderedImage"
 			));
 		}
-		
-		return classes;
 	}
 
 	private static void generateReport(String format, String outputPath) {
