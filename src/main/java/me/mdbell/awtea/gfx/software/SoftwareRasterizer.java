@@ -37,12 +37,18 @@ public class SoftwareRasterizer implements Rasterizer {
 	private final SoftwareSurface surface;
 	private final AffineTransform transform = new AffineTransform();
 	private Rectangle clip = null;
+	
+	// Color caching: store both Color objects and their encoded values for current format
 	private Color foreground = Color.WHITE;
 	private Color background = Color.BLACK;
+	private int encodedForeground = 0;
+	private int encodedBackground = 0;
+	private int cachedFormat = -1; // Track which format the encoded colors are for
 
 	SoftwareRasterizer(SoftwareSurface surface) {
 		this.surface = surface;
 		this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
+		updateEncodedColors();
 	}
 
 	private SoftwareRasterizer(SoftwareRasterizer other) {
@@ -50,7 +56,41 @@ public class SoftwareRasterizer implements Rasterizer {
 		this.transform.setTransform(other.transform);
 		this.foreground = other.foreground;
 		this.background = other.background;
+		this.encodedForeground = other.encodedForeground;
+		this.encodedBackground = other.encodedBackground;
+		this.cachedFormat = other.cachedFormat;
 		this.clip = other.clip != null ? new Rectangle(other.clip) : null;
+	}
+
+	/**
+	 * Updates the encoded color cache when colors or format might have changed.
+	 * This ensures we only encode colors once when SET_COLOR is evaluated.
+	 */
+	private void updateEncodedColors() {
+		int format = surface.getFormat();
+		if (format != cachedFormat) {
+			cachedFormat = format;
+			encodedForeground = encodeColor(foreground, format);
+			encodedBackground = encodeColor(background, format);
+		}
+	}
+
+	/**
+	 * Updates the encoded foreground color.
+	 */
+	private void updateEncodedForeground() {
+		int format = surface.getFormat();
+		cachedFormat = format;
+		encodedForeground = encodeColor(foreground, format);
+	}
+
+	/**
+	 * Updates the encoded background color.
+	 */
+	private void updateEncodedBackground() {
+		int format = surface.getFormat();
+		cachedFormat = format;
+		encodedBackground = encodeColor(background, format);
 	}
 
 	@Override
@@ -64,6 +104,7 @@ public class SoftwareRasterizer implements Rasterizer {
 		this.foreground = Color.WHITE;
 		this.background = Color.BLACK;
 		this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
+		updateEncodedColors();
 	}
 
 	@Override
@@ -74,8 +115,10 @@ public class SoftwareRasterizer implements Rasterizer {
 					Color c = (Color) cmd.obj;
 					if (cmd.arg1 == 0) {
 						this.foreground = c;
+						updateEncodedForeground();
 					} else if (cmd.arg1 == 1) {
 						this.background = c;
+						updateEncodedBackground();
 					}
 					break;
 				case SET_TRANSFORM:
@@ -145,8 +188,12 @@ public class SoftwareRasterizer implements Rasterizer {
 		int surfaceHeight = surface.getHeight();
 		int format = surface.getFormat();
 
-		// Optimize by resolving color encoding and pixel setter once
-		int color = encodeColor(foreground, format);
+		// Ensure encoded colors are up-to-date for current format
+		if (format != cachedFormat) {
+			updateEncodedColors();
+		}
+
+		// Use cached encoded color and resolve pixel setter once
 		PixelSetter setter = getPixelSetterForFormat(format);
 
 		for (int row = y0; row < y1; row++) {
@@ -158,7 +205,7 @@ public class SoftwareRasterizer implements Rasterizer {
 					continue;
 				}
 				int idx = (row * surfaceWidth + col) * 4;
-				setter.setPixel(pixels, idx, color);
+				setter.setPixel(pixels, idx, encodedForeground);
 			}
 		}
 	}
