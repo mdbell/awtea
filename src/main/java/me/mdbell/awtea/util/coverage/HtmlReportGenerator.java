@@ -156,7 +156,6 @@ public class HtmlReportGenerator {
 
 	private void writeClassDetails(ClassCoverage cls, PrintWriter out) {
 		String safeClassName = escapeHtml(cls.getRuntimeClassName()).replace(".", "_").replace("$", "_");
-		int sectionId = 0;
 		
 		if (!cls.getImplementedMethods().isEmpty()) {
 			String sectionIdStr = safeClassName + "_impl_methods";
