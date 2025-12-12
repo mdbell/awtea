@@ -139,9 +139,13 @@ public class SoftwareRasterizer implements Rasterizer {
 		int color = encodeColor(foreground, format);
 
 		for (int row = y0; row < y1; row++) {
-			if (row < 0 || row >= surfaceHeight) continue;
+			if (row < 0 || row >= surfaceHeight) {
+				continue;
+			}
 			for (int col = x0; col < x1; col++) {
-				if (col < 0 || col >= surfaceWidth) continue;
+				if (col < 0 || col >= surfaceWidth) {
+					continue;
+				}
 				setPixel(pixels, col, row, surfaceWidth, color, format);
 			}
 		}
@@ -199,7 +203,9 @@ public class SoftwareRasterizer implements Rasterizer {
 				setPixel(pixels, tx1, ty1, surfaceWidth, color, format);
 			}
 
-			if (tx1 == tx2 && ty1 == ty2) break;
+			if (tx1 == tx2 && ty1 == ty2) {
+				break;
+			}
 
 			int e2 = 2 * err;
 			if (e2 > -dy) {
@@ -237,8 +243,12 @@ public class SoftwareRasterizer implements Rasterizer {
 		int destFormat = surface.getFormat();
 
 		// If dest dimensions are 0, use source dimensions (no scaling)
-		if (destWidth == 0) destWidth = srcWidth;
-		if (destHeight == 0) destHeight = srcHeight;
+		if (destWidth == 0) {
+			destWidth = srcWidth;
+		}
+		if (destHeight == 0) {
+			destHeight = srcHeight;
+		}
 
 		// Apply clip
 		Rectangle bounds = clip != null ? clip : new Rectangle(0, 0, destSurfaceWidth, destSurfaceHeight);
@@ -257,17 +267,25 @@ public class SoftwareRasterizer implements Rasterizer {
 
 		// Simple nearest-neighbor blit with improved rounding
 		for (int destRow = y0; destRow < y1; destRow++) {
-			if (destRow < 0 || destRow >= destSurfaceHeight) continue;
+			if (destRow < 0 || destRow >= destSurfaceHeight) {
+				continue;
+			}
 
 			// Use proper rounding for better nearest-neighbor sampling
 			int srcRow = (int) ((destRow - ty) * scaleY + 0.5f);
-			if (srcRow < 0 || srcRow >= srcHeight) continue;
+			if (srcRow < 0 || srcRow >= srcHeight) {
+				continue;
+			}
 
 			for (int destCol = x0; destCol < x1; destCol++) {
-				if (destCol < 0 || destCol >= destSurfaceWidth) continue;
+				if (destCol < 0 || destCol >= destSurfaceWidth) {
+					continue;
+				}
 
 				int srcCol = (int) ((destCol - tx) * scaleX + 0.5f);
-				if (srcCol < 0 || srcCol >= srcWidth) continue;
+				if (srcCol < 0 || srcCol >= srcWidth) {
+					continue;
+				}
 
 				int srcColor = getPixel(srcPixels, srcCol, srcRow, srcWidth, srcFormat);
 				int destColor = convertColor(srcColor, srcFormat, destFormat);
