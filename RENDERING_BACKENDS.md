@@ -82,6 +82,27 @@ Surface surface = DefaultSurfaceBackend.getDefault()
 1. **WebAssembly (WASM)** - First choice if available
 2. **Java Software** - Fallback if WASM unavailable
 
+## Forcing a Specific Backend
+
+For testing or debugging purposes, you can force a specific backend using the system property:
+
+```bash
+# Force Software backend
+-Dme.mdbell.awtea.gfx.backend=software
+
+# Force WASM backend
+-Dme.mdbell.awtea.gfx.backend=wasm
+```
+
+**Valid values**: `wasm`, `webassembly`, `software`, `java`
+
+When a backend is forced via system property, only that backend will be used. If the forced backend fails to create a surface, no fallback will occur.
+
+**Example usage**:
+```bash
+java -Dme.mdbell.awtea.gfx.backend=software -jar your-app.jar
+```
+
 ## Surface API
 
 All surfaces implement the `Surface` interface:
