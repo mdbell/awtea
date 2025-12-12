@@ -7,7 +7,6 @@ import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.SurfaceCommand;
-import me.mdbell.awtea.gl.Shaders;
 import me.mdbell.awtea.impl.Debug;
 import me.mdbell.awtea.instrument.Monitored;
 import me.mdbell.awtea.util.JSObjectsExtensions;
@@ -72,8 +71,10 @@ public class TWebGLRasterizer implements Rasterizer {
 		gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
 
 		// ---- build shader programs ----
-		this.colorProgram = createProgram(gl, COLOR_VERTEX_SRC, COLOR_FRAGMENT_SRC);
-		this.textureProgram = createProgram(gl, TEX_VERTEX_SRC, TEX_FRAGMENT_SRC);
+		//this.colorProgram = createProgram(gl, COLOR_VERTEX_SRC, COLOR_FRAGMENT_SRC);
+		//	this.textureProgram = createProgram(gl, TEX_VERTEX_SRC, TEX_FRAGMENT_SRC);
+		this.colorProgram = null;
+		this.textureProgram = null;
 
 		// color program locations
 		gl.useProgram(colorProgram);
@@ -298,7 +299,7 @@ public class TWebGLRasterizer implements Rasterizer {
 		}
 		WebGLTexture tex = gl.createTexture();
 		SwizzleMode swizzleMode = getSwizzleMode(img);
-		if (swizzleMode == SwizzleMode.BGR_TO_ABGR) {
+		if (swizzleMode == SwizzleMode.BGR_TO_ARGB) {
 			Debug.trigger();
 		}
 		Uint8ClampedArray pixels = img.getPixelBytes();
@@ -366,16 +367,16 @@ public class TWebGLRasterizer implements Rasterizer {
 		useColorProgram();
 
 		float[] verts = {
-			x, y,
-			x + width, y,
-			x, y + height,
-			x, y + height,
-			x + width, y,
-			x + width, y + height
+			x, y,                     // 0, 1
+			x + width, y,             // 2, 3
+			x, y + height,             // 4, 5
+			x, y + height,             // 6, 7
+			x + width, y,             // 8, 9
+			x + width, y + height    // 10,11
 		};
 		uploadRectVertices(verts);
 
-		Color c = this.color != null ? this.color : Color.BLACK;
+		Color c = this.color != null ? this.color : new Color(0, 0, 0, 255);
 		float r = c.getRed() / 255.0f;
 		float g = c.getGreen() / 255.0f;
 		float b = c.getBlue() / 255.0f;
@@ -434,7 +435,7 @@ public class TWebGLRasterizer implements Rasterizer {
 			case TBufferedImage.TYPE_INT_RGB:
 				return SwizzleMode.RGB_TO_RGBA;
 			case TBufferedImage.TYPE_INT_BGR:
-				return SwizzleMode.BGR_TO_ABGR;
+				return SwizzleMode.BGR_TO_ARGB;
 			default:
 				return SwizzleMode.NONE;
 		}
@@ -527,31 +528,6 @@ public class TWebGLRasterizer implements Rasterizer {
 			false, 0, 0);
 	}
 
-	private WebGLProgram createProgram(WebGLRenderingContext gl, String vsSource, String fsSource) {
-		WebGLShader vs = compileShader(gl, WebGLRenderingContext.VERTEX_SHADER, vsSource);
-		WebGLShader fs = compileShader(gl, WebGLRenderingContext.FRAGMENT_SHADER, fsSource);
-		WebGLProgram program = gl.createProgram();
-		gl.attachShader(program, vs);
-		gl.attachShader(program, fs);
-		gl.linkProgram(program);
-		if (!gl.getProgramParameterb(program, WebGLRenderingContext.LINK_STATUS)) {
-			String log = gl.getProgramInfoLog(program);
-			throw new RuntimeException("Could not link WebGL program: " + log);
-		}
-		return program;
-	}
-
-	private WebGLShader compileShader(WebGLRenderingContext gl, int type, String src) {
-		WebGLShader shader = gl.createShader(type);
-		gl.shaderSource(shader, src);
-		gl.compileShader(shader);
-		if (!gl.getShaderParameterb(shader, WebGLRenderingContext.COMPILE_STATUS)) {
-			String log = gl.getShaderInfoLog(shader);
-			throw new RuntimeException("Could not compile shader: " + log);
-		}
-		return shader;
-	}
-
 	// state managment
 
 	private enum WebGLProgramType {
@@ -564,7 +540,7 @@ public class TWebGLRasterizer implements Rasterizer {
 		NONE,
 		ARGB_TO_RGBA,
 		RGB_TO_RGBA,
-		BGR_TO_ABGR
+		BGR_TO_ARGB
 	}
 
 	public class WebGLTextureWrapper implements TCachedTexture {
@@ -589,14 +565,4 @@ public class TWebGLRasterizer implements Rasterizer {
 			}
 		}
 	}
-
-	// Shaders
-
-	private static final String COLOR_VERTEX_SRC = Shaders.colorVertex();
-
-	private static final String COLOR_FRAGMENT_SRC = Shaders.colorFragment();
-
-	private static final String TEX_VERTEX_SRC = Shaders.textureVertex();
-
-	private static final String TEX_FRAGMENT_SRC = Shaders.textureFragment();
 }

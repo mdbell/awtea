@@ -268,7 +268,7 @@ public class TSoftwareGraphics extends TGraphics {
 		if (img instanceof ImageDataProvider) {
 			ImageData data = ((ImageDataProvider) img).getImageData();
 			if (data != null) {
-				image.putImageData(x, y, data);
+				//	image.putImageData(x, y, data);
 				return true;
 			}
 		}

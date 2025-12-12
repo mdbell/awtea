@@ -1,8 +1,10 @@
 package me.mdbell.awtea.classlib.java.awt.awtea.peer;
 
-import me.mdbell.awtea.classlib.java.awt.TCanvasGraphics;
 import me.mdbell.awtea.classlib.java.awt.TFrame;
+import me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics;
 import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
+import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.ui.FloatingWindow;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLElement;
@@ -12,7 +14,9 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 	private final HTMLCanvasElement canvasElement;
 	private final TEventManager eventManager;
 
-	private TCanvasGraphics graphics;
+	private TSurfaceRasterizerGraphics graphics;
+
+	private Surface surface;
 
 	public TFrameFloatingPeer(TFrame component) {
 		super("frame-peer-window");
@@ -30,6 +34,12 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 			.withMouseWheel();
 
 		setSize(0, 0); // auto-size to content
+
+		surface = DefaultSurfaceBackend.getDefault().createScreenSurface(
+			canvasElement.getWidth(),
+			canvasElement.getHeight(),
+			canvasElement
+		);
 	}
 
 	@Override
@@ -37,8 +47,8 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 		canvasElement.setWidth(widthPx);
 		canvasElement.setHeight(heightPx);
 
-		if (graphics != null) {
-			graphics.onCanvasResize(widthPx, heightPx);
+		if (surface != null) {
+			surface.resize(widthPx, heightPx);
 		}
 	}
 
@@ -52,15 +62,13 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 		return canvasElement;
 	}
 
-	public TCanvasGraphics getGraphics() {
+	public TSurfaceRasterizerGraphics getGraphics() {
 		if (graphics == null) {
 			//graphics = new TCanvas2DGraphics(canvasElement);
-			graphics = new TCanvasGraphics(canvasElement, true);
+			//graphics = new TCanvasGraphics(canvasElement, true);
+			graphics = new TSurfaceRasterizerGraphics((
+				surface.createRasterizer()));
 		}
 		return graphics;
-	}
-
-	public HTMLCanvasElement getCanvas() {
-		return canvasElement;
 	}
 }

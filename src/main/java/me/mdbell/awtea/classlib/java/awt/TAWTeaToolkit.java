@@ -126,7 +126,7 @@ public class TAWTeaToolkit extends TToolkit {
 		int width = context2D.getCanvas().getWidth();
 		int height = context2D.getCanvas().getHeight();
 		TBufferedImage bufferedImage = new TBufferedImage(width, height, TBufferedImage.TYPE_INT_ARGB);
-		bufferedImage.putImageData(context2D.getImageData(0, 0, width, height));
+		bufferedImage.putImageData(0, 0, width, height, context2D.getImageData(0, 0, width, height));
 		return bufferedImage;
 	}
 

@@ -76,19 +76,22 @@ public class EventTestApplet extends Applet
 
 	@Override
 	public void paint(Graphics g) {
-//		g = getGraphics(); // force us to use the surface gfx
-//		g.setColor(Color.LIGHT_GRAY);
-//		g.fillRect(0, 0, getWidth(), getHeight());
+		g = getGraphics(); // force us to use the surface gfx
+		g.setColor(Color.LIGHT_GRAY);
+		g.fillRect(0, 0, getWidth(), getHeight());
 
-//		g.drawImage(A_RED, 10, 10, null);
-		//g.drawImage(A_GREEN, 40, 10, null);
-//		g.drawImage(A_BLUE, 70, 10, null);
+		g.clearRect(10, 10, 20, 20);
 
-//		g.drawImage(RED, 10, 40, null);
-//		g.drawImage(GREEN, 40, 40, null);
-//		g.drawImage(BLUE, 70, 40, null);
+		g.drawImage(A_RED, 10, 10, null);
+		g.drawImage(A_GREEN, 40, 10, null);
+		g.drawImage(A_BLUE, 70, 10, null);
+
+		g.drawImage(RED, 10, 40, null);
+		g.drawImage(GREEN, 40, 40, null);
+		g.drawImage(BLUE, 70, 40, null);
 
 		g.drawImage(RED_BLUE_CHECKERED, 10, 70, null);
+
 //
 //		g.setColor(Color.BLACK);
 //		g.drawString("Click count: " + clickCount, 10, 120);

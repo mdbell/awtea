@@ -9,14 +9,11 @@ import me.mdbell.awtea.classlib.java.awt.awtea.gfx.TCachedTexture;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
 import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Surface;
+import me.mdbell.awtea.gfx.SurfaceContainer;
 import me.mdbell.awtea.instrument.Monitored;
-import me.mdbell.awtea.support.ImageDataConsumer;
-import me.mdbell.awtea.support.ImageDataProvider;
 import me.mdbell.awtea.util.GlyphRasterizer;
 import org.teavm.classlib.java.awt.TPoint;
 import org.teavm.jso.canvas.ImageData;
-import org.teavm.jso.typedarrays.Int32Array;
-import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.util.Hashtable;
@@ -26,7 +23,7 @@ import java.util.Hashtable;
  */
 @Getter
 @Monitored.AllMethods
-public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarget, ImageDataProvider, ImageDataConsumer {
+public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarget, SurfaceContainer {
 
 	public static final int TYPE_CUSTOM = 0;
 	public static final int TYPE_INT_RGB = 1;
@@ -55,18 +52,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 
 	@SuppressWarnings("rawtypes")
 	private final Hashtable properties;
-
-	@Getter(AccessLevel.NONE)
-	private ImageData cachedImageData;
-
-	@Getter(AccessLevel.NONE)
-	private ImageData underlyingImageData;
-
-	@Getter(AccessLevel.NONE) // we expose getPixelBytes() instead
-	private Uint8Array cachedBytes;
-
-	private static final boolean useImageDataDirectly = System.getProperty("awtea.bufferedimage.useimagedata",
-		"false").equals("true");
 
 	@Getter(AccessLevel.NONE)
 	private boolean dirty = true;
@@ -411,203 +396,10 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 		return properties.get(name);
 	}
 
-	@Override
-	public boolean isDirty() {
-		return surface.isDirty();
-	}
-
-	@Override
-	public void markClean() {
-		dirty = false;
-	}
-
-	@Override
-	@Monitored("getImageData_full")
-	public ImageData getImageData() {
-		// if we're backed by underlying ImageData, return it directly
-		if (this.underlyingImageData != null) {
-			return this.underlyingImageData;
-		}
-		if (useImageDataDirectly) {
-			System.out.println("Creating underlying ImageData for TBufferedImage");
-			// we want to construct an ImageData that directly maps to the underlying buffer
-			Int32Array arr = ((TDataBufferInt) this.raster.getBuffer()).getJSArray();
-			Uint8ClampedArray byteArr = new Uint8ClampedArray(arr.getBuffer());
-			this.underlyingImageData = new ImageData(byteArr, width, height);
-			return this.underlyingImageData;
-		}
-		//TODO: dirty check (likely need to propagate from the raster, since it can be modified directly)
-		if (cachedImageData == null) {
-			cachedImageData = getImageData(0, 0, width, height);
-		} else {
-			copyToImageData(0, 0, width, height, cachedImageData);
-		}
-		return cachedImageData;
-
-	}
-
-	@Override
-	@Monitored("getImageData_region")
-	public ImageData getImageData(int x, int y, int w, int h) {
-		// Clamp to image bounds, just in case
-		if (x < 0) {
-			w += x;
-			x = 0;
-		}
-		if (y < 0) {
-			h += y;
-			y = 0;
-		}
-		if (x + w > width) {
-			w = width - x;
-		}
-		if (y + h > height) {
-			h = height - y;
-		}
-
-		if (w <= 0 || h <= 0) {
-			// Minimal fallback: empty ImageData
-			return new ImageData(1, 1);
-		}
-
-		// Prepare destination ImageData
-		ImageData imgData = new ImageData(w, h);
-
-		// Copy pixels into ImageData
-		copyToImageData(x, y, w, h, imgData);
-
-		return imgData;
-	}
-
-	@Monitored("copyToImageData")
-	private void copyToImageData(int x, int y, int w, int h, ImageData dest) {
-		int dstIndex = 0;
-
-		TSampleModel sm = raster.getSampleModel();
-		TDataBuffer db = raster.getBuffer();
-		Uint8ClampedArray dst = dest.getData();
-
-		if (useImageDataDirectly) {
-			// for _all_ images (not just imagedata backed ones) we want to skip the swizzling, and
-			// copy directly from the underlying int buffer to the Uint8ClampedArray
-			Int32Array srcInt = new Int32Array(((TDataBufferInt) db).getJSArray().getBuffer());
-			Int32Array dstInt = new Int32Array(dest.getData().getBuffer());
-			for (int row = 0; row < h; row++) {
-				int srcY = y + row;
-				int srcBase = srcY * this.width;
-				int dstBase = row * w;
-				for (int col = 0; col < w; col++) {
-					int srcX = x + col;
-					int pixel = srcInt.get(srcBase + srcX);
-					dstInt.set(dstBase + col, pixel);
-				}
-			}
-			return;
-		}
-
-		// --------------------------------------------------------------------
-		// FAST PATH: packed int pixels (TYPE_INT_RGB / TYPE_INT_ARGB / PRE)
-		// --------------------------------------------------------------------
-		boolean packedInt =
-			db instanceof TDataBufferInt &&
-				sm instanceof TSinglePixelPackedSampleModel &&
-				(imageType == TYPE_INT_RGB ||
-					imageType == TYPE_INT_ARGB ||
-					imageType == TYPE_INT_ARGB_PRE);
-
-		if (packedInt) {
-			int[] pixels = ((TDataBufferInt) db).getData();
-
-			int scanlineStride = ((TSinglePixelPackedSampleModel) sm).getScanlineStride();
-
-			for (int row = 0; row < h; row++) {
-				int srcY = y + row;
-				int srcBase = srcY * scanlineStride;
-
-				for (int col = 0; col < w; col++) {
-					int srcX = x + col;
-					int pixel = pixels[srcBase + srcX];
-
-					int a, r, g, b;
-
-					switch (imageType) {
-						case TYPE_INT_RGB:
-							// 0x00RRGGBB (no alpha in pixel, treat as opaque)
-							a = 0xFF;
-							r = (pixel >>> 16) & 0xFF;
-							g = (pixel >>> 8) & 0xFF;
-							b = (pixel) & 0xFF;
-							break;
-
-						case TYPE_INT_ARGB:
-							// 0xAARRGGBB, straight alpha
-							a = (pixel >>> 24) & 0xFF;
-							r = (pixel >>> 16) & 0xFF;
-							g = (pixel >>> 8) & 0xFF;
-							b = (pixel) & 0xFF;
-							break;
-
-						case TYPE_INT_ARGB_PRE:
-							// 0xAARRGGBB, premultiplied alpha
-							a = (pixel >>> 24) & 0xFF;
-							r = (pixel >>> 16) & 0xFF;
-							g = (pixel >>> 8) & 0xFF;
-							b = (pixel) & 0xFF;
-
-							if (alphaPremultiplied && a != 0 && a != 255) {
-								// Un-premultiply to RGBA expected by canvas
-								// r' = r / a * 255, etc., with rounding
-								r = (r * 255 + (a / 2)) / a;
-								g = (g * 255 + (a / 2)) / a;
-								b = (b * 255 + (a / 2)) / a;
-							}
-							break;
-
-						default:
-							// Should not happen due to packedInt guard
-							a = 0xFF;
-							r = g = b = 0;
-							break;
-					}
-
-					dst.set(dstIndex++, r);
-					dst.set(dstIndex++, g);
-					dst.set(dstIndex++, b);
-					dst.set(dstIndex++, a);
-				}
-			}
-			return;
-		}
-
-		// --------------------------------------------------------------------
-		// SLOW / GENERIC PATH: respect the ColorModel fully
-		// --------------------------------------------------------------------
-		// For TYPE_CUSTOM or non-int buffers, use getRGB() which already uses
-		// colorModel.getRGB(pixel) under the hood.
-		for (int row = 0; row < h; row++) {
-			int srcY = y + row;
-			for (int col = 0; col < w; col++) {
-				int srcX = x + col;
-
-				int argb = getRGB(srcX, srcY); // respects current TColorModel
-				int a = (argb >>> 24) & 0xFF;
-				int r = (argb >>> 16) & 0xFF;
-				int g = (argb >>> 8) & 0xFF;
-				int b = (argb) & 0xFF;
-
-				dst.set(dstIndex++, r);
-				dst.set(dstIndex++, g);
-				dst.set(dstIndex++, b);
-				dst.set(dstIndex++, a);
-			}
-		}
-	}
-
 	public Uint8ClampedArray getPixelBytes() {
 		return surface.getPixelData();
 	}
 
-	@Override
 	public void putImageData(int x, int y, int w, int h, ImageData data) {
 		// Clamp to image bounds, just in case
 		if (x < 0) {
@@ -633,29 +425,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 
 		Uint8ClampedArray src = data.getData();
 		int srcIndex = 0;
-
-		// fast path, we're using an underlying ImageData buffer
-		// we intentionally do _not_ swizzle RGBA->ARGB here, as we perform swizzling
-		// in webgl shaders later on
-		if (this.underlyingImageData != null) {
-			Int32Array srcInt = new Int32Array(src.getBuffer());
-			Int32Array dstInt = new Int32Array(this.underlyingImageData.getData().getBuffer());
-			for (int row = 0; row < h; row++) {
-				int dstY = y + row;
-				int dstBase = dstY * this.width;
-				for (int col = 0; col < w; col++) {
-					int dstX = x + col;
-					int srcrgba = srcInt.get(srcIndex++);
-					int argb =
-						((srcrgba >>> 24) & 0xFF) << 24 | // A
-							((srcrgba) & 0xFF) << 16 |  // R
-							((srcrgba >>> 8) & 0xFF) << 8 |   // G
-							((srcrgba >>> 16) & 0xFF);        // B
-					dstInt.set(dstBase + dstX, srcrgba);
-				}
-			}
-			return;
-		}
 
 		for (int row = 0; row < h; row++) {
 			int dstY = y + row;

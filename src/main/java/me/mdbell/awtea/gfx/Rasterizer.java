@@ -4,11 +4,12 @@ import java.util.List;
 
 public interface Rasterizer {
 
-    Rasterizer create();
+	Rasterizer create();
 
-    void reset();
+	void reset();
 
-    void onResize(int width, int height);
+	@Deprecated
+	void onResize(int width, int height);
 
-    void rasterizeCommands(List<SurfaceCommand> cmds);
+	void rasterizeCommands(List<SurfaceCommand> cmds);
 }

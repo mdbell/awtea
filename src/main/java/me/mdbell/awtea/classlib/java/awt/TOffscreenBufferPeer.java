@@ -30,6 +30,6 @@ public class TOffscreenBufferPeer implements TSurfacePeer {
 
 		root.superPaint(g);
 		g.dispose();
-		root.getSurfaceGraphics().drawImage(buffer, 0, 0, null);
+//		root.getSurfaceGraphics().drawImage(buffer, 0, 0, null);
 	}
 }
