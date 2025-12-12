@@ -252,11 +252,15 @@ public class MarkdownReportGenerator extends ReportGenerator {
 		}
 	}
 	
+	private String sanitizeForFilename(String name) {
+		return name.replace('.', '_').replace('$', '_');
+	}
+	
 	private String getPackageFileName(String pkgName) {
-		return pkgName.replace('.', '_') + ".md";
+		return sanitizeForFilename(pkgName) + ".md";
 	}
 	
 	private String getClassFileName(String pkgName, String className) {
-		return pkgName.replace('.', '_') + "_" + className.replace('$', '_') + ".md";
+		return sanitizeForFilename(pkgName) + "_" + sanitizeForFilename(className) + ".md";
 	}
 }

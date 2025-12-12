@@ -264,11 +264,6 @@ public class HtmlReportGenerator extends ReportGenerator {
 		return String.format("<span class=\"coverage-badge %s\">%.1f%%</span>", badgeClass, percentage);
 	}
 
-	@Override
-	protected String formatPercentage(double percentage) {
-		return String.format("%.1f%%", percentage);
-	}
-
 	private String escapeHtml(String text) {
 		if (text == null) return "";
 		return text.replace("&", "&amp;")
