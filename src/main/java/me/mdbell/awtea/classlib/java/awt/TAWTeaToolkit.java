@@ -20,6 +20,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class TAWTeaToolkit extends TToolkit {
@@ -32,6 +34,10 @@ public class TAWTeaToolkit extends TToolkit {
 		0x000000FF,  // Blue
 		0xFF000000   // Alpha
 	);
+
+	// Image caches
+	private final Map<String, TImage> filenameCache = new HashMap<>();
+	private final Map<String, TImage> urlCache = new HashMap<>();
 
 	@Override
 	public TImage createImage(byte[] imagedata, int imageoffset, int imagelength) {
@@ -56,14 +62,32 @@ public class TAWTeaToolkit extends TToolkit {
 
 	@Override
 	public TImage getImage(String filename) {
-		// normally the toolkit should cache images loaded by filename
-		// but for simplicity we just load a new image each time
-		return createImage(filename);
+		// Check cache first
+		TImage cached = filenameCache.get(filename);
+		if (cached != null) {
+			return cached;
+		}
+		
+		// Load and cache the image
+		TImage image = createImage(filename);
+		filenameCache.put(filename, image);
+		return image;
 	}
 
 	@Override
 	public TImage getImage(URL url) {
-		return createImage(url);
+		String urlString = url.toString();
+		
+		// Check cache first
+		TImage cached = urlCache.get(urlString);
+		if (cached != null) {
+			return cached;
+		}
+		
+		// Load and cache the image
+		TImage image = createImage(url);
+		urlCache.put(urlString, image);
+		return image;
 	}
 
 	@Override
@@ -93,12 +117,61 @@ public class TAWTeaToolkit extends TToolkit {
 
 	@Override
 	public boolean prepareImage(TImage img, int w, int h, TImageObserver obs) {
+		// Check if image is already loaded
+		if (img instanceof TBufferedImage) {
+			// TBufferedImage is always fully loaded
+			return true;
+		}
+		
+		// For images that need dimensions
+		int width = img.getWidth(obs);
+		int height = img.getHeight(obs);
+		
+		// If we got valid dimensions, the image is loaded
+		if (width > 0 && height > 0) {
+			// Notify observer if provided
+			if (obs != null) {
+				obs.imageUpdate(img, TImageObserver.ALLBITS | TImageObserver.WIDTH | TImageObserver.HEIGHT, 
+					0, 0, width, height);
+			}
+			return true;
+		}
+		
+		// Image needs loading - if observer is provided, it will be notified when complete
+		if (obs != null) {
+			// Register observer and trigger load
+			// For now, we'll return false to indicate loading is needed
+			obs.imageUpdate(img, TImageObserver.WIDTH | TImageObserver.HEIGHT, 
+				0, 0, width, height);
+		}
+		
 		return false;
 	}
 
 	@Override
 	public int checkImage(TImage img, int w, int h, TImageObserver obs) {
-		return 0;
+		// Check if image is fully loaded
+		if (img instanceof TBufferedImage) {
+			// TBufferedImage is always fully loaded
+			return TImageObserver.ALLBITS | TImageObserver.WIDTH | TImageObserver.HEIGHT;
+		}
+		
+		// For other images, check dimensions
+		int width = img.getWidth(obs);
+		int height = img.getHeight(obs);
+		
+		// If we got valid dimensions, the image is loaded
+		if (width > 0 && height > 0) {
+			return TImageObserver.ALLBITS | TImageObserver.WIDTH | TImageObserver.HEIGHT;
+		}
+		
+		// Image is still loading or encountered an error
+		if (width < 0 || height < 0) {
+			return TImageObserver.ERROR;
+		}
+		
+		// Partial loading state
+		return TImageObserver.WIDTH | TImageObserver.HEIGHT;
 	}
 
 	@Override

@@ -291,7 +291,10 @@ public class TMediaTracker implements java.io.Serializable {
                     return false;
                 }
             }
-            // wait(timeout); // TeaVM: Threading not supported
+            // TeaVM: Threading not supported, so we can't wait.
+            // Since images are loaded synchronously in this implementation,
+            // if they're still loading here, return the current state
+            return (status == COMPLETE);
         }
     }
 
@@ -525,7 +528,10 @@ public class TMediaTracker implements java.io.Serializable {
                     return false;
                 }
             }
-            // wait(timeout); // TeaVM: Threading not supported
+            // TeaVM: Threading not supported, so we can't wait.
+            // Since images are loaded synchronously in this implementation,
+            // if they're still loading here, return the current state
+            return (status == COMPLETE);
         }
     }
 
