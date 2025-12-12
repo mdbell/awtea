@@ -51,11 +51,26 @@ public abstract class TImage {
 			return this;
 		}
 		
+		// Only handle ImageDataProvider instances for now
+		if (!(this instanceof ImageDataProvider)) {
+			// TODO: Support other image types (e.g., images with source URLs)
+			// For now, create a blank image as fallback
+			return new TBufferedImage(width, height, TBufferedImage.TYPE_INT_ARGB);
+		}
+		
+		ImageDataProvider provider = (ImageDataProvider) this;
+		
+		// Create temporary canvas with original size
+		HTMLCanvasElement tempCanvas = (HTMLCanvasElement) Window.current().getDocument().createElement("canvas");
+		tempCanvas.setWidth(srcWidth);
+		tempCanvas.setHeight(srcHeight);
+		CanvasRenderingContext2D tempContext = tempCanvas.getContext2d(true);
+		tempContext.putImageData(provider.getImageData(), 0, 0);
+		
 		// Create canvas with target dimensions
 		HTMLCanvasElement canvas = (HTMLCanvasElement) Window.current().getDocument().createElement("canvas");
 		canvas.setWidth(width);
 		canvas.setHeight(height);
-		
 		CanvasRenderingContext2D context = canvas.getContext2d(true);
 		
 		// Configure smoothing based on hints
@@ -65,27 +80,8 @@ public abstract class TImage {
 		}
 		JSObjectsExtensions.setImageSmoothingEnabled(context, smooth);
 		
-		// Draw scaled image
-		if (this instanceof ImageDataProvider) {
-			ImageDataProvider provider = (ImageDataProvider) this;
-			context.putImageData(provider.getImageData(), 0, 0);
-			
-			// Create temporary canvas with original size
-			HTMLCanvasElement tempCanvas = (HTMLCanvasElement) Window.current().getDocument().createElement("canvas");
-			tempCanvas.setWidth(srcWidth);
-			tempCanvas.setHeight(srcHeight);
-			CanvasRenderingContext2D tempContext = tempCanvas.getContext2d(true);
-			tempContext.putImageData(provider.getImageData(), 0, 0);
-			
-			// Draw scaled from temp canvas
-			context.drawImage(tempCanvas, 0, 0, width, height);
-		} else {
-			// Try to use HTMLImageElement if available
-			HTMLImageElement imgElement = (HTMLImageElement) Window.current().getDocument().createElement("img");
-			// This path is for images that might have a source URL
-			// For now, we'll create a blank scaled image as fallback
-			context.clearRect(0, 0, width, height);
-		}
+		// Draw scaled from temp canvas to target canvas
+		context.drawImage(tempCanvas, 0, 0, width, height);
 		
 		// Extract pixel data and create new TBufferedImage
 		TBufferedImage result = new TBufferedImage(width, height, TBufferedImage.TYPE_INT_ARGB);

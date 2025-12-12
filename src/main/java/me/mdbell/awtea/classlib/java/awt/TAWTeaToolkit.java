@@ -137,14 +137,7 @@ public class TAWTeaToolkit extends TToolkit {
 			return true;
 		}
 		
-		// Image needs loading - if observer is provided, it will be notified when complete
-		if (obs != null) {
-			// Register observer and trigger load
-			// For now, we'll return false to indicate loading is needed
-			obs.imageUpdate(img, TImageObserver.WIDTH | TImageObserver.HEIGHT, 
-				0, 0, width, height);
-		}
-		
+		// Image needs loading - return false to indicate loading is needed
 		return false;
 	}
 
