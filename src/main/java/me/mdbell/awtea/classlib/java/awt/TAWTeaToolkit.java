@@ -120,6 +120,12 @@ public class TAWTeaToolkit extends TToolkit {
 		// Check if image is already loaded
 		if (img instanceof TBufferedImage) {
 			// TBufferedImage is always fully loaded
+			if (obs != null) {
+				int width = img.getWidth(null);
+				int height = img.getHeight(null);
+				obs.imageUpdate(img, TImageObserver.ALLBITS | TImageObserver.WIDTH | TImageObserver.HEIGHT, 
+					0, 0, width, height);
+			}
 			return true;
 		}
 		
@@ -158,13 +164,13 @@ public class TAWTeaToolkit extends TToolkit {
 			return TImageObserver.ALLBITS | TImageObserver.WIDTH | TImageObserver.HEIGHT;
 		}
 		
-		// Image is still loading or encountered an error
+		// Image encountered an error (negative dimensions indicate error)
 		if (width < 0 || height < 0) {
 			return TImageObserver.ERROR;
 		}
 		
-		// Partial loading state
-		return TImageObserver.WIDTH | TImageObserver.HEIGHT;
+		// No information available yet (dimensions are 0 or unknown)
+		return 0;
 	}
 
 	@Override
