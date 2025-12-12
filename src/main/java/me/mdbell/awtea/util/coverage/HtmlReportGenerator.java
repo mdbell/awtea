@@ -9,8 +9,9 @@ import java.util.Map;
 /**
  * Generates HTML coverage reports
  */
-public class HtmlReportGenerator {
+public class HtmlReportGenerator extends ReportGenerator {
 
+	@Override
 	public void generate(CoverageData data, Path outputPath) throws IOException {
 		if (outputPath.getParent() != null) {
 			Files.createDirectories(outputPath.getParent());
@@ -263,7 +264,8 @@ public class HtmlReportGenerator {
 		return String.format("<span class=\"coverage-badge %s\">%.1f%%</span>", badgeClass, percentage);
 	}
 
-	private String formatPercentage(double percentage) {
+	@Override
+	protected String formatPercentage(double percentage) {
 		return String.format("%.1f%%", percentage);
 	}
 

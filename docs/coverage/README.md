@@ -20,7 +20,10 @@ The simplest way to generate both HTML and Markdown reports:
 ./gradlew generateDocs
 ```
 
-This generates both `docs/coverage/report.html` and `docs/coverage/report.md` in a single command.
+This generates both `docs/coverage/report.html` and multiple Markdown files in a single command:
+- `report.md` - High-level summary index
+- `<package>.md` - Index for each package
+- `<package>_<class>.md` - Detailed report for each class
 
 ### Prerequisites
 
@@ -52,11 +55,16 @@ Generate a Markdown report suitable for GitHub Pages, wikis, or version control:
 java -cp build/classes/java/main me.mdbell.awtea.util.ApiDiff --format markdown
 ```
 
-This creates `docs/coverage/report.md` by default.
+This creates multiple Markdown files in `docs/coverage/`:
+- `report.md` - High-level summary with package table
+- One file per package with class listings
+- One file per class with detailed coverage information
+
+All files are linked together for easy navigation.
 
 **Custom output path:**
 ```bash
-java -cp build/classes/java/main me.mdbell.awtea.util.ApiDiff --format markdown --output coverage.md
+java -cp build/classes/java/main me.mdbell.awtea.util.ApiDiff --format markdown --output custom-dir/report.md
 ```
 
 ### Console Output
@@ -85,10 +93,12 @@ java -cp build/classes/java/main me.mdbell.awtea.util.ApiDiff --format html java
 - **Professional styling**: Clean, modern CSS design
 
 ### Markdown Report
+- **Multi-file structure**: Separate files per package and class for better navigation
+- **High-level summary**: Index page with package table for quick overview
 - **GitHub-compatible**: Uses standard Markdown syntax
 - **Shield badges**: Shows coverage badges using shields.io
 - **ASCII progress bars**: Visual progress indicators in plain text
-- **Diff-friendly**: Structured format for tracking changes over time
+- **Linked navigation**: Easy navigation between index, packages, and classes
 - **Code blocks**: Properly formatted method/field signatures
 
 ## Example Usage in CI/CD
@@ -129,12 +139,19 @@ Reports are organized by Java package (e.g., `java.applet`, `java.awt`, `javax.s
 
 ## Files
 
-- `report.html` - Latest HTML coverage report
-- `report.md` - Latest Markdown coverage report
+### HTML Report
+- `report.html` - Interactive single-file HTML coverage report
+
+### Markdown Reports
+- `report.md` - High-level summary index with package table
+- `<package>.md` - Index for each package (e.g., `java_awt.md`)
+- `<package>_<class>.md` - Detailed report for each class (e.g., `java_awt_Graphics.md`)
 - `README.md` - This documentation file
 
 ## Notes
 
-- Reports are regenerated each time you run the ApiDiff utility
+- Reports are regenerated each time you run the ApiDiff utility or `./gradlew generateDocs`
+- Markdown reports are split into multiple files for better navigation and reduced file sizes
+- All Markdown files are linked together - start from `report.md` for the overview
 - Some classes may show errors during generation if they depend on TeaVM-specific APIs not available at runtime
 - The coverage percentage reflects public and protected API members only

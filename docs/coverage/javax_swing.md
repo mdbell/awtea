@@ -1,0 +1,36 @@
+# Package: `javax.swing`
+
+**Coverage:** 5 / 202 (2.5%)
+
+```
+[█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2.5%
+```
+
+## Classes
+
+### [`JComponent`](javax_swing_JComponent.md) ![Coverage](https://img.shields.io/badge/coverage-0.7%25-red)
+
+**Coverage:** 1 / 145 (0.7%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.7%
+```
+
+### [`JPanel`](javax_swing_JPanel.md) ![Coverage](https://img.shields.io/badge/coverage-9.1%25-red)
+
+**Coverage:** 1 / 11 (9.1%)
+
+```
+[████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 9.1%
+```
+
+### [`SwingUtilities`](javax_swing_SwingUtilities.md) ![Coverage](https://img.shields.io/badge/coverage-6.5%25-red)
+
+**Coverage:** 3 / 46 (6.5%)
+
+```
+[███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 6.5%
+```
+
+
+[← Back to Index](report.md)
