@@ -1,19 +1,16 @@
-# Class: `Paths` ![Coverage](https://img.shields.io/badge/coverage-50.0%25-yellow)
+# Class: `Paths` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
 **Full Name:** `java.nio.file.Paths`
 
-**Coverage:** 1 / 2 (50.0%)
+**Coverage:** 2 / 2 (100.0%)
 
 ```
-[█████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░] 50.0%
+[██████████████████████████████████████████████████] 100.0%
 ```
 
 ## ✓ Implemented Methods
 
 - `public static java.nio.file.Path get(java.lang.String, java.lang.String[])`
-
-## ✗ Missing Methods
-
 - `public static java.nio.file.Path get(java.net.URI)`
 
 

@@ -37,6 +37,9 @@ dependencies {
     implementation("org.teavm:teavm-core:0.13.0")
     implementation("org.teavm:teavm-classlib:0.13.0")
     implementation("org.teavm:teavm-jso-apis:0.13.0")
+    
+    // ClassGraph for class scanning
+    implementation("io.github.classgraph:classgraph:4.8.177")
 }
 
 //teavm {

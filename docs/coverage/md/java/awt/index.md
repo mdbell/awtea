@@ -1,9 +1,9 @@
 # Package: `java.awt`
 
-**Coverage:** 326 / 918 (35.5%)
+**Coverage:** 415 / 1002 (41.4%)
 
 ```
-[█████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 35.5%
+[████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 41.4%
 ```
 
 ## Classes
@@ -46,14 +46,6 @@
 
 ```
 [██████████████████████████████████████████████████] 100.0%
-```
-
-### [`EventDispatchThread`](EventDispatchThread.md) ![Coverage](https://img.shields.io/badge/coverage-25.0%25-orange)
-
-**Coverage:** 1 / 4 (25.0%)
-
-```
-[████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 25.0%
 ```
 
 ### [`EventQueue`](EventQueue.md) ![Coverage](https://img.shields.io/badge/coverage-78.6%25-green)
@@ -144,14 +136,6 @@
 [██████████████████████████████████████████████████] 100.0%
 ```
 
-### [`MediaEntry`](MediaEntry.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-
-**Coverage:** 0 / 0 (100.0%)
-
-```
-[██████████████████████████████████████████████████] 100.0%
-```
-
 ### [`MediaTracker`](MediaTracker.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
 **Coverage:** 24 / 24 (100.0%)
@@ -200,17 +184,41 @@
 [██████████████████████████████████████████████████] 100.0%
 ```
 
-### [`Toolkit`](Toolkit.md) ![Coverage](https://img.shields.io/badge/coverage-40.7%25-orange)
+### [`Toolkit`](Toolkit.md) ![Coverage](https://img.shields.io/badge/coverage-44.1%25-orange)
 
-**Coverage:** 24 / 59 (40.7%)
+**Coverage:** 26 / 59 (44.1%)
 
 ```
-[████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 40.7%
+[██████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 44.1%
 ```
 
 ### [`Transparency`](Transparency.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
 **Coverage:** 4 / 4 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`Color`](Color.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 59 / 59 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`Dimension`](Dimension.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 14 / 14 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`Point`](Point.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 15 / 15 (100.0%)
 
 ```
 [██████████████████████████████████████████████████] 100.0%

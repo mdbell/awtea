@@ -1,0 +1,20 @@
+# Package: `java.nio.file.spi`
+
+**Coverage:** 19 / 29 (65.5%)
+
+```
+[████████████████████████████████░░░░░░░░░░░░░░░░░░] 65.5%
+```
+
+## Classes
+
+### [`FileSystemProvider`](FileSystemProvider.md) ![Coverage](https://img.shields.io/badge/coverage-65.5%25-yellow)
+
+**Coverage:** 19 / 29 (65.5%)
+
+```
+[████████████████████████████████░░░░░░░░░░░░░░░░░░] 65.5%
+```
+
+
+[← Back to Index](../../../../../../report.md)

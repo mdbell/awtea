@@ -1,0 +1,20 @@
+# Package: `java.util.random`
+
+**Coverage:** 29 / 32 (90.6%)
+
+```
+[█████████████████████████████████████████████░░░░░] 90.6%
+```
+
+## Classes
+
+### [`RandomGenerator`](RandomGenerator.md) ![Coverage](https://img.shields.io/badge/coverage-90.6%25-green)
+
+**Coverage:** 29 / 32 (90.6%)
+
+```
+[█████████████████████████████████████████████░░░░░] 90.6%
+```
+
+
+[← Back to Index](../../../../../report.md)

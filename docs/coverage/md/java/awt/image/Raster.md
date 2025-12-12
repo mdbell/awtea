@@ -1,11 +1,11 @@
-# Class: `Raster` ![Coverage](https://img.shields.io/badge/coverage-23.3%25-red)
+# Class: `Raster` ![Coverage](https://img.shields.io/badge/coverage-26.7%25-orange)
 
 **Full Name:** `java.awt.image.Raster`
 
-**Coverage:** 14 / 60 (23.3%)
+**Coverage:** 16 / 60 (26.7%)
 
 ```
-[███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 23.3%
+[█████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 26.7%
 ```
 
 ## ✓ Implemented Methods
@@ -17,6 +17,7 @@
 - `public java.awt.image.Raster createTranslatedChild(int, int)`
 - `public java.awt.image.SampleModel getSampleModel()`
 - `public java.lang.Object getDataElements(int, int, java.lang.Object)`
+- `public static java.awt.image.WritableRaster createWritableRaster(java.awt.image.SampleModel, java.awt.image.DataBuffer, java.awt.Point)`
 
 ## ✗ Missing Methods
 
@@ -58,7 +59,6 @@
 - `public static java.awt.image.WritableRaster createPackedRaster(java.awt.image.DataBuffer, int, int, int, int[], java.awt.Point)`
 - `public static java.awt.image.WritableRaster createPackedRaster(java.awt.image.DataBuffer, int, int, int, java.awt.Point)`
 - `public static java.awt.image.WritableRaster createWritableRaster(java.awt.image.SampleModel, java.awt.Point)`
-- `public static java.awt.image.WritableRaster createWritableRaster(java.awt.image.SampleModel, java.awt.image.DataBuffer, java.awt.Point)`
 
 ## ✓ Implemented Fields
 
@@ -77,10 +77,13 @@
 - `protected java.awt.image.DataBuffer dataBuffer`
 - `protected java.awt.image.Raster parent`
 
+## ✓ Implemented Constructors
+
+- `protected java.awt.image.Raster(java.awt.image.SampleModel, java.awt.image.DataBuffer, java.awt.Point)`
+
 ## ✗ Missing Constructors
 
 - `protected java.awt.image.Raster(java.awt.image.SampleModel, java.awt.Point)`
-- `protected java.awt.image.Raster(java.awt.image.SampleModel, java.awt.image.DataBuffer, java.awt.Point)`
 - `protected java.awt.image.Raster(java.awt.image.SampleModel, java.awt.image.DataBuffer, java.awt.Rectangle, java.awt.Point, java.awt.image.Raster)`
 
 

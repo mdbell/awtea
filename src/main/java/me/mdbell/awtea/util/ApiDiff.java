@@ -1,34 +1,33 @@
 package me.mdbell.awtea.util;
 
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
 import me.mdbell.awtea.util.coverage.ClassCoverage;
 import me.mdbell.awtea.util.coverage.ConsoleReportGenerator;
 import me.mdbell.awtea.util.coverage.CoverageData;
 import me.mdbell.awtea.util.coverage.HtmlReportGenerator;
 import me.mdbell.awtea.util.coverage.MarkdownReportGenerator;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.JarURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 public class ApiDiff {
 
 	private static final String AWTEA_ROOT_PACKAGE = "me.mdbell.awtea.classlib";
+	private static final String TEAVM_ROOT_PACKAGE = "org.teavm.classlib";
 	private static final String AWTEA_PREFIX = AWTEA_ROOT_PACKAGE + ".";
+	private static final String TEAVM_PREFIX = TEAVM_ROOT_PACKAGE + ".";
 	private static final String CLASS_PREFIX = "T";
 
 	private static int globalRuntimeTotal = 0;
@@ -88,8 +87,14 @@ public class ApiDiff {
 		}
 
 		String[] teavmClasses = findClassesInPackage(AWTEA_ROOT_PACKAGE, loader);
+		String[] teavmOrigClasses = findClassesInPackage(TEAVM_ROOT_PACKAGE, loader);
+		
+		// Combine both class lists
+		List<String> allClasses = new ArrayList<>();
+		allClasses.addAll(Arrays.asList(teavmClasses));
+		allClasses.addAll(Arrays.asList(teavmOrigClasses));
 
-		for (String teavmName : teavmClasses) {
+		for (String teavmName : allClasses) {
 			String runtimeName = mapTeaVmToRuntimeClassName(teavmName);
 			if (runtimeName == null) {
 				continue;
@@ -161,9 +166,18 @@ public class ApiDiff {
 		
 		Set<String> implementedClasses = new HashSet<>();
 		
-		// First, collect all classes that awtea implements
+		// First, collect all classes that awtea implements (both packages)
 		String[] teavmClasses = findClassesInPackage(AWTEA_ROOT_PACKAGE, loader);
+		String[] teavmOrigClasses = findClassesInPackage(TEAVM_ROOT_PACKAGE, loader);
+		
 		for (String teavmName : teavmClasses) {
+			String runtimeName = mapTeaVmToRuntimeClassName(teavmName);
+			if (runtimeName != null) {
+				implementedClasses.add(runtimeName);
+			}
+		}
+		
+		for (String teavmName : teavmOrigClasses) {
 			String runtimeName = mapTeaVmToRuntimeClassName(teavmName);
 			if (runtimeName != null) {
 				implementedClasses.add(runtimeName);
@@ -285,116 +299,24 @@ public class ApiDiff {
 	private static Set<String> getKnownClassesInPackage(String pkgName) {
 		Set<String> classes = new HashSet<>();
 		
-		// Scan for classes in the package using the ClassLoader
-		String path = pkgName.replace('.', '/');
-		
-		try {
-			// Get the system class loader which has access to JDK classes
-			ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
+		try (ScanResult scanResult = new ClassGraph()
+				.enableSystemJarsAndModules()  // Scan system JARs and modules
+				.acceptPackages(pkgName)        // Only scan the specified package
+				.scan()) {
 			
-			// For JDK 9+, use module system to find classes
-			// For JDK 8 and earlier, scan rt.jar
-			if (isModularJDK()) {
-				scanModuleClasses(pkgName, classes);
-			} else {
-				scanClasspathForClasses(pkgName, systemLoader, classes);
-			}
-		} catch (Exception e) {
-			System.err.println("Warning: Failed to scan for classes in " + pkgName + ": " + e.getMessage());
-			// Fall back to empty set - will show 100% coverage for this package
-		}
-		
-		return classes;
-	}
-	
-	private static boolean isModularJDK() {
-		// Check if we're running on JDK 9+ by trying to access the Module class
-		try {
-			Class.forName("java.lang.Module");
-			return true;
-		} catch (ClassNotFoundException e) {
-			return false;
-		}
-	}
-	
-	private static void scanModuleClasses(String pkgName, Set<String> classes) {
-		try {
-			// Use ModuleLayer to find classes in system modules
-			// This works for JDK 9+
-			Object moduleLayer = Class.forName("java.lang.ModuleLayer")
-				.getMethod("boot")
-				.invoke(null);
-			
-			// Get all modules
-			@SuppressWarnings("unchecked")
-			Set<Object> modules = (Set<Object>) moduleLayer.getClass()
-				.getMethod("modules")
-				.invoke(moduleLayer);
-			
-			for (Object module : modules) {
-				String moduleName = (String) module.getClass()
-					.getMethod("getName")
-					.invoke(module);
-				
-				// Only scan java.desktop module for AWT classes
-				if (moduleName.equals("java.desktop")) {
-					// Get packages from module
-					@SuppressWarnings("unchecked")
-					Set<String> packages = (Set<String>) module.getClass()
-						.getMethod("getPackages")
-						.invoke(module);
-					
-					if (packages.contains(pkgName)) {
-						// Module system doesn't provide a direct way to list all classes,
-						// so we need an alternative approach
-						System.err.println("Error: Cannot enumerate classes in package " + pkgName);
-						System.err.println("Module system does not provide class enumeration API.");
-						System.exit(1);
-					}
+			for (ClassInfo classInfo : scanResult.getAllClasses()) {
+				// Only include public classes directly in this package (not subpackages)
+				if (classInfo.isPublic() && classInfo.getPackageName().equals(pkgName)) {
+					classes.add(classInfo.getName());
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Error: Failed to scan modules: " + e.getMessage());
+			System.err.println("Error: Failed to scan for classes in " + pkgName + ": " + e.getMessage());
 			e.printStackTrace();
 			System.exit(1);
 		}
-	}
-	
-	private static void scanClasspathForClasses(String pkgName, ClassLoader loader, Set<String> classes) {
-		// For JDK 8 and earlier, try to find rt.jar
-		String javaHome = System.getProperty("java.home");
-		File rtJar = new File(javaHome, "lib/rt.jar");
 		
-		if (rtJar.exists()) {
-			try (JarFile jar = new JarFile(rtJar)) {
-				String prefix = pkgName.replace('.', '/') + "/";
-				Enumeration<JarEntry> entries = jar.entries();
-				
-				while (entries.hasMoreElements()) {
-					JarEntry entry = entries.nextElement();
-					String name = entry.getName();
-					
-					if (name.startsWith(prefix) && name.endsWith(".class")) {
-						// Convert to class name
-						String className = name.replace('/', '.')
-							.substring(0, name.length() - 6);
-						
-						// Only include classes directly in this package (not subpackages)
-						if (className.lastIndexOf('.') == pkgName.length()) {
-							classes.add(className);
-						}
-					}
-				}
-			} catch (IOException e) {
-				System.err.println("Error: Failed to read rt.jar: " + e.getMessage());
-				e.printStackTrace();
-				System.exit(1);
-			}
-		} else {
-			System.err.println("Error: rt.jar not found at " + rtJar.getAbsolutePath());
-			System.err.println("Cannot enumerate classes without rt.jar or module system support.");
-			System.exit(1);
-		}
+		return classes;
 	}
 	
 	private static void generateReport(String format, String outputPath) {
@@ -449,64 +371,42 @@ public class ApiDiff {
 
 
 	private static String[] findClassesInPackage(String pkg, ClassLoader loader) {
-		String path = pkg.replace('.', '/');
 		Set<String> classes = new HashSet<>();
-		try {
-			Enumeration<URL> resources = loader.getResources(path);
-			while (resources.hasMoreElements()) {
-				URL res = resources.nextElement();
-				classes.addAll(scanResourceForClasses(res, path));
+		
+		try (ScanResult scanResult = new ClassGraph()
+				.overrideClassLoaders(loader)
+				.acceptPackages(pkg)
+				.scan()) {
+			
+			for (ClassInfo classInfo : scanResult.getAllClasses()) {
+				classes.add(classInfo.getName());
 			}
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to scan for classes in package: " + pkg, e);
 		}
+		
 		String[] array = new String[classes.size()];
 		classes.toArray(array);
 		Arrays.sort(array);
 		return array;
 	}
 
-	private static Set<String> scanResourceForClasses(URL url, String path) throws IOException {
-		Set<String> result = new HashSet<>();
-		URLConnection conn = url.openConnection();
-
-		if (conn instanceof JarURLConnection) {
-			JarURLConnection jarConn = (JarURLConnection) conn;
-			// Inside a JAR
-			JarFile jar = jarConn.getJarFile();
-			Enumeration<JarEntry> e = jar.entries();
-			while (e.hasMoreElements()) {
-				JarEntry entry = e.nextElement();
-				String name = entry.getName();
-				if (name.endsWith(".class") && name.startsWith(path)) {
-					result.add(name.replace('/', '.').substring(0, name.length() - 6));
-				}
-			}
-		} else {
-			// Directory on disk
-			File dir = new File(url.getPath());
-			if (dir.isDirectory()) {
-				Files.walk(dir.toPath())
-					.filter(p -> p.toString().endsWith(".class"))
-					.forEach(p -> {
-						String fullPath = p.toString().replace(File.separatorChar, '/');
-						int idx = fullPath.indexOf(path);
-						if (idx != -1) {
-							String className = fullPath.substring(idx)
-								.replace('/', '.')
-								.replaceAll("\\.class$", "");
-							result.add(className);
-						}
-					});
-			}
-		}
-		return result;
-	}
-
 	private static String mapTeaVmToRuntimeClassName(String teavmName) {
-		if (!teavmName.startsWith(AWTEA_PREFIX)) return null;
+		String withoutPrefix = null;
+		
+		// Check if it's from the awtea package
+		if (teavmName.startsWith(AWTEA_PREFIX)) {
+			withoutPrefix = teavmName.substring(AWTEA_PREFIX.length());
+		}
+		// Check if it's from the org.teavm.classlib package
+		else if (teavmName.startsWith(TEAVM_PREFIX)) {
+			withoutPrefix = teavmName.substring(TEAVM_PREFIX.length());
+		}
+		// Not from either package
+		else {
+			return null;
+		}
 
-		String withoutPrefix = teavmName.substring(AWTEA_PREFIX.length());
 		int lastDot = withoutPrefix.lastIndexOf('.');
 		String pkg = (lastDot == -1) ? "" : withoutPrefix.substring(0, lastDot);
 		String simple = (lastDot == -1) ? withoutPrefix : withoutPrefix.substring(lastDot + 1);

@@ -1,9 +1,9 @@
 # Package: `java.awt.geom`
 
-**Coverage:** 290 / 303 (95.7%)
+**Coverage:** 280 / 293 (95.6%)
 
 ```
-[███████████████████████████████████████████████░░░] 95.7%
+[███████████████████████████████████████████████░░░] 95.6%
 ```
 
 ## Classes
@@ -56,14 +56,6 @@
 [███████████████████████████████████████████░░░░░░░] 87.5%
 ```
 
-### [`LineIterator`](LineIterator.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-
-**Coverage:** 5 / 5 (100.0%)
-
-```
-[██████████████████████████████████████████████████] 100.0%
-```
-
 ### [`NoninvertibleTransformException`](NoninvertibleTransformException.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
 **Coverage:** 1 / 1 (100.0%)
@@ -102,14 +94,6 @@
 
 ```
 [█████████████████████████████████░░░░░░░░░░░░░░░░░] 66.7%
-```
-
-### [`RectIterator`](RectIterator.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-
-**Coverage:** 5 / 5 (100.0%)
-
-```
-[██████████████████████████████████████████████████] 100.0%
 ```
 
 ### [`Rectangle2D`](Rectangle2D.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
