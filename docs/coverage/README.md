@@ -12,6 +12,16 @@ The `ApiDiff` utility compares awtea classes (prefixed with `T`) against standar
 
 ## Generating Reports
 
+### Using Gradle Task (Recommended)
+
+The simplest way to generate both HTML and Markdown reports:
+
+```bash
+./gradlew generateDocs
+```
+
+This generates both `docs/coverage/report.html` and `docs/coverage/report.md` in a single command.
+
 ### Prerequisites
 
 Build the project first:

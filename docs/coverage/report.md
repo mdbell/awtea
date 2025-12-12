@@ -1,23 +1,23 @@
 # AWT API Coverage Report
 
-**Generated:** 2025-12-12 21:01:18
+**Generated:** 2025-12-12 21:13:59
 
 ## Summary
 
-- **Total Coverage**: 901 / 2097 (43.0%)
+- **Total Coverage**: 1327 / 2820 (47.1%)
 - **Packages**: 12
-- **Classes**: 102
+- **Classes**: 118
 
 ```
-[█████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 43.0%
+[███████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 47.1%
 ```
 
 ## Package: `java.applet`
 
-**Coverage:** 8 / 36 (22.2%)
+**Coverage:** 14 / 42 (33.3%)
 
 ```
-[███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 22.2%
+[████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 33.3%
 ```
 
 ### Class: `Applet` ![Coverage](https://img.shields.io/badge/coverage-30.8%25-orange)
@@ -88,12 +88,31 @@
 
 ---
 
-## Package: `java.awt`
+### Class: `AppletStub` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
-**Coverage:** 278 / 686 (40.5%)
+**Coverage:** 6 / 6 (100.0%)
 
 ```
-[████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 40.5%
+[██████████████████████████████████████████████████] 100.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public abstract boolean isActive()`
+- `public abstract java.applet.AppletContext getAppletContext()`
+- `public abstract java.lang.String getParameter(java.lang.String)`
+- `public abstract java.net.URL getCodeBase()`
+- `public abstract java.net.URL getDocumentBase()`
+- `public abstract void appletResize(int, int)`
+
+---
+
+## Package: `java.awt`
+
+**Coverage:** 326 / 918 (35.5%)
+
+```
+[█████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 35.5%
 ```
 
 ### Class: `AWTEvent` ![Coverage](https://img.shields.io/badge/coverage-16.7%25-red)
@@ -182,6 +201,260 @@
 #### ✗ Missing Constructors
 
 - `public java.awt.Canvas(java.awt.GraphicsConfiguration)`
+
+---
+
+### Class: `Component` ![Coverage](https://img.shields.io/badge/coverage-20.7%25-red)
+
+**Coverage:** 48 / 232 (20.7%)
+
+```
+[██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 20.7%
+```
+
+#### ✓ Implemented Methods
+
+- `protected void firePropertyChange(java.lang.String, java.lang.Object, java.lang.Object)`
+- `public boolean imageUpdate(java.awt.Image, int, int, int, int, int)`
+- `public boolean isFocusable()`
+- `public boolean isValid()`
+- `public boolean prepareImage(java.awt.Image, int, int, java.awt.image.ImageObserver)`
+- `public boolean prepareImage(java.awt.Image, java.awt.image.ImageObserver)`
+- `public int checkImage(java.awt.Image, int, int, java.awt.image.ImageObserver)`
+- `public int checkImage(java.awt.Image, java.awt.image.ImageObserver)`
+- `public int getHeight()`
+- `public int getWidth()`
+- `public int getX()`
+- `public int getY()`
+- `public java.awt.Color getBackground()`
+- `public java.awt.Color getForeground()`
+- `public java.awt.Container getParent()`
+- `public java.awt.Dimension getPreferredSize()`
+- `public java.awt.FontMetrics getFontMetrics(java.awt.Font)`
+- `public java.awt.Graphics getGraphics()`
+- `public java.awt.Image createImage(int, int)`
+- `public java.awt.Image createImage(java.awt.image.ImageProducer)`
+- `public java.awt.Point getLocationOnScreen()`
+- `public void addFocusListener(java.awt.event.FocusListener)`
+- `public void addKeyListener(java.awt.event.KeyListener)`
+- `public void addMouseListener(java.awt.event.MouseListener)`
+- `public void addMouseMotionListener(java.awt.event.MouseMotionListener)`
+- `public void addMouseWheelListener(java.awt.event.MouseWheelListener)`
+- `public void invalidate()`
+- `public void paint(java.awt.Graphics)`
+- `public void removeFocusListener(java.awt.event.FocusListener)`
+- `public void removeKeyListener(java.awt.event.KeyListener)`
+- `public void removeMouseListener(java.awt.event.MouseListener)`
+- `public void removeMouseMotionListener(java.awt.event.MouseMotionListener)`
+- `public void removeMouseWheelListener(java.awt.event.MouseWheelListener)`
+- `public void repaint()`
+- `public void repaint(int, int, int, int)`
+- `public void repaint(long, int, int, int, int)`
+- `public void requestFocus()`
+- `public void revalidate()`
+- `public void setBackground(java.awt.Color)`
+- `public void setFocusTraversalKeysEnabled(boolean)`
+- `public void setFocusable(boolean)`
+- `public void setForeground(java.awt.Color)`
+- `public void setLocation(int, int)`
+- `public void setPreferredSize(java.awt.Dimension)`
+- `public void setSize(int, int)`
+- `public void setVisible(boolean)`
+- `public void update(java.awt.Graphics)`
+- `public void validate()`
+
+#### ✗ Missing Methods
+
+- `protected boolean requestFocus(boolean)`
+- `protected boolean requestFocus(boolean, java.awt.event.FocusEvent$Cause)`
+- `protected boolean requestFocusInWindow(boolean)`
+- `protected final void disableEvents(long)`
+- `protected final void enableEvents(long)`
+- `protected java.awt.AWTEvent coalesceEvents(java.awt.AWTEvent, java.awt.AWTEvent)`
+- `protected java.lang.String paramString()`
+- `protected void firePropertyChange(java.lang.String, boolean, boolean)`
+- `protected void firePropertyChange(java.lang.String, int, int)`
+- `protected void processComponentEvent(java.awt.event.ComponentEvent)`
+- `protected void processEvent(java.awt.AWTEvent)`
+- `protected void processFocusEvent(java.awt.event.FocusEvent)`
+- `protected void processHierarchyBoundsEvent(java.awt.event.HierarchyEvent)`
+- `protected void processHierarchyEvent(java.awt.event.HierarchyEvent)`
+- `protected void processInputMethodEvent(java.awt.event.InputMethodEvent)`
+- `protected void processKeyEvent(java.awt.event.KeyEvent)`
+- `protected void processMouseEvent(java.awt.event.MouseEvent)`
+- `protected void processMouseMotionEvent(java.awt.event.MouseEvent)`
+- `protected void processMouseWheelEvent(java.awt.event.MouseWheelEvent)`
+- `public boolean action(java.awt.Event, java.lang.Object)`
+- `public boolean areFocusTraversalKeysSet(int)`
+- `public boolean contains(int, int)`
+- `public boolean contains(java.awt.Point)`
+- `public boolean getFocusTraversalKeysEnabled()`
+- `public boolean getIgnoreRepaint()`
+- `public boolean gotFocus(java.awt.Event, java.lang.Object)`
+- `public boolean handleEvent(java.awt.Event)`
+- `public boolean hasFocus()`
+- `public boolean inside(int, int)`
+- `public boolean isBackgroundSet()`
+- `public boolean isCursorSet()`
+- `public boolean isDisplayable()`
+- `public boolean isDoubleBuffered()`
+- `public boolean isEnabled()`
+- `public boolean isFocusCycleRoot(java.awt.Container)`
+- `public boolean isFocusOwner()`
+- `public boolean isFocusTraversable()`
+- `public boolean isFontSet()`
+- `public boolean isForegroundSet()`
+- `public boolean isLightweight()`
+- `public boolean isMaximumSizeSet()`
+- `public boolean isMinimumSizeSet()`
+- `public boolean isOpaque()`
+- `public boolean isPreferredSizeSet()`
+- `public boolean isShowing()`
+- `public boolean isVisible()`
+- `public boolean keyDown(java.awt.Event, int)`
+- `public boolean keyUp(java.awt.Event, int)`
+- `public boolean lostFocus(java.awt.Event, java.lang.Object)`
+- `public boolean mouseDown(java.awt.Event, int, int)`
+- `public boolean mouseDrag(java.awt.Event, int, int)`
+- `public boolean mouseEnter(java.awt.Event, int, int)`
+- `public boolean mouseExit(java.awt.Event, int, int)`
+- `public boolean mouseMove(java.awt.Event, int, int)`
+- `public boolean mouseUp(java.awt.Event, int, int)`
+- `public boolean postEvent(java.awt.Event)`
+- `public boolean requestFocusInWindow()`
+- `public boolean requestFocusInWindow(java.awt.event.FocusEvent$Cause)`
+- `public final java.lang.Object getTreeLock()`
+- `public final void dispatchEvent(java.awt.AWTEvent)`
+- `public float getAlignmentX()`
+- `public float getAlignmentY()`
+- `public int getBaseline(int, int)`
+- `public java.awt.Component getComponentAt(int, int)`
+- `public java.awt.Component getComponentAt(java.awt.Point)`
+- `public java.awt.Component locate(int, int)`
+- `public java.awt.Component$BaselineResizeBehavior getBaselineResizeBehavior()`
+- `public java.awt.ComponentOrientation getComponentOrientation()`
+- `public java.awt.Container getFocusCycleRootAncestor()`
+- `public java.awt.Cursor getCursor()`
+- `public java.awt.Dimension getMaximumSize()`
+- `public java.awt.Dimension getMinimumSize()`
+- `public java.awt.Dimension getSize()`
+- `public java.awt.Dimension getSize(java.awt.Dimension)`
+- `public java.awt.Dimension minimumSize()`
+- `public java.awt.Dimension preferredSize()`
+- `public java.awt.Dimension size()`
+- `public java.awt.Font getFont()`
+- `public java.awt.GraphicsConfiguration getGraphicsConfiguration()`
+- `public java.awt.Point getLocation()`
+- `public java.awt.Point getLocation(java.awt.Point)`
+- `public java.awt.Point getMousePosition()`
+- `public java.awt.Point location()`
+- `public java.awt.Rectangle bounds()`
+- `public java.awt.Rectangle getBounds()`
+- `public java.awt.Rectangle getBounds(java.awt.Rectangle)`
+- `public java.awt.Toolkit getToolkit()`
+- `public java.awt.dnd.DropTarget getDropTarget()`
+- `public java.awt.event.ComponentListener[] getComponentListeners()`
+- `public java.awt.event.FocusListener[] getFocusListeners()`
+- `public java.awt.event.HierarchyBoundsListener[] getHierarchyBoundsListeners()`
+- `public java.awt.event.HierarchyListener[] getHierarchyListeners()`
+- `public java.awt.event.InputMethodListener[] getInputMethodListeners()`
+- `public java.awt.event.KeyListener[] getKeyListeners()`
+- `public java.awt.event.MouseListener[] getMouseListeners()`
+- `public java.awt.event.MouseMotionListener[] getMouseMotionListeners()`
+- `public java.awt.event.MouseWheelListener[] getMouseWheelListeners()`
+- `public java.awt.im.InputContext getInputContext()`
+- `public java.awt.im.InputMethodRequests getInputMethodRequests()`
+- `public java.awt.image.ColorModel getColorModel()`
+- `public java.awt.image.VolatileImage createVolatileImage(int, int)`
+- `public java.awt.image.VolatileImage createVolatileImage(int, int, java.awt.ImageCapabilities)`
+- `public java.beans.PropertyChangeListener[] getPropertyChangeListeners()`
+- `public java.beans.PropertyChangeListener[] getPropertyChangeListeners(java.lang.String)`
+- `public java.lang.String getName()`
+- `public java.lang.String toString()`
+- `public java.util.EventListener[] getListeners(java.lang.Class)`
+- `public java.util.Locale getLocale()`
+- `public java.util.Set getFocusTraversalKeys(int)`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public void add(java.awt.PopupMenu)`
+- `public void addComponentListener(java.awt.event.ComponentListener)`
+- `public void addHierarchyBoundsListener(java.awt.event.HierarchyBoundsListener)`
+- `public void addHierarchyListener(java.awt.event.HierarchyListener)`
+- `public void addInputMethodListener(java.awt.event.InputMethodListener)`
+- `public void addNotify()`
+- `public void addPropertyChangeListener(java.beans.PropertyChangeListener)`
+- `public void addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
+- `public void applyComponentOrientation(java.awt.ComponentOrientation)`
+- `public void deliverEvent(java.awt.Event)`
+- `public void disable()`
+- `public void doLayout()`
+- `public void enable()`
+- `public void enable(boolean)`
+- `public void enableInputMethods(boolean)`
+- `public void firePropertyChange(java.lang.String, byte, byte)`
+- `public void firePropertyChange(java.lang.String, char, char)`
+- `public void firePropertyChange(java.lang.String, double, double)`
+- `public void firePropertyChange(java.lang.String, float, float)`
+- `public void firePropertyChange(java.lang.String, long, long)`
+- `public void firePropertyChange(java.lang.String, short, short)`
+- `public void hide()`
+- `public void layout()`
+- `public void list()`
+- `public void list(java.io.PrintStream)`
+- `public void list(java.io.PrintStream, int)`
+- `public void list(java.io.PrintWriter)`
+- `public void list(java.io.PrintWriter, int)`
+- `public void move(int, int)`
+- `public void nextFocus()`
+- `public void paintAll(java.awt.Graphics)`
+- `public void print(java.awt.Graphics)`
+- `public void printAll(java.awt.Graphics)`
+- `public void remove(java.awt.MenuComponent)`
+- `public void removeComponentListener(java.awt.event.ComponentListener)`
+- `public void removeHierarchyBoundsListener(java.awt.event.HierarchyBoundsListener)`
+- `public void removeHierarchyListener(java.awt.event.HierarchyListener)`
+- `public void removeInputMethodListener(java.awt.event.InputMethodListener)`
+- `public void removeNotify()`
+- `public void removePropertyChangeListener(java.beans.PropertyChangeListener)`
+- `public void removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
+- `public void repaint(long)`
+- `public void requestFocus(java.awt.event.FocusEvent$Cause)`
+- `public void reshape(int, int, int, int)`
+- `public void resize(int, int)`
+- `public void resize(java.awt.Dimension)`
+- `public void setBounds(int, int, int, int)`
+- `public void setBounds(java.awt.Rectangle)`
+- `public void setComponentOrientation(java.awt.ComponentOrientation)`
+- `public void setCursor(java.awt.Cursor)`
+- `public void setDropTarget(java.awt.dnd.DropTarget)`
+- `public void setEnabled(boolean)`
+- `public void setFocusTraversalKeys(int, java.util.Set)`
+- `public void setFont(java.awt.Font)`
+- `public void setIgnoreRepaint(boolean)`
+- `public void setLocale(java.util.Locale)`
+- `public void setLocation(java.awt.Point)`
+- `public void setMaximumSize(java.awt.Dimension)`
+- `public void setMinimumSize(java.awt.Dimension)`
+- `public void setMixingCutoutShape(java.awt.Shape)`
+- `public void setName(java.lang.String)`
+- `public void setSize(java.awt.Dimension)`
+- `public void show()`
+- `public void show(boolean)`
+- `public void transferFocus()`
+- `public void transferFocusBackward()`
+- `public void transferFocusUpCycle()`
+
+#### ✗ Missing Fields
+
+- `protected javax.accessibility.AccessibleContext accessibleContext`
+- `public static final float BOTTOM_ALIGNMENT`
+- `public static final float CENTER_ALIGNMENT`
+- `public static final float LEFT_ALIGNMENT`
+- `public static final float RIGHT_ALIGNMENT`
+- `public static final float TOP_ALIGNMENT`
+
+#### ✗ Missing Constructors
+
+- `protected java.awt.Component()`
 
 ---
 
@@ -1346,10 +1619,10 @@
 
 ## Package: `java.awt.event`
 
-**Coverage:** 77 / 161 (47.8%)
+**Coverage:** 291 / 393 (74.0%)
 
 ```
-[███████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 47.8%
+[█████████████████████████████████████░░░░░░░░░░░░░] 74.0%
 ```
 
 ### Class: `ActionEvent` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
@@ -1550,6 +1823,287 @@
 
 ---
 
+### Class: `InvocationEvent` ![Coverage](https://img.shields.io/badge/coverage-68.8%25-yellow)
+
+**Coverage:** 11 / 16 (68.8%)
+
+```
+[██████████████████████████████████░░░░░░░░░░░░░░░░] 68.8%
+```
+
+#### ✓ Implemented Methods
+
+- `public boolean isDispatched()`
+- `public java.lang.Exception getException()`
+- `public java.lang.Throwable getThrowable()`
+- `public long getWhen()`
+- `public void dispatch()`
+
+#### ✗ Missing Methods
+
+- `public java.lang.String paramString()`
+
+#### ✓ Implemented Fields
+
+- `public static final int INVOCATION_DEFAULT`
+- `public static final int INVOCATION_FIRST`
+- `public static final int INVOCATION_LAST`
+
+#### ✗ Missing Fields
+
+- `protected boolean catchExceptions`
+- `protected java.lang.Object notifier`
+- `protected java.lang.Runnable runnable`
+
+#### ✓ Implemented Constructors
+
+- `protected java.awt.event.InvocationEvent(java.lang.Object, int, java.lang.Runnable, java.lang.Object, boolean)`
+- `public java.awt.event.InvocationEvent(java.lang.Object, java.lang.Runnable)`
+- `public java.awt.event.InvocationEvent(java.lang.Object, java.lang.Runnable, java.lang.Object, boolean)`
+
+#### ✗ Missing Constructors
+
+- `public java.awt.event.InvocationEvent(java.lang.Object, java.lang.Runnable, java.lang.Runnable, boolean)`
+
+---
+
+### Class: `KeyEvent` ![Coverage](https://img.shields.io/badge/coverage-94.0%25-green)
+
+**Coverage:** 202 / 215 (94.0%)
+
+```
+[██████████████████████████████████████████████░░░░] 94.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public char getKeyChar()`
+- `public int getKeyCode()`
+
+#### ✗ Missing Methods
+
+- `public boolean isActionKey()`
+- `public int getExtendedKeyCode()`
+- `public int getKeyLocation()`
+- `public java.lang.String paramString()`
+- `public static int getExtendedKeyCodeForChar(int)`
+- `public static java.lang.String getKeyModifiersText(int)`
+- `public static java.lang.String getKeyText(int)`
+- `public void setKeyChar(char)`
+- `public void setKeyCode(int)`
+- `public void setModifiers(int)`
+
+#### ✓ Implemented Fields
+
+- `public static final char CHAR_UNDEFINED`
+- `public static final int KEY_FIRST`
+- `public static final int KEY_LAST`
+- `public static final int KEY_LOCATION_LEFT`
+- `public static final int KEY_LOCATION_NUMPAD`
+- `public static final int KEY_LOCATION_RIGHT`
+- `public static final int KEY_LOCATION_STANDARD`
+- `public static final int KEY_LOCATION_UNKNOWN`
+- `public static final int KEY_PRESSED`
+- `public static final int KEY_RELEASED`
+- `public static final int KEY_TYPED`
+- `public static final int VK_0`
+- `public static final int VK_1`
+- `public static final int VK_2`
+- `public static final int VK_3`
+- `public static final int VK_4`
+- `public static final int VK_5`
+- `public static final int VK_6`
+- `public static final int VK_7`
+- `public static final int VK_8`
+- `public static final int VK_9`
+- `public static final int VK_A`
+- `public static final int VK_ACCEPT`
+- `public static final int VK_ADD`
+- `public static final int VK_AGAIN`
+- `public static final int VK_ALL_CANDIDATES`
+- `public static final int VK_ALPHANUMERIC`
+- `public static final int VK_ALT`
+- `public static final int VK_ALT_GRAPH`
+- `public static final int VK_AMPERSAND`
+- `public static final int VK_ASTERISK`
+- `public static final int VK_AT`
+- `public static final int VK_B`
+- `public static final int VK_BACK_QUOTE`
+- `public static final int VK_BACK_SLASH`
+- `public static final int VK_BACK_SPACE`
+- `public static final int VK_BEGIN`
+- `public static final int VK_BRACELEFT`
+- `public static final int VK_BRACERIGHT`
+- `public static final int VK_C`
+- `public static final int VK_CANCEL`
+- `public static final int VK_CAPS_LOCK`
+- `public static final int VK_CIRCUMFLEX`
+- `public static final int VK_CLEAR`
+- `public static final int VK_CLOSE_BRACKET`
+- `public static final int VK_CODE_INPUT`
+- `public static final int VK_COLON`
+- `public static final int VK_COMMA`
+- `public static final int VK_COMPOSE`
+- `public static final int VK_CONTEXT_MENU`
+- `public static final int VK_CONTROL`
+- `public static final int VK_CONVERT`
+- `public static final int VK_COPY`
+- `public static final int VK_CUT`
+- `public static final int VK_D`
+- `public static final int VK_DEAD_ABOVEDOT`
+- `public static final int VK_DEAD_ABOVERING`
+- `public static final int VK_DEAD_ACUTE`
+- `public static final int VK_DEAD_BREVE`
+- `public static final int VK_DEAD_CARON`
+- `public static final int VK_DEAD_CEDILLA`
+- `public static final int VK_DEAD_CIRCUMFLEX`
+- `public static final int VK_DEAD_DIAERESIS`
+- `public static final int VK_DEAD_DOUBLEACUTE`
+- `public static final int VK_DEAD_GRAVE`
+- `public static final int VK_DEAD_IOTA`
+- `public static final int VK_DEAD_MACRON`
+- `public static final int VK_DEAD_OGONEK`
+- `public static final int VK_DEAD_SEMIVOICED_SOUND`
+- `public static final int VK_DEAD_TILDE`
+- `public static final int VK_DEAD_VOICED_SOUND`
+- `public static final int VK_DECIMAL`
+- `public static final int VK_DELETE`
+- `public static final int VK_DIVIDE`
+- `public static final int VK_DOLLAR`
+- `public static final int VK_DOWN`
+- `public static final int VK_E`
+- `public static final int VK_END`
+- `public static final int VK_ENTER`
+- `public static final int VK_EQUALS`
+- `public static final int VK_ESCAPE`
+- `public static final int VK_EURO_SIGN`
+- `public static final int VK_EXCLAMATION_MARK`
+- `public static final int VK_F`
+- `public static final int VK_F1`
+- `public static final int VK_F10`
+- `public static final int VK_F11`
+- `public static final int VK_F12`
+- `public static final int VK_F13`
+- `public static final int VK_F14`
+- `public static final int VK_F15`
+- `public static final int VK_F16`
+- `public static final int VK_F17`
+- `public static final int VK_F18`
+- `public static final int VK_F19`
+- `public static final int VK_F2`
+- `public static final int VK_F20`
+- `public static final int VK_F21`
+- `public static final int VK_F22`
+- `public static final int VK_F23`
+- `public static final int VK_F24`
+- `public static final int VK_F3`
+- `public static final int VK_F4`
+- `public static final int VK_F5`
+- `public static final int VK_F6`
+- `public static final int VK_F7`
+- `public static final int VK_F8`
+- `public static final int VK_F9`
+- `public static final int VK_FINAL`
+- `public static final int VK_FIND`
+- `public static final int VK_FULL_WIDTH`
+- `public static final int VK_G`
+- `public static final int VK_GREATER`
+- `public static final int VK_H`
+- `public static final int VK_HALF_WIDTH`
+- `public static final int VK_HELP`
+- `public static final int VK_HIRAGANA`
+- `public static final int VK_HOME`
+- `public static final int VK_I`
+- `public static final int VK_INPUT_METHOD_ON_OFF`
+- `public static final int VK_INSERT`
+- `public static final int VK_INVERTED_EXCLAMATION_MARK`
+- `public static final int VK_J`
+- `public static final int VK_JAPANESE_HIRAGANA`
+- `public static final int VK_JAPANESE_KATAKANA`
+- `public static final int VK_JAPANESE_ROMAN`
+- `public static final int VK_K`
+- `public static final int VK_KANA`
+- `public static final int VK_KANA_LOCK`
+- `public static final int VK_KANJI`
+- `public static final int VK_KATAKANA`
+- `public static final int VK_KP_DOWN`
+- `public static final int VK_KP_LEFT`
+- `public static final int VK_KP_RIGHT`
+- `public static final int VK_KP_UP`
+- `public static final int VK_L`
+- `public static final int VK_LEFT`
+- `public static final int VK_LEFT_PARENTHESIS`
+- `public static final int VK_LESS`
+- `public static final int VK_M`
+- `public static final int VK_META`
+- `public static final int VK_MINUS`
+- `public static final int VK_MODECHANGE`
+- `public static final int VK_MULTIPLY`
+- `public static final int VK_N`
+- `public static final int VK_NONCONVERT`
+- `public static final int VK_NUMBER_SIGN`
+- `public static final int VK_NUMPAD0`
+- `public static final int VK_NUMPAD1`
+- `public static final int VK_NUMPAD2`
+- `public static final int VK_NUMPAD3`
+- `public static final int VK_NUMPAD4`
+- `public static final int VK_NUMPAD5`
+- `public static final int VK_NUMPAD6`
+- `public static final int VK_NUMPAD7`
+- `public static final int VK_NUMPAD8`
+- `public static final int VK_NUMPAD9`
+- `public static final int VK_NUM_LOCK`
+- `public static final int VK_O`
+- `public static final int VK_OPEN_BRACKET`
+- `public static final int VK_P`
+- `public static final int VK_PAGE_DOWN`
+- `public static final int VK_PAGE_UP`
+- `public static final int VK_PASTE`
+- `public static final int VK_PAUSE`
+- `public static final int VK_PERIOD`
+- `public static final int VK_PLUS`
+- `public static final int VK_PREVIOUS_CANDIDATE`
+- `public static final int VK_PRINTSCREEN`
+- `public static final int VK_PROPS`
+- `public static final int VK_Q`
+- `public static final int VK_QUOTE`
+- `public static final int VK_QUOTEDBL`
+- `public static final int VK_R`
+- `public static final int VK_RIGHT`
+- `public static final int VK_RIGHT_PARENTHESIS`
+- `public static final int VK_ROMAN_CHARACTERS`
+- `public static final int VK_S`
+- `public static final int VK_SCROLL_LOCK`
+- `public static final int VK_SEMICOLON`
+- `public static final int VK_SEPARATER`
+- `public static final int VK_SEPARATOR`
+- `public static final int VK_SHIFT`
+- `public static final int VK_SLASH`
+- `public static final int VK_SPACE`
+- `public static final int VK_STOP`
+- `public static final int VK_SUBTRACT`
+- `public static final int VK_T`
+- `public static final int VK_TAB`
+- `public static final int VK_U`
+- `public static final int VK_UNDEFINED`
+- `public static final int VK_UNDERSCORE`
+- `public static final int VK_UNDO`
+- `public static final int VK_UP`
+- `public static final int VK_V`
+- `public static final int VK_W`
+- `public static final int VK_WINDOWS`
+- `public static final int VK_X`
+- `public static final int VK_Y`
+- `public static final int VK_Z`
+
+#### ✗ Missing Constructors
+
+- `public java.awt.event.KeyEvent(java.awt.Component, int, long, int, int)`
+- `public java.awt.event.KeyEvent(java.awt.Component, int, long, int, int, char)`
+- `public java.awt.event.KeyEvent(java.awt.Component, int, long, int, int, char, int)`
+
+---
+
 ### Class: `KeyListener` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
 **Coverage:** 3 / 3 (100.0%)
@@ -1678,6 +2232,20 @@
 - `public java.awt.event.MouseWheelEvent(java.awt.Component, int, long, int, int, int, int, boolean, int, int, int)`
 - `public java.awt.event.MouseWheelEvent(java.awt.Component, int, long, int, int, int, int, int, int, boolean, int, int, int)`
 - `public java.awt.event.MouseWheelEvent(java.awt.Component, int, long, int, int, int, int, int, int, boolean, int, int, int, double)`
+
+---
+
+### Class: `MouseWheelListener` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 1 / 1 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public abstract void mouseWheelMoved(java.awt.event.MouseWheelEvent)`
 
 ---
 
@@ -2395,11 +2963,103 @@
 
 ## Package: `java.awt.image`
 
-**Coverage:** 95 / 272 (34.9%)
+**Coverage:** 240 / 464 (51.7%)
 
 ```
-[█████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.9%
+[█████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░] 51.7%
 ```
+
+### Class: `BufferedImage` ![Coverage](https://img.shields.io/badge/coverage-32.8%25-orange)
+
+**Coverage:** 21 / 64 (32.8%)
+
+```
+[████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 32.8%
+```
+
+#### ✓ Implemented Methods
+
+- `public boolean isAlphaPremultiplied()`
+- `public int getHeight()`
+- `public int getHeight(java.awt.image.ImageObserver)`
+- `public int getRGB(int, int)`
+- `public int getWidth()`
+- `public int getWidth(java.awt.image.ImageObserver)`
+- `public int[] getRGB(int, int, int, int, int[], int, int)`
+- `public java.awt.Graphics getGraphics()`
+- `public java.awt.image.ColorModel getColorModel()`
+- `public java.awt.image.ImageProducer getSource()`
+- `public java.awt.image.WritableRaster getRaster()`
+- `public java.lang.Object getProperty(java.lang.String, java.awt.image.ImageObserver)`
+- `public void setRGB(int, int, int)`
+- `public void setRGB(int, int, int, int, int[], int, int)`
+
+#### ✗ Missing Methods
+
+- `public boolean hasTileWriters()`
+- `public boolean isTileWritable(int, int)`
+- `public int getMinTileX()`
+- `public int getMinTileY()`
+- `public int getMinX()`
+- `public int getMinY()`
+- `public int getNumXTiles()`
+- `public int getNumYTiles()`
+- `public int getTileGridXOffset()`
+- `public int getTileGridYOffset()`
+- `public int getTileHeight()`
+- `public int getTileWidth()`
+- `public int getTransparency()`
+- `public int getType()`
+- `public java.awt.Graphics2D createGraphics()`
+- `public java.awt.Point[] getWritableTileIndices()`
+- `public java.awt.image.BufferedImage getSubimage(int, int, int, int)`
+- `public java.awt.image.Raster getData()`
+- `public java.awt.image.Raster getData(java.awt.Rectangle)`
+- `public java.awt.image.Raster getTile(int, int)`
+- `public java.awt.image.SampleModel getSampleModel()`
+- `public java.awt.image.WritableRaster copyData(java.awt.image.WritableRaster)`
+- `public java.awt.image.WritableRaster getAlphaRaster()`
+- `public java.awt.image.WritableRaster getWritableTile(int, int)`
+- `public java.lang.Object getProperty(java.lang.String)`
+- `public java.lang.String toString()`
+- `public java.lang.String[] getPropertyNames()`
+- `public java.util.Vector getSources()`
+- `public void addTileObserver(java.awt.image.TileObserver)`
+- `public void coerceData(boolean)`
+- `public void releaseWritableTile(int, int)`
+- `public void removeTileObserver(java.awt.image.TileObserver)`
+- `public void setData(java.awt.image.Raster)`
+
+#### ✓ Implemented Fields
+
+- `public static final int TYPE_CUSTOM`
+- `public static final int TYPE_INT_ARGB`
+- `public static final int TYPE_INT_ARGB_PRE`
+- `public static final int TYPE_INT_BGR`
+- `public static final int TYPE_INT_RGB`
+
+#### ✗ Missing Fields
+
+- `public static final int TYPE_3BYTE_BGR`
+- `public static final int TYPE_4BYTE_ABGR`
+- `public static final int TYPE_4BYTE_ABGR_PRE`
+- `public static final int TYPE_BYTE_BINARY`
+- `public static final int TYPE_BYTE_GRAY`
+- `public static final int TYPE_BYTE_INDEXED`
+- `public static final int TYPE_USHORT_555_RGB`
+- `public static final int TYPE_USHORT_565_RGB`
+- `public static final int TYPE_USHORT_GRAY`
+
+#### ✓ Implemented Constructors
+
+- `public java.awt.image.BufferedImage(int, int, int)`
+- `public java.awt.image.BufferedImage(java.awt.image.ColorModel, java.awt.image.WritableRaster, boolean, java.util.Hashtable)`
+
+#### ✗ Missing Constructors
+
+- `public java.awt.image.BufferedImage(int, int, int, java.awt.image.IndexColorModel)`
+
+---
 
 ### Class: `ColorModel` ![Coverage](https://img.shields.io/badge/coverage-33.3%25-orange)
 
@@ -2468,6 +3128,252 @@
 
 - `protected java.awt.image.ColorModel(int, int[], java.awt.color.ColorSpace, boolean, boolean, int, int)`
 - `public java.awt.image.ColorModel(int)`
+
+---
+
+### Class: `DataBuffer` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 34 / 34 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public abstract int getElem(int, int)`
+- `public abstract void setElem(int, int, int)`
+- `public double getElemDouble(int)`
+- `public double getElemDouble(int, int)`
+- `public float getElemFloat(int)`
+- `public float getElemFloat(int, int)`
+- `public int getDataType()`
+- `public int getElem(int)`
+- `public int getNumBanks()`
+- `public int getOffset()`
+- `public int getSize()`
+- `public int[] getOffsets()`
+- `public static int getDataTypeSize(int)`
+- `public void setElem(int, int)`
+- `public void setElemDouble(int, double)`
+- `public void setElemDouble(int, int, double)`
+- `public void setElemFloat(int, float)`
+- `public void setElemFloat(int, int, float)`
+
+#### ✓ Implemented Fields
+
+- `protected int banks`
+- `protected int dataType`
+- `protected int offset`
+- `protected int size`
+- `protected int[] offsets`
+- `public static final int TYPE_BYTE`
+- `public static final int TYPE_DOUBLE`
+- `public static final int TYPE_FLOAT`
+- `public static final int TYPE_INT`
+- `public static final int TYPE_SHORT`
+- `public static final int TYPE_UNDEFINED`
+- `public static final int TYPE_USHORT`
+
+#### ✓ Implemented Constructors
+
+- `protected java.awt.image.DataBuffer(int, int)`
+- `protected java.awt.image.DataBuffer(int, int, int)`
+- `protected java.awt.image.DataBuffer(int, int, int, int)`
+- `protected java.awt.image.DataBuffer(int, int, int, int[])`
+
+---
+
+### Class: `DataBufferByte` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 13 / 13 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public byte[] getData()`
+- `public byte[] getData(int)`
+- `public byte[][] getBankData()`
+- `public int getElem(int)`
+- `public int getElem(int, int)`
+- `public void setElem(int, int)`
+- `public void setElem(int, int, int)`
+
+#### ✓ Implemented Constructors
+
+- `public java.awt.image.DataBufferByte(byte[], int)`
+- `public java.awt.image.DataBufferByte(byte[], int, int)`
+- `public java.awt.image.DataBufferByte(byte[][], int)`
+- `public java.awt.image.DataBufferByte(byte[][], int, int[])`
+- `public java.awt.image.DataBufferByte(int)`
+- `public java.awt.image.DataBufferByte(int, int)`
+
+---
+
+### Class: `DataBufferDouble` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 21 / 21 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public double getElemDouble(int)`
+- `public double getElemDouble(int, int)`
+- `public double[] getData()`
+- `public double[] getData(int)`
+- `public double[][] getBankData()`
+- `public float getElemFloat(int)`
+- `public float getElemFloat(int, int)`
+- `public int getElem(int)`
+- `public int getElem(int, int)`
+- `public void setElem(int, int)`
+- `public void setElem(int, int, int)`
+- `public void setElemDouble(int, double)`
+- `public void setElemDouble(int, int, double)`
+- `public void setElemFloat(int, float)`
+- `public void setElemFloat(int, int, float)`
+
+#### ✓ Implemented Constructors
+
+- `public java.awt.image.DataBufferDouble(double[], int)`
+- `public java.awt.image.DataBufferDouble(double[], int, int)`
+- `public java.awt.image.DataBufferDouble(double[][], int)`
+- `public java.awt.image.DataBufferDouble(double[][], int, int[])`
+- `public java.awt.image.DataBufferDouble(int)`
+- `public java.awt.image.DataBufferDouble(int, int)`
+
+---
+
+### Class: `DataBufferFloat` ![Coverage](https://img.shields.io/badge/coverage-81.0%25-green)
+
+**Coverage:** 17 / 21 (81.0%)
+
+```
+[████████████████████████████████████████░░░░░░░░░░] 81.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public float getElemFloat(int)`
+- `public float getElemFloat(int, int)`
+- `public float[] getData()`
+- `public float[] getData(int)`
+- `public float[][] getBankData()`
+- `public int getElem(int)`
+- `public int getElem(int, int)`
+- `public void setElem(int, int)`
+- `public void setElem(int, int, int)`
+- `public void setElemFloat(int, float)`
+- `public void setElemFloat(int, int, float)`
+
+#### ✗ Missing Methods
+
+- `public double getElemDouble(int)`
+- `public double getElemDouble(int, int)`
+- `public void setElemDouble(int, double)`
+- `public void setElemDouble(int, int, double)`
+
+#### ✓ Implemented Constructors
+
+- `public java.awt.image.DataBufferFloat(float[], int)`
+- `public java.awt.image.DataBufferFloat(float[], int, int)`
+- `public java.awt.image.DataBufferFloat(float[][], int)`
+- `public java.awt.image.DataBufferFloat(float[][], int, int[])`
+- `public java.awt.image.DataBufferFloat(int)`
+- `public java.awt.image.DataBufferFloat(int, int)`
+
+---
+
+### Class: `DataBufferInt` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 13 / 13 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public int getElem(int)`
+- `public int getElem(int, int)`
+- `public int[] getData()`
+- `public int[] getData(int)`
+- `public int[][] getBankData()`
+- `public void setElem(int, int)`
+- `public void setElem(int, int, int)`
+
+#### ✓ Implemented Constructors
+
+- `public java.awt.image.DataBufferInt(int)`
+- `public java.awt.image.DataBufferInt(int, int)`
+- `public java.awt.image.DataBufferInt(int[], int)`
+- `public java.awt.image.DataBufferInt(int[], int, int)`
+- `public java.awt.image.DataBufferInt(int[][], int)`
+- `public java.awt.image.DataBufferInt(int[][], int, int[])`
+
+---
+
+### Class: `DataBufferShort` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 13 / 13 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public int getElem(int)`
+- `public int getElem(int, int)`
+- `public short[] getData()`
+- `public short[] getData(int)`
+- `public short[][] getBankData()`
+- `public void setElem(int, int)`
+- `public void setElem(int, int, int)`
+
+#### ✓ Implemented Constructors
+
+- `public java.awt.image.DataBufferShort(int)`
+- `public java.awt.image.DataBufferShort(int, int)`
+- `public java.awt.image.DataBufferShort(short[], int)`
+- `public java.awt.image.DataBufferShort(short[], int, int)`
+- `public java.awt.image.DataBufferShort(short[][], int)`
+- `public java.awt.image.DataBufferShort(short[][], int, int[])`
+
+---
+
+### Class: `DataBufferUShort` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 13 / 13 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public int getElem(int)`
+- `public int getElem(int, int)`
+- `public short[] getData()`
+- `public short[] getData(int)`
+- `public short[][] getBankData()`
+- `public void setElem(int, int)`
+- `public void setElem(int, int, int)`
+
+#### ✓ Implemented Constructors
+
+- `public java.awt.image.DataBufferUShort(int)`
+- `public java.awt.image.DataBufferUShort(int, int)`
+- `public java.awt.image.DataBufferUShort(short[], int)`
+- `public java.awt.image.DataBufferUShort(short[], int, int)`
+- `public java.awt.image.DataBufferUShort(short[][], int)`
+- `public java.awt.image.DataBufferUShort(short[][], int, int[])`
 
 ---
 
@@ -2939,10 +3845,10 @@
 
 ## Package: `java.net`
 
-**Coverage:** 7 / 31 (22.6%)
+**Coverage:** 20 / 92 (21.7%)
 
 ```
-[███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 22.6%
+[██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 21.7%
 ```
 
 ### Class: `InetAddress` ![Coverage](https://img.shields.io/badge/coverage-8.0%25-red)
@@ -2983,6 +3889,118 @@
 - `public static java.net.InetAddress getLocalHost()`
 - `public static java.net.InetAddress getLoopbackAddress()`
 - `public static java.net.InetAddress[] getAllByName(java.lang.String)`
+
+---
+
+### Class: `Socket` ![Coverage](https://img.shields.io/badge/coverage-13.0%25-red)
+
+**Coverage:** 7 / 54 (13.0%)
+
+```
+[██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 13.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public int getSoTimeout()`
+- `public java.io.InputStream getInputStream()`
+- `public java.io.OutputStream getOutputStream()`
+- `public void close()`
+- `public void setSoTimeout(int)`
+- `public void setTcpNoDelay(boolean)`
+
+#### ✗ Missing Methods
+
+- `public boolean getKeepAlive()`
+- `public boolean getOOBInline()`
+- `public boolean getReuseAddress()`
+- `public boolean getTcpNoDelay()`
+- `public boolean isBound()`
+- `public boolean isClosed()`
+- `public boolean isConnected()`
+- `public boolean isInputShutdown()`
+- `public boolean isOutputShutdown()`
+- `public int getLocalPort()`
+- `public int getPort()`
+- `public int getReceiveBufferSize()`
+- `public int getSendBufferSize()`
+- `public int getSoLinger()`
+- `public int getTrafficClass()`
+- `public java.lang.Object getOption(java.net.SocketOption)`
+- `public java.lang.String toString()`
+- `public java.net.InetAddress getInetAddress()`
+- `public java.net.InetAddress getLocalAddress()`
+- `public java.net.Socket setOption(java.net.SocketOption, java.lang.Object)`
+- `public java.net.SocketAddress getLocalSocketAddress()`
+- `public java.net.SocketAddress getRemoteSocketAddress()`
+- `public java.nio.channels.SocketChannel getChannel()`
+- `public java.util.Set supportedOptions()`
+- `public static void setSocketImplFactory(java.net.SocketImplFactory)`
+- `public void bind(java.net.SocketAddress)`
+- `public void connect(java.net.SocketAddress)`
+- `public void connect(java.net.SocketAddress, int)`
+- `public void sendUrgentData(int)`
+- `public void setKeepAlive(boolean)`
+- `public void setOOBInline(boolean)`
+- `public void setPerformancePreferences(int, int, int)`
+- `public void setReceiveBufferSize(int)`
+- `public void setReuseAddress(boolean)`
+- `public void setSendBufferSize(int)`
+- `public void setSoLinger(boolean, int)`
+- `public void setTrafficClass(int)`
+- `public void shutdownInput()`
+- `public void shutdownOutput()`
+
+#### ✓ Implemented Constructors
+
+- `public java.net.Socket(java.net.InetAddress, int)`
+
+#### ✗ Missing Constructors
+
+- `protected java.net.Socket(java.net.SocketImpl)`
+- `public java.net.Socket()`
+- `public java.net.Socket(java.lang.String, int)`
+- `public java.net.Socket(java.lang.String, int, boolean)`
+- `public java.net.Socket(java.lang.String, int, java.net.InetAddress, int)`
+- `public java.net.Socket(java.net.InetAddress, int, boolean)`
+- `public java.net.Socket(java.net.InetAddress, int, java.net.InetAddress, int)`
+- `public java.net.Socket(java.net.Proxy)`
+
+---
+
+### Class: `Socket$SocketInputStream` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 4 / 4 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+#### ✓ Implemented Methods
+
+- `public int available()`
+- `public int read()`
+- `public int read(byte[], int, int)`
+- `public void close()`
+
+---
+
+### Class: `Socket$SocketOutputStream` ![Coverage](https://img.shields.io/badge/coverage-66.7%25-yellow)
+
+**Coverage:** 2 / 3 (66.7%)
+
+```
+[█████████████████████████████████░░░░░░░░░░░░░░░░░] 66.7%
+```
+
+#### ✓ Implemented Methods
+
+- `public void write(byte[], int, int)`
+- `public void write(int)`
+
+#### ✗ Missing Methods
+
+- `public void close()`
 
 ---
 

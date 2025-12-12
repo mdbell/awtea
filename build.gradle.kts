@@ -105,3 +105,35 @@ tasks.named<ProcessResources>("processResources") {
         into("") // root of resources
     }
 }
+
+tasks.register("generateDocs") {
+    group = "documentation"
+    description = "Generate API coverage reports in HTML and Markdown formats"
+    
+    dependsOn("classes")
+    
+    doLast {
+        val classpath = sourceSets["main"].runtimeClasspath.asPath
+        
+        // Generate HTML report
+        exec {
+            commandLine(
+                "java", "-cp", classpath,
+                "me.mdbell.awtea.util.ApiDiff",
+                "--format", "html"
+            )
+        }
+        
+        // Generate Markdown report
+        exec {
+            commandLine(
+                "java", "-cp", classpath,
+                "me.mdbell.awtea.util.ApiDiff",
+                "--format", "markdown"
+            )
+        }
+        
+        println("✓ Generated HTML report: docs/coverage/report.html")
+        println("✓ Generated Markdown report: docs/coverage/report.md")
+    }
+}

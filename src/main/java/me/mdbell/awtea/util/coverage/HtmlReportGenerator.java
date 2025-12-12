@@ -75,6 +75,8 @@ public class HtmlReportGenerator {
 		out.println("        .class-content.expanded { display: block; }");
 		out.println("        .section { margin: 15px 0; }");
 		out.println("        .section-title { font-weight: bold; color: #555; margin-bottom: 5px; }");
+		out.println("        .section-title.collapsible { cursor: pointer; user-select: none; padding: 8px; border-radius: 3px; background: #f5f5f5; }");
+		out.println("        .section-title.collapsible:hover { background: #e0e0e0; }");
 		out.println("        .item-list { list-style: none; padding: 0; margin: 10px 0; }");
 		out.println("        .item-list li { padding: 5px 10px; margin: 3px 0; background: #f9f9f9; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 0.9em; }");
 		out.println("        .item-list.implemented li { background: #e8f5e9; border-left: 3px solid #4CAF50; }");
@@ -153,11 +155,17 @@ public class HtmlReportGenerator {
 	}
 
 	private void writeClassDetails(ClassCoverage cls, PrintWriter out) {
+		String safeClassName = escapeHtml(cls.getRuntimeClassName()).replace(".", "_").replace("$", "_");
+		int sectionId = 0;
+		
 		if (!cls.getImplementedMethods().isEmpty()) {
+			String sectionIdStr = safeClassName + "_impl_methods";
 			out.println("                        <div class=\"section\">");
-			out.printf("                            <div class=\"section-title\">✓ Implemented Methods (%d)</div>%n", 
-				cls.getImplementedMethods().size());
-			out.println("                            <ul class=\"item-list implemented\">");
+			out.printf("                            <div class=\"section-title collapsible\" onclick=\"toggleSection('%s')\">%n", sectionIdStr);
+			out.printf("                                <span class=\"toggle-icon\" id=\"icon-%s\">▶</span> ✓ Implemented Methods (%d)%n", 
+				sectionIdStr, cls.getImplementedMethods().size());
+			out.println("                            </div>");
+			out.printf("                            <ul class=\"item-list implemented\" id=\"%s\" style=\"display: none;\">%n", sectionIdStr);
 			for (String method : cls.getImplementedMethods()) {
 				out.printf("                                <li>%s</li>%n", escapeHtml(method));
 			}
@@ -166,10 +174,13 @@ public class HtmlReportGenerator {
 		}
 		
 		if (!cls.getMissingMethods().isEmpty()) {
+			String sectionIdStr = safeClassName + "_miss_methods";
 			out.println("                        <div class=\"section\">");
-			out.printf("                            <div class=\"section-title\">✗ Missing Methods (%d)</div>%n", 
-				cls.getMissingMethods().size());
-			out.println("                            <ul class=\"item-list missing\">");
+			out.printf("                            <div class=\"section-title collapsible\" onclick=\"toggleSection('%s')\">%n", sectionIdStr);
+			out.printf("                                <span class=\"toggle-icon\" id=\"icon-%s\">▶</span> ✗ Missing Methods (%d)%n", 
+				sectionIdStr, cls.getMissingMethods().size());
+			out.println("                            </div>");
+			out.printf("                            <ul class=\"item-list missing\" id=\"%s\" style=\"display: none;\">%n", sectionIdStr);
 			for (String method : cls.getMissingMethods()) {
 				out.printf("                                <li>%s</li>%n", escapeHtml(method));
 			}
@@ -178,10 +189,13 @@ public class HtmlReportGenerator {
 		}
 		
 		if (!cls.getImplementedFields().isEmpty()) {
+			String sectionIdStr = safeClassName + "_impl_fields";
 			out.println("                        <div class=\"section\">");
-			out.printf("                            <div class=\"section-title\">✓ Implemented Fields (%d)</div>%n", 
-				cls.getImplementedFields().size());
-			out.println("                            <ul class=\"item-list implemented\">");
+			out.printf("                            <div class=\"section-title collapsible\" onclick=\"toggleSection('%s')\">%n", sectionIdStr);
+			out.printf("                                <span class=\"toggle-icon\" id=\"icon-%s\">▶</span> ✓ Implemented Fields (%d)%n", 
+				sectionIdStr, cls.getImplementedFields().size());
+			out.println("                            </div>");
+			out.printf("                            <ul class=\"item-list implemented\" id=\"%s\" style=\"display: none;\">%n", sectionIdStr);
 			for (String field : cls.getImplementedFields()) {
 				out.printf("                                <li>%s</li>%n", escapeHtml(field));
 			}
@@ -190,10 +204,13 @@ public class HtmlReportGenerator {
 		}
 		
 		if (!cls.getMissingFields().isEmpty()) {
+			String sectionIdStr = safeClassName + "_miss_fields";
 			out.println("                        <div class=\"section\">");
-			out.printf("                            <div class=\"section-title\">✗ Missing Fields (%d)</div>%n", 
-				cls.getMissingFields().size());
-			out.println("                            <ul class=\"item-list missing\">");
+			out.printf("                            <div class=\"section-title collapsible\" onclick=\"toggleSection('%s')\">%n", sectionIdStr);
+			out.printf("                                <span class=\"toggle-icon\" id=\"icon-%s\">▶</span> ✗ Missing Fields (%d)%n", 
+				sectionIdStr, cls.getMissingFields().size());
+			out.println("                            </div>");
+			out.printf("                            <ul class=\"item-list missing\" id=\"%s\" style=\"display: none;\">%n", sectionIdStr);
 			for (String field : cls.getMissingFields()) {
 				out.printf("                                <li>%s</li>%n", escapeHtml(field));
 			}
@@ -202,10 +219,13 @@ public class HtmlReportGenerator {
 		}
 		
 		if (!cls.getImplementedConstructors().isEmpty()) {
+			String sectionIdStr = safeClassName + "_impl_ctors";
 			out.println("                        <div class=\"section\">");
-			out.printf("                            <div class=\"section-title\">✓ Implemented Constructors (%d)</div>%n", 
-				cls.getImplementedConstructors().size());
-			out.println("                            <ul class=\"item-list implemented\">");
+			out.printf("                            <div class=\"section-title collapsible\" onclick=\"toggleSection('%s')\">%n", sectionIdStr);
+			out.printf("                                <span class=\"toggle-icon\" id=\"icon-%s\">▶</span> ✓ Implemented Constructors (%d)%n", 
+				sectionIdStr, cls.getImplementedConstructors().size());
+			out.println("                            </div>");
+			out.printf("                            <ul class=\"item-list implemented\" id=\"%s\" style=\"display: none;\">%n", sectionIdStr);
 			for (String ctor : cls.getImplementedConstructors()) {
 				out.printf("                                <li>%s</li>%n", escapeHtml(ctor));
 			}
@@ -214,10 +234,13 @@ public class HtmlReportGenerator {
 		}
 		
 		if (!cls.getMissingConstructors().isEmpty()) {
+			String sectionIdStr = safeClassName + "_miss_ctors";
 			out.println("                        <div class=\"section\">");
-			out.printf("                            <div class=\"section-title\">✗ Missing Constructors (%d)</div>%n", 
-				cls.getMissingConstructors().size());
-			out.println("                            <ul class=\"item-list missing\">");
+			out.printf("                            <div class=\"section-title collapsible\" onclick=\"toggleSection('%s')\">%n", sectionIdStr);
+			out.printf("                                <span class=\"toggle-icon\" id=\"icon-%s\">▶</span> ✗ Missing Constructors (%d)%n", 
+				sectionIdStr, cls.getMissingConstructors().size());
+			out.println("                            </div>");
+			out.printf("                            <ul class=\"item-list missing\" id=\"%s\" style=\"display: none;\">%n", sectionIdStr);
 			for (String ctor : cls.getMissingConstructors()) {
 				out.printf("                                <li>%s</li>%n", escapeHtml(ctor));
 			}
@@ -276,6 +299,17 @@ public class HtmlReportGenerator {
 		out.println("            } else {");
 		out.println("                content.classList.add('expanded');");
 		out.println("                icon.textContent = '▼';");
+		out.println("            }");
+		out.println("        }");
+		out.println("        function toggleSection(sectionId) {");
+		out.println("            const content = document.getElementById(sectionId);");
+		out.println("            const icon = document.getElementById('icon-' + sectionId);");
+		out.println("            if (content.style.display === 'none') {");
+		out.println("                content.style.display = 'block';");
+		out.println("                icon.textContent = '▼';");
+		out.println("            } else {");
+		out.println("                content.style.display = 'none';");
+		out.println("                icon.textContent = '▶';");
 		out.println("            }");
 		out.println("        }");
 		out.println("    </script>");
