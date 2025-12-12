@@ -1,5 +1,10 @@
 package me.mdbell.awtea.util;
 
+import me.mdbell.awtea.util.coverage.ClassCoverage;
+import me.mdbell.awtea.util.coverage.CoverageData;
+import me.mdbell.awtea.util.coverage.HtmlReportGenerator;
+import me.mdbell.awtea.util.coverage.MarkdownReportGenerator;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -11,6 +16,10 @@ import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -23,12 +32,39 @@ public class ApiDiff {
 
 	private static int globalRuntimeTotal = 0;
 	private static int globalImplementedTotal = 0;
+	private static CoverageData coverageData = null;
 
 
 	public static void main(String[] args) {
 		ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
-		String[] classesToCheck = args.length == 0 ? null : args;
+		String outputFormat = null;
+		String outputPath = null;
+		List<String> classesToCheckList = new ArrayList<>();
+		
+		// Parse command-line arguments
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].equals("--format") && i + 1 < args.length) {
+				outputFormat = args[++i];
+			} else if (args[i].equals("--output") && i + 1 < args.length) {
+				outputPath = args[++i];
+			} else if (args[i].equals("--help") || args[i].equals("-h")) {
+				printUsage();
+				return;
+			} else {
+				classesToCheckList.add(args[i]);
+			}
+		}
+		
+		String[] classesToCheck = classesToCheckList.isEmpty() ? null : 
+			classesToCheckList.toArray(new String[0]);
+
+		// Initialize coverage data if generating a report
+		if (outputFormat != null) {
+			coverageData = new CoverageData();
+			coverageData.setTimestamp(LocalDateTime.now()
+				.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+		}
 
 		String[] teavmClasses = findClassesInPackage(AWTEA_ROOT_PACKAGE, loader);
 
@@ -64,15 +100,62 @@ public class ApiDiff {
 			}
 		}
 
-		System.out.println("======================================================");
-		System.out.println("Global API Coverage Summary:");
-		System.out.printf("Total covered: %d / %d (%.1f%%)%n",
-			globalImplementedTotal,
-			globalRuntimeTotal,
-			globalRuntimeTotal == 0 ? 100.0 : (100.0 * globalImplementedTotal / globalRuntimeTotal));
-		System.out.println("======================================================");
+		// Print console summary if not generating a report
+		if (outputFormat == null) {
+			System.out.println("======================================================");
+			System.out.println("Global API Coverage Summary:");
+			System.out.printf("Total covered: %d / %d (%.1f%%)%n",
+				globalImplementedTotal,
+				globalRuntimeTotal,
+				globalRuntimeTotal == 0 ? 100.0 : (100.0 * globalImplementedTotal / globalRuntimeTotal));
+			System.out.println("======================================================");
+		} else {
+			// Generate report
+			generateReport(outputFormat, outputPath);
+		}
 
 	}
+
+	private static void printUsage() {
+		System.out.println("Usage: ApiDiff [options] [classNames...]");
+		System.out.println();
+		System.out.println("Options:");
+		System.out.println("  --format <html|markdown>  Generate report in specified format");
+		System.out.println("  --output <path>           Output file path (default: docs/coverage/report.<ext>)");
+		System.out.println("  --help, -h                Show this help message");
+		System.out.println();
+		System.out.println("Examples:");
+		System.out.println("  ApiDiff                                    # Console output");
+		System.out.println("  ApiDiff --format html                      # Generate HTML report");
+		System.out.println("  ApiDiff --format markdown --output out.md  # Generate Markdown report");
+	}
+
+	private static void generateReport(String format, String outputPath) {
+		try {
+			Path path;
+			if (outputPath == null) {
+				String ext = format.equals("html") ? "html" : "md";
+				path = Paths.get("docs/coverage/report." + ext);
+			} else {
+				path = Paths.get(outputPath);
+			}
+			
+			if (format.equalsIgnoreCase("html")) {
+				new HtmlReportGenerator().generate(coverageData, path);
+				System.out.println("HTML report generated: " + path.toAbsolutePath());
+			} else if (format.equalsIgnoreCase("markdown")) {
+				new MarkdownReportGenerator().generate(coverageData, path);
+				System.out.println("Markdown report generated: " + path.toAbsolutePath());
+			} else {
+				System.err.println("Unknown format: " + format);
+				System.err.println("Supported formats: html, markdown");
+			}
+		} catch (IOException e) {
+			System.err.println("Failed to generate report: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
 
 	private static String[] findClassesInPackage(String pkg, ClassLoader loader) {
 		String path = pkg.replace('.', '/');
@@ -185,6 +268,11 @@ public class ApiDiff {
 		Set<String> missingMethods = diff(runtimeMethods, teavmMethods);
 		Set<String> missingFields  = diff(runtimeFields,  teavmFields);
 		Set<String> missingCtors   = diff(runtimeCtors,   teavmCtors);
+		
+		// Implemented items
+		Set<String> implementedMethods = diff(runtimeMethods, missingMethods);
+		Set<String> implementedFields  = diff(runtimeFields,  missingFields);
+		Set<String> implementedCtors   = diff(runtimeCtors,   missingCtors);
 
 		// Totals
 		int runtimeTotal = runtimeMethods.size() + runtimeFields.size() + runtimeCtors.size();
@@ -195,33 +283,55 @@ public class ApiDiff {
 		globalRuntimeTotal += runtimeTotal;
 		globalImplementedTotal += implementedTotal;
 
-		// If class fully covered, you can skip printing
-		if (missingMethods.isEmpty() && missingFields.isEmpty() && missingCtors.isEmpty()) {
-			System.out.printf("=== %s: FULL COVERAGE (%d/%d = 100%%)%n",
-				runtimeClass.getName(), implementedTotal, runtimeTotal);
-			return;
+		// If generating coverage data, populate it
+		if (coverageData != null) {
+			ClassCoverage classCoverage = new ClassCoverage(
+				teavmClass.getName(), 
+				runtimeClass.getName()
+			);
+			
+			implementedMethods.forEach(classCoverage::addImplementedMethod);
+			missingMethods.forEach(classCoverage::addMissingMethod);
+			implementedFields.forEach(classCoverage::addImplementedField);
+			missingFields.forEach(classCoverage::addMissingField);
+			implementedCtors.forEach(classCoverage::addImplementedConstructor);
+			missingCtors.forEach(classCoverage::addMissingConstructor);
+			
+			String packageName = runtimeClass.getPackage() != null ? 
+				runtimeClass.getPackage().getName() : "(default)";
+			coverageData.addClassCoverage(packageName, classCoverage);
 		}
 
-		// Print diff
-		System.out.printf("=== %s vs %s ===%n", teavmClass.getName(), runtimeClass.getName());
-		System.out.printf("Coverage: %d/%d = %.1f%%%n",
-			implementedTotal, runtimeTotal,
-			(runtimeTotal == 0 ? 100.0 : (100.0 * implementedTotal / runtimeTotal)));
+		// Print console output only if not generating a report
+		if (coverageData == null) {
+			// If class fully covered, you can skip printing
+			if (missingMethods.isEmpty() && missingFields.isEmpty() && missingCtors.isEmpty()) {
+				System.out.printf("=== %s: FULL COVERAGE (%d/%d = 100%%)%n",
+					runtimeClass.getName(), implementedTotal, runtimeTotal);
+				return;
+			}
 
-		if (!missingMethods.isEmpty()) {
-			System.out.println("  Missing methods:");
-			missingMethods.forEach(m -> System.out.println("    " + m));
-		}
-		if (!missingFields.isEmpty()) {
-			System.out.println("  Missing fields:");
-			missingFields.forEach(f -> System.out.println("    " + f));
-		}
-		if (!missingCtors.isEmpty()) {
-			System.out.println("  Missing ctors:");
-			missingCtors.forEach(c -> System.out.println("    " + c));
-		}
+			// Print diff
+			System.out.printf("=== %s vs %s ===%n", teavmClass.getName(), runtimeClass.getName());
+			System.out.printf("Coverage: %d/%d = %.1f%%%n",
+				implementedTotal, runtimeTotal,
+				(runtimeTotal == 0 ? 100.0 : (100.0 * implementedTotal / runtimeTotal)));
 
-		System.out.println();
+			if (!missingMethods.isEmpty()) {
+				System.out.println("  Missing methods:");
+				missingMethods.forEach(m -> System.out.println("    " + m));
+			}
+			if (!missingFields.isEmpty()) {
+				System.out.println("  Missing fields:");
+				missingFields.forEach(f -> System.out.println("    " + f));
+			}
+			if (!missingCtors.isEmpty()) {
+				System.out.println("  Missing ctors:");
+				missingCtors.forEach(c -> System.out.println("    " + c));
+			}
+
+			System.out.println();
+		}
 	}
 
 
