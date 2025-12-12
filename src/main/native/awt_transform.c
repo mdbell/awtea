@@ -1,5 +1,7 @@
 #include "awt_transform.h"
 
+#define EPS 1e-9
+
 int is_identity_transform(const Transform2D* t) {
     return  t->m00 == 1.0f && t->m11 == 1.0f &&
             t->m01 == 0.0f && t->m10 == 0.0f &&
@@ -8,7 +10,7 @@ int is_identity_transform(const Transform2D* t) {
 
 int invert_transform(const Transform2D* t, Transform2D* out) {
     float det = t->m00 * t->m11 - t->m01 * t->m10;
-    if (det == 0.0f) {
+    if (fabs(det) < EPS) {
         return 0; // non-invertible
     }
     float invDet = 1.0f / det;
