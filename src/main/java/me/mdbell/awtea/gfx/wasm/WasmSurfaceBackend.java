@@ -8,10 +8,13 @@ public class WasmSurfaceBackend implements SurfaceBackend {
 	private static final String WASM_MODULE_PATH = System.getProperty("me.mdbell.awtea.wasm.module_path",
 		"build/wasm/awt_raster.wasm");
 
-	private final WasmAwtRasterizerExports exports;
+	final WasmAwtRasterizerExports exports;
+
+	final SurfaceLRUCache surfaceCache;
 
 	public WasmSurfaceBackend() {
 		this.exports = WasmAwtLoader.load(WASM_MODULE_PATH).await();
+		this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
 	}
 
 	public WasmSurface createSurface(int width, int height, int pixelFormat) {
@@ -28,7 +31,7 @@ public class WasmSurfaceBackend implements SurfaceBackend {
 		if (surfaceId < 0) {
 			throw new IllegalStateException("createSurface failed: " + surfaceId);
 		}
-		return new WasmSurface(exports, surfaceId, width, height, pixelFormat);
+		return new WasmSurface(this, surfaceId, width, height, pixelFormat);
 	}
 
 	@Override
@@ -45,5 +48,17 @@ public class WasmSurfaceBackend implements SurfaceBackend {
 										   boolean isRasterPremultiplied, int bufferedImageType) {
 		// Not supported in Wasm backend - we need to allocate surface memory in the WASM module
 		return null;
+	}
+
+	private static int getSurfaceCacheSize() {
+		String prop = System.getProperty("me.mdbell.awtea.wasm.surface_cache_size");
+		if (prop != null) {
+			try {
+				return Integer.parseInt(prop);
+			} catch (NumberFormatException e) {
+				// ignore
+			}
+		}
+		return 100;
 	}
 }

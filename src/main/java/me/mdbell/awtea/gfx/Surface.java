@@ -20,6 +20,22 @@ public interface Surface {
 		return type >= MIN_FORMAT && type <= MAX_FORMAT;
 	}
 
+	static int toBufferedImageType(int pixelFormat) {
+		switch (pixelFormat) {
+			case FORMAT_INT_ARGB:
+				return BufferedImage.TYPE_INT_ARGB;
+			case FORMAT_INT_RGB:
+				return BufferedImage.TYPE_INT_RGB;
+			case FORMAT_INT_BGR:
+				return BufferedImage.TYPE_INT_BGR;
+			case FORMAT_INT_RGBA:
+				return BufferedImage.TYPE_INT_ARGB; // Closest match
+			default:
+				System.err.println("Surface.toBufferedImageType: Unsupported pixel format: " + pixelFormat);
+				return BufferedImage.TYPE_CUSTOM;
+		}
+	}
+
 	static int fromBufferedImageType(int bufferedImageType) {
 		switch (bufferedImageType) {
 			case BufferedImage.TYPE_INT_ARGB:

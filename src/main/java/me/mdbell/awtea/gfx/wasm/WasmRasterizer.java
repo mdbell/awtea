@@ -36,6 +36,30 @@ public class WasmRasterizer implements Rasterizer {
 	public void reset() {
 	}
 
+	private void blitSurface(Surface srcSurface, int destX, int destY) {
+		// pixel data already uploaded to WASM memory by the Surface implementation
+		if (srcSurface instanceof WasmSurface) {
+			WasmSurface wasmSurface = (WasmSurface) srcSurface;
+			commandBuffer.emitBlitImage(
+				wasmSurface.getId(),
+				destX, destY);
+		} else {
+			WasmSurfaceBackend backend = surface.backend;
+
+			SurfaceLRUCache.SurfaceCacheEntry cacheEntry = backend.surfaceCache.get(srcSurface);
+			if (cacheEntry == null) {
+				System.err.println("WasmRasterizer: blitSurface failed to lookup surface cache");
+				return;
+			}
+
+			cacheEntry.sync();
+
+			commandBuffer.emitBlitImage(
+				cacheEntry.imageId,
+				destX, destY);
+		}
+	}
+
 	@Override
 	public void rasterizeCommands(List<SurfaceCommand> cmds) {
 		for (SurfaceCommand cmd : cmds) {
@@ -51,15 +75,8 @@ public class WasmRasterizer implements Rasterizer {
 						System.err.println("WasmRasterizer: BLIT_IMAGE command missing SurfaceContainer object");
 					} else {
 						Surface surface1 = ((SurfaceContainer) cmd.obj).getSurface();
-						if (!(surface1 instanceof WasmSurface)) {
-							System.err.println("WasmRasterizer: BLIT_IMAGE command has incompatible Surface type: " + surface1.getClass().getName());
-						} else {
-							WasmSurface wasmSurface = (WasmSurface) surface1;
-							//TODO: missing width/height args?
-							commandBuffer.emitBlitImage(
-								wasmSurface.getId(),
-								cmd.arg1, cmd.arg2);
-						}
+						//TODO: missing width/height args?
+						blitSurface(surface1, cmd.arg1, cmd.arg2);
 					}
 					break;
 				case SET_COLOR:

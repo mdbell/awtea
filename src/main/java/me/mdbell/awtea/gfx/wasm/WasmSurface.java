@@ -26,9 +26,12 @@ public final class WasmSurface implements Surface {
 
 	private Uint8ClampedArray pixelsView = null;
 
-	public WasmSurface(WasmAwtRasterizerExports exports, int surfaceId,
-					   int width, int height, int pixelFormat) {
-		this.exports = exports;
+	WasmSurfaceBackend backend;
+
+	WasmSurface(WasmSurfaceBackend backend, int surfaceId,
+				int width, int height, int pixelFormat) {
+		this.backend = backend;
+		this.exports = backend.exports;
 		this.surfaceId = surfaceId;
 		this.pixelFormat = pixelFormat;
 		this.memoryBuffer = exports.getMemory().getBuffer();
@@ -116,5 +119,9 @@ public final class WasmSurface implements Surface {
 
 	public int getId() {
 		return surfaceId;
+	}
+
+	public enum ExtendedOperation {
+		FREE_IMAGE;
 	}
 }

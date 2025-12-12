@@ -20,6 +20,9 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSMethod("get_command_size")
 	int getSurfaceCommandSize();
 
+	@JSMethod("request_command_buffer")
+	int requestCommandBuffer(int commandCount);
+
 	// int reset_surface(int surface_id, int layer, int width, int height, int pixel_format);
 	@JSMethod("reset_surface")
 	int resetSurface(int surfaceId, int layer, int width, int height, int pixelFormat);
@@ -37,13 +40,12 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSMethod("get_surface_stride")
 	int getSurfaceStride(int surfaceId);
 
-	// void register_image(int id, uint32_t ptr, int format, int width, int height, int stride);
+	// int register_image(int format, int width, int height, int stride)
 	@JSMethod("register_image")
-	void registerImage(int id, int pixelsPtr, int format, int width, int height, int stride);
+	int registerImage(int format, int width, int height, int stride);
 
-	// uint32_t alloc_pixels(int width, int height);
-	@JSMethod("alloc_pixels")
-	int allocPixels(int width, int height);
+	@JSMethod("get_image_pixels_ptr")
+	int getImagePixelsPtr(int imageId);
 
 	@JSMethod("free_pixels")
 	void freePixels(int ptr);

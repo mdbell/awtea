@@ -78,12 +78,16 @@ class WebGLRasterizer implements Rasterizer {
 	}
 
 	private void fillRect(float x, float y, float width, float height) {
+		int h = surface.getHeight();
+		y = h - (y + height); // flip Y coordinate
 		useColorProgram();
 
 		setColor(foreground);
 		backend.setRectBuffer(x, y, width, height);
 
 		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+
+		surface.markDirty();
 	}
 
 	private void drawRect(float x, float y, float width, float height, float lineWidth) {
@@ -92,6 +96,8 @@ class WebGLRasterizer implements Rasterizer {
 		fillRect(x, y + height - lineWidth, width, lineWidth); // bottom
 		fillRect(x, y + lineWidth, lineWidth, height - 2 * lineWidth); // left
 		fillRect(x + width - lineWidth, y + lineWidth, lineWidth, height - 2 * lineWidth); // right
+
+		surface.markDirty();
 	}
 
 	private void setColor(Color c) {
@@ -166,6 +172,8 @@ class WebGLRasterizer implements Rasterizer {
 		}
 		gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
 		applyClip(); // restore previous clip
+
+		surface.markDirty();
 	}
 
 	private void setClip(Shape shape) {
@@ -185,6 +193,8 @@ class WebGLRasterizer implements Rasterizer {
 			// generic Surface drawing (not optimized - gets copied into GPU texture and then drawn)
 			Surface surface = (Surface) img;
 			drawSurface(surface, x, y, width, height);
+		} else {
+			System.err.println("WebGLRasterizer: drawImage: Unsupported image type: " + img.getClass().getName());
 		}
 	}
 
@@ -256,13 +266,14 @@ class WebGLRasterizer implements Rasterizer {
 			x + width, y,
 			x + width, y + height
 		};
+
 		float[] uvs = {
+			0f, 1f,
+			1f, 1f,
 			0f, 0f,
-			1f, 0f,
-			0f, 1f,
-			0f, 1f,
-			1f, 0f,
-			1f, 1f
+			0f, 0f,
+			1f, 1f,
+			1f, 0f
 		};
 
 		backend.uploadQuadVertices(verts, uvs);
@@ -281,6 +292,8 @@ class WebGLRasterizer implements Rasterizer {
 		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
 
 		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
+
+		surface.markDirty();
 	}
 
 	@Override
@@ -330,8 +343,8 @@ class WebGLRasterizer implements Rasterizer {
 				case CLEAR_RECT:
 					clearRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
 					break;
-				case DRAW_LINE:
-					break;
+//				case DRAW_LINE:
+//					break;
 				case NO_OP:
 					// do nothing (shouldn't be in the command list in the first place)
 					break;
@@ -373,12 +386,12 @@ class WebGLRasterizer implements Rasterizer {
 		};
 
 		float[] uvs = {
+			0f, 0f,
+			1f, 0f,
 			0f, 1f,
-			1f, 1f,
-			0f, 0f,
-			0f, 0f,
-			1f, 1f,
-			1f, 0f
+			0f, 1f,
+			1f, 0f,
+			1f, 1f
 		};
 
 		backend.uploadQuadVertices(verts, uvs);

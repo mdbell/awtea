@@ -1,8 +1,9 @@
 package me.mdbell.awtea.classlib.java.awt.awtea.peer;
 
 import me.mdbell.awtea.classlib.java.awt.TFrame;
-import me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics;
+import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
+import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.ui.FloatingWindow;
@@ -14,9 +15,8 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 	private final HTMLCanvasElement canvasElement;
 	private final TEventManager eventManager;
 
-	private TSurfaceRasterizerGraphics graphics;
-
-	private Surface surface;
+	private final Surface surface;
+	private final TBufferedImage screenImg;
 
 	public TFrameFloatingPeer(TFrame component) {
 		super("frame-peer-window");
@@ -43,6 +43,8 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 			canvasElement.getHeight(),
 			canvasElement
 		);
+
+		screenImg = new TBufferedImage(surface);
 	}
 
 	@Override
@@ -65,13 +67,7 @@ public final class TFrameFloatingPeer extends FloatingWindow {
 		return canvasElement;
 	}
 
-	public TSurfaceRasterizerGraphics getGraphics() {
-		if (graphics == null) {
-			//graphics = new TCanvas2DGraphics(canvasElement);
-			//graphics = new TCanvasGraphics(canvasElement, true);
-			graphics = new TSurfaceRasterizerGraphics((
-				surface.createRasterizer()));
-		}
-		return graphics;
+	public TGraphics getGraphics() {
+		return screenImg.getGraphics();
 	}
 }

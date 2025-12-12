@@ -130,20 +130,15 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
 	@Override
 	public Surface createCompatibleSurface(int width, int height, int bufferedImageType) {
-		return new WebGLSurface(this, width, height, true); // TODO: get forScreen properly, and pass in the type
+		if (bufferedImageType != Surface.FORMAT_INT_RGBA) {
+			return null;
+		}
+		return new WebGLSurface(this, width, height, true);
 	}
 
 	@Override
 	public Surface createCompatibleSurface(Object cm, Object raster, boolean isRasterPremultiplied, int bufferedImageType) {
 		return null;
-	}
-
-	float[] identityTransform() {
-		return new float[]{
-			1f, 0f, 0f,
-			0f, 1f, 0f,
-			0f, 0f, 1f
-		};
 	}
 
 	protected void useColorProgram(int width, int height, Float32Array transform) {

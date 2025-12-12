@@ -2,9 +2,20 @@
 #include "awt_surface.h"
 #include "awt_draw.h"
 #include "awt_util.h"
+#include "awt_image.h"
 
 int get_command_size() {
     return sizeof(SurfaceCommand);
+}
+
+int request_command_buffer(int max_commands) {
+    size_t bytes = (size_t)max_commands * sizeof(SurfaceCommand);
+    void* p = malloc(bytes);
+    if (!p){
+        return 0;
+    }
+    memset(p, 0, bytes);
+    return (int)(uintptr_t)p;
 }
 
 int render_awt(int surface_id, uint32_t cmdPtr, int cmdCount) {
@@ -55,6 +66,10 @@ int render_awt(int surface_id, uint32_t cmdPtr, int cmdCount) {
                 draw_line(surface, cmd->x, cmd->y,
                           cmd->width, cmd->height,
                           surface->argb[COLOR_FG]);
+                break;
+
+            case EXT_FREE_IMAGE:
+                free_image((int)cmd->x);
                 break;
 
             // No-op or unknown command

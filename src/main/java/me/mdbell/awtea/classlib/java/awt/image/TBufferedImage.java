@@ -38,11 +38,11 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 
 	private final int width;
 	private final int height;
-	private final int imageType;
+	private int imageType;
 
-	private final TColorModel colorModel;
-	private final TWritableRaster raster;
-	private final boolean alphaPremultiplied;
+	private TColorModel colorModel;
+	private TWritableRaster raster;
+	private boolean alphaPremultiplied;
 
 	@Getter(AccessLevel.NONE)
 	private TSurfaceRasterizerGraphics gfx;
@@ -52,6 +52,19 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 
 	@Getter(onMethod_ = @Override)
 	private Surface surface;
+
+	public TBufferedImage(Surface existingSurface) {
+		if (existingSurface == null) {
+			throw new NullPointerException("existingSurface must not be null");
+		}
+
+		this.surface = existingSurface;
+
+		this.width = existingSurface.getWidth();
+		this.height = existingSurface.getHeight();
+		this.properties = new Hashtable<>();
+		init(this.surface);
+	}
 
 	public TBufferedImage(int width, int height) {
 		this(width, height, TYPE_INT_RGB);
@@ -72,13 +85,35 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 			throw new IllegalArgumentException("Unsupported imageType: " + imageType);
 		}
 
-		// TODO: delegate these to the Surface implementation
-
 		this.width = width;
 		this.height = height;
-		this.imageType = imageType;
+		this.properties = properties;
+		init(this.surface);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public TBufferedImage(TColorModel cm,
+						  TWritableRaster raster,
+						  boolean isRasterPremultiplied,
+						  Hashtable properties) {
+		if (cm == null || raster == null) {
+			throw new NullPointerException("ColorModel and Raster must not be null");
+		}
+
+		this.colorModel = cm;
+		this.raster = raster;
+		this.alphaPremultiplied = isRasterPremultiplied;
 		this.properties = properties;
 
+		this.width = raster.getWidth();
+		this.height = raster.getHeight();
+
+		this.imageType = inferImageType(cm, raster, alphaPremultiplied);
+		this.surface = DefaultSurfaceBackend.getDefault().createCompatibleSurface(cm, raster, isRasterPremultiplied, imageType);
+	}
+
+	private void init(Surface surface) {
+		imageType = Surface.toBufferedImageType(surface.getFormat());
 		switch (imageType) {
 			case TYPE_INT_ARGB: {
 				// A,R,G,B in 0xAARRGGBB layout
@@ -185,27 +220,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 			default:
 				throw new IllegalArgumentException("Unsupported imageType: " + imageType);
 		}
-	}
-
-	@SuppressWarnings("rawtypes")
-	public TBufferedImage(TColorModel cm,
-						  TWritableRaster raster,
-						  boolean isRasterPremultiplied,
-						  Hashtable properties) {
-		if (cm == null || raster == null) {
-			throw new NullPointerException("ColorModel and Raster must not be null");
-		}
-
-		this.colorModel = cm;
-		this.raster = raster;
-		this.alphaPremultiplied = isRasterPremultiplied;
-		this.properties = properties;
-
-		this.width = raster.getWidth();
-		this.height = raster.getHeight();
-
-		this.imageType = inferImageType(cm, raster, alphaPremultiplied);
-		this.surface = DefaultSurfaceBackend.getDefault().createCompatibleSurface(cm, raster, isRasterPremultiplied, imageType);
 	}
 
 	private static int inferImageType(TColorModel cm,

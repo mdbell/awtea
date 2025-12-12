@@ -6,7 +6,7 @@ import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8Array;
 
-final class SurfaceCommandBuffer {
+public final class SurfaceCommandBuffer {
 	private final WasmAwtRasterizerExports exports;
 	private final ArrayBuffer memoryBuffer;
 	private final Uint8Array u8;
@@ -21,13 +21,13 @@ final class SurfaceCommandBuffer {
 
 	private final int surfaceId;
 
-	public SurfaceCommandBuffer(WasmAwtRasterizerExports exports,
-								int maxCommands) {
+	SurfaceCommandBuffer(WasmAwtRasterizerExports exports,
+						 int maxCommands) {
 		this(-1, exports, maxCommands);
 	}
 
-	public SurfaceCommandBuffer(int surfaceId, WasmAwtRasterizerExports exports,
-								int maxCommands) {
+	SurfaceCommandBuffer(int surfaceId, WasmAwtRasterizerExports exports,
+						 int maxCommands) {
 		this.surfaceId = surfaceId;
 		this.exports = exports;
 		this.memoryBuffer = exports.getMemory().getBuffer();
@@ -37,11 +37,7 @@ final class SurfaceCommandBuffer {
 		this.commandSize = exports.getSurfaceCommandSize();
 		this.maxCommands = maxCommands;
 
-		int totalBytes = commandSize * maxCommands;
-		int words = (totalBytes + 3) / 4; // round up to 32-bit words
-
-		// abuse alloc_pixels as a generic malloc: width = words, height = 1
-		this.basePtr = exports.allocPixels(words, 1);
+		this.basePtr = exports.requestCommandBuffer(maxCommands);
 		if (basePtr == 0) {
 			throw new IllegalStateException("Failed to allocate command buffer");
 		}
@@ -195,6 +191,21 @@ final class SurfaceCommandBuffer {
 		i32.set(wordBase + 6, 0);
 	}
 
+	public void emitFreeImage(int imageId) {
+		int idx = ensureSlot();
+		int baseByte = cmdBaseByte(idx);
+		int wordBase = cmdWordBase(baseByte);
+
+		setExtendedOperation(baseByte, WasmSurface.ExtendedOperation.FREE_IMAGE);
+
+		i32.set(wordBase + 1, imageId);
+		i32.set(wordBase + 2, 0);
+		i32.set(wordBase + 3, 0);
+		i32.set(wordBase + 4, 0);
+		i32.set(wordBase + 5, 0);
+		i32.set(wordBase + 6, 0);
+	}
+
 	public void emitSetTransform(
 		float m00, float m10, float m01,
 		float m11, float m02, float m12) {
@@ -254,6 +265,12 @@ final class SurfaceCommandBuffer {
 
 	private void setOperation(int byteIndex, SurfaceCommand.Operation op) {
 		u8.set(byteIndex, (short) op.ordinal());
+	}
+
+	private void setExtendedOperation(int byteIndex, WasmSurface.ExtendedOperation op) {
+		int operationOffset = 128; // TODO: define constant
+		int opCode = operationOffset + op.ordinal();
+		u8.set(byteIndex, (short) (opCode & 0xFF));
 	}
 
 	public void emitDrawSurface(WasmSurface surface, int imgX, int imgY) {

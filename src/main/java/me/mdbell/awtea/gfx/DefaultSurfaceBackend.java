@@ -5,8 +5,6 @@ import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
 import me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 
-import java.awt.image.BufferedImage;
-
 public class DefaultSurfaceBackend implements SurfaceBackend {
 
 	private final SurfaceBackend[] backends;
@@ -69,6 +67,6 @@ public class DefaultSurfaceBackend implements SurfaceBackend {
 	 */
 	public Surface createScreenSurface(int width, int height, HTMLCanvasElement canvas) {
 		WebGLSurfaceBackend webGLBackend = new WebGLSurfaceBackend(canvas);
-		return webGLBackend.createCompatibleSurface(width, height, BufferedImage.TYPE_INT_ARGB);
+		return webGLBackend.createCompatibleSurface(width, height, Surface.FORMAT_INT_RGBA);
 	}
 }

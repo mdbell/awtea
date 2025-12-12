@@ -38,7 +38,9 @@ typedef enum {
     CMD_CLEAR_RECT,
     CMD_DRAW_LINE,
 
-    CMD_COUNT // last value is reserved for counting
+    CMD_COUNT, // last value is reserved for counting
+
+    EXT_FREE_IMAGE = 128, // non-standard render commands start here
 
 } SurfaceOperation;
 
