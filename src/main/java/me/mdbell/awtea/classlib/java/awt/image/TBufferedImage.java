@@ -50,11 +50,7 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	@SuppressWarnings("rawtypes")
 	private final Hashtable properties;
 
-	@Getter(AccessLevel.NONE)
-	private boolean dirty = true;
-
-	// Begin of Surface rework vars
-
+	@Getter(onMethod_ = @Override)
 	private Surface surface;
 
 	public TBufferedImage(int width, int height) {
@@ -285,7 +281,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 	}
 
 	public void setRGB(int x, int y, int argb) {
-		dirty = true;
 		// Decompose ARGB into components
 		int r = (argb >> 16) & 0xFF;
 		int g = (argb >> 8) & 0xFF;
@@ -345,7 +340,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 					   int[] rgbArray,
 					   int offset,
 					   int scansize) {
-		dirty = true;
 
 		if (w <= 0 || h <= 0) {
 			return;
@@ -417,8 +411,6 @@ public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarg
 		if (w <= 0 || h <= 0) {
 			return;
 		}
-
-		dirty = true;
 
 		Uint8ClampedArray src = data.getData();
 		int srcIndex = 0;

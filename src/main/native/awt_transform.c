@@ -1,3 +1,4 @@
+#include <math.h>
 #include "awt_transform.h"
 
 #define EPS 1e-9
