@@ -63,6 +63,10 @@ typedef struct {
     float m10, m11, m12; // second row: y' = m10*x + m11*y + m12
 } Transform2D;
 
+
+
+// This file is the source of truth for the representation of the pixel formats,
+// it should be updated _first_ before anywhere else (e.g Java side)
 typedef enum {
     PIXEL_FORMAT_ARGB = 0,
     PIXEL_FORMAT_RGB,

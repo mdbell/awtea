@@ -16,8 +16,12 @@ public class SoftwareSurfaceBackend implements SurfaceBackend {
 
 	@Override
 	public Surface createCompatibleSurface(Object cm, Object raster, boolean isRasterPremultiplied, int bufferedImageType) {
+		int format = Surface.fromBufferedImageType(bufferedImageType);
+		if (format == -1) {
+			return null;
+		}
 		return new SoftwareSurface((java.awt.image.WritableRaster) raster,
 			(java.awt.image.ColorModel) cm,
-			bufferedImageType);
+			format);
 	}
 }

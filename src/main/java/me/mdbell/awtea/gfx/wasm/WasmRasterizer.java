@@ -37,11 +37,6 @@ public class WasmRasterizer implements Rasterizer {
 	}
 
 	@Override
-	public void onResize(int width, int height) {
-		surface.resize(width, height);
-	}
-
-	@Override
 	public void rasterizeCommands(List<SurfaceCommand> cmds) {
 		for (SurfaceCommand cmd : cmds) {
 			switch (cmd.type) {

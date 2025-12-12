@@ -34,9 +34,6 @@ public class ThreadDetour {
 	public static Thread init(Runnable target, String name) {
 		Thread thread = new Thread(target, name);
 		ThreadMonitor.get().register(thread);
-
-		Thread example = new Thread();
-
 		return thread;
 	}
 

@@ -77,11 +77,6 @@ class WebGLRasterizer implements Rasterizer {
 		this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
 	}
 
-	@Override
-	public void onResize(int width, int height) {
-		// TODO: This should be removed, resizing should be handled by the surface itself
-	}
-
 	private void fillRect(float x, float y, float width, float height) {
 		useColorProgram();
 
@@ -215,14 +210,30 @@ class WebGLRasterizer implements Rasterizer {
 		gl.texParameteri(WebGLRenderingContext.TEXTURE_2D,
 			WebGLRenderingContext.TEXTURE_MAG_FILTER,
 			WebGLRenderingContext.LINEAR);
-		//TODO: determine swizzle mode based on surface pixel format
-		WebGLSurfaceBackend.SwizzleMode mode = WebGLSurfaceBackend.SwizzleMode.RGB_TO_RGBA;
+		WebGLSurfaceBackend.SwizzleMode mode = determineSwizzleMode(surface);
 		try {
 			drawTexture(tmp, mode, x, y, surface.getWidth(), surface.getHeight(), width, height, surface.getPixelData());
 		} finally {
 			// clean up temporary texture
 			gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
 			gl.deleteTexture(tmp);
+		}
+	}
+
+	private WebGLSurfaceBackend.SwizzleMode determineSwizzleMode(Surface surface) {
+		switch (surface.getFormat()) {
+			case Surface.FORMAT_INT_ARGB:
+				return WebGLSurfaceBackend.SwizzleMode.ARGB_TO_RGBA;
+			case Surface.FORMAT_INT_RGB:
+				return WebGLSurfaceBackend.SwizzleMode.RGB_TO_RGBA;
+			case Surface.FORMAT_INT_BGR:
+				return WebGLSurfaceBackend.SwizzleMode.BGR_TO_ABGR;
+			case Surface.FORMAT_INT_RGBA:
+				return WebGLSurfaceBackend.SwizzleMode.NONE;
+			default:
+				System.err.println("WebGLRasterizer: Unknown surface format: " + surface.getFormat() +
+					", defaulting to no swizzling");
+				return WebGLSurfaceBackend.SwizzleMode.NONE;
 		}
 	}
 

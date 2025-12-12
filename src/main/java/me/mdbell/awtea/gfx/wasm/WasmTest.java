@@ -1,6 +1,7 @@
 package me.mdbell.awtea.gfx.wasm;
 
 import me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics;
+import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.util.jso.JSRecord;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
@@ -30,7 +31,7 @@ public class WasmTest {
 
 		WasmSurfaceBackend engine = new WasmSurfaceBackend();
 
-		framebuffer = engine.createSurface(canvasElement.getWidth(), canvasElement.getHeight(), WasmPixelFormat.PIXEL_FORMAT_ABGR);
+		framebuffer = engine.createSurface(canvasElement.getWidth(), canvasElement.getHeight(), Surface.FORMAT_INT_ABGR);
 
 		gfx = new TSurfaceRasterizerGraphics(new WasmRasterizer(framebuffer));
 

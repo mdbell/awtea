@@ -29,11 +29,6 @@ public class SoftwareRasterizer implements Rasterizer {
 	}
 
 	@Override
-	public void onResize(int width, int height) {
-		// unsupported, fixed-size surface
-	}
-
-	@Override
 	public void rasterizeCommands(List<SurfaceCommand> cmds) {
 		// currently a stub, in RS they blit directly to the underlying pixel buffer
 	}

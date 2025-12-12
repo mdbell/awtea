@@ -75,6 +75,12 @@ class WebGLSurface implements Surface {
 	}
 
 	@Override
+	public int getFormat() {
+		// WebGL surfaces are always RGBA - mapped to INT_ARGB in our format system
+		return Surface.FORMAT_INT_ARGB;
+	}
+
+	@Override
 	public void destroy() {
 		if (texture != null) {
 			backend.gl.deleteTexture(texture);

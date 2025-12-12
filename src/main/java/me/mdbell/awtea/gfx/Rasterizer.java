@@ -8,8 +8,5 @@ public interface Rasterizer {
 
 	void reset();
 
-	@Deprecated
-	void onResize(int width, int height);
-
 	void rasterizeCommands(List<SurfaceCommand> cmds);
 }

@@ -40,7 +40,7 @@ public final class WasmSurface implements Surface {
 	}
 
 	public SurfaceCommandBuffer createBuffer() {
-		return createBuffer(1024);
+		return createBuffer(MAX_COMMANDS);
 	}
 
 	public SurfaceCommandBuffer createBuffer(int maxCommands) {
@@ -99,6 +99,11 @@ public final class WasmSurface implements Surface {
 			throw new IllegalStateException("Surface has been destroyed");
 		}
 		return pixelsView;
+	}
+
+	@Override
+	public int getFormat() {
+		return pixelFormat;
 	}
 
 	public Int32Array getPixelsView() {

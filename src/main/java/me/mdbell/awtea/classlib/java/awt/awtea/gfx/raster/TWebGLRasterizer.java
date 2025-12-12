@@ -168,14 +168,6 @@ public class TWebGLRasterizer implements Rasterizer {
 	}
 
 	@Override
-	public void onResize(int width, int height) {
-		if (width == this.backbufferWidth && height == this.backbufferHeight) {
-			return;
-		}
-		resizeBackbuffer(width, height);
-	}
-
-	@Override
 	public void rasterizeCommands(List<SurfaceCommand> ops) {
 //		Debug.trigger();
 		// we draw to a framebuffer so we can have incremental updates without

@@ -24,12 +24,7 @@ public class TOffscreenBufferPeer implements TSurfacePeer {
 	public void paintAll() {
 		Debug.trigger();
 		TGraphics g = buffer.getGraphics();
-
-//		Color bg = root.getBackground();
-//		g.setColor(bg != null ? bg : Color.BLACK);
-//		g.fillRect(0, 0, buffer.getWidth(), buffer.getHeight());
-		//g.clearRect(0, 0, buffer.getWidth(), buffer.getHeight());
-
+		
 		root.superPaint(g);
 		g.dispose();
 		root.getSurfaceGraphics().drawImage(buffer, 0, 0, null);

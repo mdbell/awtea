@@ -209,7 +209,7 @@ void blit_from_view(Surface* dst,
     uint32_t* src_pixels = (uint32_t*)(uintptr_t)src->ptr;
     uint32_t  src_stride = src->stride / 4; // in pixels
 
-    // Idenity transform blit: simple copy
+    // Identity transform blit: simple copy
     if (is_identity_transform(&dst->transform)) {
 
         int startX = clip_x(x, dst);

@@ -4,6 +4,7 @@ varying vec2 v_texCoord;
 uniform sampler2D u_texture;
 uniform int u_swizzleMode;
 
+
 void main() {
     vec4 tex = texture2D(u_texture, v_texCoord);
 

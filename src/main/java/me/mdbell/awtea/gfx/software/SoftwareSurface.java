@@ -10,17 +10,22 @@ public class SoftwareSurface implements Surface {
 
 	private WritableRaster raster;
 	private ColorModel cm; // not really needed here yet, maybe in software rasterizer?
-	private int type;
+	private int format;
 
 	private Uint8ClampedArray pixelData;
 
-	public SoftwareSurface(WritableRaster raster, ColorModel cm, int type) {
+	public SoftwareSurface(WritableRaster raster, ColorModel cm, int format) {
 		this.raster = raster;
 		this.cm = cm;
-		this.type = type;
+		this.format = format;
 
 		this.pixelData = getPixelDataFromBuffer(raster.getDataBuffer());
 
+	}
+
+	@Override
+	public int getFormat() {
+		return format;
 	}
 
 	private Uint8ClampedArray getPixelDataFromBuffer(DataBuffer dataBuffer) {

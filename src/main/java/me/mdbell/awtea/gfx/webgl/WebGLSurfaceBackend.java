@@ -222,6 +222,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		TEXTURE
 	}
 
+	// TODO: it would be nice to remove this and just use Surface pixel format directly
 	protected enum SwizzleMode {
 		NONE,
 		ARGB_TO_RGBA,

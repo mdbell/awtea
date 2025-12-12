@@ -35,12 +35,11 @@ int render_awt(int surface_id, uint32_t cmdPtr, int cmdCount) {
                 surface->clip.y = cmd->y;
                 surface->clip.width = cmd->width;
                 surface->clip.height = cmd->height;
-            break;    
-
+                break;    
             // Drawing commands
             case CMD_BLIT_IMAGE:
                 blit_image(surface, cmd->blit.image_id, cmd->x, cmd->y);
-            break;
+                break;
             case CMD_DRAW_RECT:
                 draw_rect(surface, cmd->x, cmd->y, cmd->width, cmd->height,
                           surface->argb[COLOR_FG]);

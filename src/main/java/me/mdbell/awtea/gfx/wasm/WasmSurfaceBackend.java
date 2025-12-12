@@ -14,26 +14,30 @@ public class WasmSurfaceBackend implements SurfaceBackend {
 		this.exports = WasmAwtLoader.load(WASM_MODULE_PATH).await();
 	}
 
-	public WasmSurface createSurface(int width, int height, WasmPixelFormat pixelFormat) {
+	public WasmSurface createSurface(int width, int height, int pixelFormat) {
 
 		if (width <= 0 || height <= 0) {
 			throw new IllegalArgumentException("Width and height must be positive");
+		}
+
+		if (!Surface.isValidPixelFormat(pixelFormat)) {
+			throw new IllegalArgumentException("Invalid pixel format: " + pixelFormat);
 		}
 
 		int surfaceId = exports.findFreeSurfaceId();
 		if (surfaceId < 0) {
 			throw new IllegalStateException("createSurface failed: " + surfaceId);
 		}
-		return new WasmSurface(exports, surfaceId, width, height, pixelFormat.ordinal());
+		return new WasmSurface(exports, surfaceId, width, height, pixelFormat);
 	}
 
 	@Override
 	public Surface createCompatibleSurface(int width, int height, int bufferedImageType) {
-		WasmPixelFormat format = WasmPixelFormat.fromBufferedImageType(bufferedImageType);
-		if (format != null) {
-			return createSurface(width, height, format);
+		int format = Surface.fromBufferedImageType(bufferedImageType);
+		if (format == -1) {
+			return null;
 		}
-		return null;
+		return createSurface(width, height, format);
 	}
 
 	@Override
