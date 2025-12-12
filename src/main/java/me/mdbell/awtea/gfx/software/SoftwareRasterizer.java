@@ -97,6 +97,10 @@ public class SoftwareRasterizer implements Rasterizer {
 
 	private void fillRect(int x, int y, int width, int height) {
 		// Apply transform
+		// Note: Currently only translation is supported for simplicity.
+		// Full affine transform support (scale, rotation, shear) would require
+		// transforming the rectangle corners and scan-converting the resulting quad,
+		// which is complex for a software fallback renderer.
 		int tx = (int) (x + transform.getTranslateX());
 		int ty = (int) (y + transform.getTranslateY());
 
@@ -146,6 +150,8 @@ public class SoftwareRasterizer implements Rasterizer {
 
 	private void clearRect(int x, int y, int width, int height) {
 		Color oldFg = foreground;
+		// Use background color if set, otherwise use transparent black
+		// The null check is defensive programming even though background is initialized to BLACK
 		foreground = background != null ? background : new Color(0, 0, 0, 0);
 		fillRect(x, y, width, height);
 		foreground = oldFg;
@@ -284,61 +290,75 @@ public class SoftwareRasterizer implements Rasterizer {
 		int b2 = pixels.get(idx + 2) & 0xFF;
 		int b3 = pixels.get(idx + 3) & 0xFF;
 
+		// Memory layout is little-endian, so we need to reconstruct the 32-bit value
 		switch (format) {
 			case Surface.FORMAT_INT_ARGB:
-				return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+				// 0xAARRGGBB: [BB, GG, RR, AA] in memory
+				return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
 			case Surface.FORMAT_INT_RGB:
-				return (b0 << 16) | (b1 << 8) | b2;
+				// 0x00RRGGBB: [BB, GG, RR, 00] in memory
+				return (b2 << 16) | (b1 << 8) | b0;
 			case Surface.FORMAT_INT_RGBA:
-				return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+				// 0xRRGGBBAA: [AA, BB, GG, RR] in memory
+				return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
 			case Surface.FORMAT_INT_ABGR:
-				return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+				// 0xAABBGGRR: [RR, GG, BB, AA] in memory
+				return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
 			case Surface.FORMAT_INT_BGR:
-				return (b0 << 16) | (b1 << 8) | b2;
+				// 0x00BBGGRR: [RR, GG, BB, 00] in memory
+				return (b2 << 16) | (b1 << 8) | b0;
 			default:
-				return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+				// Default to ARGB
+				return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
 		}
 	}
 
 	private void setPixel(Uint8ClampedArray pixels, int x, int y, int width, int color, int format) {
 		int idx = (y * width + x) * 4;
 
+		// Memory layout is little-endian, so we write bytes in LSB-first order
 		switch (format) {
 			case Surface.FORMAT_INT_ARGB:
-				pixels.set(idx, (color >> 24) & 0xFF);     // A
-				pixels.set(idx + 1, (color >> 16) & 0xFF); // R
-				pixels.set(idx + 2, (color >> 8) & 0xFF);  // G
-				pixels.set(idx + 3, color & 0xFF);         // B
+				// 0xAARRGGBB: write as [BB, GG, RR, AA]
+				pixels.set(idx, color & 0xFF);         // B
+				pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
+				pixels.set(idx + 2, (color >> 16) & 0xFF); // R
+				pixels.set(idx + 3, (color >> 24) & 0xFF); // A
 				break;
 			case Surface.FORMAT_INT_RGB:
-				pixels.set(idx, (color >> 16) & 0xFF);     // R
+				// 0x00RRGGBB: write as [BB, GG, RR, 0xFF]
+				pixels.set(idx, color & 0xFF);         // B
 				pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
-				pixels.set(idx + 2, color & 0xFF);         // B
-				pixels.set(idx + 3, 0xFF);                 // A = opaque
+				pixels.set(idx + 2, (color >> 16) & 0xFF); // R
+				pixels.set(idx + 3, 0xFF);             // A = opaque
 				break;
 			case Surface.FORMAT_INT_RGBA:
-				pixels.set(idx, (color >> 24) & 0xFF);     // R
-				pixels.set(idx + 1, (color >> 16) & 0xFF); // G
-				pixels.set(idx + 2, (color >> 8) & 0xFF);  // B
-				pixels.set(idx + 3, color & 0xFF);         // A
+				// 0xRRGGBBAA: write as [AA, BB, GG, RR]
+				pixels.set(idx, color & 0xFF);         // A
+				pixels.set(idx + 1, (color >> 8) & 0xFF);  // B
+				pixels.set(idx + 2, (color >> 16) & 0xFF); // G
+				pixels.set(idx + 3, (color >> 24) & 0xFF); // R
 				break;
 			case Surface.FORMAT_INT_ABGR:
-				pixels.set(idx, (color >> 24) & 0xFF);     // A
-				pixels.set(idx + 1, (color >> 16) & 0xFF); // B
-				pixels.set(idx + 2, (color >> 8) & 0xFF);  // G
-				pixels.set(idx + 3, color & 0xFF);         // R
+				// 0xAABBGGRR: write as [RR, GG, BB, AA]
+				pixels.set(idx, color & 0xFF);         // R
+				pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
+				pixels.set(idx + 2, (color >> 16) & 0xFF); // B
+				pixels.set(idx + 3, (color >> 24) & 0xFF); // A
 				break;
 			case Surface.FORMAT_INT_BGR:
-				pixels.set(idx, (color >> 16) & 0xFF);     // B
+				// 0x00BBGGRR: write as [RR, GG, BB, 0xFF]
+				pixels.set(idx, color & 0xFF);         // R
 				pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
-				pixels.set(idx + 2, color & 0xFF);         // R
-				pixels.set(idx + 3, 0xFF);                 // A = opaque
+				pixels.set(idx + 2, (color >> 16) & 0xFF); // B
+				pixels.set(idx + 3, 0xFF);             // A = opaque
 				break;
 			default:
-				pixels.set(idx, (color >> 24) & 0xFF);     // A
-				pixels.set(idx + 1, (color >> 16) & 0xFF); // R
-				pixels.set(idx + 2, (color >> 8) & 0xFF);  // G
-				pixels.set(idx + 3, color & 0xFF);         // B
+				// Default to ARGB
+				pixels.set(idx, color & 0xFF);
+				pixels.set(idx + 1, (color >> 8) & 0xFF);
+				pixels.set(idx + 2, (color >> 16) & 0xFF);
+				pixels.set(idx + 3, (color >> 24) & 0xFF);
 				break;
 		}
 	}

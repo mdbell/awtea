@@ -24,7 +24,7 @@ public class SoftwareSurfaceBackend implements SurfaceBackend {
 
 		switch (bufferedImageType) {
 			case java.awt.image.BufferedImage.TYPE_INT_ARGB: {
-				int[] masks = {0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000}; // R, G, B, A
+				int[] masks = {0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000}; // R, G, B, A masks for 0xAARRGGBB
 				SinglePixelPackedSampleModel sm = new SinglePixelPackedSampleModel(
 					DataBuffer.TYPE_INT, width, height, masks);
 				DataBufferInt db = new DataBufferInt(width * height);
@@ -33,7 +33,7 @@ public class SoftwareSurfaceBackend implements SurfaceBackend {
 				break;
 			}
 			case java.awt.image.BufferedImage.TYPE_INT_RGB: {
-				int[] masks = {0x00FF0000, 0x0000FF00, 0x000000FF}; // R, G, B
+				int[] masks = {0x00FF0000, 0x0000FF00, 0x000000FF}; // R, G, B masks for 0x00RRGGBB
 				SinglePixelPackedSampleModel sm = new SinglePixelPackedSampleModel(
 					DataBuffer.TYPE_INT, width, height, masks);
 				DataBufferInt db = new DataBufferInt(width * height);
@@ -42,7 +42,7 @@ public class SoftwareSurfaceBackend implements SurfaceBackend {
 				break;
 			}
 			case java.awt.image.BufferedImage.TYPE_INT_BGR: {
-				int[] masks = {0x000000FF, 0x0000FF00, 0x00FF0000}; // R, G, B (reversed)
+				int[] masks = {0x000000FF, 0x0000FF00, 0x00FF0000}; // R, G, B masks for 0x00BBGGRR (B in MSB, R in LSB)
 				SinglePixelPackedSampleModel sm = new SinglePixelPackedSampleModel(
 					DataBuffer.TYPE_INT, width, height, masks);
 				DataBufferInt db = new DataBufferInt(width * height);
