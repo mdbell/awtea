@@ -9,6 +9,30 @@ import me.mdbell.awtea.font.TrueTypeFont;
 
 import java.util.*;
 
+/**
+ * Utility class for rasterizing TrueType font glyphs to pixel-based representations.
+ * 
+ * <p>This class provides the core rasterization logic for converting vector font outlines
+ * to antialiased pixel data. It uses scanline filling with configurable supersampling
+ * for high-quality text rendering.
+ * 
+ * <p><b>Architecture Note:</b> This class is now used internally by {@link me.mdbell.awtea.font.RasterFontRenderer}.
+ * New code should use the {@link me.mdbell.awtea.font.FontRenderer} abstraction via
+ * {@link me.mdbell.awtea.font.FontPeer} rather than calling this class directly.
+ * Direct usage is maintained for backward compatibility and internal implementation.
+ * 
+ * <p>The rasterization process:
+ * <ol>
+ *   <li>Extract glyph outline as bezier curves from TrueType font</li>
+ *   <li>Flatten curves into line segments</li>
+ *   <li>Build edge list for scanline filling</li>
+ *   <li>Rasterize at supersampled resolution</li>
+ *   <li>Downsample and blend to target surface</li>
+ * </ol>
+ * 
+ * @see me.mdbell.awtea.font.FontRenderer
+ * @see me.mdbell.awtea.font.RasterFontRenderer
+ */
 public final class GlyphRasterizer {
 
 	private static final int SUPERSAMPLE = 4; // 2, 3, or 4; 4 looks nice
