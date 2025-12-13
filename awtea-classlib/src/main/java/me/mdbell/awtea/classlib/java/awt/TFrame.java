@@ -8,80 +8,83 @@ import java.awt.event.ComponentListener;
 
 public class TFrame extends TSurface {
 
-	private final TFrameFloatingPeer peer;
+    private final TFrameFloatingPeer peer;
 
-	// Constructor
-	public TFrame() {
-		peer = new TFrameFloatingPeer(this);
-		this.surfacePeer = new TOffscreenBufferPeer(this, 1, 1);
-	}
+    private static final Color FRAME_BACKGROUND_COLOR = new Color(223, 223, 223);
 
-	@Override
-	public TGraphics getSurfaceGraphics() {
-		return peer.getGraphics();
-	}
+    // Constructor
+    public TFrame() {
+        peer = new TFrameFloatingPeer(this);
+        this.surfacePeer = new TOffscreenBufferPeer(this, 1, 1);
+        this.setBackground(FRAME_BACKGROUND_COLOR);
+    }
 
-	// Set the title of the frame
-	public void setTitle(String title) {
-		peer.setTitle(title);
-	}
+    @Override
+    public TGraphics getSurfaceGraphics() {
+        return peer.getGraphics();
+    }
 
-	// Set whether the frame is resizable
-	public void setResizable(boolean resizable) {
-		peer.setResizeable(resizable);
-	}
+    // Set the title of the frame
+    public void setTitle(String title) {
+        peer.setTitle(title);
+    }
 
-	// Add a window listener
-	public void addWindowListener(TWindowListener l) {
-		// Implement event listener logic
-	}
+    // Set whether the frame is resizable
+    public void setResizable(boolean resizable) {
+        peer.setResizeable(resizable);
+    }
 
-	// Set the frame visible
-	public void setVisible(boolean b) {
-		peer.setVisible(b);
-	}
+    // Add a window listener
+    public void addWindowListener(TWindowListener l) {
+        // Implement event listener logic
+    }
 
-	public void toFront() {
-		peer.bringToFront();
-	}
+    // Set the frame visible
+    public void setVisible(boolean b) {
+        peer.setVisible(b);
+    }
 
-	// Get Insets, using the TInsets class
-	public TInsets getInsets() {
-		return new TInsets(0, 0, 0, 0);
-	}
+    public void toFront() {
+        peer.bringToFront();
+    }
 
-	public void setSize(int width, int height) {
-		if (width == getWidth() && height == getHeight()) {
-			return;
-		}
-		super.setSize(width, height);
-		peer.setSize(width, height);
-		repaint();
-	}
+    // Get Insets, using the TInsets class
+    public TInsets getInsets() {
+        return new TInsets(0, 0, 0, 0);
+    }
 
-	// this is _technically_ part of Window, but whatever
-	public void pack() {
-		int minWidth = 0;
-		int minHeight = 0;
-		TComponent[] components = this.getComponents();
-		for (TComponent child : components) {
-			minWidth = Math.max(minWidth, child.getX() + child.getWidth());
-			minHeight = Math.max(minHeight, child.getY() + child.getHeight());
-		}
+    public void setSize(int width, int height) {
+        if (width == getWidth() && height == getHeight()) {
+            return;
+        }
+        super.setSize(width, height);
+        peer.setSize(width, height);
+        repaint();
+    }
 
-		setSize(minWidth, minHeight);
-		repaint();
-	}
+    // this is _technically_ part of Window, but whatever
+    public void pack() {
+        int minWidth = 0;
+        int minHeight = 0;
+        TComponent[] components = this.getComponents();
+        for (TComponent child : components) {
+            minWidth = Math.max(minWidth, child.getX() + child.getWidth());
+            minHeight = Math.max(minHeight, child.getY() + child.getHeight());
+        }
 
-	public void setPreferredSize(Dimension dim) {
-		// No-op mock
-	}
+        setSize(minWidth, minHeight);
+        repaint();
+    }
 
-	public void setMinimumSize(Dimension dim) {
-		// No-op mock
-	}
+    public void setPreferredSize(Dimension dim) {
+        // No-op mock
+    }
 
-	public void addComponentListener(ComponentListener l) {
+    public void setMinimumSize(Dimension dim) {
+        // No-op mock
+    }
 
-	}
+    public void addComponentListener(ComponentListener l) {
+
+    }
 }

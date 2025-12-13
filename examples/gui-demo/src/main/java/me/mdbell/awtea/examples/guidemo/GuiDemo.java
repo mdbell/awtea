@@ -1,8 +1,5 @@
 package me.mdbell.awtea.examples.guidemo;
 
-import me.mdbell.awtea.util.logging.LogLevel;
-import me.mdbell.awtea.util.logging.LoggerFactory;
-
 import java.awt.*;
 
 /**
@@ -17,8 +14,9 @@ public class GuiDemo {
 
     public static void main(String[] args) {
 
-        LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
+//        LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
         System.setProperty("me.mdbell.awtea.wasm.module_path", "awt_raster.wasm");
+
 
         // Create the main window
         Frame frame = new Frame();
