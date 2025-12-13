@@ -7,6 +7,7 @@ awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime 
 ## Features
 - AWT event and component emulation
 - Multi-backend rendering: WebGL, WASM, and Java software renderer
+- Modular, extensible font rendering architecture with pluggable strategies
 - Bytecode instrumentation for performance and extensibility
 - Zero-copy pixel buffers
 - Comprehensive debugging and monitoring tools
@@ -46,7 +47,8 @@ This project is organized into multiple modules for better maintainability and m
 
 - **awtea-graphics**: Graphics and rendering system
   - Graphics rendering (software, WebGL, WASM)
-  - Font handling and TrueType font support
+  - Modular font rendering with FontRenderer/FontPeer architecture
+  - TrueType font support with multiple rendering strategies
   - OpenGL bindings
   - Native code for rasterization
 
@@ -173,6 +175,7 @@ canvas.destroy();
 ### Architecture Documentation
 - [Component Mapping Strategy](docs/COMPONENT_MAPPING.md) - How AWT components map to web technologies
 - [Rendering Backends](docs/RENDERING_BACKENDS.md) - WebGL, WASM, and Software rendering systems
+- [Font Rendering Architecture](docs/FONT_RENDERING_ARCHITECTURE.md) - Modular font rendering with pluggable strategies
 - [Font Loading Strategy](docs/FONT_LOADING.md) - Runtime font loading with browser HTTP caching
 - [CSS Embedding](docs/CSS_EMBEDDING.md) - Embedding CSS files with CSS custom properties for theming
 

@@ -3,6 +3,8 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import me.mdbell.awtea.classlib.java.awt.image.TFontFormatException;
+import me.mdbell.awtea.font.FontPeer;
+import me.mdbell.awtea.font.FontRendererFactory;
 import me.mdbell.awtea.font.FontLoader;
 import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.impl.Debug;
@@ -46,7 +48,7 @@ public class TFont {
     private final int style;
     private final int size;
 
-	private final TrueTypeFont trueType;
+	private final FontPeer fontPeer;
 
 	public static final String SERIF = "Serif";
 	public static final String SANS_SERIF = "SansSerif";
@@ -66,7 +68,8 @@ public class TFont {
 			styleStr += "Italic";
 		}
 
-		this.trueType = loadSafeFont(name, styleStr);
+		TrueTypeFont trueType = loadSafeFont(name, styleStr);
+		this.fontPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
 	}
 
 	public TFont(Map<? extends AttributedCharacterIterator.Attribute,?> attributes) {
@@ -75,7 +78,6 @@ public class TFont {
 
 	TFont(TrueTypeFont trueType, int size) {
 		this.name = trueType.getFamily();
-		this.trueType = trueType;
 		this.size = size;
 
 		int style = 0;
@@ -89,6 +91,7 @@ public class TFont {
 			style = PLAIN;
 		}
 		this.style = style;
+		this.fontPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
 	}
 
 	public static TFont getDefaultFont() {
@@ -96,19 +99,37 @@ public class TFont {
 	}
 
 	public String getFamily() {
-		return trueType.getFamily();
+		return fontPeer.getFont().getFamily();
 	}
 
 	public String getPSName(){
-		return trueType.getPostScriptName();
+		return fontPeer.getFont().getPostScriptName();
 	}
 
 	public String getFontName() {
-		return trueType.getFullName(); // this may not be right
+		return fontPeer.getFont().getFullName(); // this may not be right
+	}
+	
+	/**
+	 * Get the underlying TrueType font data.
+	 * @deprecated Use getFontPeer().getFont() instead for better encapsulation
+	 * @return the TrueType font
+	 */
+	@Deprecated
+	public TrueTypeFont getTrueType() {
+		return fontPeer.getFont();
 	}
 
 	public TFontMetrics getFontMetrics() {
 		return new TFontMetrics(this);
+	}
+
+	/**
+	 * Get the FontPeer for this font, which provides access to rendering capabilities.
+	 * @return the font peer
+	 */
+	public FontPeer getFontPeer() {
+		return fontPeer;
 	}
 
 	public TFont deriveFont(int newStyle) {
@@ -147,12 +168,12 @@ public class TFont {
 		return style == tFont.style &&
 			size == tFont.size &&
 			Objects.equals(name, tFont.name) &&
-			trueType == tFont.trueType; // identity compare; you typically only have one instance per file
+			fontPeer.getFont() == tFont.fontPeer.getFont(); // identity compare; you typically only have one instance per file
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(name, style, size, System.identityHashCode(trueType));
+		return Objects.hash(name, style, size, System.identityHashCode(fontPeer.getFont()));
 	}
 
 	public static TFont createFont(int fontFormat, InputStream in) throws TFontFormatException, IOException {
