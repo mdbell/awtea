@@ -8,13 +8,13 @@ A comprehensive awtea example demonstrating multiple AWT components, graphics pr
 
 ## What This Example Demonstrates
 
-- Creating a complex GUI with multiple panels
-- Using `TCanvas` for custom graphics
-- Drawing primitives (rectangles, ovals, lines, arcs)
+- Creating a complex GUI with multiple containers
+- Using `Canvas` for custom graphics
+- Drawing primitives (rectangles, lines, arcs, polygons)
 - Event handling (mouse clicks and movement)
 - Color manipulation
 - Font rendering
-- Layout management
+- Component positioning with setBounds
 - Interactive components
 
 ## Building
@@ -41,15 +41,15 @@ python3 -m http.server 8000
 
 The demo includes:
 
-1. **Drawing Canvas**: A canvas where you can click to draw colored circles
+1. **Drawing Canvas**: A canvas where you can click to draw colored squares
 2. **Graphics Primitives**: Demonstrations of various shape drawing methods
-3. **Text Rendering**: Different fonts, sizes, and styles
-4. **Color Palette**: Shows various colors and gradients
+3. **Text Rendering**: Different fonts and styles
+4. **Color Palette**: Shows various colors
 5. **Mouse Tracking**: Real-time display of mouse coordinates
 
 ## Interaction
 
-- **Click** on the main canvas to draw a circle at that location
+- **Click** on the main canvas to draw a square at that location
 - **Move the mouse** over the canvas to see coordinates update
 - Observe the various graphics primitives and text rendering
 
@@ -59,6 +59,8 @@ The example consists of:
 - `GuiDemo.java`: Main application class with frame setup
 - `DrawingCanvas.java`: Interactive canvas with mouse event handling
 - `GraphicsDemoPanel.java`: Panel demonstrating various graphics operations
+
+Uses standard `java.awt.*` classes which TeaVM automatically aliases to awtea's implementations.
 
 ## Next Steps
 

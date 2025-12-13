@@ -8,8 +8,8 @@ This is the simplest possible awtea application - a minimal AWT program that dis
 
 ## What This Example Demonstrates
 
-- Creating a basic `TFrame` window
-- Using `TCanvas` for custom drawing
+- Creating a basic `Frame` window
+- Using `Canvas` for custom drawing
 - Rendering text with `Graphics.drawString()`
 - Setting up the basic structure of an awtea application
 
@@ -36,10 +36,12 @@ python3 -m http.server 8000
 ## Code Overview
 
 The example consists of a single class `HelloWorld` that:
-1. Creates a `TFrame` (top-level window)
-2. Adds a `TCanvas` for custom drawing
-3. Draws "Hello, awtea!" text in the center of the canvas
+1. Creates a `Frame` (top-level window)
+2. Adds a `Canvas` for custom drawing
+3. Draws "Hello, awtea!" text and a border
 4. Displays the window
+
+Uses standard `java.awt.*` classes which TeaVM automatically aliases to awtea's implementations.
 
 ## Next Steps
 

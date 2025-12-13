@@ -8,7 +8,7 @@ This directory contains example applications demonstrating how to use awtea to r
 A minimal AWT applet that displays "Hello, awtea!" in a window. This is the simplest possible example to get started.
 
 **Features demonstrated:**
-- Basic TFrame usage
+- Basic Frame usage
 - Simple graphics rendering with drawString
 - Setting up a basic AWT application structure
 
@@ -16,10 +16,9 @@ A minimal AWT applet that displays "Hello, awtea!" in a window. This is the simp
 A more comprehensive example showcasing multiple AWT components, layouts, graphics primitives, and event handling.
 
 **Features demonstrated:**
-- Multiple component types (buttons, panels, canvas)
-- Layout managers
-- Event handling (mouse and keyboard events)
-- Graphics primitives (lines, rectangles, ovals, colors)
+- Multiple component types (containers, panels, canvas)
+- Event handling (mouse click and movement events)
+- Graphics primitives (lines, rectangles, arcs, polygons, colors)
 - Text rendering with different fonts
 - User interaction
 
@@ -102,9 +101,9 @@ example-name/
 ## Tips for Creating Your Own Applications
 
 1. **Start Simple**: Begin with the hello-world example and gradually add features
-2. **Use TFrame**: For top-level windows, use `TFrame` (not standard AWT Frame)
+2. **Use Standard AWT Classes**: Use standard `java.awt.*` classes (Frame, Canvas, Graphics, etc.) - TeaVM will automatically alias them to awtea's implementations
 3. **Lightweight Components**: Most UI components should be lightweight (no peers)
-4. **Canvas for Custom Drawing**: Use `TCanvas` for custom graphics
+4. **Canvas for Custom Drawing**: Use `Canvas` for custom graphics
 5. **Check Documentation**: Review the main project docs for component mapping and available features
 
 ## Contributing

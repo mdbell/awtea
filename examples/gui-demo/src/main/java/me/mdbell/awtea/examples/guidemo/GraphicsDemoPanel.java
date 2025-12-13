@@ -1,15 +1,14 @@
 package me.mdbell.awtea.examples.guidemo;
 
-import me.mdbell.awtea.classlib.java.awt.*;
-import java.awt.Color;
+import java.awt.*;
 
 /**
  * Panel demonstrating various graphics primitives and text rendering.
  */
-public class GraphicsDemoPanel extends TContainer {
+public class GraphicsDemoPanel extends Container {
     
     @Override
-    public void paint(TGraphics g) {
+    public void paint(Graphics g) {
         // Background
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, getWidth(), getHeight());
@@ -19,12 +18,12 @@ public class GraphicsDemoPanel extends TContainer {
         
         // Title
         g.setColor(Color.BLACK);
-        g.setFont(new TFont("SansSerif", TFont.BOLD, 16));
+        g.setFont(new Font("SansSerif", Font.BOLD, 16));
         g.drawString("Graphics Primitives", 10, yPos);
         yPos += spacing;
         
         // Rectangles
-        g.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
+        g.setFont(new Font("SansSerif", Font.PLAIN, 12));
         g.drawString("Rectangles:", 10, yPos);
         g.setColor(Color.RED);
         g.fillRect(150, yPos - 15, 50, 30);
@@ -61,14 +60,14 @@ public class GraphicsDemoPanel extends TContainer {
         yPos += spacing;
         g.setColor(Color.BLACK);
         g.drawString("Fonts:", 10, yPos);
-        g.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
+        g.setFont(new Font("SansSerif", Font.PLAIN, 12));
         g.drawString("Plain", 150, yPos);
-        g.setFont(new TFont("SansSerif", TFont.BOLD, 12));
+        g.setFont(new Font("SansSerif", Font.BOLD, 12));
         g.drawString("Bold", 200, yPos);
         
         // Color palette at the bottom
         yPos += spacing;
-        g.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
+        g.setFont(new Font("SansSerif", Font.PLAIN, 12));
         g.drawString("Colors:", 10, yPos);
         
         Color[] colors = {

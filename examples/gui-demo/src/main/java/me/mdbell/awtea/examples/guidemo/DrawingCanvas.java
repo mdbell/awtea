@@ -1,14 +1,13 @@
 package me.mdbell.awtea.examples.guidemo;
 
-import me.mdbell.awtea.classlib.java.awt.*;
-import me.mdbell.awtea.classlib.java.awt.event.*;
-import java.awt.Color;
+import java.awt.*;
+import java.awt.event.*;
 
 /**
  * Interactive drawing canvas that responds to mouse events.
  * Click to draw colored squares at the mouse position.
  */
-public class DrawingCanvas extends TCanvas {
+public class DrawingCanvas extends Canvas {
     
     private static class DrawRect {
         int x, y, size;
@@ -33,26 +32,26 @@ public class DrawingCanvas extends TCanvas {
     
     public DrawingCanvas() {
         // Add mouse listener for clicks
-        addMouseListener(new TMouseListener() {
-            public void mouseClicked(TMouseEvent e) {}
+        addMouseListener(new MouseListener() {
+            public void mouseClicked(MouseEvent e) {}
             
-            public void mousePressed(TMouseEvent e) {
+            public void mousePressed(MouseEvent e) {
                 // Add a square at the click position
                 rects.add(new DrawRect(e.getX(), e.getY(), 30, colors[colorIndex]));
                 colorIndex = (colorIndex + 1) % colors.length;
                 repaint();
             }
             
-            public void mouseReleased(TMouseEvent e) {}
-            public void mouseEntered(TMouseEvent e) {}
-            public void mouseExited(TMouseEvent e) {}
+            public void mouseReleased(MouseEvent e) {}
+            public void mouseEntered(MouseEvent e) {}
+            public void mouseExited(MouseEvent e) {}
         });
         
         // Add mouse motion listener to track position
-        addMouseMotionListener(new TMouseMotionListener() {
-            public void mouseDragged(TMouseEvent e) {}
+        addMouseMotionListener(new MouseMotionListener() {
+            public void mouseDragged(MouseEvent e) {}
             
-            public void mouseMoved(TMouseEvent e) {
+            public void mouseMoved(MouseEvent e) {
                 mouseX = e.getX();
                 mouseY = e.getY();
                 repaint();
@@ -61,7 +60,7 @@ public class DrawingCanvas extends TCanvas {
     }
     
     @Override
-    public void paint(TGraphics g) {
+    public void paint(Graphics g) {
         // Background
         g.setColor(new Color(240, 240, 255));
         g.fillRect(0, 0, getWidth(), getHeight());
@@ -85,7 +84,7 @@ public class DrawingCanvas extends TCanvas {
         
         // Draw instructions and mouse position
         g.setColor(Color.BLACK);
-        g.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
+        g.setFont(new Font("SansSerif", Font.PLAIN, 12));
         g.drawString("Click anywhere to draw squares!", 10, 20);
         
         if (mouseX >= 0 && mouseY >= 0) {
