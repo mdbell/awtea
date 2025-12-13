@@ -96,7 +96,28 @@ if (log.isDebugEnabled()) {
 
 ### Configuring Log Level
 
-Set the global log level programmatically:
+#### Via System Property
+
+Set the log level at startup using the system property:
+
+```bash
+# Set to DEBUG
+java -Dme.mdbell.awtea.log.level=DEBUG -jar myapp.jar
+
+# Set to ERROR
+java -Dme.mdbell.awtea.log.level=ERROR -jar myapp.jar
+
+# Valid values: ERROR, WARN, INFO (default), DEBUG
+```
+
+For Gradle:
+```bash
+./gradlew run -Dme.mdbell.awtea.log.level=DEBUG
+```
+
+#### Programmatically
+
+Set the global log level at runtime:
 
 ```java
 import me.mdbell.awtea.util.logging.LogLevel;

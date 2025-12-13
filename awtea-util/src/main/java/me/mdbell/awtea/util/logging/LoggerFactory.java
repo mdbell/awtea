@@ -11,16 +11,45 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Factory for creating Logger instances.
  * Supports both native Java and TeaVM environments.
+ * 
+ * Log level can be configured via system property:
+ * -Dme.mdbell.awtea.log.level=DEBUG
  */
 public final class LoggerFactory {
 
+	/**
+	 * System property for configuring the global log level.
+	 * Valid values: ERROR, WARN, INFO, DEBUG (case-insensitive)
+	 */
+	public static final String LOG_LEVEL_PROPERTY = "me.mdbell.awtea.log.level";
+
 	private static final Map<String, Logger> loggers = new ConcurrentHashMap<>();
 	private static final List<LogSink> sinks = new ArrayList<>();
-	private static volatile LogLevel globalLevel = LogLevel.INFO;
+	private static volatile LogLevel globalLevel;
 
 	static {
+		// Initialize log level from system property or default to INFO
+		globalLevel = initLogLevel();
+		
 		// Initialize with console sink by default
 		addSink(new ConsoleLogSink());
+	}
+
+	/**
+	 * Initialize log level from system property
+	 */
+	private static LogLevel initLogLevel() {
+		String levelProperty = System.getProperty(LOG_LEVEL_PROPERTY);
+		if (levelProperty != null && !levelProperty.isEmpty()) {
+			try {
+				return LogLevel.valueOf(levelProperty.toUpperCase());
+			} catch (IllegalArgumentException e) {
+				// Invalid level specified, fall back to INFO
+				System.err.println("Invalid log level '" + levelProperty + "' specified in " + 
+					LOG_LEVEL_PROPERTY + ". Valid values: ERROR, WARN, INFO, DEBUG. Using INFO.");
+			}
+		}
+		return LogLevel.INFO;
 	}
 
 	private LoggerFactory() {
