@@ -3,6 +3,7 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import me.mdbell.awtea.classlib.java.awt.image.TFontFormatException;
+import me.mdbell.awtea.font.FontLoader;
 import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.impl.Debug;
 

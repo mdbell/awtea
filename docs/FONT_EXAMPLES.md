@@ -75,7 +75,7 @@ java -Dme.mdbell.awtea.font.base_url=fonts/v1.2.0/ -jar myapp.jar
 Clearing the font cache when needed:
 
 ```java
-import me.mdbell.awtea.classlib.java.awt.FontLoader;
+import me.mdbell.awtea.font.FontLoader;
 import me.mdbell.awtea.classlib.java.awt.TFont;
 
 public class CacheManagementExample {
