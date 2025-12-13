@@ -2,7 +2,6 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.util.FetchAPI;
-import org.teavm.interop.Async;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int8Array;
 
@@ -88,71 +87,58 @@ public final class FontLoader {
 
 	/**
 	 * Loads font bytes for the given font name.
-	 * This is async in browser, synchronous in JVM.
+	 * In browser environments, fonts are fetched from the configured URL.
+	 * Falls back to resource loading if fetch fails.
 	 * 
 	 * @param fontName the font name (without .ttf extension)
 	 * @return the font data as a byte array
 	 * @throws IOException if the font cannot be loaded
 	 */
-	@Async
-	public static native byte[] loadFontBytes(String fontName) throws IOException;
-
-	/**
-	 * Implementation of async font loading for browser.
-	 * This method is called by TeaVM's async transformation.
-	 */
-	@SuppressWarnings("unused")
-	private static void loadFontBytes(String fontName, AsyncCallback<byte[]> callback) {
+	public static byte[] loadFontBytes(String fontName) throws IOException {
 		// Check cache first
 		byte[] cached = fontCache.get(fontName);
 		if (cached != null) {
-			callback.complete(cached);
-			return;
+			return cached;
 		}
 
 		// Try to load via fetch (browser)
 		String url = fontBaseUrl + fontName + ".ttf";
 
-		FetchAPI.fetch(url).then(response -> {
+		try {
+			FetchAPI.Response response = FetchAPI.fetch(url).await();
+			
 			if (!response.isOk()) {
 				// If fetch fails, try loading from resources as fallback
-				tryLoadFromResource(fontName, callback);
-				return null;
+				System.err.println("Fetch returned non-OK status for font " + fontName + " (HTTP " + response.getStatus() + "), trying resource fallback");
+				return loadFontBytesWithFallback(fontName);
 			}
 			
-			// Chain the arrayBuffer promise
-			response.arrayBuffer().then(buffer -> {
-				// Convert ArrayBuffer to byte[]
-				byte[] bytes = arrayBufferToByteArray(buffer);
-				fontCache.put(fontName, bytes);
-				callback.complete(bytes);
-				return null;
-			}).catchError(bufferError -> {
-				System.err.println("Failed to read arrayBuffer for font " + fontName + ": " + bufferError);
-				tryLoadFromResource(fontName, callback);
-				return null;
-			});
+			// Get the arrayBuffer from response
+			ArrayBuffer buffer = response.arrayBuffer().await();
 			
-			return null;
-		}).catchError(error -> {
+			// Convert ArrayBuffer to byte[]
+			byte[] bytes = arrayBufferToByteArray(buffer);
+			fontCache.put(fontName, bytes);
+			return bytes;
+			
+		} catch (Exception e) {
 			// If fetch fails (e.g., network error), try loading from resources
-			System.err.println("Fetch failed for font " + fontName + ", trying resource fallback: " + error);
-			tryLoadFromResource(fontName, callback);
-			return null;
-		});
+			System.err.println("Fetch failed for font " + fontName + ", trying resource fallback: " + e.getMessage());
+			return loadFontBytesWithFallback(fontName);
+		}
 	}
 
 	/**
 	 * Fallback method to load font from resources when fetch fails.
+	 * 
+	 * @param fontName the font name
+	 * @return the font data
+	 * @throws IOException if the font cannot be loaded from resources either
 	 */
-	private static void tryLoadFromResource(String fontName, AsyncCallback<byte[]> callback) {
-		try {
-			byte[] data = loadFontBytesFromResource(fontName);
-			fontCache.put(fontName, data);
-			callback.complete(data);
-		} catch (IOException e) {
-			callback.error(new IOException("Failed to load font " + fontName + " from URL or resources", e));
-		}
+	private static byte[] loadFontBytesWithFallback(String fontName) throws IOException {
+		byte[] data = loadFontBytesFromResource(fontName);
+		fontCache.put(fontName, data);
+		return data;
 	}
 
 	/**
@@ -185,14 +171,5 @@ public final class FontLoader {
 			bytes[i] = int8Array.get(i);
 		}
 		return bytes;
-	}
-
-	/**
-	 * Callback interface for async operations.
-	 * This is used by TeaVM's async transformation.
-	 */
-	private interface AsyncCallback<T> {
-		void complete(T result);
-		void error(Throwable t);
 	}
 }
