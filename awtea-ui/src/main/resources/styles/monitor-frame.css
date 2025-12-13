@@ -1,0 +1,45 @@
+.monitor-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.monitor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: var(--aw-bg);
+  color: var(--aw-fg);
+}
+
+.monitor-header-cell {
+  border-bottom: 1px solid var(--aw-table-header-border);
+  padding: 2px 4px;
+  text-align: left;
+  background: var(--aw-table-header-bg);
+  color: var(--aw-fg);
+}
+
+.monitor-rate-cell {
+  text-align: right;
+  font-family: monospace;
+  width: 100px;
+  max-width: 100px;
+  padding: 2px 4px;
+  color: var(--aw-fg);
+}
+
+.monitor-data-cell {
+  padding: 2px 4px;
+  white-space: nowrap;
+  color: var(--aw-fg);
+}
+
+.monitor-row {
+  border-bottom: 1px solid var(--aw-table-header-border);
+  cursor: default;
+}
+
+.monitor-row:hover {
+  background: var(--aw-table-row-hover-bg);
+}

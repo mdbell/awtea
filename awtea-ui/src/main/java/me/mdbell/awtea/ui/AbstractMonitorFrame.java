@@ -223,53 +223,14 @@ public abstract class AbstractMonitorFrame<E extends MonitorEntry, S extends Mon
 	}
 
 	static {
-		AwCss.sheet()
-			.createClass("monitor-root")
-			.prop("display", "flex")
-			.prop("flex-direction", "column")
-			.prop("gap", "0.4rem")
-
-			.createClass("monitor-table")
-			.prop("width", "100%")
-			.prop("border-collapse", "collapse")
-			.prop("font-size", "12px")
-			.prop("background", Theme.Var.BACKGROUND)
-			.prop("color", Theme.Var.FOREGROUND)
-
-			.createClass("monitor-header-cell")
-			.prop("border-bottom")
-			.value("1px solid")
-			.value(Theme.Var.TABLE_HEADER_BORDER)
-			.end()
-			.prop("padding", "2px 4px")
-			.prop("text-align", "left")
-			.prop("background", Theme.Var.TABLE_HEADER_BACKGROUND)
-			.prop("color", Theme.Var.FOREGROUND)
-
-			.createClass("monitor-rate-cell")
-			.prop("text-align", "right")
-			.prop("font-family", "monospace")
-			.prop("width", "100px")
-			.prop("max-width", "100px")
-			.prop("padding", "2px 4px")
-			.prop("color", Theme.Var.FOREGROUND)
-
-			.createClass("monitor-data-cell")
-			.prop("padding", "2px 4px")
-			.prop("white-space", "nowrap")
-			.prop("color", Theme.Var.FOREGROUND)
-
-			.createClass("monitor-row")
-			.prop("border-bottom")
-			.value("1px solid")
-			.value(Theme.Var.TABLE_HEADER_BORDER)
-			.end()
-			.prop("cursor", "default")
-			.subClass(":hover")
-			.prop("background", Theme.Var.TABLE_ROW_HOVER_BACKGROUND)
-
-			.end()
-
-			.inject();
+		// Inject the CSS from embedded file
+		HTMLElement style = org.teavm.jso.browser.Window.current()
+			.getDocument()
+			.createElement("style");
+		style.setTextContent(UiStyles.monitorFrameCSS());
+		org.teavm.jso.browser.Window.current()
+			.getDocument()
+			.getHead()
+			.appendChild(style);
 	}
 }

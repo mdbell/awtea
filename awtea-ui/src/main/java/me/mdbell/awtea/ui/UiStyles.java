@@ -24,4 +24,12 @@ public class UiStyles {
 	@GeneratedBy(EmbedGenerator.class)
 	public native String floatingFrameCSS();
 
+	@CSSSource("styles/log-frame.css")
+	@GeneratedBy(EmbedGenerator.class)
+	public native String logFrameCSS();
+
+	@CSSSource("styles/monitor-frame.css")
+	@GeneratedBy(EmbedGenerator.class)
+	public native String monitorFrameCSS();
+
 }
