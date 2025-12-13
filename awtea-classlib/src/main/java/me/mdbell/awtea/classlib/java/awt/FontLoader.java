@@ -8,8 +8,8 @@ import org.teavm.jso.typedarrays.Int8Array;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Handles loading fonts from external URLs via fetch (for browser environments)
@@ -24,11 +24,11 @@ public final class FontLoader {
 	
 	private static String fontBaseUrl = DEFAULT_FONT_BASE_URL;
 	
-	// Cache for loaded font data (byte arrays)
-	private static final Map<String, byte[]> fontCache = new HashMap<>();
+	// Cache for loaded font data (byte arrays) - thread-safe for concurrent access
+	private static final Map<String, byte[]> fontCache = new java.util.concurrent.ConcurrentHashMap<>();
 	
-	// Cache for parsed TrueTypeFont objects
-	private static final Map<String, TrueTypeFont> parsedFontCache = new HashMap<>();
+	// Cache for parsed TrueTypeFont objects - thread-safe for concurrent access
+	private static final Map<String, TrueTypeFont> parsedFontCache = new java.util.concurrent.ConcurrentHashMap<>();
 
 	private FontLoader() {}
 
