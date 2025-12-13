@@ -6,7 +6,9 @@ import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.font.FontPeer;
+import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Rasterizer;
+import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import org.teavm.jso.browser.Window;
 
@@ -16,6 +18,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TSurfaceRasterizerGraphics extends TGraphics2D {
+
+	/**
+	 * Padding around text glyphs when rendering to a temporary surface.
+	 * This ensures glyphs that extend beyond their nominal bounds are not clipped.
+	 */
+	private static final int TEXT_SURFACE_PADDING = 4;
 
 	protected transient boolean scheduled = false;
 
@@ -330,17 +338,17 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 		int textWidth = peer.measureString(str, sizePx);
 		FontPeer.FontMetrics metrics = peer.getFontMetrics(sizePx);
 		
-		// Calculate surface dimensions with some padding for glyphs that may extend beyond bounds
-		int surfaceWidth = textWidth + 4; // Add small padding
-		int surfaceHeight = (int) Math.ceil(metrics.getAscent() + metrics.getDescent()) + 4;
+		// Calculate surface dimensions with padding for glyphs that may extend beyond bounds
+		int surfaceWidth = textWidth + TEXT_SURFACE_PADDING;
+		int surfaceHeight = (int) Math.ceil(metrics.getAscent() + metrics.getDescent()) + TEXT_SURFACE_PADDING;
 		
 		if (surfaceWidth <= 0 || surfaceHeight <= 0) {
 			return;
 		}
 		
 		// Create a surface for rendering the text using the backend
-		me.mdbell.awtea.gfx.DefaultSurfaceBackend backend = me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
-		me.mdbell.awtea.gfx.Surface textSurface = backend.createFontRenderSurface(surfaceWidth, surfaceHeight);
+		DefaultSurfaceBackend backend = DefaultSurfaceBackend.getDefault();
+		Surface textSurface = backend.createFontRenderSurface(surfaceWidth, surfaceHeight);
 		
 		if (textSurface == null) {
 			// If surface creation failed, silently return
@@ -349,22 +357,22 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 		
 		// Create a TBufferedImage wrapper for the surface to act as a RasterTarget
 		// The TBufferedImage will own the surface and destroy it when garbage collected
-		me.mdbell.awtea.classlib.java.awt.image.TBufferedImage textImage = 
-			new me.mdbell.awtea.classlib.java.awt.image.TBufferedImage(textSurface);
+		TBufferedImage textImage = new TBufferedImage(textSurface);
 		
 		// Convert AWT Color to ARGB int
 		int argb = (color.getAlpha() << 24) | (color.getRed() << 16) | 
 		           (color.getGreen() << 8) | color.getBlue();
 		
 		// Render the string to the surface
-		// Offset by padding and ascent to position text correctly
-		int renderX = 2;
-		int renderY = (int) Math.ceil(metrics.getAscent()) + 2;
+		// Position text with half padding as offset, and baseline at ascent + half padding
+		int halfPadding = TEXT_SURFACE_PADDING / 2;
+		int renderX = halfPadding;
+		int renderY = (int) Math.ceil(metrics.getAscent()) + halfPadding;
 		peer.renderString(str, textImage, sizePx, renderX, renderY, argb);
 		
 		// Blit the rendered text surface to the screen
 		// Adjust destination position to account for the padding and baseline
-		int destX = x - 2;
+		int destX = x - halfPadding;
 		int destY = y - renderY;
 		pushOp(new SurfaceCommand(SurfaceCommand.Operation.BLIT_IMAGE, textImage, 
 		                          destX, destY, surfaceWidth, surfaceHeight));
