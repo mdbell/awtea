@@ -1,7 +1,7 @@
 package me.mdbell.awtea.gfx;
 
 public class SurfaceCommand {
-
+    
     public Operation type;
     public Object obj;
     public int arg1;
@@ -59,6 +59,6 @@ public class SurfaceCommand {
         DRAW_RECT,
         FILL_RECT,
         CLEAR_RECT,
-        DRAW_LINE
+        DRAW_LINE,
     }
 }
