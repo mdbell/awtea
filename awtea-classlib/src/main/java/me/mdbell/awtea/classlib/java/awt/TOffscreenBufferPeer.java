@@ -11,12 +11,12 @@ public class TOffscreenBufferPeer implements TSurfacePeer {
 
 	public TOffscreenBufferPeer(TSurface root, int width, int height) {
 		this.root = root;
-		this.buffer = new TBufferedImage(width, height, TBufferedImage.TYPE_INT_RGB);
+		this.buffer = new TBufferedImage(width, height, TBufferedImage.TYPE_INT_ARGB);
 	}
 
 	@Override
 	public void resize(int width, int height) {
-		buffer = new TBufferedImage(width, height, TBufferedImage.TYPE_INT_RGB);
+		buffer = new TBufferedImage(width, height, TBufferedImage.TYPE_INT_ARGB);
 	}
 
 	@Override
