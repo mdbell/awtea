@@ -1,6 +1,29 @@
-# AWTea
+# awtea
 
-AWTea is a Java AWT implementation for the browser using TeaVM.
+**Bringing Java back to the browser**
+
+awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime using [TeaVM](https://teavm.org/) and WebAssembly, enabling legacy and modern Java graphical applications to run natively in the browser.
+
+## Features
+- AWT event and component emulation
+- Multi-backend rendering: WebGL, WASM, and Java software renderer
+- Bytecode instrumentation for performance and extensibility
+- Zero-copy pixel buffers
+- Comprehensive debugging and monitoring tools
+
+## Getting Started
+
+### Prerequisites
+- Java 11 or newer
+- Gradle
+
+### Building
+```sh
+./gradlew build
+```
+
+### Running
+Instructions for running in the browser (via TeaVM) coming soon!
 
 ## Project Structure
 
@@ -122,3 +145,9 @@ Find missing classes:
 ## Native Components
 
 The `awtea-graphics` module includes native C code compiled to WebAssembly for high-performance rasterization. The WASM module is automatically built using Docker and the Emscripten SDK when building the graphics module.
+
+## Contributing
+Contributions are welcome! Please file issues or submit pull requests.
+
+## License
+Specify license here (currently missing).
