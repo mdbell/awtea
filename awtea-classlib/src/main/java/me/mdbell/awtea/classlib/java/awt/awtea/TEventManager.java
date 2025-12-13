@@ -169,6 +169,9 @@ public final class TEventManager implements AutoCloseable {
 
 	public void detach() {
 		registrations.cleanup();
+		// Reset mouse position tracking to prevent stale coordinates
+		lastMouseX = Integer.MIN_VALUE;
+		lastMouseY = Integer.MIN_VALUE;
 	}
 
 	@Override
