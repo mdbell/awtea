@@ -1,7 +1,7 @@
 package me.mdbell.awtea.gfx;
 
 public class SurfaceCommand {
-    
+
     public Operation type;
     public Object obj;
     public int arg1;
