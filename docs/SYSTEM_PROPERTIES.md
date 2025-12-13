@@ -43,9 +43,8 @@ This document provides comprehensive documentation for all system properties tha
 - **Type**: String (enum)
 - **Default**: `"raster"`
 - **Valid Values**: 
-  - `"raster"` - Use raster font renderer (default)
-  - Future: `"sdf"`, `"canvas"`, `"vector"` (planned)
-- **Description**: Configures which font rendering strategy to use. Currently only the raster renderer is implemented, which rasterizes TrueType fonts to bitmaps.
+  - `"raster"` - Use raster font renderer (default and currently only option)
+- **Description**: Configures which font rendering strategy to use. Currently only the raster renderer is implemented, which rasterizes TrueType fonts to bitmaps. Future versions may support additional rendering strategies such as SDF (Signed Distance Field), canvas-based, or vector rendering.
 - **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/font/FontRendererFactory.java:36`
 - **Since**: v0.1.0
 
