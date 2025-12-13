@@ -25,20 +25,17 @@ public class BasicFontExample extends TApplet {
 
 ## Custom Font URL
 
-Loading fonts from a CDN or custom location:
+Configure fonts to load from a CDN or custom location using the system property:
 
 ```java
-import me.mdbell.awtea.classlib.java.awt.FontLoader;
 import me.mdbell.awtea.classlib.java.awt.TFont;
 import me.mdbell.awtea.classlib.java.applet.TApplet;
 
 public class CdnFontExample extends TApplet {
     @Override
     public void init() {
-        // Configure font URL before loading any fonts
-        FontLoader.setFontBaseUrl("https://cdn.example.com/fonts/");
-        
-        // Now fonts will be loaded from the CDN
+        // Fonts will be loaded from the configured URL
+        // Set via: -Dme.mdbell.awtea.font.base_url=https://cdn.example.com/fonts/
         TFont font = new TFont("Helvetica", TFont.PLAIN, 12);
         
         // Fonts are cached automatically - subsequent uses don't hit the network
@@ -47,49 +44,30 @@ public class CdnFontExample extends TApplet {
 }
 ```
 
+Set the system property when starting your application:
+```bash
+java -Dme.mdbell.awtea.font.base_url=https://cdn.example.com/fonts/ -jar myapp.jar
+```
+
 ## Relative Path
 
 Loading fonts from a different relative path:
 
-```java
-import me.mdbell.awtea.classlib.java.awt.FontLoader;
-import me.mdbell.awtea.classlib.java.awt.TFont;
-import me.mdbell.awtea.classlib.java.applet.TApplet;
-
-public class RelativePathExample extends TApplet {
-    @Override
-    public void init() {
-        // Load from assets/typography/ instead of fonts/
-        FontLoader.setFontBaseUrl("assets/typography/");
-        
-        TFont font = new TFont("Helvetica", TFont.BOLD, 16);
-    }
-}
+```bash
+# Set via system property
+java -Dme.mdbell.awtea.font.base_url=assets/typography/ -jar myapp.jar
 ```
 
 ## Versioned Fonts (Cache Busting)
 
-Force browsers to load new font versions:
+Force browsers to load new font versions using system properties:
 
-```java
-import me.mdbell.awtea.classlib.java.awt.FontLoader;
-import me.mdbell.awtea.classlib.java.awt.TFont;
-import me.mdbell.awtea.classlib.java.applet.TApplet;
+```bash
+# Use query parameter for versioning
+java -Dme.mdbell.awtea.font.base_url=fonts/?version=v1.2.0 -jar myapp.jar
 
-public class VersionedFontExample extends TApplet {
-    private static final String FONT_VERSION = "v1.2.0";
-    
-    @Override
-    public void init() {
-        // Use query parameter for versioning
-        FontLoader.setFontBaseUrl("fonts/?version=" + FONT_VERSION);
-        
-        // Or use path versioning
-        // FontLoader.setFontBaseUrl("fonts/v1.2.0/");
-        
-        TFont font = new TFont("Helvetica", TFont.PLAIN, 12);
-    }
-}
+# Or use path versioning
+java -Dme.mdbell.awtea.font.base_url=fonts/v1.2.0/ -jar myapp.jar
 ```
 
 ## Cache Management
@@ -99,11 +77,9 @@ Clearing the font cache when needed:
 ```java
 import me.mdbell.awtea.classlib.java.awt.FontLoader;
 import me.mdbell.awtea.classlib.java.awt.TFont;
-import me.mdbell.awtea.classlib.java.applet.TApplet;
 
-public class CacheManagementExample extends TApplet {
-    @Override
-    public void init() {
+public class CacheManagementExample {
+    public void reloadFonts() {
         TFont font1 = new TFont("Helvetica", TFont.PLAIN, 12);
         
         // Font is now cached in memory
@@ -112,10 +88,10 @@ public class CacheManagementExample extends TApplet {
         // Clear cache if needed (e.g., before loading different version)
         FontLoader.clearCache();
         
-        // Change to new version
-        FontLoader.setFontBaseUrl("fonts/v2/");
+        // Note: To change the font URL, you need to restart with a different
+        // system property: -Dme.mdbell.awtea.font.base_url=fonts/v2/
         
-        // This will load from new location
+        // This will reload from the configured URL
         TFont font2 = new TFont("Helvetica", TFont.PLAIN, 12);
     }
 }
@@ -189,15 +165,10 @@ public class FontDemoApp extends TApplet {
     }
     
     private void setupFonts() {
-        // Option 1: Use default location (fonts/)
-        // No configuration needed
-        
-        // Option 2: Use CDN
-        // FontLoader.setFontBaseUrl("https://fonts.example.com/awtea/");
-        
-        // Option 3: Use versioned path
-        String version = "1.0.0";
-        // FontLoader.setFontBaseUrl("fonts/v" + version + "/");
+        // Fonts are configured via system property:
+        // -Dme.mdbell.awtea.font.base_url=https://fonts.example.com/awtea/
+        // 
+        // Or use default location (fonts/) if not configured
         
         // Create fonts
         titleFont = new TFont("Helvetica", TFont.BOLD, 24);
@@ -223,7 +194,10 @@ When deploying an application using the new font loading system:
    Cache-Control: public, max-age=31536000, immutable
    Access-Control-Allow-Origin: *
    ```
-3. **Set font base URL** in your application (if not using default `fonts/`)
+3. **Set font base URL** via system property (if not using default `fonts/`):
+   ```bash
+   -Dme.mdbell.awtea.font.base_url=https://cdn.example.com/fonts/
+   ```
 4. **Test font loading** using browser DevTools Network tab
 5. **Verify caching** by checking for "(from cache)" on subsequent loads
 

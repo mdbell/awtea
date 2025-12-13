@@ -19,9 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class FontLoader {
 
-	private static final String DEFAULT_FONT_BASE_URL = "fonts/";
-	
-	private static String fontBaseUrl = DEFAULT_FONT_BASE_URL;
+	private static final String FONT_BASE_URL = getFontBaseUrlFromProperty();
 	
 	// Cache for loaded font data (byte arrays) - thread-safe for concurrent access
 	private static final Map<String, byte[]> fontCache = new java.util.concurrent.ConcurrentHashMap<>();
@@ -32,15 +30,19 @@ public final class FontLoader {
 	private FontLoader() {}
 
 	/**
-	 * Sets the base URL for loading fonts.
-	 * This should be set to the location where fonts are hosted (e.g., CDN or server path).
+	 * Gets the font base URL from the system property.
+	 * The system property "me.mdbell.awtea.font.base_url" can be used to configure
+	 * the base URL for loading fonts. If not set, defaults to "fonts/".
 	 * 
-	 * @param baseUrl the base URL (should end with /)
+	 * @return the configured font base URL
 	 */
-	public static void setFontBaseUrl(String baseUrl) {
-		if (baseUrl != null && !baseUrl.isEmpty()) {
-			fontBaseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
+	private static String getFontBaseUrlFromProperty() {
+		String baseUrl = System.getProperty("me.mdbell.awtea.font.base_url", "fonts/");
+		// Ensure URL ends with /
+		if (!baseUrl.isEmpty() && !baseUrl.endsWith("/")) {
+			baseUrl = baseUrl + "/";
 		}
+		return baseUrl;
 	}
 
 	/**
@@ -49,7 +51,7 @@ public final class FontLoader {
 	 * @return the font base URL
 	 */
 	public static String getFontBaseUrl() {
-		return fontBaseUrl;
+		return FONT_BASE_URL;
 	}
 
 	/**
@@ -102,7 +104,7 @@ public final class FontLoader {
 		}
 
 		// Try to load via fetch (browser)
-		String url = fontBaseUrl + fontName + ".ttf";
+		String url = FONT_BASE_URL + fontName + ".ttf";
 
 		try {
 			FetchAPI.Response response = FetchAPI.fetch(url).await();

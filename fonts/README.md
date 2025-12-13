@@ -28,13 +28,13 @@ For example, if your application is at `https://example.com/app/`, fonts should 
 
 ### Custom Font URL
 
-You can customize the base URL for fonts by calling:
+You can customize the base URL for fonts using a system property:
 
-```java
-FontLoader.setFontBaseUrl("https://cdn.example.com/fonts/");
+```bash
+java -Dme.mdbell.awtea.font.base_url=https://cdn.example.com/fonts/ -jar myapp.jar
 ```
 
-This should be called before any fonts are loaded (typically at application startup).
+This should be set when starting the application.
 
 ## Caching Strategy
 
@@ -53,13 +53,13 @@ This tells browsers to cache fonts for one year since font files rarely change.
 If you need to update fonts and force clients to download new versions, you can:
 
 1. **Version the URL**: Change the base URL to include a version number
-   ```java
-   FontLoader.setFontBaseUrl("fonts/v2/");
+   ```bash
+   -Dme.mdbell.awtea.font.base_url=fonts/v2/
    ```
 
 2. **Query Strings**: Append a version query parameter
-   ```java
-   FontLoader.setFontBaseUrl("fonts/?v=2");
+   ```bash
+   -Dme.mdbell.awtea.font.base_url=fonts/?v=2
    ```
 
 3. **Hash in Filename**: Rename font files to include content hashes (requires code changes)

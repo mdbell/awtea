@@ -33,8 +33,11 @@ The main font loading utility that handles:
 Key methods:
 - `FontLoader.loadFont(String fontName)`: Loads and parses a font
 - `FontLoader.loadFontBytes(String fontName)`: Loads raw font data
-- `FontLoader.setFontBaseUrl(String baseUrl)`: Configures the base URL for fonts
+- `FontLoader.getFontBaseUrl()`: Gets the configured base URL for fonts
 - `FontLoader.clearCache()`: Clears the font cache
+
+Key configuration:
+- System property `me.mdbell.awtea.font.base_url`: Configures the base URL for fonts (default: "fonts/")
 
 #### 3. TFont Updates
 
@@ -53,17 +56,17 @@ TFont font = new TFont("Helvetica", TFont.BOLD, 12);
 
 ### Custom Font URL
 
-To load fonts from a custom location (e.g., CDN):
+To load fonts from a custom location (e.g., CDN), set the system property:
 
-```java
-// Configure at application startup
-FontLoader.setFontBaseUrl("https://cdn.example.com/myfonts/");
-
-// Fonts will now be loaded from:
-// https://cdn.example.com/myfonts/Helvetica.ttf
-// https://cdn.example.com/myfonts/Helvetica-Bold.ttf
-// etc.
+```bash
+# Set via command line
+java -Dme.mdbell.awtea.font.base_url=https://cdn.example.com/myfonts/ -jar myapp.jar
 ```
+
+Fonts will now be loaded from:
+- https://cdn.example.com/myfonts/Helvetica.ttf
+- https://cdn.example.com/myfonts/Helvetica-Bold.ttf
+- etc.
 
 ### Cache Management
 
@@ -109,21 +112,16 @@ location /fonts/ {
 
 **Note**: CORS headers are important if fonts are hosted on a different domain than your application.
 
-### 3. Update Application Configuration
+### 3. Configure Font URL (Optional)
 
-If fonts are not in the default `fonts/` directory, configure the base URL:
+If fonts are not in the default `fonts/` directory, set the system property:
 
-```java
-public class MyApp extends TApplet {
-    public void init() {
-        // Configure before any fonts are used
-        FontLoader.setFontBaseUrl("https://cdn.example.com/fonts/v1/");
-        
-        // Now use fonts normally
-        TFont font = new TFont("Helvetica", TFont.PLAIN, 12);
-        // ...
-    }
-}
+```bash
+# Via command line
+java -Dme.mdbell.awtea.font.base_url=https://cdn.example.com/fonts/v1/ -jar myapp.jar
+
+# Or via environment/config
+export JAVA_OPTS="-Dme.mdbell.awtea.font.base_url=https://cdn.example.com/fonts/v1/"
 ```
 
 ## Caching Strategy
@@ -154,13 +152,13 @@ Both caches persist for the lifetime of the application, eliminating redundant n
 To force clients to download new font versions:
 
 #### Option 1: Version in URL
-```java
-FontLoader.setFontBaseUrl("fonts/v2/");  // Change version number
+```bash
+-Dme.mdbell.awtea.font.base_url=fonts/v2/  # Change version number
 ```
 
 #### Option 2: Query Parameter
-```java
-FontLoader.setFontBaseUrl("fonts/?v=1.2.3");
+```bash
+-Dme.mdbell.awtea.font.base_url=fonts/?v=1.2.3
 ```
 
 #### Option 3: Hash in Filename
@@ -194,8 +192,8 @@ python3 -m http.server 8000
 ```
 
 Configure your application to use the local URL:
-```java
-FontLoader.setFontBaseUrl("http://localhost:8000/fonts/");
+```bash
+java -Dme.mdbell.awtea.font.base_url=http://localhost:8000/fonts/ -jar myapp.jar
 ```
 
 ### Verifying Cache Behavior
@@ -276,7 +274,7 @@ If you have existing AWTea applications that rely on embedded fonts:
 
 1. **Update Dependencies**: Pull the latest awtea-classlib and awtea-util
 2. **Deploy Fonts**: Copy font files to your web server
-3. **Configure URL** (if not using default): Call `FontLoader.setFontBaseUrl()`
+3. **Configure URL** (if not using default): Set system property `-Dme.mdbell.awtea.font.base_url=<url>`
 4. **Test**: Verify fonts load correctly
 5. **Remove Legacy Resources** (optional): If no longer needed for fallback
 
