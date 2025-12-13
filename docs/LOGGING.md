@@ -248,7 +248,7 @@ LogSink testSink = new LogSink() {
     
     @Override
     public void log(String logger, LogLevel level, String message, Throwable t) {
-        capturedLogs.add(level + ": " + message);
+        capturedLogs.add(level.name() + ": " + message);
     }
 };
 

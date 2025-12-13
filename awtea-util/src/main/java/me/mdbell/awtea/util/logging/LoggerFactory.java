@@ -1,6 +1,7 @@
 package me.mdbell.awtea.util.logging;
 
 import org.teavm.interop.PlatformMarker;
+import org.teavm.jso.JSBody;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -130,12 +131,14 @@ public final class LoggerFactory {
 		private void handleSinkError(LogSink sink, Exception e) {
 			// In TeaVM, use console.error directly
 			if (isTeaVM()) {
-				logTeaVMError(sink, e);
+				logTeaVMError(sink.getClass().getName(), e.getMessage());
 			} else {
 				System.err.println("Error in log sink " + sink.getClass().getName() + ": " + e.getMessage());
 			}
 		}
 
-		private static native void logTeaVMError(LogSink sink, Exception e);
+		@JSBody(params = {"sinkClass", "errorMessage"}, script = 
+			"console.error('Error in log sink ' + sinkClass + ': ' + errorMessage);")
+		private static native void logTeaVMError(String sinkClass, String errorMessage);
 	}
 }

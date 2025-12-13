@@ -1,6 +1,7 @@
 package me.mdbell.awtea.util.logging;
 
 import org.teavm.interop.PlatformMarker;
+import org.teavm.jso.JSBody;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -94,8 +95,15 @@ public class ConsoleLogSink implements LogSink {
 		}
 	}
 
+	@JSBody(params = "message", script = "console.error(message);")
 	private static native void consoleError(String message);
+
+	@JSBody(params = "message", script = "console.warn(message);")
 	private static native void consoleWarn(String message);
+
+	@JSBody(params = "message", script = "console.info(message);")
 	private static native void consoleInfo(String message);
+
+	@JSBody(params = "message", script = "console.log(message);")
 	private static native void consoleLog(String message);
 }
