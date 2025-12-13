@@ -1,7 +1,13 @@
 package me.mdbell.awtea.sound;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 public class CircularAudioBuffer {
-    private final float[] buf;
+
+	private static final Logger log = LoggerFactory.getLogger(CircularAudioBuffer.class);
+
+	private final float[] buf;
     private final int size;
     private int writeIndex = 0;
     private int readIndex = 0;
@@ -23,8 +29,8 @@ public class CircularAudioBuffer {
         if (availableToWrite() > 0) {
             buf[writeIndex] = data;
             writeIndex = (writeIndex + 1) % size;
-        }else {
-			System.err.println("Audio buffer overrun!");
+        } else {
+			log.warn("Audio buffer overrun!");
 		}
     }
 

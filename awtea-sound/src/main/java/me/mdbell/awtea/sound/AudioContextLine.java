@@ -1,5 +1,7 @@
 package me.mdbell.awtea.sound;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;
@@ -11,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AudioContextLine implements SourceDataLine, AudioConstants {
+
+	private static final Logger log = LoggerFactory.getLogger(AudioContextLine.class);
 
     /**
      * The time in milliseconds between each flush of the audio buffer, or how often we check to see if there is any
@@ -150,7 +154,7 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
         AudioBufferSourceNode source = context.createBufferSource();
 
         if (source == null) {
-            System.err.println("Failed to create buffer source node - Stopping audio line.");
+            log.error("Failed to create buffer source node - Stopping audio line.");
             running = false;
             return 0;
         }
