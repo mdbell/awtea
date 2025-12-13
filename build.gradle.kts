@@ -15,12 +15,15 @@ allprojects {
 subprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
-    
 
     java {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(11))
-                }
+        }
+
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
 
     publishing {
         publications {
@@ -29,7 +32,6 @@ subprojects {
                 artifactId = project.name
             }
         }
-    }
     }
 }
 
@@ -41,34 +43,20 @@ tasks.register<JavaExec>("generateDocs") {
     
     classpath = project(":awtea-util").sourceSets["main"].runtimeClasspath
     mainClass.set("me.mdbell.awtea.util.ApiDiff")
-
+    
     doFirst {
-
-        // Clean previous reports
-        val reportDir = file("docs/coverage")
-        if (reportDir.exists()) {
-            reportDir.deleteRecursively()
-        }
-        reportDir.mkdirs()
-
         // Generate HTML report
         args("--format", "html")
-        exec();
-        args("--missing-classes", "--format", "html")
-        exec();
     }
-
+    
     doLast {
         // Generate Markdown report in a separate execution
         project.javaexec {
             classpath = project(":awtea-util").sourceSets["main"].runtimeClasspath
             mainClass.set("me.mdbell.awtea.util.ApiDiff")
             args("--format", "markdown")
-            exec();
-            args("--missing-classes", "--format", "markdown")
-            exec();
         }
-
+        
         println("✓ Generated HTML report: docs/coverage/report.html")
         println("✓ Generated Markdown report: docs/coverage/report.md")
     }
