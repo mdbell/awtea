@@ -146,17 +146,40 @@ public abstract class AbstractLogger implements Logger {
 	}
 
 	/**
-	 * Simple string formatting using String.format
+	 * SLF4J-style string interpolation using {} placeholders
 	 */
 	protected String format(String format, Object... args) {
 		if (args == null || args.length == 0) {
 			return format;
 		}
-		try {
-			return String.format(format, args);
-		} catch (Exception e) {
-			// Fallback if formatting fails
-			return format + " [formatting error: " + e.getMessage() + "]";
+		
+		StringBuilder result = new StringBuilder();
+		int argIndex = 0;
+		int i = 0;
+		
+		while (i < format.length()) {
+			// Look for {} placeholder
+			if (i < format.length() - 1 && format.charAt(i) == '{' && format.charAt(i + 1) == '}') {
+				// Found a placeholder
+				if (argIndex < args.length) {
+					result.append(args[argIndex]);
+					argIndex++;
+				} else {
+					// No more arguments, keep the placeholder
+					result.append("{}");
+				}
+				i += 2; // Skip past {}
+			} else if (i < format.length() - 1 && format.charAt(i) == '\\' && format.charAt(i + 1) == '{') {
+				// Escaped brace: \{ -> {
+				result.append('{');
+				i += 2;
+			} else {
+				// Regular character
+				result.append(format.charAt(i));
+				i++;
+			}
 		}
+		
+		return result.toString();
 	}
 }

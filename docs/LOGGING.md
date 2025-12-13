@@ -58,12 +58,18 @@ public class MyClass {
 
 ### String Formatting
 
-The logging framework supports Java's `String.format()` style formatting:
+The logging framework supports SLF4J-style `{}` placeholder formatting:
 
 ```java
-log.info("Processing %d items", count);
-log.debug("User %s accessed resource %s", username, resource);
-log.warn("Cache hit rate: %.2f%%", hitRate * 100);
+log.info("Processing {} items", count);
+log.debug("User {} accessed resource {}", username, resource);
+log.warn("Cache hit rate: {}%", hitRate * 100);
+```
+
+Multiple placeholders are replaced in order:
+
+```java
+log.info("User {} performed {} on {} at {}", user, action, resource, timestamp);
 ```
 
 ### Exception Logging

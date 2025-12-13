@@ -77,7 +77,7 @@ log.info("Count: {}", count);
 System.out.printf("Count: %d, Rate: %.2f%%\n", count, rate);
 
 // After
-log.info("Count: %d, Rate: %.2f%%", count, rate);
+log.info("Count: {}, Rate: {}%", count, rate);
 ```
 
 #### Error messages
