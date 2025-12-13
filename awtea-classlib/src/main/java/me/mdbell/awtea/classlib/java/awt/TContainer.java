@@ -45,9 +45,20 @@ public class TContainer extends TComponent {
         for (TComponent component : children) {
             int x = component.x;
             int y = component.y;
-            g.translate(x, y);
-            component.paint(g);
-            g.resetTranslate(x, y);
+            int width = component.width;
+            int height = component.height;
+            
+            // Create a new graphics context for the child component
+            TGraphics childGraphics = g.create();
+            if (childGraphics != null) {
+                // Translate to the child's position
+                childGraphics.translate(x, y);
+                // Clip to the child's bounds (in the child's coordinate system, so at 0, 0)
+                childGraphics.clipRect(0, 0, width, height);
+                // Paint the child
+                component.paint(childGraphics);
+                childGraphics.dispose();
+            }
         }
     }
 
