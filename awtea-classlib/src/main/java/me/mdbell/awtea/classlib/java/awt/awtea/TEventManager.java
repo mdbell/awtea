@@ -15,6 +15,8 @@ import me.mdbell.awtea.util.ElementUtils;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.NormalizedPoint;
 import me.mdbell.awtea.util.Point;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.dom.events.*;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLElement;
@@ -33,193 +35,198 @@ import java.util.List;
 @ExtensionMethod({JSObjectsExtensions.class})
 public final class TEventManager implements AutoCloseable {
 
-	public static final int SCROLL_AMOUNT = 3;
+    private static final Logger log = LoggerFactory.getLogger(TEventManager.class);
 
-	private final HTMLElement element;
-	private final TContainer container;
+    public static final int SCROLL_AMOUNT = 3;
 
-	private final List<Registration> registrations;
+    private final HTMLElement element;
+    private final TContainer container;
 
-	// Track last mouse position to debounce duplicate mousemove events
-	private int lastMouseX = Integer.MIN_VALUE;
-	private int lastMouseY = Integer.MIN_VALUE;
+    private final List<Registration> registrations;
 
-	public TEventManager(HTMLElement element, TContainer container) {
-		this.element = element;
-		this.container = container;
-		this.registrations = new LinkedList<>();
-	}
+    // Track last mouse position to debounce duplicate mousemove events
+    private int lastMouseX = Integer.MIN_VALUE;
+    private int lastMouseY = Integer.MIN_VALUE;
 
-	/**
-	 * Suppress the default browser context menu on right-click.
-	 */
-	public TEventManager disableContextMenu() {
-		element.onEvent("contextmenu", Event::preventDefault).track(registrations);
-		return this;
-	}
+    public TEventManager(HTMLElement element, TContainer container) {
+        this.element = element;
+        this.container = container;
+        this.registrations = new LinkedList<>();
+    }
 
-	/**
-	 * Attach mouse listeners, mapping to TMouseEvent.
-	 */
-	public TEventManager withMouse() {
-		for (MouseEventType type : MouseEventType.values()) {
-			if (type == MouseEventType.WHEEL) {
-				continue; // Handled separately
-			}
-			element.onEvent(type.getType(), e -> {
-				MouseEvent me = (MouseEvent) e;
-				MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
-				Point point = new Point(me.getClientX(), me.getClientY());
-				translatePoint(point, (HTMLCanvasElement) element);
+    /**
+     * Suppress the default browser context menu on right-click.
+     */
+    public TEventManager disableContextMenu() {
+        element.onEvent("contextmenu", Event::preventDefault).track(registrations);
+        return this;
+    }
 
-				TComponent comp = getComponentAt(point);
+    /**
+     * Attach mouse listeners, mapping to TMouseEvent.
+     */
+    public TEventManager withMouse() {
+        for (MouseEventType type : MouseEventType.values()) {
+            if (type == MouseEventType.WHEEL) {
+                continue; // Handled separately
+            }
+            element.onEvent(type.getType(), e -> {
+                MouseEvent me = (MouseEvent) e;
+                MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
+                Point point = new Point(me.getClientX(), me.getClientY());
+                translatePoint(point, (HTMLCanvasElement) element);
 
-				java.awt.Point onScreen = comp.getLocationOnScreen();
+                TComponent comp = getComponentAt(point);
 
-				point.translate(-onScreen.x, -onScreen.y);
+                log.trace("Mouse event: type={}, button={}, point=({}, {}) on component={}",
+                        type, button, point.getX(), point.getY(), comp.getClass().getName());
 
-				// Debounce mousemove events - only dispatch if coordinates changed
-				if (type == MouseEventType.MOVED) {
-					if (point.getX() == lastMouseX && point.getY() == lastMouseY) {
-						return; // Skip duplicate event
-					}
-					lastMouseX = point.getX();
-					lastMouseY = point.getY();
-				}
+                java.awt.Point onScreen = comp.getLocationOnScreen();
 
-				TMouseEvent event = new TMouseEvent(comp, type.getId(),
-					point.getX(), point.getY(), button, me.getMetaKey());
-				post(event);
+                point.translate(-onScreen.x, -onScreen.y);
 
-			}).track(registrations);
-		}
-		return this;
-	}
+                // Debounce mousemove events - only dispatch if coordinates changed
+                if (type == MouseEventType.MOVED) {
+                    if (point.getX() == lastMouseX && point.getY() == lastMouseY) {
+                        return; // Skip duplicate event
+                    }
+                    lastMouseX = point.getX();
+                    lastMouseY = point.getY();
+                }
 
-	/**
-	 * Attach mouse wheel listener, mapping to TMouseWheelEvent.
-	 */
-	public TEventManager withMouseWheel() {
-		element.onEvent("wheel", e -> {
-			WheelEvent me = (WheelEvent) e;
-			MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
-			Point point = new Point(me.getClientX(), me.getClientY());
-			translatePoint(point, (HTMLCanvasElement) element);
+                TMouseEvent event = new TMouseEvent(comp, type.getId(),
+                        point.getX(), point.getY(), button, me.getMetaKey());
+                post(event);
 
-			TComponent comp = getComponentAt(point);
+            }).track(registrations);
+        }
+        return this;
+    }
 
-			java.awt.Point onScreen = comp.getLocationOnScreen();
+    /**
+     * Attach mouse wheel listener, mapping to TMouseWheelEvent.
+     */
+    public TEventManager withMouseWheel() {
+        element.onEvent("wheel", e -> {
+            WheelEvent me = (WheelEvent) e;
+            MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
+            Point point = new Point(me.getClientX(), me.getClientY());
+            translatePoint(point, (HTMLCanvasElement) element);
 
-			point.translate(-onScreen.x, -onScreen.y);
+            TComponent comp = getComponentAt(point);
 
-			int scrollType = me.getDeltaMode(); // TODO: verify the values map 1-1
-			double deltaY = me.getDeltaY();
-			int rotation = (int) Math.signum(deltaY);
-			int unitsToScroll = rotation * SCROLL_AMOUNT;
-			boolean meta = me.getMetaKey();
+            java.awt.Point onScreen = comp.getLocationOnScreen();
 
-			TMouseWheelEvent event = new TMouseWheelEvent(comp, MouseEventType.WHEEL.getId(),
-				point.getX(), point.getY(), button, meta,
-				deltaY,
-				SCROLL_AMOUNT,
-				scrollType,
-				unitsToScroll,
-				rotation
-			);
-			post(event);
-		}).track(registrations);
+            point.translate(-onScreen.x, -onScreen.y);
 
-		return this;
-	}
+            int scrollType = me.getDeltaMode(); // TODO: verify the values map 1-1
+            double deltaY = me.getDeltaY();
+            int rotation = (int) Math.signum(deltaY);
+            int unitsToScroll = rotation * SCROLL_AMOUNT;
+            boolean meta = me.getMetaKey();
 
-	/**
-	 * Attach keyboard listeners, mapping to TKeyEvent.
-	 */
-	public TEventManager withKeyboard() {
-		for (TKeyEvent.KeyEvent type : TKeyEvent.KeyEvent.values()) {
-			element.onEvent(type.getType(), e -> {
-				TComponent focusOwner = TFocusManager.get().getGlobalFocusOwner();
-				if (focusOwner == null) {
-					return;
-				}
-				KeyboardEvent ke = (KeyboardEvent) e;
-				TKeyEvent awt = TKeyEvent.adapt(focusOwner, ke);
-				post(awt);
-			}).track(registrations);
-		}
-		return this;
-	}
+            TMouseWheelEvent event = new TMouseWheelEvent(comp, MouseEventType.WHEEL.getId(),
+                    point.getX(), point.getY(), button, meta,
+                    deltaY,
+                    SCROLL_AMOUNT,
+                    scrollType,
+                    unitsToScroll,
+                    rotation
+            );
+            post(event);
+        }).track(registrations);
 
-	/**
-	 * Attach focus / blur listeners, mapping to TFocusEvent.
-	 */
-	public TEventManager withFocus() {
+        return this;
+    }
 
-		element.onEvent("focus", e -> {
-			post(new TFocusEvent(container, TFocusEvent.FOCUS_GAINED));
-		}).track(registrations);
+    /**
+     * Attach keyboard listeners, mapping to TKeyEvent.
+     */
+    public TEventManager withKeyboard() {
+        for (TKeyEvent.KeyEvent type : TKeyEvent.KeyEvent.values()) {
+            element.onEvent(type.getType(), e -> {
+                TComponent focusOwner = TFocusManager.get().getGlobalFocusOwner();
+                if (focusOwner == null) {
+                    return;
+                }
+                KeyboardEvent ke = (KeyboardEvent) e;
+                TKeyEvent awt = TKeyEvent.adapt(focusOwner, ke);
+                post(awt);
+            }).track(registrations);
+        }
+        return this;
+    }
 
-		element.onEvent("blur", e -> {
-			post(new TFocusEvent(container, TFocusEvent.FOCUS_LOST));
-		}).track(registrations);
-		return this;
-	}
+    /**
+     * Attach focus / blur listeners, mapping to TFocusEvent.
+     */
+    public TEventManager withFocus() {
 
-	public void detach() {
-		registrations.cleanup();
-		// Reset mouse position tracking to prevent stale coordinates
-		lastMouseX = Integer.MIN_VALUE;
-		lastMouseY = Integer.MIN_VALUE;
-	}
+        element.onEvent("focus", e -> {
+            post(new TFocusEvent(container, TFocusEvent.FOCUS_GAINED));
+        }).track(registrations);
 
-	@Override
-	public void close() throws Exception {
-		detach();
-	}
+        element.onEvent("blur", e -> {
+            post(new TFocusEvent(container, TFocusEvent.FOCUS_LOST));
+        }).track(registrations);
+        return this;
+    }
 
-	private TComponent getComponentAt(Point p) {
-		TComponent component = container.getComponentAt(p.getX(), p.getY());
-		if (component == null) {
-			component = container;
-		}
-		return component;
-	}
+    public void detach() {
+        registrations.cleanup();
+        // Reset mouse position tracking to prevent stale coordinates
+        lastMouseX = Integer.MIN_VALUE;
+        lastMouseY = Integer.MIN_VALUE;
+    }
 
-	private void post(TAWTEvent event) {
-		TToolkit.getEventQueue().postEvent(event);
-	}
+    @Override
+    public void close() throws Exception {
+        detach();
+    }
 
-	private static void translatePoint(Point p, HTMLCanvasElement element) {
-		TextRectangle rect = element.getBoundingClientRect();
-		if (ElementUtils.isFullscreen(element)) {
+    private TComponent getComponentAt(Point p) {
+        TComponent component = container.getComponentAt(p.getX(), p.getY());
+        if (component == null) {
+            component = container;
+        }
+        return component;
+    }
 
+    private void post(TAWTEvent event) {
+        TToolkit.getEventQueue().postEvent(event);
+    }
 
-			// the client is scaled based on the hight of the element, and the element gets set to the screen size
-			// However the browser _also_ inserts padding to preserve the aspect ratio, so we need to account for that
-
-			double scale = rect.getHeight();
-			scale /= element.getHeight();
-
-			double xPadding = (rect.getWidth() - element.getWidth() * scale) / 2;
-			double yPadding = (rect.getHeight() - element.getHeight() * scale) / 2;
-
-			p.translate((int) -xPadding, (int) -yPadding);
-
-			NormalizedPoint point = p.normalize((int) (rect.getWidth() - xPadding * 2), (int) (rect.getHeight() - yPadding * 2));
-
-			p.setX(point.getX(element.getWidth()));
-			p.setY(point.getY(element.getHeight()));
-			return;
-		}
-
-		p.translate(-rect.getLeft(), -rect.getTop());
-		double xScale = element.getWidth();
-		xScale /= rect.getWidth();
-
-		double yScale = element.getHeight();
-		yScale /= rect.getHeight();
+    private static void translatePoint(Point p, HTMLCanvasElement element) {
+        TextRectangle rect = element.getBoundingClientRect();
+        if (ElementUtils.isFullscreen(element)) {
 
 
-		p.scale(xScale, yScale);
-	}
+            // the client is scaled based on the hight of the element, and the element gets set to the screen size
+            // However the browser _also_ inserts padding to preserve the aspect ratio, so we need to account for that
+
+            double scale = rect.getHeight();
+            scale /= element.getHeight();
+
+            double xPadding = (rect.getWidth() - element.getWidth() * scale) / 2;
+            double yPadding = (rect.getHeight() - element.getHeight() * scale) / 2;
+
+            p.translate((int) -xPadding, (int) -yPadding);
+
+            NormalizedPoint point = p.normalize((int) (rect.getWidth() - xPadding * 2), (int) (rect.getHeight() - yPadding * 2));
+
+            p.setX(point.getX(element.getWidth()));
+            p.setY(point.getY(element.getHeight()));
+            return;
+        }
+
+        p.translate(-rect.getLeft(), -rect.getTop());
+        double xScale = element.getWidth();
+        xScale /= rect.getWidth();
+
+        double yScale = element.getHeight();
+        yScale /= rect.getHeight();
+
+
+        p.scale(xScale, yScale);
+    }
 }

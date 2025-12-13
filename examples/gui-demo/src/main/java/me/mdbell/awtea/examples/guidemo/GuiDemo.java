@@ -18,7 +18,7 @@ public class GuiDemo {
     public static void main(String[] args) {
 
         LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
-        System.setProperty("me.mdbell.awtea.gfx.backend", "java");
+        System.setProperty("me.mdbell.awtea.wasm.module_path", "awt_raster.wasm");
 
         // Create the main window
         Frame frame = new Frame();
@@ -88,6 +88,8 @@ public class GuiDemo {
         };
         infoPanel.setBounds(10, 390, 500, 110);
         mainPanel.add(infoPanel);
+
+        mainPanel.setSize(800, 600);
 
         // Add the main panel to the frame
         frame.add(mainPanel);
