@@ -50,6 +50,17 @@ public class WasmSurfaceBackend implements SurfaceBackend {
 		return null;
 	}
 
+	@Override
+	public Surface createFontRenderSurface(int width, int height) {
+		// Use ARGB format for text rendering to support alpha transparency
+		try {
+			return createSurface(width, height, Surface.FORMAT_INT_ARGB);
+		} catch (Exception e) {
+			// If WASM surface creation fails, return null to allow fallback to software
+			return null;
+		}
+	}
+
 	private static int getSurfaceCacheSize() {
 		String prop = System.getProperty("me.mdbell.awtea.wasm.surface_cache_size");
 		if (prop != null) {

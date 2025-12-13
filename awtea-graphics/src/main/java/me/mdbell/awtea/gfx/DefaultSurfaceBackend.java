@@ -125,4 +125,24 @@ public class DefaultSurfaceBackend implements SurfaceBackend {
 		WebGLSurfaceBackend webGLBackend = new WebGLSurfaceBackend(canvas);
 		return webGLBackend.createCompatibleSurface(width, height, Surface.FORMAT_INT_RGBA);
 	}
+
+	/**
+	 * Create a surface suitable for rendering text/fonts.
+	 * Tries each backend in priority order (WASM > Software), using the first one that succeeds.
+	 * This ensures that if WASM fails to load or errors occur, we fall back to software rendering.
+	 *
+	 * @param width  The width of the surface in pixels
+	 * @param height The height of the surface in pixels
+	 * @return The created surface, or null if no backend can create the surface
+	 */
+	@Override
+	public Surface createFontRenderSurface(int width, int height) {
+		for (SurfaceBackend backend : backends) {
+			Surface surface = backend.createFontRenderSurface(width, height);
+			if (surface != null) {
+				return surface;
+			}
+		}
+		return null;
+	}
 }

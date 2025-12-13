@@ -5,6 +5,7 @@ import lombok.Setter;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
+import me.mdbell.awtea.font.FontPeer;
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import org.teavm.jso.browser.Window;
@@ -309,20 +310,83 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
 	@Override
 	public void drawString(String str, int x, int y) {
-		//TODO: get font from native renderer
-		//TFontRenderer.getRenderer(this.getFont()).drawString(context, str, x + translateX, y + translateY);
+		if (str == null || str.isEmpty()) {
+			return;
+		}
+		
+		// Get font peer for rendering
+		FontPeer peer = font.getFontPeer();
+		if (peer == null) {
+			return;
+		}
+		
+		// Measure the string to determine surface size
+		float sizePx = font.getSize();
+		int textWidth = peer.measureString(str, sizePx);
+		FontPeer.FontMetrics metrics = peer.getFontMetrics(sizePx);
+		
+		// Calculate surface dimensions with some padding for glyphs that may extend beyond bounds
+		int surfaceWidth = textWidth + 4; // Add small padding
+		int surfaceHeight = (int) Math.ceil(metrics.getAscent() + metrics.getDescent()) + 4;
+		
+		if (surfaceWidth <= 0 || surfaceHeight <= 0) {
+			return;
+		}
+		
+		// Create a surface for rendering the text using the backend
+		me.mdbell.awtea.gfx.DefaultSurfaceBackend backend = me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
+		me.mdbell.awtea.gfx.Surface textSurface = backend.createFontRenderSurface(surfaceWidth, surfaceHeight);
+		
+		if (textSurface == null) {
+			// If surface creation failed, silently return
+			return;
+		}
+		
+		try {
+			// Create a TBufferedImage wrapper for the surface to act as a RasterTarget
+			me.mdbell.awtea.classlib.java.awt.image.TBufferedImage textImage = 
+				new me.mdbell.awtea.classlib.java.awt.image.TBufferedImage(textSurface);
+			
+			// Convert AWT Color to ARGB int
+			int argb = (color.getAlpha() << 24) | (color.getRed() << 16) | 
+			           (color.getGreen() << 8) | color.getBlue();
+			
+			// Render the string to the surface
+			// Offset by padding and ascent to position text correctly
+			int renderX = 2;
+			int renderY = (int) Math.ceil(metrics.getAscent()) + 2;
+			peer.renderString(str, textImage, sizePx, renderX, renderY, argb);
+			
+			// Blit the rendered text surface to the screen
+			// Adjust destination position to account for the padding and baseline
+			int destX = x - 2;
+			int destY = y - renderY;
+			pushOp(new SurfaceCommand(SurfaceCommand.Operation.BLIT_IMAGE, textImage, 
+			                          destX, destY, surfaceWidth, surfaceHeight));
+		} finally {
+			// Clean up the temporary surface
+			textSurface.destroy();
+		}
 	}
 
 	@Override
 	public void drawString(AttributedCharacterIterator iterator, float x, float y) {
-		//TODO: get font from native renderer
-		//TFontRenderer.getRenderer(this.getFont()).drawString(context, str, x + translateX, y + translateY);
+		// Convert iterator to string and delegate to drawString(String, int, int)
+		StringBuilder sb = new StringBuilder();
+		for (char c = iterator.first(); c != AttributedCharacterIterator.DONE; c = iterator.next()) {
+			sb.append(c);
+		}
+		drawString(sb.toString(), (int) x, (int) y);
 	}
 
 	@Override
 	public void drawString(AttributedCharacterIterator iterator, int x, int y) {
-		//TODO: get font from native renderer
-		//TFontRenderer.getRenderer(this.getFont()).drawString(context, str, x + translateX, y + translateY);
+		// Convert iterator to string and delegate to drawString(String, int, int)
+		StringBuilder sb = new StringBuilder();
+		for (char c = iterator.first(); c != AttributedCharacterIterator.DONE; c = iterator.next()) {
+			sb.append(c);
+		}
+		drawString(sb.toString(), x, y);
 	}
 
 	@Override

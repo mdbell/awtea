@@ -68,4 +68,10 @@ public class SoftwareSurfaceBackend implements SurfaceBackend {
 			(java.awt.image.ColorModel) cm,
 			format);
 	}
+
+	@Override
+	public Surface createFontRenderSurface(int width, int height) {
+		// Use TYPE_INT_ARGB for text rendering to support alpha transparency
+		return createCompatibleSurface(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+	}
 }
