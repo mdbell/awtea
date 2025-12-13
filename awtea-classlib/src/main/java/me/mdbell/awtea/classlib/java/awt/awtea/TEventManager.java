@@ -40,6 +40,10 @@ public final class TEventManager implements AutoCloseable {
 
 	private final List<Registration> registrations;
 
+	// Track last mouse position to debounce duplicate mousemove events
+	private int lastMouseX = Integer.MIN_VALUE;
+	private int lastMouseY = Integer.MIN_VALUE;
+
 	public TEventManager(HTMLElement element, TContainer container) {
 		this.element = element;
 		this.container = container;
@@ -73,6 +77,15 @@ public final class TEventManager implements AutoCloseable {
 				java.awt.Point onScreen = comp.getLocationOnScreen();
 
 				point.translate(-onScreen.x, -onScreen.y);
+
+				// Debounce mousemove events - only dispatch if coordinates changed
+				if (type == MouseEventType.MOVED) {
+					if (point.getX() == lastMouseX && point.getY() == lastMouseY) {
+						return; // Skip duplicate event
+					}
+					lastMouseX = point.getX();
+					lastMouseY = point.getY();
+				}
 
 				TMouseEvent event = new TMouseEvent(comp, type.getId(),
 					point.getX(), point.getY(), button, me.getMetaKey());
