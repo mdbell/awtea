@@ -45,7 +45,6 @@ public class EventTestApplet extends Applet
 
 		addMouseListener(this);
 		addMouseMotionListener(this);
-		addMouseListener(this);
 		addKeyListener(this);
 
 

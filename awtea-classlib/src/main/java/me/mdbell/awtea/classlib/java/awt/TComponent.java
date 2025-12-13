@@ -242,7 +242,7 @@ public abstract class TComponent implements TImageObserver {
 		if (l == null) {
 			return; // special case to match AWT behavior
 		}
-		this.mouseListeners.add(l);
+		this.mouseListeners.remove(l);
 	}
 
 	public void addFocusListener(TFocusListener l) {
