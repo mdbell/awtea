@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World - awtea Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+        }
+        .info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #app-container {
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>awtea Hello World Example</h1>
+        
+        <div class="info">
+            <h3>About this example</h3>
+            <p>
+                This is the simplest possible awtea application. It demonstrates:
+            </p>
+            <ul>
+                <li>Creating a TFrame window</li>
+                <li>Using TCanvas for custom drawing</li>
+                <li>Rendering text with Graphics</li>
+            </ul>
+            <p>
+                The application runs entirely in your browser using TeaVM and WebAssembly.
+            </p>
+        </div>
+        
+        <div id="app-container">
+            <div class="loading">Loading awtea application...</div>
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="classes.js"></script>
+</body>
+</html>

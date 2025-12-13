@@ -22,8 +22,14 @@ awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime 
 ./gradlew build
 ```
 
-### Running
-Instructions for running in the browser (via TeaVM) coming soon!
+### Running Examples
+
+Check out the [examples/](examples/) directory for working demos:
+
+- **[hello-world](examples/hello-world/)**: Minimal "Hello, awtea!" application
+- **[gui-demo](examples/gui-demo/)**: Comprehensive GUI with interactive components, graphics, and event handling
+
+Each example can be built and run independently. See the [examples README](examples/README.md) for detailed instructions.
 
 ## Project Structure
 
