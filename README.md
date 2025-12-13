@@ -143,6 +143,26 @@ awtea-net        ↓
 awtea-classlib (depends on most modules)
 ```
 
+## Configuration
+
+awtea can be configured using system properties to control rendering backends, font settings, logging, and more. See the [System Properties](docs/SYSTEM_PROPERTIES.md) documentation for a complete list of available configuration options.
+
+**Quick examples:**
+
+```bash
+# Use software renderer instead of WASM
+-Dme.mdbell.awtea.gfx.backend=software
+
+# Enable debug logging
+-Dme.mdbell.awtea.log.level=DEBUG
+
+# Adjust font quality (1-4, default: 4)
+-Dme.mdbell.awtea.font.supersample=2
+
+# Custom font directory
+-Dme.mdbell.awtea.font.base_url=assets/fonts/
+```
+
 ## Documentation
 
 ### Canvas Components
@@ -186,6 +206,7 @@ canvas.destroy();
 - [Font Rendering Architecture](docs/FONT_RENDERING_ARCHITECTURE.md) - Modular font rendering with pluggable strategies
 - [Font Loading Strategy](docs/FONT_LOADING.md) - Runtime font loading with browser HTTP caching
 - [CSS Embedding](docs/CSS_EMBEDDING.md) - Embedding CSS files with CSS custom properties for theming
+- [System Properties](docs/SYSTEM_PROPERTIES.md) - Configuration via system properties
 
 ### Development Tools
 
