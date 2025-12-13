@@ -4,6 +4,8 @@
 
 awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime using [TeaVM](https://teavm.org/) and WebAssembly, enabling legacy and modern Java graphical applications to run natively in the browser.
 
+> **Note:** This project implements a subset of the Java AWT API specification using TeaVM. This is a clean-room implementation and does not include any code from Oracle's Java implementation or OpenJDK. The AWT API specifications are referenced for compatibility purposes only.
+
 ## Features
 - AWT event and component emulation
 - Multi-backend rendering: WebGL, WASM, and Java software renderer
@@ -205,4 +207,8 @@ The `awtea-graphics` module includes native C code compiled to WebAssembly for h
 Contributions are welcome! Please file issues or submit pull requests.
 
 ## License
-Specify license here (currently missing).
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+
+The project dependencies are also permissively licensed:
+- [TeaVM](https://teavm.org/) - Apache License 2.0
+- [Lombok](https://projectlombok.org/) - MIT License
