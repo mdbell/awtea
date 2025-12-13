@@ -11,64 +11,64 @@ import java.awt.*;
  * - Text rendering
  */
 public class GuiDemo {
-    
+
     public static void main(String[] args) {
         // Create the main window
         Frame frame = new Frame();
         frame.setTitle("GUI Demo - awtea Example");
         frame.setSize(800, 600);
-        
+
         // Create a container to hold everything
         Container mainPanel = new Container();
-        
+
         // Add title panel at the top
         Container titlePanel = new Container() {
             @Override
             public void paint(Graphics g) {
                 g.setColor(new Color(70, 130, 180)); // Steel blue
                 g.fillRect(0, 0, getWidth(), getHeight());
-                
+
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("SansSerif", Font.BOLD, 24));
                 g.drawString("awtea GUI Demo", 250, 35);
-                
+
                 g.setFont(new Font("SansSerif", Font.PLAIN, 12));
                 g.drawString("Interactive AWT components running in your browser", 200, 55);
             }
         };
         titlePanel.setBounds(0, 0, 800, 70);
         mainPanel.add(titlePanel);
-        
+
         // Add interactive drawing canvas
         DrawingCanvas canvas = new DrawingCanvas();
         canvas.setBounds(10, 80, 500, 300);
         mainPanel.add(canvas);
-        
+
         // Add graphics demo panel
         GraphicsDemoPanel demoPanel = new GraphicsDemoPanel();
         demoPanel.setBounds(520, 80, 270, 500);
         mainPanel.add(demoPanel);
-        
+
         // Add info panel at the bottom
         Container infoPanel = new Container() {
             @Override
             public void paint(Graphics g) {
                 g.setColor(new Color(245, 245, 245));
                 g.fillRect(0, 0, getWidth(), getHeight());
-                
+
                 // Draw border
                 g.setColor(new Color(200, 200, 200));
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
-                
+
                 g.setColor(Color.BLACK);
                 g.setFont(new Font("SansSerif", Font.BOLD, 12));
                 g.drawString("Instructions:", 10, 20);
-                
+
                 g.setFont(new Font("SansSerif", Font.PLAIN, 11));
                 g.drawString("• Click on the left canvas to draw colored squares", 10, 40);
                 g.drawString("• Move your mouse to see real-time coordinates", 10, 55);
                 g.drawString("• View graphics primitives on the right panel", 10, 70);
-                
+
                 g.setFont(new Font("SansSerif", Font.ITALIC, 10));
                 g.setColor(Color.GRAY);
                 g.drawString("Powered by awtea - Java AWT for the Web", 10, 95);
@@ -76,10 +76,10 @@ public class GuiDemo {
         };
         infoPanel.setBounds(10, 390, 500, 110);
         mainPanel.add(infoPanel);
-        
+
         // Add the main panel to the frame
         frame.add(mainPanel);
-        
+
         // Show the window
         frame.setVisible(true);
     }
