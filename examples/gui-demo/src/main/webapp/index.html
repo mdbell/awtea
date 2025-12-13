@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUI Demo - awtea Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+        }
+        .info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #app-container {
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .feature {
+            padding: 8px;
+            background-color: #f8f8f8;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>awtea GUI Demo</h1>
+
+    <div class="info">
+        <h3>About this example</h3>
+        <p>
+            This comprehensive demo showcases advanced awtea features:
+        </p>
+        <div class="features">
+            <div class="feature">✓ Interactive drawing canvas</div>
+            <div class="feature">✓ Mouse event handling</div>
+            <div class="feature">✓ Graphics primitives (shapes, lines, arcs)</div>
+            <div class="feature">✓ Multiple panels and layouts</div>
+            <div class="feature">✓ Text rendering with various fonts</div>
+            <div class="feature">✓ Color palette demonstration</div>
+        </div>
+        <p style="margin-top: 15px;">
+            <strong>Try it:</strong> Click on the canvas to draw circles, move your mouse to see coordinates!
+        </p>
+    </div>
+
+    <div id="app-container">
+        <div class="loading">Loading awtea application...</div>
+    </div>
+</div>
+<script type="module">
+    import { main } from './js/gui-demo.js';
+
+    main([]);
+</script>
+</body>
+</html>
