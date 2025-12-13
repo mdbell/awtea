@@ -10,6 +10,10 @@ import org.teavm.jso.dom.events.KeyboardEvent;
 
 /**
  * @see java.awt.event.KeyEvent
+ * 
+ * Note: The VK_ constants in this class match those defined in
+ * {@link me.mdbell.awtea.input.KeyConstants}. They are redefined here
+ * for compatibility with the java.awt.event.KeyEvent API.
  */
 @Getter
 @ToString(callSuper = true)

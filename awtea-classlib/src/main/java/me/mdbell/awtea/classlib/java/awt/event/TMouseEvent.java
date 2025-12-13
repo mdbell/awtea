@@ -7,6 +7,10 @@ import me.mdbell.awtea.input.MouseButtonType;
 
 /**
  * @see java.awt.event.MouseEvent
+ * 
+ * Note: The BUTTON and MOUSE_ constants in this class match those defined in
+ * {@link me.mdbell.awtea.input.MouseConstants}. They are redefined here
+ * for compatibility with the java.awt.event.MouseEvent API.
  */
 @Getter
 @ToString(callSuper = true)

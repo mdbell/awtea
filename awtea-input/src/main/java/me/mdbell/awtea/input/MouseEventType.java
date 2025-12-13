@@ -2,19 +2,19 @@ package me.mdbell.awtea.input;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import java.awt.event.MouseEvent;
+import static me.mdbell.awtea.input.MouseConstants.*;
 import me.mdbell.awtea.util.EnumLookup;
 
 @AllArgsConstructor
 @Getter
 public enum MouseEventType {
-    PRESSED("mousedown", MouseEvent.MOUSE_PRESSED),
-    RELEASED("mouseup", MouseEvent.MOUSE_RELEASED),
-    MOVED("mousemove", MouseEvent.MOUSE_MOVED),
-    ENTERED("mouseenter", MouseEvent.MOUSE_ENTERED),
-    EXITED("mouseout", MouseEvent.MOUSE_EXITED),
-    CLICKED("click", MouseEvent.MOUSE_CLICKED),
-    WHEEL("wheel", MouseEvent.MOUSE_WHEEL),
+    PRESSED("mousedown", MOUSE_PRESSED),
+    RELEASED("mouseup", MOUSE_RELEASED),
+    MOVED("mousemove", MOUSE_MOVED),
+    ENTERED("mouseenter", MOUSE_ENTERED),
+    EXITED("mouseout", MOUSE_EXITED),
+    CLICKED("click", MOUSE_CLICKED),
+    WHEEL("wheel", MOUSE_WHEEL),
     UNKNOWN("unknown", -1);
 
     private static final EnumLookup.StringKey<MouseEventType> LOOKUP = new EnumLookup.StringKey<>(values(),

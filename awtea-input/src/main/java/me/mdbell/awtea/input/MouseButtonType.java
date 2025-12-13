@@ -2,18 +2,18 @@ package me.mdbell.awtea.input;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import java.awt.event.MouseEvent;
+import static me.mdbell.awtea.input.MouseConstants.*;
 import me.mdbell.awtea.util.EnumLookup;
 
 @AllArgsConstructor
 @Getter
 public enum MouseButtonType {
-    LEFT(0, MouseEvent.BUTTON1),
-    MIDDLE(1, MouseEvent.BUTTON2),
-    RIGHT(2, MouseEvent.BUTTON3),
-    BACK(3, MouseEvent.NOBUTTON),
-    FORWARD(4, MouseEvent.NOBUTTON),
-    UNKNOWN(-1, MouseEvent.NOBUTTON);
+    LEFT(0, BUTTON1),
+    MIDDLE(1, BUTTON2),
+    RIGHT(2, BUTTON3),
+    BACK(3, NOBUTTON),
+    FORWARD(4, NOBUTTON),
+    UNKNOWN(-1, NOBUTTON);
 
     private final int html;
     private final int java;
