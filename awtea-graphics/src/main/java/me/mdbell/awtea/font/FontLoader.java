@@ -21,10 +21,10 @@ public final class FontLoader {
 	private static final String FONT_BASE_URL = getFontBaseUrlFromProperty();
 	
 	// Cache for loaded font data (byte arrays) - thread-safe for concurrent access
-	private static final Map<String, byte[]> fontCache = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final Map<String, byte[]> fontCache = new ConcurrentHashMap<>();
 	
 	// Cache for parsed TrueTypeFont objects - thread-safe for concurrent access
-	private static final Map<String, TrueTypeFont> parsedFontCache = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final Map<String, TrueTypeFont> parsedFontCache = new ConcurrentHashMap<>();
 
 	private FontLoader() {}
 
