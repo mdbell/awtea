@@ -1,7 +1,5 @@
 package me.mdbell.awtea.gfx.software;
 
-import me.mdbell.awtea.gfx.TAlphaComposite;
-import me.mdbell.awtea.gfx.TComposite;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
@@ -30,7 +28,7 @@ import java.util.List;
  * (scale, rotation, shear) would require more complex scan conversion and are deferred
  * as a future enhancement for this software fallback renderer.
  * <p>
- * Alpha blending: Supports standard Porter-Duff compositing rules via TAlphaComposite.
+ * Alpha blending: Supports standard Porter-Duff compositing rules via AlphaComposite.
  * The default composite is SRC_OVER with alpha = 1.0.
  */
 @Monitored.AllMethods
@@ -59,7 +57,7 @@ public class SoftwareRasterizer implements Rasterizer {
 	private int cachedFormat = -1; // Track which format the encoded colors are for
 
 	// Compositing state
-	private TComposite composite = TAlphaComposite.SrcOver;
+	private Composite composite = AlphaComposite.SrcOver;
 
 
 	SoftwareRasterizer(SoftwareSurface surface) {
@@ -122,7 +120,7 @@ public class SoftwareRasterizer implements Rasterizer {
 		this.foreground = Color.WHITE;
 		this.background = Color.BLACK;
 		this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
-		this.composite = TAlphaComposite.SrcOver;
+		this.composite = AlphaComposite.SrcOver;
 		updateEncodedColors();
 	}
 
@@ -153,8 +151,8 @@ public class SoftwareRasterizer implements Rasterizer {
 					}
 					break;
 				case SET_COMPOSITE:
-					TComposite comp = (TComposite) cmd.obj;
-					this.composite = comp != null ? comp : TAlphaComposite.SrcOver;
+					Composite comp = (Composite) cmd.obj;
+					this.composite = comp != null ? comp : AlphaComposite.SrcOver;
 					break;
 				case BLIT_IMAGE:
 					Surface srcSurface = ((SurfaceContainer) cmd.obj).getSurface();
@@ -577,13 +575,13 @@ public class SoftwareRasterizer implements Rasterizer {
 	 * @param composite the composite operation to apply
 	 * @return the blended color in ARGB format
 	 */
-	private int blendPixel(int srcColor, int dstColor, TComposite composite) {
-		if (!(composite instanceof TAlphaComposite)) {
+	private int blendPixel(int srcColor, int dstColor, Composite composite) {
+		if (!(composite instanceof AlphaComposite)) {
 			// If not an alpha composite, just return source (SRC mode)
 			return srcColor;
 		}
 
-		TAlphaComposite alphaComp = (TAlphaComposite) composite;
+		AlphaComposite alphaComp = (AlphaComposite) composite;
 		int rule = alphaComp.getRule();
 		float extraAlpha = alphaComp.getAlpha();
 
@@ -612,74 +610,74 @@ public class SoftwareRasterizer implements Rasterizer {
 
 		// Apply Porter-Duff compositing rules
 		switch (rule) {
-			case TAlphaComposite.CLEAR:
+			case AlphaComposite.CLEAR:
 				return 0; // Fully transparent
 
-			case TAlphaComposite.SRC:
+			case AlphaComposite.SRC:
 				// Replace destination with source
 				return (sa << 24) | (sr << 16) | (sg << 8) | sb;
 
-			case TAlphaComposite.DST:
+			case AlphaComposite.DST:
 				// Leave destination unchanged
 				return dstColor;
 
-			case TAlphaComposite.SRC_OVER:
+			case AlphaComposite.SRC_OVER:
 				// Source over destination (default blending)
 				outAlpha = srcAlpha + dstAlpha * (1.0f - srcAlpha);
 				srcFactor = 1.0f;
 				dstFactor = 1.0f - srcAlpha;
 				break;
 
-			case TAlphaComposite.DST_OVER:
+			case AlphaComposite.DST_OVER:
 				// Destination over source
 				outAlpha = dstAlpha + srcAlpha * (1.0f - dstAlpha);
 				srcFactor = 1.0f - dstAlpha;
 				dstFactor = 1.0f;
 				break;
 
-			case TAlphaComposite.SRC_IN:
+			case AlphaComposite.SRC_IN:
 				// Source where destination is opaque
 				outAlpha = srcAlpha * dstAlpha;
 				srcFactor = dstAlpha;
 				dstFactor = 0.0f;
 				break;
 
-			case TAlphaComposite.DST_IN:
+			case AlphaComposite.DST_IN:
 				// Destination where source is opaque
 				outAlpha = dstAlpha * srcAlpha;
 				srcFactor = 0.0f;
 				dstFactor = srcAlpha;
 				break;
 
-			case TAlphaComposite.SRC_OUT:
+			case AlphaComposite.SRC_OUT:
 				// Source where destination is transparent
 				outAlpha = srcAlpha * (1.0f - dstAlpha);
 				srcFactor = 1.0f - dstAlpha;
 				dstFactor = 0.0f;
 				break;
 
-			case TAlphaComposite.DST_OUT:
+			case AlphaComposite.DST_OUT:
 				// Destination where source is transparent
 				outAlpha = dstAlpha * (1.0f - srcAlpha);
 				srcFactor = 0.0f;
 				dstFactor = 1.0f - srcAlpha;
 				break;
 
-			case TAlphaComposite.SRC_ATOP:
+			case AlphaComposite.SRC_ATOP:
 				// Source over destination, only where destination is opaque
 				outAlpha = dstAlpha;
 				srcFactor = dstAlpha;
 				dstFactor = 1.0f - srcAlpha;
 				break;
 
-			case TAlphaComposite.DST_ATOP:
+			case AlphaComposite.DST_ATOP:
 				// Destination over source, only where source is opaque
 				outAlpha = srcAlpha;
 				srcFactor = 1.0f - dstAlpha;
 				dstFactor = srcAlpha;
 				break;
 
-			case TAlphaComposite.XOR:
+			case AlphaComposite.XOR:
 				// Source xor destination
 				outAlpha = srcAlpha + dstAlpha - 2.0f * srcAlpha * dstAlpha;
 				srcFactor = 1.0f - dstAlpha;
@@ -721,11 +719,11 @@ public class SoftwareRasterizer implements Rasterizer {
 	 * @return true if alpha blending should be applied
 	 */
 	private boolean needsBlending() {
-		if (!(composite instanceof TAlphaComposite)) {
+		if (!(composite instanceof AlphaComposite)) {
 			return false;
 		}
-		TAlphaComposite alphaComp = (TAlphaComposite) composite;
+		AlphaComposite alphaComp = (AlphaComposite) composite;
 		// Need blending if not SRC with full alpha, or if source has alpha channel
-		return alphaComp.getRule() != TAlphaComposite.SRC || alphaComp.getAlpha() < 1.0f;
+		return alphaComp.getRule() != AlphaComposite.SRC || alphaComp.getAlpha() < 1.0f;
 	}
 }

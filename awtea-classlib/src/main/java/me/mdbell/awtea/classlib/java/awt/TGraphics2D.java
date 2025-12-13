@@ -1,7 +1,6 @@
 package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
-import me.mdbell.awtea.gfx.TComposite;
 
 import java.awt.*;
 import java.text.AttributedCharacterIterator;

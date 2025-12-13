@@ -1,4 +1,4 @@
-package me.mdbell.awtea.gfx;
+package me.mdbell.awtea.classlib.java.awt;
 
 /**
  * The TComposite interface defines methods to compose a draw primitive with the underlying graphics area.

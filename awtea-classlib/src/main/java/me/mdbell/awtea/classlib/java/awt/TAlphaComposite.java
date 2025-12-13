@@ -1,4 +1,4 @@
-package me.mdbell.awtea.gfx;
+package me.mdbell.awtea.classlib.java.awt;
 
 /**
  * The TAlphaComposite class implements alpha blending rules for combining source and destination pixels.

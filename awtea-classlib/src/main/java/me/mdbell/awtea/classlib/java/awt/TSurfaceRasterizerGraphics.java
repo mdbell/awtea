@@ -10,8 +10,6 @@ import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
-import me.mdbell.awtea.gfx.TAlphaComposite;
-import me.mdbell.awtea.gfx.TComposite;
 import org.teavm.jso.browser.Window;
 
 import java.awt.*;
