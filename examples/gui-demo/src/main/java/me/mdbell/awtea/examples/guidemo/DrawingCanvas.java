@@ -6,7 +6,7 @@ import java.awt.Color;
 
 /**
  * Interactive drawing canvas that responds to mouse events.
- * Click to draw colored rectangles at the mouse position.
+ * Click to draw colored squares at the mouse position.
  */
 public class DrawingCanvas extends TCanvas {
     
@@ -37,7 +37,7 @@ public class DrawingCanvas extends TCanvas {
             public void mouseClicked(TMouseEvent e) {}
             
             public void mousePressed(TMouseEvent e) {
-                // Add a rectangle at the click position
+                // Add a square at the click position
                 rects.add(new DrawRect(e.getX(), e.getY(), 30, colors[colorIndex]));
                 colorIndex = (colorIndex + 1) % colors.length;
                 repaint();
@@ -75,7 +75,7 @@ public class DrawingCanvas extends TCanvas {
             g.drawLine(0, i, getWidth(), i);
         }
         
-        // Draw all rectangles
+        // Draw all squares
         for (DrawRect rect : rects) {
             g.setColor(rect.color);
             g.fillRect(rect.x - rect.size/2, rect.y - rect.size/2, rect.size, rect.size);
