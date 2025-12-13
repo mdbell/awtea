@@ -314,6 +314,11 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 			return;
 		}
 		
+		// Check for null font and color
+		if (font == null || color == null) {
+			return;
+		}
+		
 		// Get font peer for rendering
 		FontPeer peer = font.getFontPeer();
 		if (peer == null) {
