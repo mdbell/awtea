@@ -10,4 +10,8 @@ public class Styles {
 	@GeneratedBy(EmbedGenerator.class)
 	public native String componentCSS();
 
+	@CSSSource("styles/theme.css")
+	@GeneratedBy(EmbedGenerator.class)
+	public native String themeCSS();
+
 }
