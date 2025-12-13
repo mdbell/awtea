@@ -10,3 +10,7 @@ include("awtea-net")
 include("awtea-ui")
 include("awtea-util")
 
+// Examples
+include("examples:hello-world")
+include("examples:gui-demo")
+

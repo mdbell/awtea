@@ -19,20 +19,22 @@ A comprehensive awtea example demonstrating multiple AWT components, graphics pr
 
 ## Building
 
+From the root awtea directory:
+
 ```bash
-./gradlew build
+./gradlew :examples:gui-demo:build
 ```
 
 ## Running
 
-After building, open `build/dist/index.html` in your web browser:
+After building, open `examples/gui-demo/build/dist/index.html` in your web browser:
 
 ```bash
-# Linux/macOS
-xdg-open build/dist/index.html
+# From root directory (Linux/macOS)
+xdg-open examples/gui-demo/build/dist/index.html
 
 # Or serve with Python
-cd build/dist
+cd examples/gui-demo/build/dist
 python3 -m http.server 8000
 # Then open http://localhost:8000
 ```

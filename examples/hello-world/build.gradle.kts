@@ -1,15 +1,10 @@
 plugins {
     id("java")
-    id("org.teavm") version "0.13.0"
+    id("org.teavm")
 }
 
 group = "me.mdbell.awtea.examples"
 version = "1.0.0"
-
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
 
 java {
     toolchain {
@@ -20,8 +15,8 @@ java {
 }
 
 dependencies {
-    // awtea dependencies - using composite build to reference parent project
-    implementation("me.mdbell:awtea-classlib:0.1.0")
+    // awtea dependencies - now as project dependencies
+    implementation(project(":awtea-classlib"))
     
     // TeaVM dependencies
     implementation("org.teavm:teavm-classlib:0.13.0")

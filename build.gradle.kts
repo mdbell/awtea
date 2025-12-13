@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("org.teavm") version "0.13.0" apply false
     id("maven-publish")
 }
 
@@ -14,7 +15,11 @@ allprojects {
 
 subprojects {
     apply(plugin = "java")
-    apply(plugin = "maven-publish")
+    
+    // Only apply maven-publish to non-example projects
+    if (!project.path.startsWith(":examples")) {
+        apply(plugin = "maven-publish")
+    }
 
     java {
         toolchain {
@@ -25,11 +30,14 @@ subprojects {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    publishing {
-        publications {
-            create<MavenPublication>("mavenJava") {
-                from(components["java"])
-                artifactId = project.name
+    // Only configure publishing for non-example projects
+    if (!project.path.startsWith(":examples")) {
+        publishing {
+            publications {
+                create<MavenPublication>("mavenJava") {
+                    from(components["java"])
+                    artifactId = project.name
+                }
             }
         }
     }

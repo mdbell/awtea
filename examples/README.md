@@ -24,7 +24,7 @@ A more comprehensive example showcasing multiple AWT components, layouts, graphi
 
 ## Building and Running Examples
 
-Each example is a self-contained Gradle project that can be built independently.
+The examples are integrated as subprojects of the main awtea build.
 
 ### Prerequisites
 - Java 11 or newer
@@ -41,47 +41,53 @@ The examples serve as:
 
 ### Building an Example
 
-Navigate to the example directory and run:
+From the root awtea directory, you can build individual examples:
 
 ```bash
-cd hello-world
-./gradlew build
+# Build hello-world example
+./gradlew :examples:hello-world:build
+
+# Build gui-demo example
+./gradlew :examples:gui-demo:build
+
+# Build all examples
+./gradlew :examples:hello-world:build :examples:gui-demo:build
 ```
 
 This will:
 1. Compile the Java source code
 2. Run TeaVM to transpile Java bytecode to JavaScript/WebAssembly
-3. Generate HTML files and assets in `build/dist/`
+3. Generate HTML files and assets in `examples/*/build/dist/`
 
 ### Running an Example
 
 After building, open the generated HTML file in a web browser:
 
 ```bash
-# Open in default browser (Linux/macOS)
-open build/dist/index.html
+# Open hello-world in default browser (Linux/macOS)
+open examples/hello-world/build/dist/index.html
 
 # Or on Linux with xdg-open
-xdg-open build/dist/index.html
+xdg-open examples/hello-world/build/dist/index.html
 
 # Or on Windows
-start build/dist/index.html
+start examples\hello-world\build\dist\index.html
 ```
 
 Alternatively, you can serve the files with a local web server:
 
 ```bash
-cd build/dist
+cd examples/hello-world/build/dist
 python3 -m http.server 8000
 # Then open http://localhost:8000 in your browser
 ```
 
 ## Project Structure
 
-Each example follows this structure:
+The examples are integrated as subprojects under the main awtea build. Each example follows this structure:
 
 ```
-example-name/
+examples/example-name/
 ├── build.gradle.kts          # Build configuration with TeaVM plugin
 ├── src/
 │   └── main/
@@ -90,6 +96,8 @@ example-name/
 │           └── index.html
 └── README.md                 # Example-specific documentation
 ```
+
+Examples use `project(":awtea-classlib")` dependencies to reference the parent awtea modules.
 
 ## Known Limitations
 
