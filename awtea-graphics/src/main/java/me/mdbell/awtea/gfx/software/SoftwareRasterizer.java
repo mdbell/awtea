@@ -212,9 +212,15 @@ public class SoftwareRasterizer implements Rasterizer {
 
 		int surfaceWidth = surface.getWidth();
 		int surfaceHeight = surface.getHeight();
+		int destFormat = surface.getFormat();
 
-		// Check once if blending is needed (not per pixel!)
+		// Check if blending is needed: either composite requires it OR color has alpha < 255
 		boolean blend = needsBlending();
+		
+		// Also check if the color itself has alpha (need to check the foreground color's alpha)
+		if (!blend && foreground.getAlpha() < 255) {
+			blend = true;
+		}
 
 		if (!blend) {
 			// Fast path: no blending needed - just write the encoded foreground color directly
@@ -232,7 +238,6 @@ public class SoftwareRasterizer implements Rasterizer {
 			}
 		} else {
 			// Slow path: blending required
-			int destFormat = surface.getFormat();
 			
 			// Pre-convert source color to ARGB once (not per pixel!)
 			int srcColorARGB = convertColorToARGB(encodedForeground, destFormat);
