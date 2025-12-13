@@ -69,7 +69,7 @@ public class DefaultSurfaceBackend implements SurfaceBackend {
 		} catch (Exception e) {
 			// WASM backend failed to load (e.g., wasm file not found on server)
 			// Continue without it - will use software fallback
-			System.err.println("Failed to load WASM backend, will use software renderer: " + e.getMessage());
+			log.warn("Failed to load WASM backend, will use software renderer: {}", e.getMessage());
 		}
 		
 		// Always add software backend as fallback

@@ -199,7 +199,7 @@ class WebGLRasterizer implements Rasterizer {
 			Surface surface = (Surface) img;
 			drawSurface(surface, x, y, width, height);
 		} else {
-			System.err.println("WebGLRasterizer: drawImage: Unsupported image type: " + img.getClass().getName());
+			log.error("WebGLRasterizer: drawImage: Unsupported image type: {}", img.getClass().getName());
 		}
 	}
 
@@ -246,8 +246,7 @@ class WebGLRasterizer implements Rasterizer {
 			case Surface.FORMAT_INT_RGBA:
 				return WebGLSurfaceBackend.SwizzleMode.NONE;
 			default:
-				System.err.println("WebGLRasterizer: Unknown surface format: " + surface.getFormat() +
-					", defaulting to no swizzling");
+				log.warn("WebGLRasterizer: Unknown surface format: {}, defaulting to no swizzling", surface.getFormat());
 				return WebGLSurfaceBackend.SwizzleMode.NONE;
 		}
 	}

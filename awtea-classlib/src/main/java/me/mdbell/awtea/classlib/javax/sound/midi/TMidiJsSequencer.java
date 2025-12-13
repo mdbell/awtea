@@ -103,7 +103,7 @@ public class TMidiJsSequencer implements TReceiver, TSequencer, TTransmitter, MI
                 channels[msg.getChannel()].setProgram(msg.getData1());
                 break;
             default:
-                System.err.println("[MIDI] Unhandled message: " + msg.getCommand());
+                log.warn("[MIDI] Unhandled message: {}", msg.getCommand());
         }
     }
 

@@ -251,7 +251,7 @@ public class ApiDiff {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Error scanning package " + pkgToScan + ": " + e.getMessage());
+                log.error("Error scanning package {}: {}", pkgToScan, e.getMessage());
             }
 
             if (!missingInPackage.isEmpty()) {
@@ -308,7 +308,7 @@ public class ApiDiff {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error: Failed to scan for classes in " + pkgName + ": " + e.getMessage());
+            log.error("Error: Failed to scan for classes in {}: {}", pkgName, e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }
@@ -328,11 +328,11 @@ public class ApiDiff {
         if (format.equalsIgnoreCase("html")) {
             HtmlReportGenerator gen = new HtmlReportGenerator(path);
             coverageData.accept(gen);
-            System.out.println("HTML report generated: " + path.toAbsolutePath());
+            log.info("HTML report generated: {}", path.toAbsolutePath());
         } else if (format.equalsIgnoreCase("markdown")) {
             MarkdownReportGenerator gen = new MarkdownReportGenerator(path);
             coverageData.accept(gen);
-            System.out.println("Markdown report generated: " + path.toAbsolutePath());
+            log.info("Markdown report generated: {}", path.toAbsolutePath());
         } else {
             log.error("{}", "Unknown format: " + format);
             log.error("Supported formats: html, markdown");
@@ -355,11 +355,11 @@ public class ApiDiff {
         if (format.equalsIgnoreCase("html")) {
             HtmlReportGenerator gen = new HtmlReportGenerator(path);
             missingData.accept(gen);
-            System.out.println("Missing classes HTML report generated: " + path.toAbsolutePath());
+            log.info("Missing classes HTML report generated: {}", path.toAbsolutePath());
         } else if (format.equalsIgnoreCase("markdown")) {
             MarkdownReportGenerator gen = new MarkdownReportGenerator(path);
             missingData.accept(gen);
-            System.out.println("Missing classes Markdown report generated: " + path.toAbsolutePath());
+            log.info("Missing classes Markdown report generated: {}", path.toAbsolutePath());
         } else {
             log.error("{}", "Unknown format: " + format);
             log.error("Supported formats: html, markdown");

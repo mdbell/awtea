@@ -62,7 +62,7 @@ public class SoftwareSurface implements Surface {
 				return getPixelDataFromDoubleBuffer((DataBufferDouble) dataBuffer);
 			case DataBuffer.TYPE_UNDEFINED:
 			default:
-				System.err.println("SoftwareSurface: Unsupported DataBuffer type: " + dataBuffer.getDataType());
+				log.error("SoftwareSurface: Unsupported DataBuffer type: {}", dataBuffer.getDataType());
 				return null;
 		}
 	}
