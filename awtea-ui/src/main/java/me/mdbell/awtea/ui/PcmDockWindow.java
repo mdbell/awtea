@@ -6,7 +6,7 @@ import org.teavm.jso.dom.html.HTMLInputElement;
 
 import java.util.List;
 
-public final class PcmDockWindow extends FloatingWindow {
+public final class PcmDockWindow extends FloatingFrame {
 
 	private final PcmMonitor monitor = PcmMonitor.get();
 

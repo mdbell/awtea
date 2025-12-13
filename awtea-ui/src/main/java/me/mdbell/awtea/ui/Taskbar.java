@@ -92,9 +92,9 @@ public final class Taskbar {
 	}
 
 	/**
-	 * Called by FloatingWindow when it is created.
+	 * Called by FloatingFrame when it is created.
 	 */
-	void registerWindow(FloatingWindow win) {
+	void registerWindow(FloatingFrame win) {
 		String id = win.getWindowId();
 		if (buttons.containsKey(id)) {
 			return;
@@ -118,9 +118,9 @@ public final class Taskbar {
 	}
 
 	/**
-	 * Called by FloatingWindow when closed.
+	 * Called by FloatingFrame when closed.
 	 */
-	void unregisterWindow(FloatingWindow win) {
+	void unregisterWindow(FloatingFrame win) {
 		String id = win.getWindowId();
 		HTMLElement btn = buttons.remove(id);
 		if (btn != null && btn.getParentNode() != null) {
@@ -128,7 +128,7 @@ public final class Taskbar {
 		}
 	}
 
-	void setActive(FloatingWindow win, boolean active) {
+	void setActive(FloatingFrame win, boolean active) {
 		HTMLElement btn = buttons.get(win.getWindowId());
 		if (btn == null) return;
 

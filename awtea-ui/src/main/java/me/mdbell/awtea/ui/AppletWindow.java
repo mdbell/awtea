@@ -7,7 +7,7 @@ import org.teavm.jso.dom.html.HTMLElement;
 import java.applet.Applet;
 import java.util.Properties;
 
-public class AppletWindow extends FloatingWindow {
+public class AppletWindow extends FloatingFrame {
 
 	private Applet applet;
 	private TeaAppletStub stub;

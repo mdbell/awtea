@@ -7,7 +7,7 @@ import org.teavm.jso.dom.html.HTMLElement;
 
 import java.util.List;
 
-public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends MonitorSnapshot<E>> extends FloatingWindow {
+public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends MonitorSnapshot<E>> extends FloatingFrame {
 
 	protected final AbstractMonitor<E, S> monitor;
 

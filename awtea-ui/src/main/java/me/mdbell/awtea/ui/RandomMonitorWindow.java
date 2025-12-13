@@ -5,7 +5,7 @@ import org.teavm.jso.dom.html.HTMLElement;
 
 import java.util.List;
 
-public final class RandomMonitorWindow extends FloatingWindow {
+public final class RandomMonitorWindow extends FloatingFrame {
 
 	private final RandomMonitor monitor = RandomMonitor.get();
 

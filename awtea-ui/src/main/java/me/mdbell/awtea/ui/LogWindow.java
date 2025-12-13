@@ -7,7 +7,7 @@ import org.teavm.jso.dom.html.HTMLElement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LogWindow extends FloatingWindow {
+public class LogWindow extends FloatingFrame {
 
 	private final List<LogEntry> lines = new ArrayList<>();
 	private static final int MAX_LINES = 500;

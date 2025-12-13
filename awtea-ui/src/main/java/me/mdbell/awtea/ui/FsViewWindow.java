@@ -16,7 +16,7 @@ import static me.mdbell.awtea.ui.Theme.humanReadableSize;
 import static me.mdbell.awtea.ui.Theme.humanReadableTimestamp;
 
 @ExtensionMethod({JSObjectsExtensions.class})
-public class FsViewWindow extends FloatingWindow {
+public class FsViewWindow extends FloatingFrame {
 
 	private static final File ROOT = new File("/");
 

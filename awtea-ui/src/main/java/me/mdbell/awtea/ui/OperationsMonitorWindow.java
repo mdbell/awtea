@@ -10,7 +10,7 @@ import java.util.List;
 // we don't extend AbstractMonitorWindow here
 // since this is a 'special' floating window, with multiple
 // possible monitors inside it
-public class OperationsMonitorWindow extends FloatingWindow {
+public class OperationsMonitorWindow extends FloatingFrame {
 
 	private int selectedMonitorId = -1;
 
