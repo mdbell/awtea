@@ -58,12 +58,14 @@ public class SoftwareRasterizer implements Rasterizer {
 
 	// Compositing state
 	private Composite composite = AlphaComposite.SrcOver;
+	private boolean needsBlending = false; // Cached result to avoid repeated instanceof checks
 
 
 	SoftwareRasterizer(SoftwareSurface surface) {
 		this.surface = surface;
 		this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
 		updateEncodedColors();
+		updateBlendingCache();
 	}
 
 	private SoftwareRasterizer(SoftwareRasterizer other) {
@@ -76,6 +78,7 @@ public class SoftwareRasterizer implements Rasterizer {
 		this.cachedFormat = other.cachedFormat;
 		this.clip = other.clip != null ? new Rectangle(other.clip) : null;
 		this.composite = other.composite;
+		this.needsBlending = other.needsBlending;
 	}
 
 	/**
@@ -122,6 +125,7 @@ public class SoftwareRasterizer implements Rasterizer {
 		this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
 		this.composite = AlphaComposite.SrcOver;
 		updateEncodedColors();
+		updateBlendingCache();
 	}
 
 	@Override
@@ -153,6 +157,7 @@ public class SoftwareRasterizer implements Rasterizer {
 				case SET_COMPOSITE:
 					Composite comp = (Composite) cmd.obj;
 					this.composite = comp != null ? comp : AlphaComposite.SrcOver;
+					updateBlendingCache();
 					break;
 				case BLIT_IMAGE:
 					Surface srcSurface = ((SurfaceContainer) cmd.obj).getSurface();
@@ -207,31 +212,46 @@ public class SoftwareRasterizer implements Rasterizer {
 
 		int surfaceWidth = surface.getWidth();
 		int surfaceHeight = surface.getHeight();
-		int destFormat = surface.getFormat();
 
-		// Convert foreground color to ARGB for blending
-		int srcColorARGB = convertColorToARGB(encodedForeground, destFormat);
-
+		// Check once if blending is needed (not per pixel!)
 		boolean blend = needsBlending();
 
-		for (int row = y0; row < y1; row++) {
-			if (row < 0 || row >= surfaceHeight) {
-				continue;
-			}
-			for (int col = x0; col < x1; col++) {
-				if (col < 0 || col >= surfaceWidth) {
+		if (!blend) {
+			// Fast path: no blending needed - just write the encoded foreground color directly
+			for (int row = y0; row < y1; row++) {
+				if (row < 0 || row >= surfaceHeight) {
 					continue;
 				}
-				int idx = (row * surfaceWidth + col);
-
-				if (blend) {
+				int rowOffset = row * surfaceWidth;
+				for (int col = x0; col < x1; col++) {
+					if (col < 0 || col >= surfaceWidth) {
+						continue;
+					}
+					pixels[rowOffset + col] = encodedForeground;
+				}
+			}
+		} else {
+			// Slow path: blending required
+			int destFormat = surface.getFormat();
+			
+			// Pre-convert source color to ARGB once (not per pixel!)
+			int srcColorARGB = convertColorToARGB(encodedForeground, destFormat);
+			
+			for (int row = y0; row < y1; row++) {
+				if (row < 0 || row >= surfaceHeight) {
+					continue;
+				}
+				int rowOffset = row * surfaceWidth;
+				for (int col = x0; col < x1; col++) {
+					if (col < 0 || col >= surfaceWidth) {
+						continue;
+					}
+					int idx = rowOffset + col;
+					
 					// Convert destination to ARGB, blend, then convert back
 					int dstColorARGB = convertColorToARGB(pixels[idx], destFormat);
 					int blendedARGB = blendPixel(srcColorARGB, dstColorARGB, composite);
 					pixels[idx] = convertColor(blendedARGB, Surface.FORMAT_INT_ARGB, destFormat);
-				} else {
-					// Fast path: no blending needed
-					pixels[idx] = encodedForeground;
 				}
 			}
 		}
@@ -715,15 +735,25 @@ public class SoftwareRasterizer implements Rasterizer {
 	}
 
 	/**
+	 * Updates the cached blending flag based on the current composite.
+	 * Called whenever the composite is changed.
+	 */
+	private void updateBlendingCache() {
+		if (!(composite instanceof AlphaComposite)) {
+			needsBlending = false;
+			return;
+		}
+		AlphaComposite alphaComp = (AlphaComposite) composite;
+		// Need blending if not SRC with full alpha
+		needsBlending = alphaComp.getRule() != AlphaComposite.SRC || alphaComp.getAlpha() < 1.0f;
+	}
+
+	/**
 	 * Checks if alpha blending is needed based on the current composite.
+	 * This now returns the cached value instead of checking instanceof every time.
 	 * @return true if alpha blending should be applied
 	 */
 	private boolean needsBlending() {
-		if (!(composite instanceof AlphaComposite)) {
-			return false;
-		}
-		AlphaComposite alphaComp = (AlphaComposite) composite;
-		// Need blending if not SRC with full alpha, or if source has alpha channel
-		return alphaComp.getRule() != AlphaComposite.SRC || alphaComp.getAlpha() < 1.0f;
+		return needsBlending;
 	}
 }
