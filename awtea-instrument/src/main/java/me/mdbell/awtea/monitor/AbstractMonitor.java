@@ -1,6 +1,8 @@
 package me.mdbell.awtea.monitor;
 
 import lombok.Getter;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <S> the type of monitor snapshots
  */
 public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorSnapshot<E>> {
+
+	private static final Logger log = LoggerFactory.getLogger(AbstractMonitor.class);
 
 	private final Map<Object, E> entries;
 
@@ -149,7 +153,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 * Reset the monitor by clearing all entries.
 	 */
 	public synchronized void reset() {
-		System.out.println("Resetting monitor: " + this.getClass().getSimpleName());
+		log.debug("Resetting monitor: {}", this.getClass().getSimpleName());
 		entries.clear();
 		bumpRevision();
 	}

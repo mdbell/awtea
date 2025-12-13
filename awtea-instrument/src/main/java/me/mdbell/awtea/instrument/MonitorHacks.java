@@ -2,6 +2,8 @@ package me.mdbell.awtea.instrument;
 
 import lombok.AllArgsConstructor;
 import me.mdbell.awtea.monitor.OperationsMonitor;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.model.*;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
@@ -14,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MonitorHacks implements ClassHolderTransformer {
+
+	private static final Logger log = LoggerFactory.getLogger(MonitorHacks.class);
 
 	private static final String MONITOR_CLASS = OperationsMonitor.class.getName();
 	private static final String MONITOR_FIELD = "$awtea$monitor";
@@ -56,7 +60,7 @@ public class MonitorHacks implements ClassHolderTransformer {
 		List<MonitorMethod> monitored = new ArrayList<>();
 
 		if (cls.getAnnotations().get(Monitored.Disabled.class.getName()) != null) {
-			System.out.println("Skipping monitoring for disabled class: " + cls.getName());
+			log.debug("Skipping monitoring for disabled class: {}", cls.getName());
 			return;
 		}
 

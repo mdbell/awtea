@@ -1,5 +1,7 @@
 package me.mdbell.awtea.instrument;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.model.*;
 import org.teavm.model.instructions.InvokeInstruction;
 
@@ -70,6 +72,8 @@ public class DetourHacks implements ClassHolderTransformer {
 	 * val: detours for that class.
 	 */
 	private final Map<String, MethodDetour[]> detours;
+
+	private static final Logger log = LoggerFactory.getLogger(DetourHacks.class);
 
 	/**
 	 * Construct a DetourHacks transformer for a given set of detour classes.
@@ -191,7 +195,7 @@ public class DetourHacks implements ClassHolderTransformer {
 		for (Class<?> detourClass : detourClasses) {
 			DetourReceiver receiver = detourClass.getAnnotation(DetourReceiver.class);
 			if (receiver == null) {
-				System.err.println("Detour class missing @DetourReceiver: " + detourClass.getName() + " - skipping");
+				log.warn("Detour class missing @DetourReceiver: {} - skipping", detourClass.getName());
 				continue;
 			}
 
@@ -205,7 +209,7 @@ public class DetourHacks implements ClassHolderTransformer {
 				}
 
 				if (!java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
-					System.err.println("Detour method not static: " + m + " - skipping");
+					log.warn("Detour method not static: {} - skipping", m);
 					continue;
 				}
 				if (m.getAnnotation(NoDetours.class) != null) {
