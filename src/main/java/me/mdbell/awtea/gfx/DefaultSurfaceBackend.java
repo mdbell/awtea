@@ -54,10 +54,20 @@ public class DefaultSurfaceBackend implements SurfaceBackend {
 		}
 		
 		// Default priority: WASM > Software
-		return new SurfaceBackend[]{
-			new WasmSurfaceBackend(),
-			new SoftwareSurfaceBackend(),
-		};
+		// Try to load WASM backend, but fall back gracefully if it fails
+		try {
+			return new SurfaceBackend[]{
+				new WasmSurfaceBackend(),
+				new SoftwareSurfaceBackend(),
+			};
+		} catch (Exception e) {
+			// WASM backend failed to load (e.g., wasm file not found on server)
+			// Fall back to software-only rendering
+			System.err.println("Failed to load WASM backend, falling back to software renderer: " + e.getMessage());
+			return new SurfaceBackend[]{
+				new SoftwareSurfaceBackend(),
+			};
+		}
 	}
 
 	public static DefaultSurfaceBackend getDefault() {

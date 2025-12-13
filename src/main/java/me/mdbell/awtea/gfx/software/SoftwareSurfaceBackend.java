@@ -23,7 +23,7 @@ public class SoftwareSurfaceBackend implements SurfaceBackend {
 		ColorModel cm;
 
 		switch (bufferedImageType) {
-			case java.awt.image.BufferedImage.TYPE_INT_ARGB: {
+			case BufferedImage.TYPE_INT_ARGB: {
 				int[] masks = {0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000}; // R, G, B, A masks for 0xAARRGGBB
 				SinglePixelPackedSampleModel sm = new SinglePixelPackedSampleModel(
 					DataBuffer.TYPE_INT, width, height, masks);
@@ -32,7 +32,7 @@ public class SoftwareSurfaceBackend implements SurfaceBackend {
 				cm = new DirectColorModel(32, masks[0], masks[1], masks[2], masks[3]);
 				break;
 			}
-			case java.awt.image.BufferedImage.TYPE_INT_RGB: {
+			case BufferedImage.TYPE_INT_RGB: {
 				int[] masks = {0x00FF0000, 0x0000FF00, 0x000000FF}; // R, G, B masks for 0x00RRGGBB
 				SinglePixelPackedSampleModel sm = new SinglePixelPackedSampleModel(
 					DataBuffer.TYPE_INT, width, height, masks);
@@ -41,7 +41,7 @@ public class SoftwareSurfaceBackend implements SurfaceBackend {
 				cm = new DirectColorModel(24, masks[0], masks[1], masks[2]);
 				break;
 			}
-			case java.awt.image.BufferedImage.TYPE_INT_BGR: {
+			case BufferedImage.TYPE_INT_BGR: {
 				// R, G, B masks for 0x00BBGGRR format (B in bits 16-23, G in bits 8-15, R in bits 0-7)
 				int[] masks = {0x000000FF, 0x0000FF00, 0x00FF0000};
 				SinglePixelPackedSampleModel sm = new SinglePixelPackedSampleModel(
