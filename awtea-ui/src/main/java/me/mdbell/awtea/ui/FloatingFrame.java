@@ -2,6 +2,7 @@ package me.mdbell.awtea.ui;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.MouseEvent;
 import org.teavm.jso.dom.html.HTMLButtonElement;
 import org.teavm.jso.dom.html.HTMLElement;
@@ -46,11 +47,11 @@ public abstract class FloatingFrame extends FloatingWindow {
 
 	static {
 		// Inject the CSS from embedded file
-		HTMLElement style = org.teavm.jso.browser.Window.current()
+		HTMLElement style = Window.current()
 			.getDocument()
 			.createElement("style");
 		style.setTextContent(UiStyles.floatingFrameCSS());
-		org.teavm.jso.browser.Window.current()
+		Window.current()
 			.getDocument()
 			.getHead()
 			.appendChild(style);
