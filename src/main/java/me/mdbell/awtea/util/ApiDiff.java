@@ -373,10 +373,21 @@ public class ApiDiff {
 	private static String[] findClassesInPackage(String pkg, ClassLoader loader) {
 		Set<String> classes = new HashSet<>();
 		
+		// Determine the build output directory to scan only project classes
+		Path buildDir = Paths.get("build/classes/java/main").toAbsolutePath();
+		if (!Files.exists(buildDir)) {
+			// Fallback for different build configurations
+			buildDir = Paths.get("target/classes").toAbsolutePath();
+		}
+		
+		if (!Files.exists(buildDir)) {
+			throw new RuntimeException("Build directory not found. Please compile the project first.");
+		}
+		
 		try (ScanResult scanResult = new ClassGraph()
 				.overrideClassLoaders(loader)
+				.overrideClasspath(buildDir.toString())  // Only scan project's build output
 				.acceptPackages(pkg)
-				.rejectJars()  // Only scan classes from file system (source), not from JARs
 				.scan()) {
 			
 			for (ClassInfo classInfo : scanResult.getAllClasses()) {
