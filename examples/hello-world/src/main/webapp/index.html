@@ -39,29 +39,32 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>awtea Hello World Example</h1>
-        
-        <div class="info">
-            <h3>About this example</h3>
-            <p>
-                This is the simplest possible awtea application. It demonstrates:
-            </p>
-            <ul>
-                <li>Creating a TFrame window</li>
-                <li>Using TCanvas for custom drawing</li>
-                <li>Rendering text with Graphics</li>
-            </ul>
-            <p>
-                The application runs entirely in your browser using TeaVM and WebAssembly.
-            </p>
-        </div>
-        
-        <div id="app-container">
-            <div class="loading">Loading awtea application...</div>
-        </div>
+<div class="container">
+    <h1>awtea Hello World Example</h1>
+
+    <div class="info">
+        <h3>About this example</h3>
+        <p>
+            This is the simplest possible awtea application. It demonstrates:
+        </p>
+        <ul>
+            <li>Creating a TFrame window</li>
+            <li>Using TCanvas for custom drawing</li>
+            <li>Rendering text with Graphics</li>
+        </ul>
+        <p>
+            The application runs entirely in your browser using TeaVM and WebAssembly.
+        </p>
     </div>
-    
-    <script type="text/javascript" src="classes.js"></script>
+
+    <div id="app-container">
+        <div class="loading">Loading awtea application...</div>
+    </div>
+</div>
+<script type="module">
+    import { main } from './js/hello-world.js';
+
+    main([]);
+</script>
 </body>
 </html>

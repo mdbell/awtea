@@ -1,3 +1,6 @@
+import org.teavm.gradle.api.JSModuleType
+import org.teavm.gradle.api.OptimizationLevel
+
 plugins {
     id("java")
     id("org.teavm")
@@ -17,7 +20,7 @@ java {
 dependencies {
     // awtea dependencies - now as project dependencies
     implementation(project(":awtea-classlib"))
-    
+
     // TeaVM dependencies
     implementation("org.teavm:teavm-classlib:0.13.0")
     implementation("org.teavm:teavm-jso-apis:0.13.0")
@@ -28,10 +31,12 @@ teavm {
         // Configure JavaScript generation
         mainClass = "me.mdbell.awtea.examples.helloworld.HelloWorld"
         outputDir = layout.buildDirectory.dir("dist").get().asFile
-        
+        moduleType = JSModuleType.ES2015
+
         // Optimization settings
+        optimization = OptimizationLevel.NONE
         obfuscated = false
-        
+
         // Source maps for debugging
         sourceMap = true
     }
@@ -41,6 +46,9 @@ teavm {
 tasks.register<Copy>("copyWebapp") {
     from("src/main/webapp")
     into(layout.buildDirectory.dir("dist"))
+
+    from("../../fonts")
+    into(layout.buildDirectory.dir("dist/fonts"))
 }
 
 // Make sure HTML is copied before TeaVM runs
