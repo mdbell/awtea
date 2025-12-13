@@ -1,0 +1,59 @@
+.aw-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem;
+  background: var(--aw-header-bg);
+  border-bottom: 1px solid var(--aw-header-border);
+  border-radius: 4px 4px 0 0;
+  cursor: move;
+}
+
+.aw-window-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.aw-window-header-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.aw-window-button {
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  border: 1px solid var(--aw-button-border);
+  background: var(--aw-button-bg);
+  color: var(--aw-fg);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.aw-window-body:has(.aw-menubar) {
+  padding-top: 0;
+}
+
+.aw-window-resizer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  cursor: se-resize;
+  background: transparent;
+}
+
+.aw-window-resizer::before {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--aw-fg);
+  border-bottom: 2px solid var(--aw-fg);
+  pointer-events: none;
+}
