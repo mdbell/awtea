@@ -359,6 +359,13 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 		// The TBufferedImage will own the surface and destroy it when garbage collected
 		TBufferedImage textImage = new TBufferedImage(textSurface);
 		
+		// Clear the surface to fully transparent (ARGB format)
+		// This ensures text is rendered with transparent background
+		TGraphics g = textImage.getGraphics();
+		g.setColor(new Color(0, 0, 0, 0)); // Fully transparent
+		g.fillRect(0, 0, surfaceWidth, surfaceHeight);
+		g.dispose();
+		
 		// Convert AWT Color to ARGB int
 		int argb = (color.getAlpha() << 24) | (color.getRed() << 16) | 
 		           (color.getGreen() << 8) | color.getBlue();
@@ -371,7 +378,8 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 		peer.renderString(str, textImage, sizePx, renderX, renderY, argb);
 		
 		// Blit the rendered text surface to the screen
-		// Adjust destination position to account for the padding and baseline
+		// The surface baseline is at renderY, and we want it at the destination y coordinate
+		// So destination y = y (desired baseline) - renderY (baseline within surface)
 		int destX = x - halfPadding;
 		int destY = y - renderY;
 		pushOp(new SurfaceCommand(SurfaceCommand.Operation.BLIT_IMAGE, textImage, 
