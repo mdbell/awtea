@@ -1,5 +1,8 @@
 package me.mdbell.awtea.examples.guidemo;
 
+import me.mdbell.awtea.util.logging.LogLevel;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import java.awt.*;
 
 /**
@@ -13,6 +16,10 @@ import java.awt.*;
 public class GuiDemo {
 
     public static void main(String[] args) {
+
+        LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
+        System.setProperty("me.mdbell.awtea.gfx.backend", "java");
+
         // Create the main window
         Frame frame = new Frame();
         frame.setTitle("GUI Demo - awtea Example");
