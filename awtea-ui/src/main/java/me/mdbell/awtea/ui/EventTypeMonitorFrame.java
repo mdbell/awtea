@@ -3,8 +3,8 @@ package me.mdbell.awtea.ui;
 import me.mdbell.awtea.monitor.EventTypeMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 
-public final class EventTypeMonitorWindow
-	extends AbstractMonitorWindow<EventTypeMonitor.Entry, EventTypeMonitor.Snapshot> {
+public final class EventTypeMonitorFrame
+	extends AbstractMonitorFrame<EventTypeMonitor.Entry, EventTypeMonitor.Snapshot> {
 
 	private static final String[] HEADERS = {
 		"Type",
@@ -18,7 +18,7 @@ public final class EventTypeMonitorWindow
 		"Last ID"
 	};
 
-	public EventTypeMonitorWindow() {
+	public EventTypeMonitorFrame() {
 		super(
 			"awt.eventtype.monitor",
 			"AWT Event Types",

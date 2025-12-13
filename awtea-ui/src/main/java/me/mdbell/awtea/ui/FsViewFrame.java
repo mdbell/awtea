@@ -16,7 +16,7 @@ import static me.mdbell.awtea.ui.Theme.humanReadableSize;
 import static me.mdbell.awtea.ui.Theme.humanReadableTimestamp;
 
 @ExtensionMethod({JSObjectsExtensions.class})
-public class FsViewWindow extends FloatingFrame {
+public class FsViewFrame extends FloatingFrame {
 
 	private static final File ROOT = new File("/");
 
@@ -89,11 +89,11 @@ public class FsViewWindow extends FloatingFrame {
 			.inject();
 	}
 
-	public FsViewWindow() {
+	public FsViewFrame() {
 		this(10000);
 	}
 
-	public FsViewWindow(int refreshIntervalMs) {
+	public FsViewFrame(int refreshIntervalMs) {
 		super("fsviewer", "Filesystem Viewer", 500, 500, refreshIntervalMs);
 		initMenuBar();
 		ensureDelegatedClicks();

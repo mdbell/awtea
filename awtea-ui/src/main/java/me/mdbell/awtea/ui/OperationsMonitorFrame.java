@@ -10,11 +10,11 @@ import java.util.List;
 // we don't extend AbstractMonitorWindow here
 // since this is a 'special' floating window, with multiple
 // possible monitors inside it
-public class OperationsMonitorWindow extends FloatingFrame {
+public class OperationsMonitorFrame extends FloatingFrame {
 
 	private int selectedMonitorId = -1;
 
-	public OperationsMonitorWindow() {
+	public OperationsMonitorFrame() {
 		super("awtea.operations.monitor", "AWTEA Operations Monitor", 800, 400, 500);
 		ensureDelegatedClicks();
 	}

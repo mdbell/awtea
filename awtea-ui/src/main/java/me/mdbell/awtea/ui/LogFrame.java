@@ -7,7 +7,7 @@ import org.teavm.jso.dom.html.HTMLElement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LogWindow extends FloatingFrame {
+public class LogFrame extends FloatingFrame {
 
 	private final List<LogEntry> lines = new ArrayList<>();
 	private static final int MAX_LINES = 500;
@@ -49,7 +49,7 @@ public class LogWindow extends FloatingFrame {
 			.inject();
 	}
 
-	public LogWindow() {
+	public LogFrame() {
 		super("logviewer", "Log Viewer", 800, 400, 0); // no timer needed
 		setAutoscroll(true);
 

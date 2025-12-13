@@ -3,7 +3,7 @@ package me.mdbell.awtea.ui;
 import me.mdbell.awtea.monitor.ScheduleTaskMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 
-public class ScheduleTaskMonitorWindow extends AbstractMonitorWindow<ScheduleTaskMonitor.Entry,
+public class ScheduleTaskMonitorFrame extends AbstractMonitorFrame<ScheduleTaskMonitor.Entry,
 	ScheduleTaskMonitor.Snapshot> {
 
 	public static final String[] HEADERS = {
@@ -14,7 +14,7 @@ public class ScheduleTaskMonitorWindow extends AbstractMonitorWindow<ScheduleTas
 		"Period (ms)"
 	};
 
-	public ScheduleTaskMonitorWindow() {
+	public ScheduleTaskMonitorFrame() {
 		super("task.monitor",
 			"Task Monitor",
 			700,

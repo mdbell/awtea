@@ -5,7 +5,7 @@ import org.teavm.jso.dom.html.HTMLElement;
 
 import javax.sound.sampled.AudioFormat;
 
-public final class AudioLineMonitorWindow extends AbstractMonitorWindow<LineMonitor.Entry, LineMonitor.Snapshot> {
+public final class AudioLineMonitorFrame extends AbstractMonitorFrame<LineMonitor.Entry, LineMonitor.Snapshot> {
 
 	static final String[] HEADERS = new String[]{
 		"ID",
@@ -28,7 +28,7 @@ public final class AudioLineMonitorWindow extends AbstractMonitorWindow<LineMoni
 		return "monitor-header-cell";
 	}
 
-	public AudioLineMonitorWindow() {
+	public AudioLineMonitorFrame() {
 		super(
 			"audio.line.monitor",
 			"Audio Line Monitor",
