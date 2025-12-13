@@ -67,109 +67,15 @@ public abstract class FloatingWindow {
 	protected static int zCounter = 10000;
 
 	static {
-		AwCss.sheet()
-			.createClass("aw-window")
-			.prop("position", "fixed")
-			.prop("top", "10px")
-			.prop("right", "10px")
-			.prop("font-family", "sans-serif")
-			.prop("font-size", "13px")
-			.prop("border")
-			.value("1px solid")
-			.value(Theme.Var.BORDER)
-			.end()
-			.prop("border-radius", "4px")
-			.prop("background", Theme.Var.BACKGROUND)
-			.prop("color", Theme.Var.FOREGROUND)
-			.prop("box-shadow")
-			.value("0 0 0 1px")
-			.value(Theme.Var.SHADOW)
-			.end()
-			.prop("z-index", "9999")
-			.prop("display", "flex")
-			.prop("flex-direction", "column")
-			.prop("overflow", "hidden")
-			.prop("scrollbar-width", "thin")
-			.prop("scrollbar-color")
-			.value(Theme.Var.SCROLLBAR_THUMB)
-			.value(Theme.Var.SCROLLBAR_TRACK)
-			.end()
-			.createClass("aw-window::-webkit-scrollbar")
-			.prop("width", "8px")
-			.end()
-			.createClass("aw-window::-webkit-scrollbar-track")
-			.prop("background", Theme.Var.SCROLLBAR_TRACK)
-			.end()
-			.createClass("aw-window::-webkit-scrollbar-thumb")
-			.prop("background", Theme.Var.SCROLLBAR_THUMB)
-			.prop("border-radius", "4px")
-			.end()
-			.createClass("aw-window-body")
-			.prop("padding", "0.5rem 0.6rem 0.6rem 0.6rem")
-			.prop("flex", "1")
-			.prop("min-height", "0") // allow flex to shrink
-			.prop("overflow", "auto")
-			.prop("color", Theme.Var.FOREGROUND)
-
-			// input styling (for filter boxes, selects, etc)
-			.createClass("aw-window  select, .aw-window input[type=\"text\"], .aw-window  input[type=\"number\"]")
-			.prop("padding", "2px 4px")
-			.prop("background", Theme.Var.BACKGROUND)
-			.prop("color", Theme.Var.FOREGROUND)
-			.prop("border")
-			.value("1px solid")
-			.value(Theme.Var.BORDER)
-			.end()
-			.prop("border-radius", "3px")
-			.end()
-
-			// table styling
-			.createClass("aw-window table")
-			.prop("width", "100%")
-			.prop("border-collapse", "collapse")
-			.prop("font-size", "12px")
-			.prop("background", Theme.Var.BACKGROUND)
-			.prop("color", Theme.Var.FOREGROUND)
-
-			// table headers
-			.createClass("aw-window th")
-			.prop("border-bottom")
-			.value("1px solid")
-			.value(Theme.Var.TABLE_HEADER_BORDER)
-			.end()
-			.prop("padding", "2px 4px")
-			.prop("text-align", "left")
-			.prop("background", Theme.Var.TABLE_HEADER_BACKGROUND)
-			.prop("color", Theme.Var.FOREGROUND)
-
-			// table data cells
-
-			.createClass("aw-window td")
-			.prop("padding", "2px 4px")
-			.prop("white-space", "nowrap")
-			.prop("color", Theme.Var.FOREGROUND)
-
-			// table rows (alternating colors)
-			.createClass("aw-window tr")
-			.prop("border-bottom")
-			.value("1px solid")
-			.value(Theme.Var.TABLE_HEADER_BORDER)
-			.end()
-			.prop("cursor", "default")
-			.subClass(":hover")
-			.prop("background", Theme.Var.TABLE_ROW_HOVER_BACKGROUND)
-			.end()
-
-			.createClass("aw-window tr:nth-child(odd)")
-			.prop("background", Theme.Var.TABLE_ROW_BACKGROUND)
-			.end()
-
-			.createClass("aw-window tr:nth-child(even)")
-			.prop("background", Theme.Var.TABLE_ROW_ALT_BACKGROUND)
-			.end()
-
-
-			.inject();
+		// Inject the CSS from embedded file
+		HTMLElement style = Window.current()
+			.getDocument()
+			.createElement("style");
+		style.setTextContent(UiStyles.floatingWindowCSS());
+		Window.current()
+			.getDocument()
+			.getHead()
+			.appendChild(style);
 	}
 
 	protected FloatingWindow(String windowId) {

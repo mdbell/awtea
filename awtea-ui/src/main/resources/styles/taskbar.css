@@ -1,0 +1,35 @@
+.aw-taskbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  background: var(--aw-header-bg);
+  border-top: 1px solid var(--aw-border);
+  font-family: sans-serif;
+  font-size: 12px;
+  z-index: 9998;
+}
+
+.aw-taskbar-button {
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--aw-border);
+  background: var(--aw-button-bg);
+  color: var(--aw-fg);
+  cursor: pointer;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+.aw-taskbar-button.aw-active {
+  font-weight: 600;
+  border-color: var(--aw-accent);
+}
