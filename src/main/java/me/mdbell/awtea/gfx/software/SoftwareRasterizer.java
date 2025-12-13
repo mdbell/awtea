@@ -220,9 +220,12 @@ public class SoftwareRasterizer implements Rasterizer {
 
 	private void clearRect(int x, int y, int width, int height) {
 		Color oldFg = foreground;
+		int oldFgInt = encodedForeground;
 		foreground = background;
+		encodedForeground = encodedBackground;
 		fillRect(x, y, width, height);
 		foreground = oldFg;
+		encodedForeground = oldFgInt;
 	}
 
 	private void drawLine(int x1, int y1, int x2, int y2) {
@@ -290,7 +293,7 @@ public class SoftwareRasterizer implements Rasterizer {
 		}
 
 		// Create Int32Array view of source pixels for faster access
-		Int32Array srcPixels = new Int32Array(srcPixelsBytes.getBuffer(), 
+		Int32Array srcPixels = new Int32Array(srcPixelsBytes.getBuffer(),
 			srcPixelsBytes.getByteOffset(), srcPixelsBytes.getByteLength() / 4);
 
 		int srcWidth = srcSurface.getWidth();
