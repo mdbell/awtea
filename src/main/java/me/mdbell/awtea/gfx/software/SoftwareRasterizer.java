@@ -4,6 +4,7 @@ import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import me.mdbell.awtea.gfx.SurfaceContainer;
+import me.mdbell.awtea.instrument.Monitored;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.awt.*;
@@ -12,17 +13,18 @@ import java.util.List;
 
 /**
  * Pure Java software rasterizer implementation.
- * 
+ * <p>
  * This rasterizer supports all standard SurfaceCommand operations and can read/write
  * all pixel formats (ARGB, RGB, RGBA, ABGR, BGR) through format conversion logic.
- * 
+ * <p>
  * Note: The parent SoftwareSurface can only be created with ARGB, RGB, or BGR formats,
  * but this rasterizer can blit from surfaces with any format via automatic conversion.
- * 
+ * <p>
  * Transform support: Currently only translation is implemented. Full affine transforms
  * (scale, rotation, shear) would require more complex scan conversion and are deferred
  * as a future enhancement for this software fallback renderer.
  */
+@Monitored.AllMethods
 public class SoftwareRasterizer implements Rasterizer {
 
 	/**
@@ -37,13 +39,14 @@ public class SoftwareRasterizer implements Rasterizer {
 	private final SoftwareSurface surface;
 	private final AffineTransform transform = new AffineTransform();
 	private Rectangle clip = null;
-	
+
 	// Color caching: store both Color objects and their encoded values for current format
 	private Color foreground = Color.WHITE;
 	private Color background = Color.BLACK;
 	private int encodedForeground = 0;
 	private int encodedBackground = 0;
 	private int cachedFormat = -1; // Track which format the encoded colors are for
+
 
 	SoftwareRasterizer(SoftwareSurface surface) {
 		this.surface = surface;
@@ -179,22 +182,13 @@ public class SoftwareRasterizer implements Rasterizer {
 			return;
 		}
 
-		Uint8ClampedArray pixels = surface.getPixelData();
+		int[] pixels = surface.getPixelDataAsInt32Array();
 		if (pixels == null) {
 			return;
 		}
 
 		int surfaceWidth = surface.getWidth();
 		int surfaceHeight = surface.getHeight();
-		int format = surface.getFormat();
-
-		// Ensure encoded colors are up-to-date for current format
-		if (format != cachedFormat) {
-			updateEncodedColors();
-		}
-
-		// Use cached encoded color and resolve pixel setter once
-		PixelSetter setter = getPixelSetterForFormat(format);
 
 		for (int row = y0; row < y1; row++) {
 			if (row < 0 || row >= surfaceHeight) {
@@ -204,8 +198,8 @@ public class SoftwareRasterizer implements Rasterizer {
 				if (col < 0 || col >= surfaceWidth) {
 					continue;
 				}
-				int idx = (row * surfaceWidth + col) * 4;
-				setter.setPixel(pixels, idx, encodedForeground);
+				int idx = (row * surfaceWidth + col);
+				pixels[idx] = encodedForeground;
 			}
 		}
 	}
@@ -244,26 +238,22 @@ public class SoftwareRasterizer implements Rasterizer {
 		int sy = ty1 < ty2 ? 1 : -1;
 		int err = dx - dy;
 
-		Uint8ClampedArray pixels = surface.getPixelData();
+		int[] pixels = surface.getPixelDataAsInt32Array();
 		if (pixels == null) {
 			return;
 		}
 
 		int surfaceWidth = surface.getWidth();
 		int surfaceHeight = surface.getHeight();
-		int format = surface.getFormat();
-		
-		// Optimize by resolving color encoding and pixel setter once
-		int color = encodeColor(foreground, format);
-		PixelSetter setter = getPixelSetterForFormat(format);
+
 
 		Rectangle bounds = clip != null ? clip : new Rectangle(0, 0, surfaceWidth, surfaceHeight);
 
 		while (true) {
 			if (tx1 >= bounds.x && tx1 < bounds.x + bounds.width &&
 				ty1 >= bounds.y && ty1 < bounds.y + bounds.height) {
-				int idx = (ty1 * surfaceWidth + tx1) * 4;
-				setter.setPixel(pixels, idx, color);
+				int idx = (ty1 * surfaceWidth + tx1);
+				pixels[idx] = encodedForeground;
 			}
 
 			if (tx1 == tx2 && ty1 == ty2) {
@@ -292,7 +282,7 @@ public class SoftwareRasterizer implements Rasterizer {
 		int ty = (int) (destY + transform.getTranslateY());
 
 		Uint8ClampedArray srcPixels = srcSurface.getPixelData();
-		Uint8ClampedArray destPixels = surface.getPixelData();
+		int[] destPixels = surface.getPixelDataAsInt32Array();
 
 		if (srcPixels == null || destPixels == null) {
 			return;
@@ -328,9 +318,6 @@ public class SoftwareRasterizer implements Rasterizer {
 		float scaleX = (float) srcWidth / destWidth;
 		float scaleY = (float) srcHeight / destHeight;
 
-		// Optimize by resolving pixel setter once
-		PixelSetter setter = getPixelSetterForFormat(destFormat);
-
 		// Simple nearest-neighbor blit with improved rounding
 		for (int destRow = y0; destRow < y1; destRow++) {
 			if (destRow < 0 || destRow >= destSurfaceHeight) {
@@ -354,9 +341,8 @@ public class SoftwareRasterizer implements Rasterizer {
 				}
 
 				int srcColor = getPixel(srcPixels, srcCol, srcRow, srcWidth, srcFormat);
-				int destColor = convertColor(srcColor, srcFormat, destFormat);
-				int idx = (destRow * destSurfaceWidth + destCol) * 4;
-				setter.setPixel(destPixels, idx, destColor);
+				int idx = (destRow * destSurfaceWidth + destCol);
+				destPixels[idx] = convertColor(srcColor, srcFormat, destFormat);
 			}
 		}
 	}
@@ -410,56 +396,6 @@ public class SoftwareRasterizer implements Rasterizer {
 			default:
 				// Default to ARGB
 				return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-		}
-	}
-
-	private void setPixel(Uint8ClampedArray pixels, int x, int y, int width, int color, int format) {
-		int idx = (y * width + x) * 4;
-
-		// Memory layout is little-endian, so we write bytes in LSB-first order
-		switch (format) {
-			case Surface.FORMAT_INT_ARGB:
-				// 0xAARRGGBB: write as [BB, GG, RR, AA]
-				pixels.set(idx, color & 0xFF);         // B
-				pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
-				pixels.set(idx + 2, (color >> 16) & 0xFF); // R
-				pixels.set(idx + 3, (color >> 24) & 0xFF); // A
-				break;
-			case Surface.FORMAT_INT_RGB:
-				// 0x00RRGGBB: write as [BB, GG, RR, 0xFF]
-				pixels.set(idx, color & 0xFF);         // B
-				pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
-				pixels.set(idx + 2, (color >> 16) & 0xFF); // R
-				pixels.set(idx + 3, 0xFF);             // A = opaque
-				break;
-			case Surface.FORMAT_INT_RGBA:
-				// 0xRRGGBBAA: write as [AA, BB, GG, RR]
-				pixels.set(idx, color & 0xFF);         // A
-				pixels.set(idx + 1, (color >> 8) & 0xFF);  // B
-				pixels.set(idx + 2, (color >> 16) & 0xFF); // G
-				pixels.set(idx + 3, (color >> 24) & 0xFF); // R
-				break;
-			case Surface.FORMAT_INT_ABGR:
-				// 0xAABBGGRR: write as [RR, GG, BB, AA]
-				pixels.set(idx, color & 0xFF);         // R
-				pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
-				pixels.set(idx + 2, (color >> 16) & 0xFF); // B
-				pixels.set(idx + 3, (color >> 24) & 0xFF); // A
-				break;
-			case Surface.FORMAT_INT_BGR:
-				// 0x00BBGGRR: write as [RR, GG, BB, 0xFF]
-				pixels.set(idx, color & 0xFF);         // R
-				pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
-				pixels.set(idx + 2, (color >> 16) & 0xFF); // B
-				pixels.set(idx + 3, 0xFF);             // A = opaque
-				break;
-			default:
-				// Default to ARGB
-				pixels.set(idx, color & 0xFF);
-				pixels.set(idx + 1, (color >> 8) & 0xFF);
-				pixels.set(idx + 2, (color >> 16) & 0xFF);
-				pixels.set(idx + 3, (color >> 24) & 0xFF);
-				break;
 		}
 	}
 
