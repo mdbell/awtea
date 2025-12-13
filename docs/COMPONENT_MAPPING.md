@@ -2,11 +2,13 @@
 
 ## Overview
 
-This document describes how AWT/Swing components are mapped to web technologies in awtea. The architecture distinguishes between **heavyweight** components (with DOM elements and peers) and **lightweight** components (pure Java rendering).
+This document describes how AWT/Swing components are mapped to web technologies in awtea. The architecture distinguishes
+between **heavyweight** components (with DOM elements and peers) and **lightweight** components (pure Java rendering).
 
 ## Core Concepts
 
 ### Heavyweight Components
+
 - Have their own DOM element (usually a `<canvas>`)
 - Use a **Peer** class that manages the DOM interaction
 - Have their own **Surface** for rendering
@@ -14,12 +16,14 @@ This document describes how AWT/Swing components are mapped to web technologies 
 - Examples: `TFrame`, `Applet`
 
 ### Lightweight Components
+
 - No DOM element
 - Render into their parent's Surface via `paint(Graphics g)`
 - Events are dispatched through the parent hierarchy
 - Examples: `TPanel`, `TCanvas`, `TButton`, `TLabel`
 
 ### Special Components
+
 - Menu components (`MenuBar`, `Menu`, `MenuItem`) use a separate AWT hierarchy
 - Rendered as DOM elements (`<div>`) outside the normal Component tree
 - Not part of the `Component` class hierarchy in AWT
@@ -28,55 +32,55 @@ This document describes how AWT/Swing components are mapped to web technologies 
 
 ### Core AWT Components
 
-| AWT Class | Weight | awtea Class | Peer / DOM Mapping | Notes |
-|-----------|--------|-------------|-------------------|-------|
-| `Frame` | **Heavyweight** | `TFrame` | `TFrameFloatingPeer` → `FloatingWindow` + `<canvas>` | Top-level decorated window with title bar and controls |
-| `Window` | **Heavyweight** | _Not yet implemented_ | Planned: `TAWTWindowPeer` → `FloatingWindow` (undecorated) | Top-level window without decorations (Issue #18) |
-| `Dialog` | **Heavyweight** | _Not yet implemented_ | Planned: `TDialogFloatingPeer` → `FloatingWindow` | Modal/non-modal dialog window (Issue #18) |
-| `Applet` | **Heavyweight** | `TApplet` | `AppletWindow` → `FloatingWindow` + `<canvas>` | Browser-embedded application window |
-| `Panel` | **Lightweight** | _Implicit via TContainer_ | ❌ None | Pure Java container, renders to parent |
-| `Container` | **Lightweight** | `TContainer` | ❌ None | Base container class for organizing components |
-| `Component` | **Lightweight** | `TComponent` | ❌ None | Base class for all UI components |
-| `Canvas` | **Lightweight** | `TCanvas` | ❌ None | Drawable area, renders to parent's surface |
-| `Button` | **Lightweight** | _Not yet implemented_ | ❌ None | Clickable button drawn via graphics primitives |
-| `Label` | **Lightweight** | _Not yet implemented_ | ❌ None | Static text rendered via `drawString()` |
-| `TextField` | **Hybrid** | _Not yet implemented_ | ⚠️ Possible `<input>` overlay | May use DOM overlay for native keyboard/accessibility |
-| `TextArea` | **Hybrid** | _Not yet implemented_ | ⚠️ Possible `<textarea>` overlay | May use DOM overlay for native text editing |
-| `Checkbox` | **Lightweight** | _Not yet implemented_ | ❌ None | Checkbox drawn via graphics primitives |
-| `List` | **Lightweight** | _Not yet implemented_ | ❌ None | Scrollable list component |
-| `Choice` | **Lightweight** | _Not yet implemented_ | ❌ None | Drop-down choice/combo box |
-| `Scrollbar` | **Lightweight** | _Not yet implemented_ | ❌ None | Scrollbar control |
-| `ScrollPane` | **Lightweight** | _Not yet implemented_ | ❌ None | Container with scrollbars |
+| AWT Class    | Weight          | awtea Class               | Peer / DOM Mapping                                         | Notes                                                  |
+|--------------|-----------------|---------------------------|------------------------------------------------------------|--------------------------------------------------------|
+| `Frame`      | **Heavyweight** | `TFrame`                  | `TFrameFloatingPeer` → `FloatingWindow` + `<canvas>`       | Top-level decorated window with title bar and controls |
+| `Window`     | **Heavyweight** | _Not yet implemented_     | Planned: `TAWTWindowPeer` → `FloatingWindow` (undecorated) | Top-level window without decorations (Issue #18)       |
+| `Dialog`     | **Heavyweight** | _Not yet implemented_     | Planned: `TDialogFloatingPeer` → `FloatingWindow`          | Modal/non-modal dialog window (Issue #18)              |
+| `Applet`     | **Heavyweight** | `TApplet`                 | `AppletWindow` → `FloatingWindow` + `<canvas>`             | Browser-embedded application window                    |
+| `Panel`      | **Lightweight** | _Implicit via TContainer_ | ❌ None                                                     | Pure Java container, renders to parent                 |
+| `Container`  | **Lightweight** | `TContainer`              | ❌ None                                                     | Base container class for organizing components         |
+| `Component`  | **Lightweight** | `TComponent`              | ❌ None                                                     | Base class for all UI components                       |
+| `Canvas`     | **Lightweight** | `TCanvas`                 | ❌ None                                                     | Drawable area, renders to parent's surface             |
+| `Button`     | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Clickable button drawn via graphics primitives         |
+| `Label`      | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Static text rendered via `drawString()`                |
+| `TextField`  | **Hybrid**      | _Not yet implemented_     | ⚠️ Possible `<input>` overlay                              | May use DOM overlay for native keyboard/accessibility  |
+| `TextArea`   | **Hybrid**      | _Not yet implemented_     | ⚠️ Possible `<textarea>` overlay                           | May use DOM overlay for native text editing            |
+| `Checkbox`   | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Checkbox drawn via graphics primitives                 |
+| `List`       | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Scrollable list component                              |
+| `Choice`     | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Drop-down choice/combo box                             |
+| `Scrollbar`  | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Scrollbar control                                      |
+| `ScrollPane` | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Container with scrollbars                              |
 
 ### Swing Components
 
-| Swing Class | Weight | awtea Class | Peer / DOM Mapping | Notes |
-|-------------|--------|-------------|-------------------|-------|
-| `JComponent` | **Lightweight** | `TJComponent` | ❌ None | Base class for Swing components |
-| `JPanel` | **Lightweight** | `TJPanel` | ❌ None | Swing container with double buffering |
-| `JFrame` | **Heavyweight** | _Not yet implemented_ | Would extend `TFrame` | Top-level Swing window |
-| `JButton` | **Lightweight** | _Not yet implemented_ | ❌ None | Swing button with look and feel |
-| `JLabel` | **Lightweight** | _Not yet implemented_ | ❌ None | Swing text/icon label |
+| Swing Class  | Weight          | awtea Class           | Peer / DOM Mapping    | Notes                                 |
+|--------------|-----------------|-----------------------|-----------------------|---------------------------------------|
+| `JComponent` | **Lightweight** | `TJComponent`         | ❌ None                | Base class for Swing components       |
+| `JPanel`     | **Lightweight** | `TJPanel`             | ❌ None                | Swing container with double buffering |
+| `JFrame`     | **Heavyweight** | _Not yet implemented_ | Would extend `TFrame` | Top-level Swing window                |
+| `JButton`    | **Lightweight** | _Not yet implemented_ | ❌ None                | Swing button with look and feel       |
+| `JLabel`     | **Lightweight** | _Not yet implemented_ | ❌ None                | Swing text/icon label                 |
 
 ### awtea Internal Classes
 
-| Class | Weight | DOM Mapping | Purpose |
-|-------|--------|-------------|---------|
-| `TSurface` | **Heavyweight** | Abstract base + `TSurfacePeer` | Base class for components with their own rendering surface |
-| `FloatingWindow` | N/A | `<div>` positioned container | Base UI class for windowing system (Issue #18) |
-| `AppletWindow` | N/A | `<div>` with `<canvas>` | Applet container window |
+| Class            | Weight          | DOM Mapping                    | Purpose                                                    |
+|------------------|-----------------|--------------------------------|------------------------------------------------------------|
+| `TSurface`       | **Heavyweight** | Abstract base + `TSurfacePeer` | Base class for components with their own rendering surface |
+| `FloatingWindow` | N/A             | `<div>` positioned container   | Base UI class for windowing system (Issue #18)             |
+| `AppletWindow`   | N/A             | `<div>` with `<canvas>`        | Applet container window                                    |
 
 ### Menu Components (Separate Hierarchy)
 
 Menu components in AWT/Swing are **not** part of the `Component` hierarchy. They extend `MenuComponent` instead.
 
-| AWT MenuComponent | Weight | awtea Class | DOM Mapping | Notes |
-|-------------------|--------|-------------|-------------|-------|
-| `MenuBar` | **Special** | `MenuBar` | `<div class="aw-menubar">` | Horizontal menu bar at top of window |
-| `Menu` | **Special** | `MenuHandle` interface | `<div class="aw-menu-item">` + dropdown | Top-level menu with dropdown items |
-| `MenuItem` | **Special** | Menu entry | `<div class="aw-menu-entry">` | Individual menu action item |
-| `CheckboxMenuItem` | **Special** | _Not yet implemented_ | Planned | Menu item with checkbox state |
-| `PopupMenu` | **Special** | _Not yet implemented_ | Planned | Context menu (right-click menu) |
+| AWT MenuComponent  | Weight      | awtea Class            | DOM Mapping                             | Notes                                |
+|--------------------|-------------|------------------------|-----------------------------------------|--------------------------------------|
+| `MenuBar`          | **Special** | `MenuBar`              | `<div class="aw-menubar">`              | Horizontal menu bar at top of window |
+| `Menu`             | **Special** | `MenuHandle` interface | `<div class="aw-menu-item">` + dropdown | Top-level menu with dropdown items   |
+| `MenuItem`         | **Special** | Menu entry             | `<div class="aw-menu-entry">`           | Individual menu action item          |
+| `CheckboxMenuItem` | **Special** | _Not yet implemented_  | Planned                                 | Menu item with checkbox state        |
+| `PopupMenu`        | **Special** | _Not yet implemented_  | Planned                                 | Context menu (right-click menu)      |
 
 ## Architecture Diagrams
 
@@ -226,24 +230,36 @@ Heavyweight components use the **Surface/Peer** pattern:
 1. **TSurface**: Abstract base class that owns a `TSurfacePeer`
 2. **TSurfacePeer**: Manages double-buffering and coordinates painting
 3. **Peer (e.g., TFrameFloatingPeer)**: Bridges Java component to DOM
-   - Extends `FloatingWindow` (UI class)
-   - Creates and manages `<canvas>` element
-   - Sets up `TEventManager` for DOM event capture
-   - Provides `TGraphics` context backed by Surface
+    - Extends `FloatingWindow` (UI class)
+    - Creates and manages `<canvas>` element
+    - Sets up `TEventManager` for DOM event capture
+    - Provides `TGraphics` context backed by Surface
 
 ### Event Dispatch
 
 #### For Heavyweight Components:
+
 ```java
-Browser Event → TEventManager → TAWTEvent → TEventQueue 
-→ TFrame.dispatchEvent() → Event handlers
+Browser Event →TEventManager →TAWTEvent →TEventQueue 
+→ TFrame.
+
+dispatchEvent() →
+Event handlers
 ```
 
 #### For Lightweight Components:
+
 ```java
-Browser Event → TEventManager → TAWTEvent → TEventQueue
-→ TFrame.dispatchEvent() → TContainer.getComponentAt(x,y)
-→ TCanvas.dispatchEvent() → Event handlers
+Browser Event →TEventManager →TAWTEvent →TEventQueue
+→ TFrame.
+
+dispatchEvent() → TContainer.
+
+getComponentAt(x, y)
+→ TCanvas.
+
+dispatchEvent() →
+Event handlers
 ```
 
 ### Focus Management
@@ -261,9 +277,9 @@ All rendering goes through the **command pattern**:
 2. `TGraphics` records operations as `SurfaceCommand` objects
 3. Commands batched and sent to `Rasterizer`
 4. Backend executes commands:
-   - **WebGL**: For screen surfaces (hardware-accelerated)
-   - **WASM**: For offscreen surfaces (high performance)
-   - **Software**: Java fallback (compatibility)
+    - **WebGL**: For screen surfaces (hardware-accelerated)
+    - **WASM**: For offscreen surfaces (high performance)
+    - **Software**: Java fallback (compatibility)
 
 See [RENDERING_BACKENDS.md](RENDERING_BACKENDS.md) for details.
 
@@ -284,9 +300,15 @@ Menus are handled separately from the Component system:
 ```java
 // TFrame is heavyweight - creates its own window and canvas
 TFrame frame = new TFrame();
-frame.setTitle("My Application");
-frame.setSize(800, 600);
-frame.setVisible(true);
+frame.
+
+setTitle("My Application");
+frame.
+
+setSize(800,600);
+frame.
+
+setVisible(true);
 
 // Add lightweight components
 TCanvas canvas = new TCanvas() {
@@ -296,7 +318,9 @@ TCanvas canvas = new TCanvas() {
         g.fillRect(10, 10, 100, 100);
     }
 };
-frame.add(canvas);
+frame.
+
+add(canvas);
 ```
 
 ### Event Handling
@@ -305,15 +329,17 @@ frame.add(canvas);
 // Heavyweight component receives events directly
 frame.addMouseListener(new TMouseAdapter() {
     @Override
-    public void mouseClicked(TMouseEvent e) {
+    public void mouseClicked (TMouseEvent e){
         System.out.println("Frame clicked at: " + e.getX() + ", " + e.getY());
     }
 });
 
 // Lightweight component receives events from parent
-canvas.addMouseListener(new TMouseAdapter() {
+        canvas.
+
+addMouseListener(new TMouseAdapter() {
     @Override
-    public void mouseClicked(TMouseEvent e) {
+    public void mouseClicked (TMouseEvent e){
         // Coordinates already translated to canvas space
         System.out.println("Canvas clicked at: " + e.getX() + ", " + e.getY());
         repaint();
@@ -327,18 +353,34 @@ canvas.addMouseListener(new TMouseAdapter() {
 MenuBar menuBar = new MenuBar(frame::schedule);
 
 MenuHandle fileMenu = menuBar.createMenu("File");
-fileMenu.createEntry("Open", () -> {
-    System.out.println("Open clicked");
+fileMenu.
+
+createEntry("Open",() ->{
+        System.out.
+
+println("Open clicked");
 });
-fileMenu.createEntry("Save", () -> {
-    System.out.println("Save clicked");
+        fileMenu.
+
+createEntry("Save",() ->{
+        System.out.
+
+println("Save clicked");
 });
-fileMenu.createSeparator();
-fileMenu.createEntry("Exit", () -> {
-    System.exit(0);
+        fileMenu.
+
+createSeparator();
+fileMenu.
+
+createEntry("Exit",() ->{
+        System.
+
+exit(0);
 });
 
-frame.setMenuBar(menuBar);
+        frame.
+
+setMenuBar(menuBar);
 ```
 
 ## Guidelines for Developers
@@ -367,41 +409,52 @@ For text input components, consider a hybrid approach:
 
 - Render visually as lightweight (drawn graphics)
 - Overlay a hidden/transparent `<input>` or `<textarea>` for:
-  - Native mobile keyboard
-  - Copy/paste functionality
-  - Screen reader accessibility
-  - IME support (international text input)
+    - Native mobile keyboard
+    - Copy/paste functionality
+    - Screen reader accessibility
+    - IME support (international text input)
 
 ## Related Documentation
 
 - [RENDERING_BACKENDS.md](RENDERING_BACKENDS.md) - Details on WebGL/WASM/Software rendering
-- [Issue #18](https://github.com/mdbell/awtea/issues/18) - FloatingWindow refactoring
-- [Issue #21](https://github.com/mdbell/awtea/issues/21) - This component mapping documentation
 
 ## Key Source Files
 
 ### Core Components
-- [`TComponent.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TComponent.java) - Base component
-- [`TContainer.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TContainer.java) - Container base
+
+- [`TComponent.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TComponent.java) - Base
+  component
+- [`TContainer.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TContainer.java) - Container
+  base
 - [`TCanvas.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TCanvas.java) - Lightweight canvas
 - [`TSurface.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TSurface.java) - Heavyweight base
 - [`TFrame.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TFrame.java) - Frame window
 - [`TApplet.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/applet/TApplet.java) - Applet container
 
 ### Peers
-- [`TFrameFloatingPeer.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/peer/TFrameFloatingPeer.java) - Frame peer
-- [`TSurfacePeer.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/peer/TSurfacePeer.java) - Surface peer base
+
+- [
+  `TFrameFloatingPeer.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/peer/TFrameFloatingPeer.java) -
+  Frame peer
+- [
+  `TSurfacePeer.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/peer/TSurfacePeer.java) -
+  Surface peer base
 
 ### UI System
+
 - [`FloatingWindow.java`](../awtea-ui/src/main/java/me/mdbell/awtea/ui/FloatingWindow.java) - Windowing system base
 - [`AppletWindow.java`](../awtea-ui/src/main/java/me/mdbell/awtea/ui/AppletWindow.java) - Applet window
 - [`MenuBar.java`](../awtea-ui/src/main/java/me/mdbell/awtea/ui/MenuBar.java) - Menu system
 
 ### Events
+
 - [`TEventQueue.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TEventQueue.java) - Event queue
-- [`TEventManager.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/TEventManager.java) - DOM event capture
+- [`TEventManager.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/TEventManager.java) -
+  DOM event capture
 
 ### Graphics
-- [`TGraphics.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TGraphics.java) - Graphics context
+
+- [`TGraphics.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TGraphics.java) - Graphics
+  context
 - [`Surface.java`](../awtea-graphics/src/main/java/me/mdbell/awtea/gfx/Surface.java) - Surface interface
 - [`Rasterizer.java`](../awtea-graphics/src/main/java/me/mdbell/awtea/gfx/Rasterizer.java) - Rendering backend
