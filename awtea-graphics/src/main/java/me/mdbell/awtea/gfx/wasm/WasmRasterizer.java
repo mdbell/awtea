@@ -1,5 +1,8 @@
 package me.mdbell.awtea.gfx.wasm;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
@@ -11,6 +14,8 @@ import java.util.List;
 
 @Monitored.AllMethods
 public class WasmRasterizer implements Rasterizer {
+
+	private static final Logger log = LoggerFactory.getLogger(WasmRasterizer.class);
 
 	private final WasmSurface surface;
 	private transient final SurfaceCommandBuffer commandBuffer;
@@ -47,7 +52,7 @@ public class WasmRasterizer implements Rasterizer {
 
 			SurfaceLRUCache.SurfaceCacheEntry cacheEntry = backend.surfaceCache.get(srcSurface);
 			if (cacheEntry == null) {
-				System.err.println("WasmRasterizer: blitSurface failed to lookup surface cache");
+				log.error("WasmRasterizer: blitSurface failed to lookup surface cache");
 				return;
 			}
 
@@ -71,7 +76,7 @@ public class WasmRasterizer implements Rasterizer {
 					break;
 				case BLIT_IMAGE:
 					if (!(cmd.obj instanceof SurfaceContainer)) {
-						System.err.println("WasmRasterizer: BLIT_IMAGE command missing SurfaceContainer object");
+						log.error("WasmRasterizer: BLIT_IMAGE command missing SurfaceContainer object");
 					} else {
 						Surface surface1 = ((SurfaceContainer) cmd.obj).getSurface();
 						//TODO: missing width/height args?
@@ -108,7 +113,7 @@ public class WasmRasterizer implements Rasterizer {
 				case NO_OP:
 					break;
 				default:
-					System.out.println("WasmRasterizer: Unhandled command type: " + cmd.type);
+					log.info("WasmRasterizer: Unhandled command type: {}", cmd.type);
 					break;
 			}
 		}

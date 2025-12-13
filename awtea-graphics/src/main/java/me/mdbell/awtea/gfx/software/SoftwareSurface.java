@@ -1,5 +1,8 @@
 package me.mdbell.awtea.gfx.software;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import org.teavm.jso.typedarrays.*;
@@ -7,6 +10,8 @@ import org.teavm.jso.typedarrays.*;
 import java.awt.image.*;
 
 public class SoftwareSurface implements Surface {
+
+	private static final Logger log = LoggerFactory.getLogger(SoftwareSurface.class);
 
 	private final WritableRaster raster;
 	private final ColorModel cm; // not really needed here yet, maybe in software rasterizer?

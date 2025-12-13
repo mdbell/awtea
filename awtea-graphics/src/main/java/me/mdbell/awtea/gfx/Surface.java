@@ -1,5 +1,8 @@
 package me.mdbell.awtea.gfx;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.awt.image.BufferedImage;
@@ -31,7 +34,7 @@ public interface Surface {
 			case FORMAT_INT_RGBA:
 				return BufferedImage.TYPE_INT_ARGB; // Closest match
 			default:
-				System.err.println("Surface.toBufferedImageType: Unsupported pixel format: " + pixelFormat);
+				LoggerFactory.getLogger(Surface.class).error("Surface.toBufferedImageType: Unsupported pixel format: {}", pixelFormat);
 				return BufferedImage.TYPE_CUSTOM;
 		}
 	}
@@ -46,7 +49,7 @@ public interface Surface {
 			case BufferedImage.TYPE_INT_BGR:
 				return FORMAT_INT_BGR;
 			default:
-				System.err.println("Surface.fromBufferedImageType: Unsupported BufferedImage type: " + bufferedImageType);
+				LoggerFactory.getLogger(Surface.class).error("Surface.fromBufferedImageType: Unsupported BufferedImage type: {}", bufferedImageType);
 				return -1;
 		}
 	}

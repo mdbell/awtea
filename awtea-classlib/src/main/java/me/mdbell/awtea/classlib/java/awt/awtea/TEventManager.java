@@ -1,5 +1,8 @@
 package me.mdbell.awtea.classlib.java.awt.awtea;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.TAWTEvent;
 import me.mdbell.awtea.classlib.java.awt.TComponent;
@@ -32,6 +35,8 @@ import java.util.List;
  */
 @ExtensionMethod({JSObjectsExtensions.class})
 public final class TEventManager implements AutoCloseable {
+
+	private static final Logger log = LoggerFactory.getLogger(TEventManager.class);
 
 	public static final int SCROLL_AMOUNT = 3;
 
@@ -128,7 +133,7 @@ public final class TEventManager implements AutoCloseable {
 			);
 			post(event);
 
-			System.out.println("Dispatched mouse wheel event: " + event);
+			log.info("Dispatched mouse wheel event: {}", event);
 		}).track(registrations);
 
 		return this;

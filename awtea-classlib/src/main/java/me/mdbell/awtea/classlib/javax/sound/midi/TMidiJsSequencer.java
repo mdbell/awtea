@@ -1,5 +1,8 @@
 package me.mdbell.awtea.classlib.javax.sound.midi;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -11,6 +14,8 @@ import me.mdbell.awtea.sound.midi.MIDI;
  * @see javax.sound.midi.Sequencer
  */
 public class TMidiJsSequencer implements TReceiver, TSequencer, TTransmitter, MIDI.MidiCallbacks, AudioConstants {
+
+	private static final Logger log = LoggerFactory.getLogger(TMidiJsSequencer.class);
 
     @Getter
     private boolean connected;
@@ -134,7 +139,7 @@ public class TMidiJsSequencer implements TReceiver, TSequencer, TTransmitter, MI
                 midi.stop();
                 break;
             default:
-                System.err.println("[MIDI] Unhandled Control Change: " + channel + " " + ctrlNum + " " + value);
+                log.error("[MIDI] Unhandled Control Change: {}", channel + " " + ctrlNum + " " + value);
         }
     }
 

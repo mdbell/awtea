@@ -1,5 +1,8 @@
 package me.mdbell.awtea.classlib.javax.sound.sampled;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import lombok.Getter;
 import me.mdbell.awtea.monitor.LineMonitor;
 import me.mdbell.awtea.monitor.PcmMonitor;
@@ -10,6 +13,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioConstants {
+
+	private static final Logger log = LoggerFactory.getLogger(TAbstractSourceDataLine.class);
 
 	protected int channels;
 	protected int sampleRate;
@@ -106,7 +111,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
 
 		int framesHint = bufferSize / this.channels;
 		if (framesHint <= 0) {
-			System.out.println("Warning: invalid buffer size hint " + bufferSize + " bytes; using default");
+			log.info("Warning: invalid buffer size hint {}", bufferSize + " bytes; using default");
 			framesHint = (int) (sampleRate * 0.1); // ~100ms as a fallback
 		}
 

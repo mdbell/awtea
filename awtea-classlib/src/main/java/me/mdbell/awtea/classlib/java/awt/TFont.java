@@ -1,5 +1,8 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import lombok.Getter;
 import lombok.SneakyThrows;
 import me.mdbell.awtea.classlib.java.awt.image.TFontFormatException;
@@ -22,6 +25,8 @@ import java.util.Objects;
  */
 @Getter
 public class TFont {
+
+	private static final Logger log = LoggerFactory.getLogger(TFont.class);
 
 	private static final String TTF_DIR = "/fonts/";
 
@@ -270,12 +275,12 @@ public class TFont {
 		try {
 			return FontLoader.loadFont(fontname);
 		} catch (IOException e) {
-			System.err.println("Missing font:" + fontname + " - falling back");
+			log.error("Missing font:{}", fontname + " - falling back");
 			try {
 				return FontLoader.loadFont(FALLBACK_FONT_NAME);
 			} catch (IOException fallbackError) {
 				// If even fallback fails, try legacy resource loading as last resort
-				System.err.println("Fallback font also failed, trying legacy resource loading");
+				log.error("Fallback font also failed, trying legacy resource loading");
 				return TrueTypeFont.read(getFontBytes(FALLBACK_FONT_NAME));
 			}
 		}

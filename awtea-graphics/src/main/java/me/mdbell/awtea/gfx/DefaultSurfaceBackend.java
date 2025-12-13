@@ -1,11 +1,16 @@
 package me.mdbell.awtea.gfx;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import me.mdbell.awtea.gfx.software.SoftwareSurfaceBackend;
 import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
 import me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 
 public class DefaultSurfaceBackend implements SurfaceBackend {
+
+	private static final Logger log = LoggerFactory.getLogger(DefaultSurfaceBackend.class);
 
 	private final SurfaceBackend[] backends;
 
@@ -40,14 +45,14 @@ public class DefaultSurfaceBackend implements SurfaceBackend {
 			switch (forcedBackend) {
 				case "wasm":
 				case "webassembly":
-					System.out.println("Forcing WASM backend via system property");
+					log.info("Forcing WASM backend via system property");
 					return new SurfaceBackend[]{new WasmSurfaceBackend()};
 				case "software":
 				case "java":
-					System.out.println("Forcing Software backend via system property");
+					log.info("Forcing Software backend via system property");
 					return new SurfaceBackend[]{new SoftwareSurfaceBackend()};
 				default:
-					System.err.println("Unknown backend '" + forcedBackend + "' specified in " + 
+					log.error("Unknown backend '{}", forcedBackend + "' specified in " + 
 						BACKEND_PROPERTY + ". Using default priority.");
 					break;
 			}

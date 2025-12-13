@@ -1,5 +1,8 @@
 package me.mdbell.awtea.font;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import lombok.*;
 import me.mdbell.awtea.font.cmap.Format14Cmap;
 import me.mdbell.awtea.font.tables.*;
@@ -7,6 +10,8 @@ import me.mdbell.awtea.font.tables.*;
 @Value
 @Builder(access = AccessLevel.PRIVATE)
 public class TrueTypeFont {
+
+	private static final Logger log = LoggerFactory.getLogger(TrueTypeFont.class);
 	TtfFile file;
 	NameTable nameTable;
 	HeadTable headTable;
@@ -44,7 +49,7 @@ public class TrueTypeFont {
 		ByteReader os2Reader = ttf.slice("OS/2");
 
 		if(os2Reader != null){
-			System.out.println("OS/2 table found!");
+			log.info("OS/2 table found!");
 			builder.os2Table(Os2Table.read(os2Reader));
 		}
 

@@ -1,5 +1,8 @@
 package me.mdbell.awtea.classlib.java.awt.event;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,6 +21,8 @@ import org.teavm.jso.dom.events.KeyboardEvent;
 @Getter
 @ToString(callSuper = true)
 public class TKeyEvent extends TInputEvent {
+
+	private static final Logger log = LoggerFactory.getLogger(TKeyEvent.class);
 
 	/**
 	 * The first number in the range of ids used for key events.
@@ -1221,7 +1226,7 @@ public class TKeyEvent extends TInputEvent {
 		}
 
 		if (key == KeyboardKey.UNDEFINED) {
-			System.err.println("Key not found: " + event.getCode() + " - " + event.getKey() + " - " + event.getType());
+			log.warn("Key not found: {} - {} - {}", event.getCode(), event.getKey(), event.getType());
 		}
 
 		int modifiers = 0;
