@@ -392,8 +392,65 @@ public class SoftwareRasterizer implements Rasterizer {
 		float scaleY = (float) srcHeight / destHeight;
 
 		boolean blend = needsBlending();
+		boolean sameFormat = (srcFormat == destFormat);
 
-		// Simple nearest-neighbor blit with improved rounding
+		// Ultra-fast path: same format, no blending, no scaling
+		if (!blend && sameFormat && srcWidth == destWidth && srcHeight == destHeight) {
+			// Direct copy - no conversions needed at all!
+			for (int destRow = y0; destRow < y1; destRow++) {
+				if (destRow < 0 || destRow >= destSurfaceHeight) {
+					continue;
+				}
+				int srcRow = destRow - ty;
+				if (srcRow < 0 || srcRow >= srcHeight) {
+					continue;
+				}
+				int srcRowOffset = srcRow * srcWidth;
+				int destRowOffset = destRow * destSurfaceWidth;
+				
+				for (int destCol = x0; destCol < x1; destCol++) {
+					if (destCol < 0 || destCol >= destSurfaceWidth) {
+						continue;
+					}
+					int srcCol = destCol - tx;
+					if (srcCol < 0 || srcCol >= srcWidth) {
+						continue;
+					}
+					destPixels[destRowOffset + destCol] = srcPixels.get(srcRowOffset + srcCol);
+				}
+			}
+			return;
+		}
+
+		// Fast path: same format, no blending (but with scaling)
+		if (!blend && sameFormat) {
+			for (int destRow = y0; destRow < y1; destRow++) {
+				if (destRow < 0 || destRow >= destSurfaceHeight) {
+					continue;
+				}
+				int srcRow = (int) ((destRow - ty) * scaleY + 0.5f);
+				if (srcRow < 0 || srcRow >= srcHeight) {
+					continue;
+				}
+				int srcRowOffset = srcRow * srcWidth;
+				int destRowOffset = destRow * destSurfaceWidth;
+				
+				for (int destCol = x0; destCol < x1; destCol++) {
+					if (destCol < 0 || destCol >= destSurfaceWidth) {
+						continue;
+					}
+					int srcCol = (int) ((destCol - tx) * scaleX + 0.5f);
+					if (srcCol < 0 || srcCol >= srcWidth) {
+						continue;
+					}
+					// Direct copy - no conversion needed
+					destPixels[destRowOffset + destCol] = srcPixels.get(srcRowOffset + srcCol);
+				}
+			}
+			return;
+		}
+
+		// Slower paths: need format conversion and/or blending
 		for (int destRow = y0; destRow < y1; destRow++) {
 			if (destRow < 0 || destRow >= destSurfaceHeight) {
 				continue;
@@ -427,7 +484,7 @@ public class SoftwareRasterizer implements Rasterizer {
 					int blendedARGB = blendPixel(srcColorARGB, dstColorARGB, composite);
 					destPixels[destIdx] = convertColor(blendedARGB, Surface.FORMAT_INT_ARGB, destFormat);
 				} else {
-					// Fast path: no blending needed
+					// Format conversion needed but no blending
 					destPixels[destIdx] = convertColor(srcColor, srcFormat, destFormat);
 				}
 			}
