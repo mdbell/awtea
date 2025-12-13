@@ -2,6 +2,10 @@
 
 A comprehensive awtea example demonstrating multiple AWT components, graphics primitives, event handling, and user interaction.
 
+## Status
+
+⚠️ **Note**: This example is currently experiencing TeaVM compilation issues that are being investigated in the awtea project. The code demonstrates correct API usage and will work once runtime compatibility issues are resolved.
+
 ## What This Example Demonstrates
 
 - Creating a complex GUI with multiple panels

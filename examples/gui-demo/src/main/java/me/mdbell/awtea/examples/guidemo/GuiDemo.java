@@ -1,6 +1,7 @@
 package me.mdbell.awtea.examples.guidemo;
 
 import me.mdbell.awtea.classlib.java.awt.*;
+import java.awt.Color;
 
 /**
  * Comprehensive GUI demo showcasing awtea features including:
@@ -22,14 +23,14 @@ public class GuiDemo {
         TPanel mainPanel = new TPanel();
         mainPanel.setLayout(null); // Using absolute positioning for simplicity
         
-        // Add title label at the top
+        // Add title panel at the top
         TPanel titlePanel = new TPanel() {
             @Override
             public void paint(TGraphics g) {
-                g.setColor(new TColor(70, 130, 180)); // Steel blue
+                g.setColor(new Color(70, 130, 180)); // Steel blue
                 g.fillRect(0, 0, getWidth(), getHeight());
                 
-                g.setColor(TColor.WHITE);
+                g.setColor(Color.WHITE);
                 g.setFont(new TFont("SansSerif", TFont.BOLD, 24));
                 String title = "awtea GUI Demo";
                 TFontMetrics metrics = g.getFontMetrics();
@@ -60,14 +61,14 @@ public class GuiDemo {
         TPanel infoPanel = new TPanel() {
             @Override
             public void paint(TGraphics g) {
-                g.setColor(new TColor(245, 245, 245));
+                g.setColor(new Color(245, 245, 245));
                 g.fillRect(0, 0, getWidth(), getHeight());
                 
                 // Draw border
-                g.setColor(new TColor(200, 200, 200));
+                g.setColor(new Color(200, 200, 200));
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
                 
-                g.setColor(TColor.BLACK);
+                g.setColor(Color.BLACK);
                 g.setFont(new TFont("SansSerif", TFont.BOLD, 12));
                 g.drawString("Instructions:", 10, 20);
                 
@@ -77,7 +78,7 @@ public class GuiDemo {
                 g.drawString("• View graphics primitives on the right panel", 10, 70);
                 
                 g.setFont(new TFont("SansSerif", TFont.ITALIC, 10));
-                g.setColor(TColor.GRAY);
+                g.setColor(Color.GRAY);
                 g.drawString("Powered by awtea - Java AWT for the Web", 10, 95);
             }
         };

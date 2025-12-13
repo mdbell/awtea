@@ -32,15 +32,13 @@ teavm {
     js {
         // Configure JavaScript generation
         mainClass = "me.mdbell.awtea.examples.guidemo.GuiDemo"
-        targetDirectory = layout.buildDirectory.dir("dist").get().asFile
+        outputDir = layout.buildDirectory.dir("dist").get().asFile
         
         // Optimization settings
-        optimization.set(org.teavm.gradle.api.OptimizationLevel.SIMPLE)
         obfuscated = false
         
         // Source maps for debugging
         sourceMap = true
-        sourceFilesCopied = true
     }
 }
 

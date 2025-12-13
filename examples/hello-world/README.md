@@ -2,6 +2,10 @@
 
 This is the simplest possible awtea application - a minimal AWT program that displays "Hello, awtea!" in a window.
 
+## Status
+
+⚠️ **Note**: This example is currently experiencing TeaVM compilation issues that are being investigated in the awtea project. The code demonstrates correct API usage and will work once runtime compatibility issues are resolved.
+
 ## What This Example Demonstrates
 
 - Creating a basic `TFrame` window

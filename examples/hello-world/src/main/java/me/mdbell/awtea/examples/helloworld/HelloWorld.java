@@ -1,6 +1,7 @@
 package me.mdbell.awtea.examples.helloworld;
 
 import me.mdbell.awtea.classlib.java.awt.*;
+import java.awt.Color;
 
 /**
  * A minimal awtea example that displays "Hello, awtea!" in a window.
@@ -19,11 +20,11 @@ public class HelloWorld {
             @Override
             public void paint(TGraphics g) {
                 // Set background color
-                g.setColor(TColor.WHITE);
+                g.setColor(Color.WHITE);
                 g.fillRect(0, 0, getWidth(), getHeight());
                 
                 // Draw "Hello, awtea!" text
-                g.setColor(TColor.BLACK);
+                g.setColor(Color.BLACK);
                 g.setFont(new TFont("SansSerif", TFont.BOLD, 32));
                 
                 String message = "Hello, awtea!";
@@ -35,7 +36,7 @@ public class HelloWorld {
                 
                 // Draw a subtitle
                 g.setFont(new TFont("SansSerif", TFont.PLAIN, 14));
-                g.setColor(TColor.GRAY);
+                g.setColor(Color.GRAY);
                 String subtitle = "Java AWT running in your browser!";
                 metrics = g.getFontMetrics();
                 int subX = (getWidth() - metrics.stringWidth(subtitle)) / 2;

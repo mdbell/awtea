@@ -31,6 +31,15 @@ Each example is a self-contained Gradle project that can be built independently.
 - Java 11 or newer
 - Gradle (or use the included wrapper)
 
+### Current Status
+
+⚠️ **Note**: The examples are currently experiencing TeaVM compilation issues that are being investigated. The example code demonstrates the correct API usage and structure for awtea applications. Once the underlying runtime compatibility issues are resolved, these examples will build and run successfully.
+
+The examples serve as:
+- Reference implementations showing proper awtea API usage
+- Templates for your own applications
+- Documentation of component interactions and patterns
+
 ### Building an Example
 
 Navigate to the example directory and run:

@@ -2,6 +2,7 @@ package me.mdbell.awtea.examples.guidemo;
 
 import me.mdbell.awtea.classlib.java.awt.*;
 import me.mdbell.awtea.classlib.java.awt.event.*;
+import java.awt.Color;
 
 /**
  * Interactive drawing canvas that responds to mouse events.
@@ -11,9 +12,9 @@ public class DrawingCanvas extends TCanvas {
     
     private static class Circle {
         int x, y, radius;
-        TColor color;
+        Color color;
         
-        Circle(int x, int y, int radius, TColor color) {
+        Circle(int x, int y, int radius, Color color) {
             this.x = x;
             this.y = y;
             this.radius = radius;
@@ -24,9 +25,9 @@ public class DrawingCanvas extends TCanvas {
     private java.util.List<Circle> circles = new java.util.ArrayList<>();
     private int mouseX = -1;
     private int mouseY = -1;
-    private TColor[] colors = {
-        TColor.RED, TColor.BLUE, TColor.GREEN, TColor.ORANGE,
-        TColor.MAGENTA, TColor.CYAN, TColor.PINK, TColor.YELLOW
+    private Color[] colors = {
+        Color.RED, Color.BLUE, Color.GREEN, Color.ORANGE,
+        Color.MAGENTA, Color.CYAN, Color.PINK, Color.YELLOW
     };
     private int colorIndex = 0;
     
@@ -56,11 +57,11 @@ public class DrawingCanvas extends TCanvas {
     @Override
     public void paint(TGraphics g) {
         // Background
-        g.setColor(new TColor(240, 240, 255));
+        g.setColor(new Color(240, 240, 255));
         g.fillRect(0, 0, getWidth(), getHeight());
         
         // Draw grid
-        g.setColor(new TColor(220, 220, 230));
+        g.setColor(new Color(220, 220, 230));
         for (int i = 0; i < getWidth(); i += 50) {
             g.drawLine(i, 0, i, getHeight());
         }
@@ -73,13 +74,13 @@ public class DrawingCanvas extends TCanvas {
             g.setColor(circle.color);
             g.fillOval(circle.x - circle.radius, circle.y - circle.radius, 
                       circle.radius * 2, circle.radius * 2);
-            g.setColor(TColor.BLACK);
+            g.setColor(Color.BLACK);
             g.drawOval(circle.x - circle.radius, circle.y - circle.radius, 
                       circle.radius * 2, circle.radius * 2);
         }
         
         // Draw instructions and mouse position
-        g.setColor(TColor.BLACK);
+        g.setColor(Color.BLACK);
         g.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
         g.drawString("Click anywhere to draw circles!", 10, 20);
         
