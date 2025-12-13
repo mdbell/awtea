@@ -1,8 +1,13 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import lombok.Getter;
 
 class TEventDispatchThread {
+
+	private static final Logger log = LoggerFactory.getLogger(TEventDispatchThread.class);
 
 	@Getter
 	private final Thread thread;
@@ -29,7 +34,7 @@ class TEventDispatchThread {
 	}
 
 	public void run() {
-		System.out.println("Event Dispatch Thread started.");
+		log.info("Event Dispatch Thread started.");
 		pumpEvents();
 	}
 

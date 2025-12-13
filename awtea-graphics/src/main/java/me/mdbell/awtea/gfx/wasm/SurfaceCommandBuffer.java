@@ -1,5 +1,8 @@
 package me.mdbell.awtea.gfx.wasm;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import lombok.Getter;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import org.teavm.jso.typedarrays.ArrayBuffer;
@@ -7,6 +10,9 @@ import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8Array;
 
 public final class SurfaceCommandBuffer {
+
+	private static final Logger log = LoggerFactory.getLogger(SurfaceCommandBuffer.class);
+
 	private final WasmAwtRasterizerExports exports;
 	private final ArrayBuffer memoryBuffer;
 	private final Uint8Array u8;
@@ -63,7 +69,7 @@ public final class SurfaceCommandBuffer {
 		if (rc == 0) {
 			reset();
 		} else {
-			System.err.println("SurfaceCommandBuffer.flush: renderAwt failed: " + rc);
+			log.error("SurfaceCommandBuffer.flush: renderAwt failed: {}", rc);
 		}
 	}
 

@@ -1,6 +1,8 @@
 package me.mdbell.awtea.font;
 
 import me.mdbell.awtea.util.GlyphRasterizer;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -11,45 +13,48 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class TtfDump {
+
+	private static final Logger log = LoggerFactory.getLogger(TtfDump.class);
+
 	public static void main(String[] args) throws IOException {
 		if (args.length != 1) {
-			System.err.println("Missing font");
+			log.error("Missing font");
 			System.exit(1);
 		}
 
 		String fontFile = args[0];
 
-		System.out.println("Reading: " + fontFile);
+		log.info("Reading: {}", fontFile);
 
 		byte[] bytes = Files.readAllBytes(Paths.get(fontFile));
 
 		TrueTypeFont font = TrueTypeFont.read(bytes);
 
-		System.out.println("head: " + font.getHeadTable());
-		System.out.println("maxp: " + font.getMaxpTable());
-		System.out.println("====================");
-		System.out.println("Glyph A: " + font.glyphForCodePoint('a'));
-		System.out.println("Glyph B: " + font.glyphForCodePoint('B'));
-		System.out.println("Glyph €:" + font.glyphForCodePoint(0x20AC));
+		log.info("head: {}", font.getHeadTable());
+		log.info("maxp: {}", font.getMaxpTable());
+		log.info("====================");
+		log.info("Glyph A: {}", font.glyphForCodePoint('a'));
+		log.info("Glyph B: {}", font.glyphForCodePoint('B'));
+		log.info("Glyph €: {}", font.glyphForCodePoint(0x20AC));
 
 		// sanity checks for glyph parsing
 
 		Glyph g = font.loadGlyphForCodePoint('A');
 		if (g == null) {
-			System.out.println("No glyph for 'A'");
+			log.info("No glyph for 'A'");
 			return;
 		}
 
-		System.out.println("Glyph 'A' contours=" + g.numberOfContours);
-		System.out.println("Bounds: [" + g.xMin + "," + g.yMin + "] - [" + g.xMax + "," + g.yMax + "]");
+		log.info("Glyph 'A' contours={}", g.numberOfContours);
+		log.info("Bounds: [" + g.xMin + "," + g.yMin + "] - [" + g.xMax + "," + g.yMax + "]");
 
 		for (int c = 0; c < g.numberOfContours; c++) {
 			int start = (c == 0) ? 0 : (g.endPtsOfContours[c - 1] + 1);
 			int end = g.endPtsOfContours[c];
 
-			System.out.println("Contour " + c + " points " + start + ".." + end);
+			log.info("Contour {} points {}..", c, start, end);
 			for (int i = start; i <= end; i++) {
-				System.out.printf("  %3d: (%d,%d)%s%n",
+				log.info("  %3d: (%d,%d)%s",
 					i, g.x[i], g.y[i], g.onCurve[i] ? " ON" : " OFF");
 			}
 		}
@@ -57,21 +62,21 @@ public class TtfDump {
 		// Glyph paths
 		GlyphPath path = GlyphPathBuilder.buildPath(g);
 
-		System.out.println("Path for 'A':");
+		log.info("Path for 'A':");
 		for (GlyphPath.Cmd cmd : path.getCommands()) {
 			switch (cmd.type) {
 				case MOVE_TO:
-					System.out.printf("MOVE_TO (%.1f, %.1f)%n", cmd.x1, cmd.y1);
+					log.info("MOVE_TO (%.1f, %.1f)", cmd.x1, cmd.y1);
 					break;
 				case LINE_TO:
-					System.out.printf("LINE_TO (%.1f, %.1f)%n", cmd.x1, cmd.y1);
+					log.info("LINE_TO (%.1f, %.1f)", cmd.x1, cmd.y1);
 					break;
 				case QUAD_TO:
-					System.out.printf("QUAD_TO ctrl(%.1f, %.1f) end(%.1f, %.1f)%n",
+					log.info("QUAD_TO ctrl(%.1f, %.1f) end(%.1f, %.1f)",
 						cmd.x2, cmd.y2, cmd.x1, cmd.y1);
 					break;
 				case CLOSE:
-					System.out.println("CLOSE");
+					log.info("CLOSE");
 					break;
 			}
 		}
@@ -83,23 +88,21 @@ public class TtfDump {
 
 		// metrics
 
-		System.out.println("unitsPerEm = " + font.getUnitsPerEm());
-		System.out.println("ascent=" + font.getAscentUnits()
-			+ " descent=" + font.getDescentUnits()
-			+ " lineGap=" + font.getLineGapUnits());
+		log.info("unitsPerEm = {}", font.getUnitsPerEm());
+		log.info("ascent={} descent={} lineGap={}", font.getAscentUnits(),
+			font.getDescentUnits(), font.getLineGapUnits());
 
-		System.out.println("'A' gid=" + gidA + " adv=" + font.getAdvanceWidthUnits(gidA));
-		System.out.println("'B' gid=" + gidB + " adv=" + font.getAdvanceWidthUnits(gidB));
-		System.out.println("'€' gid=" + gidEuro + " adv=" + font.getAdvanceWidthUnits(gidEuro));
+		log.info("'A' gid={} adv={}", gidA, font.getAdvanceWidthUnits(gidA));
+		log.info("'B' gid={} adv={}", gidB, font.getAdvanceWidthUnits(gidB));
+		log.info("'€' gid={} adv={}", gidEuro, font.getAdvanceWidthUnits(gidEuro));
 
 		float sizePx = 32f;
 		float scale = sizePx / font.getUnitsPerEm();
-		System.out.println("scale @ " + sizePx + "px = " + scale);
+		log.info("scale @ {}px = {}", sizePx, scale);
 
-		System.out.println("'A' advance px ≈ " + font.getAdvanceWidthUnits(gidA) * scale);
-		System.out.println("'B' advance px ≈ " + font.getAdvanceWidthUnits(gidB) * scale);
-		System.out.println("'€' advance px ≈ " + font.getAdvanceWidthUnits(gidEuro) * scale);
-		System.out.println("line height px ≈ " + (font.getAscentUnits() - font.getDescentUnits()
+		log.info("'A' advance px ≈ {}", font.getAdvanceWidthUnits(gidA) * scale);
+		log.info("'€' advance px ≈ {}", font.getAdvanceWidthUnits(gidEuro) * scale);
+		log.info("line height px ≈ {}", (font.getAscentUnits() - font.getDescentUnits()
 			+ font.getLineGapUnits()) * scale);
 
 		// simple rendering test
@@ -142,6 +145,6 @@ public class TtfDump {
 
 		ImageIO.write(img, "png", new File("./A.png"));
 
-		System.out.println(font.getFamily() + " - Full:" + font.getFullName());
+		log.info("{} - Full: {}", font.getFamily(), font.getFullName());
 	}
 }

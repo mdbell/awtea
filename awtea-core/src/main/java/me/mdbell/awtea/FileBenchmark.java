@@ -1,5 +1,7 @@
 package me.mdbell.awtea;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.runtime.fs.VirtualFileSystemProvider;
 import me.mdbell.awtea.impl.idb.IndexedDBHelper;
 import me.mdbell.awtea.impl.idb.IndexedDBVirtualFileSystem;
@@ -10,6 +12,9 @@ import java.io.IOException;
 import java.util.Random;
 
 public class FileBenchmark {
+
+    private static final Logger log = LoggerFactory.getLogger(FileBenchmark.class);
+
     private static final String FILE_PATH = "benchmark_test.dat";
     private static final int FILE_SIZE_MB = 100; // File size in MB
     private static final int BUFFER_SIZE = 8192; // 8KB buffer
@@ -21,20 +26,20 @@ public class FileBenchmark {
 
         // in case file is left over from previous run
         if (IndexedDBHelper.isFile("/" + FILE_PATH) && !IndexedDBHelper.deleteFile("/" + FILE_PATH)) {
-            System.out.println("Failed to delete existing file");
+            log.info("Failed to delete existing file");
             return;
         }
 
-        System.out.println("File I/O Benchmark (File size: " + FILE_SIZE_MB + "MB)");
+        log.info("File I/O Benchmark (File size: {}MB)", FILE_SIZE_MB);
 
-        System.out.println("Verifying file contents...");
+        log.info("Verifying file contents...");
         verifyFileContents();
-        System.out.println("Benchmarking write speed...");
+        log.info("Benchmarking write speed...");
         long writeTime = benchmarkWrite();
-        System.out.printf("Write Speed: %.2f MB/s\n", (FILE_SIZE_MB * 1000.0) / writeTime);
-        System.out.println("Benchmarking read speed...");
+        log.info("Write Speed: {} MB/s", String.format("%.2f", (FILE_SIZE_MB * 1000.0) / writeTime));
+        log.info("Benchmarking read speed...");
         long readTime = benchmarkRead();
-        System.out.printf("Read Speed: %.2f MB/s\n", (FILE_SIZE_MB * 1000.0) / readTime);
+        log.info("Read Speed: {} MB/s", String.format("%.2f", (FILE_SIZE_MB * 1000.0) / readTime));
 
         IndexedDBHelper.deleteFile(FILE_PATH);
     }

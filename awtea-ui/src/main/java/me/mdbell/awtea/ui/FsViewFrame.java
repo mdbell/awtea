@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.dom.css.CSSStyleDeclaration;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.file.FileList;
@@ -17,6 +19,8 @@ import static me.mdbell.awtea.ui.Theme.humanReadableTimestamp;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class FsViewFrame extends FloatingFrame {
+
+	private static final Logger log = LoggerFactory.getLogger(FsViewFrame.class);
 
 	private static final File ROOT = new File("/");
 
@@ -236,14 +240,14 @@ public class FsViewFrame extends FloatingFrame {
 			org.teavm.jso.dom.html.HTMLInputElement input = (org.teavm.jso.dom.html.HTMLInputElement) evt.getTarget();
 			schedule(() -> {
 				FileList fileList = input.getFiles();
-				System.out.println("Uploading " + (fileList != null ? fileList.getLength() : 0) + " files to " + currentDir.getAbsolutePath());
+				log.info("Uploading {} files to {}", (fileList != null ? fileList.getLength() : 0), currentDir.getAbsolutePath());
 				if (fileList != null) {
 					for (int i = 0; i < fileList.getLength(); i++) {
 						org.teavm.jso.file.File jsFile = fileList.item(i);
 						Uint8ClampedArray nativeArray = new Uint8ClampedArray(jsFile.arrayBuffer().await());
 						byte[] buffer = nativeArray.getArrayFromJS();
 						File destFile = new File(currentDir, jsFile.getName());
-						System.out.println(" - " + jsFile.getName() + " (" + buffer.length + " bytes)");
+						log.info(" - {} ({} bytes)", jsFile.getName(), buffer.length);
 						// Write to local FS
 						try (java.io.FileOutputStream fos = new java.io.FileOutputStream(destFile)) {
 							fos.write(buffer);
@@ -355,8 +359,8 @@ public class FsViewFrame extends FloatingFrame {
 			return span;
 		}
 
-		System.out.println(currentDir);
-		System.out.println(ROOT);
+		log.debug("currentDir: {}", currentDir);
+		log.debug("ROOT: {}", ROOT);
 
 		// Absolute path of current directory
 		String absPath = currentDir.getAbsolutePath();

@@ -1,5 +1,8 @@
 package me.mdbell.awtea.classlib.java.net;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import lombok.Getter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.monitor.NetworkMonitor;
@@ -24,6 +27,8 @@ import java.util.List;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class TSocket {
+
+	private static final Logger log = LoggerFactory.getLogger(TSocket.class);
 	private final String host;
 	private final int port;
 
@@ -94,7 +99,7 @@ public class TSocket {
 
 	private JSPromise<WebSocket> connect(String server, int port) {
 		String url = this.resolver.resolveUrl(server, port);
-		System.out.println("Connecting to " + server + ":" + port + "(" + url + ") via WebSocket");
+		log.info("Connecting to {}:{} ({}) via WebSocket", server, port, url);
 
 		NetworkMonitor.get().register(this, host, port, url);
 		WebSocket ws = new WebSocket(url, "binary");

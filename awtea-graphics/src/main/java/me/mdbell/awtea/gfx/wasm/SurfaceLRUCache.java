@@ -1,5 +1,8 @@
 package me.mdbell.awtea.gfx.wasm;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.instrument.Monitored;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
@@ -10,6 +13,9 @@ import java.util.Map;
 
 @Monitored.AllMethods
 class SurfaceLRUCache {
+
+	private static final Logger log = LoggerFactory.getLogger(SurfaceLRUCache.class);
+
 	private final int maxSize;
 	private final Map<Surface, Node> map;
 	private Node head; // most recently used
@@ -44,12 +50,12 @@ class SurfaceLRUCache {
 					entry = new SurfaceCacheEntry(surface);
 				} catch (IllegalStateException e2) {
 					// Still failed; give up
-					System.err.println("Failed to allocate SurfaceCacheEntry even after freeing oldest entry");
+					log.error("Failed to allocate SurfaceCacheEntry even after freeing oldest entry");
 					return null;
 				}
 			} else {
 				// No entries to free; give up
-				System.err.println("Failed to allocate SurfaceCacheEntry and cache is empty");
+				log.error("Failed to allocate SurfaceCacheEntry and cache is empty");
 				return null;
 			}
 		}
@@ -178,7 +184,7 @@ class SurfaceLRUCache {
 				);
 			}
 			if (srcPixels.getBuffer() == pixelsView.getBuffer()) {
-				System.err.println("SurfaceCacheEntry.sync: Surface is already using WASM memory buffer! We are copying unnecessarily.");
+				log.error("SurfaceCacheEntry.sync: Surface is already using WASM memory buffer! We are copying unnecessarily.");
 			}
 			this.pixelsView.set(srcPixels);
 		}

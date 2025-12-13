@@ -1,6 +1,8 @@
 package me.mdbell.awtea.ui;
 
 import me.mdbell.awtea.monitor.OperationsMonitor;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLInputElement;
 
@@ -11,6 +13,8 @@ import java.util.List;
 // since this is a 'special' floating window, with multiple
 // possible monitors inside it
 public class OperationsMonitorFrame extends FloatingFrame {
+
+	private static final Logger log = LoggerFactory.getLogger(OperationsMonitorFrame.class);
 
 	private int selectedMonitorId = -1;
 
@@ -99,7 +103,7 @@ public class OperationsMonitorFrame extends FloatingFrame {
 		header.appendChild(reset);
 
 		registerClickHandler("reset-monitor", () -> {
-			System.out.println("Resetting Operations Monitor...");
+			log.debug("Resetting Operations Monitor...");
 			selectedMonitor.reset();
 		});
 

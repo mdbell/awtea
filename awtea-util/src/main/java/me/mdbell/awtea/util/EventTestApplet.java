@@ -1,5 +1,8 @@
 package me.mdbell.awtea.util;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
@@ -7,6 +10,8 @@ import java.awt.image.BufferedImage;
 
 public class EventTestApplet extends Applet
 	implements MouseListener, MouseMotionListener, KeyListener, MouseWheelListener {
+
+	private static final Logger log = LoggerFactory.getLogger(EventTestApplet.class);
 
 	private int clickCount = 0;
 	private int motionCount = 0;
@@ -41,7 +46,7 @@ public class EventTestApplet extends Applet
 
 	@Override
 	public void init() {
-		System.out.println("init()");
+		log.debug("init()");
 
 		addMouseListener(this);
 		addMouseMotionListener(this);
@@ -112,25 +117,25 @@ public class EventTestApplet extends Applet
 	// Mouse events
 	// --------------------------------------------------------
 	public void mousePressed(MouseEvent e) {
-		System.out.println("mousePressed: " + e);
+		log.debug("mousePressed: {}", e);
 		clickCount++;
 		repaint();
 	}
 
 	public void mouseReleased(MouseEvent e) {
-		System.out.println("mouseReleased: " + e);
+		log.debug("mouseReleased: {}", e);
 	}
 
 	public void mouseClicked(MouseEvent e) {
-		System.out.println("mouseClicked: " + e);
+		log.debug("mouseClicked: {}", e);
 	}
 
 	public void mouseEntered(MouseEvent e) {
-		System.out.println("mouseEntered: " + e);
+		log.debug("mouseEntered: {}", e);
 	}
 
 	public void mouseExited(MouseEvent e) {
-		System.out.println("mouseExited: " + e);
+		log.debug("mouseExited: {}", e);
 	}
 
 	// --------------------------------------------------------
@@ -140,33 +145,33 @@ public class EventTestApplet extends Applet
 		motionCount++;
 		lastMouseX = e.getX();
 		lastMouseY = e.getY();
-		System.out.println("mouseMoved: " + e.getX() + "," + e.getY());
+		log.debug("mouseMoved: {},{}", e.getX(), e.getY());
 		repaint(); // flood test: move around and watch coalescing
 	}
 
 	public void mouseDragged(MouseEvent e) {
-		System.out.println("mouseDragged: " + e);
+		log.debug("mouseDragged: {}", e);
 	}
 
 	// --------------------------------------------------------
 	// Key events
 	// --------------------------------------------------------
 	public void keyPressed(KeyEvent e) {
-		System.out.println("keyPressed: " + e.getKeyChar());
+		log.debug("keyPressed: {}", e.getKeyChar());
 		repaint();
 	}
 
 	public void keyReleased(KeyEvent e) {
-		System.out.println("keyReleased: " + e.getKeyChar());
+		log.debug("keyReleased: {}", e.getKeyChar());
 	}
 
 	public void keyTyped(KeyEvent e) {
-		System.out.println("keyTyped: " + e.getKeyChar());
+		log.debug("keyTyped: {}", e.getKeyChar());
 	}
 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		System.out.println("mouseWheelMoved: " + e.getWheelRotation());
+		log.debug("mouseWheelMoved: {}", e.getWheelRotation());
 		repaint();
 	}
 }

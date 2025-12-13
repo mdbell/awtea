@@ -1,5 +1,8 @@
 package me.mdbell.awtea.gfx.webgl;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
@@ -18,6 +21,8 @@ import java.util.List;
 
 @Monitored.AllMethods
 class WebGLRasterizer implements Rasterizer {
+
+	private static final Logger log = LoggerFactory.getLogger(WebGLRasterizer.class);
 
 	private final WebGLSurfaceBackend backend;
 	private final WebGL2RenderingContext gl;
@@ -194,7 +199,7 @@ class WebGLRasterizer implements Rasterizer {
 			Surface surface = (Surface) img;
 			drawSurface(surface, x, y, width, height);
 		} else {
-			System.err.println("WebGLRasterizer: drawImage: Unsupported image type: " + img.getClass().getName());
+			log.error("WebGLRasterizer: drawImage: Unsupported image type: {}", img.getClass().getName());
 		}
 	}
 
@@ -241,8 +246,7 @@ class WebGLRasterizer implements Rasterizer {
 			case Surface.FORMAT_INT_RGBA:
 				return WebGLSurfaceBackend.SwizzleMode.NONE;
 			default:
-				System.err.println("WebGLRasterizer: Unknown surface format: " + surface.getFormat() +
-					", defaulting to no swizzling");
+				log.warn("WebGLRasterizer: Unknown surface format: {}, defaulting to no swizzling", surface.getFormat());
 				return WebGLSurfaceBackend.SwizzleMode.NONE;
 		}
 	}
@@ -319,7 +323,7 @@ class WebGLRasterizer implements Rasterizer {
 					} else if (cmd.arg1 == 1) {
 						this.background = c;
 					} else {
-						System.err.println("WebGLRasterizer: Unknown color target: " + cmd.arg1);
+						log.error("WebGLRasterizer: Unknown color target: {}", cmd.arg1);
 					}
 					break;
 				case SET_TRANSFORM:
@@ -349,7 +353,7 @@ class WebGLRasterizer implements Rasterizer {
 					// do nothing (shouldn't be in the command list in the first place)
 					break;
 				default:
-					System.err.println("WebGLRasterizer: Unhandled command type: " + cmd.type);
+					log.error("WebGLRasterizer: Unhandled command type: {}", cmd.type);
 					break;
 			}
 		}

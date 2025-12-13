@@ -15,8 +15,12 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 
 public class ApiDiff {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiDiff.class);
 
     private static final String AWTEA_ROOT_PACKAGE = "me.mdbell.awtea.classlib";
     private static final String TEAVM_ROOT_PACKAGE = "org.teavm.classlib";
@@ -110,9 +114,9 @@ public class ApiDiff {
                 compareClasses(teavmClass, runtimeClass);
             } catch (ClassNotFoundException e) {
                 // ignored
-//				System.out.printf("No runtime class for %s -> %s%n", teavmName, runtimeName);
+//				log.info("No runtime class for %s -> %s%n", teavmName, runtimeName);
             } catch (Throwable t) {
-                System.out.printf("Error loading %s or %s: %s%n", teavmName, runtimeName, t);
+                log.info("Error loading %s or %s: %s%n", teavmName, runtimeName, t);
             }
         }
 
@@ -132,30 +136,30 @@ public class ApiDiff {
     }
 
     private static void printUsage() {
-        System.out.println("Usage: ApiDiff [options] [classNames...]");
-        System.out.println();
-        System.out.println("Options:");
-        System.out.println("  --format <html|markdown>  Generate report in specified format");
-        System.out.println("  --output <path>           Output file path (default: docs/coverage/report.<ext>)");
-        System.out.println("  --missing-classes         Check for missing public classes in packages");
-        System.out.println("  --packages <pkg1,pkg2>    Comma-separated list of packages to scan (default: java.awt.*)");
-        System.out.println("  --help, -h                Show this help message");
-        System.out.println();
-        System.out.println("Examples:");
-        System.out.println("  ApiDiff                                    # Console output");
-        System.out.println("  ApiDiff --format html                      # Generate HTML report");
-        System.out.println("  ApiDiff --format markdown --output out.md  # Generate Markdown report");
-        System.out.println("  ApiDiff --missing-classes                  # Find missing classes in java.awt.*");
-        System.out.println("  ApiDiff --missing-classes --format html    # Missing classes report in docs/coverage/missing/");
-        System.out.println("  ApiDiff --missing-classes --packages javax.swing,javax.sound.sampled");
+        log.info("Usage: ApiDiff [options] [classNames...]");
+        log.info("");
+        log.info("Options:");
+        log.info("  --format <html|markdown>  Generate report in specified format");
+        log.info("  --output <path>           Output file path (default: docs/coverage/report.<ext>)");
+        log.info("  --missing-classes         Check for missing public classes in packages");
+        log.info("  --packages <pkg1,pkg2>    Comma-separated list of packages to scan (default: java.awt.*)");
+        log.info("  --help, -h                Show this help message");
+        log.info("");
+        log.info("Examples:");
+        log.info("  ApiDiff                                    # Console output");
+        log.info("  ApiDiff --format html                      # Generate HTML report");
+        log.info("  ApiDiff --format markdown --output out.md  # Generate Markdown report");
+        log.info("  ApiDiff --missing-classes                  # Find missing classes in java.awt.*");
+        log.info("  ApiDiff --missing-classes --format html    # Missing classes report in docs/coverage/missing/");
+        log.info("  ApiDiff --missing-classes --packages javax.swing,javax.sound.sampled");
     }
 
     private static void findMissingClasses(List<String> packagesToScan, ClassLoader loader, String outputFormat, String outputPath) {
-        System.out.println("Searching for missing public classes in packages:");
+        log.info("Searching for missing public classes in packages:");
         for (String pkg : packagesToScan) {
-            System.out.println("  - " + pkg);
+            log.info("{}", "  - " + pkg);
         }
-        System.out.println();
+        log.info("");
 
         Set<String> implementedClasses = new HashSet<>();
 
@@ -247,7 +251,7 @@ public class ApiDiff {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Error scanning package " + pkgToScan + ": " + e.getMessage());
+                log.error("Error scanning package {}: {}", pkgToScan, e.getMessage());
             }
 
             if (!missingInPackage.isEmpty()) {
@@ -257,27 +261,27 @@ public class ApiDiff {
         }
 
         // Print results
-        System.out.println("======================================================");
-        System.out.println("Missing Classes Report");
-        System.out.println("======================================================");
-        System.out.printf("Total public classes found: %d%n", totalFound);
-        System.out.printf("Total missing classes: %d%n", totalMissing);
-        System.out.printf("Coverage: %d / %d (%.1f%%)%n",
+        log.info("======================================================");
+        log.info("Missing Classes Report");
+        log.info("======================================================");
+        log.info("Total public classes found: %d%n", totalFound);
+        log.info("Total missing classes: %d%n", totalMissing);
+        log.info("Coverage: %d / %d (%.1f%%)%n",
                 totalFound - totalMissing, totalFound,
                 totalFound == 0 ? 100.0 : (100.0 * (totalFound - totalMissing) / totalFound));
-        System.out.println("======================================================");
-        System.out.println();
+        log.info("======================================================");
+        log.info("");
 
         if (totalMissing > 0) {
             for (Map.Entry<String, List<String>> entry : missingByPackage.entrySet()) {
                 String pkg = entry.getKey();
                 List<String> missing = entry.getValue();
 
-                System.out.printf("Package: %s (%d missing)%n", pkg, missing.size());
+                log.info("Package: %s (%d missing)%n", pkg, missing.size());
                 for (String className : missing) {
-                    System.out.println("  - " + className);
+                    log.info("{}", "  - " + className);
                 }
-                System.out.println();
+                log.info("");
             }
 
             // Generate reports if format specified
@@ -285,7 +289,7 @@ public class ApiDiff {
                 generateMissingClassReports(outputFormat, outputPath, missingCoverageData);
             }
         } else {
-            System.out.println("✓ All public classes are implemented!");
+            log.info("✓ All public classes are implemented!");
         }
     }
 
@@ -304,7 +308,7 @@ public class ApiDiff {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error: Failed to scan for classes in " + pkgName + ": " + e.getMessage());
+            log.error("Error: Failed to scan for classes in {}: {}", pkgName, e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }
@@ -324,14 +328,14 @@ public class ApiDiff {
         if (format.equalsIgnoreCase("html")) {
             HtmlReportGenerator gen = new HtmlReportGenerator(path);
             coverageData.accept(gen);
-            System.out.println("HTML report generated: " + path.toAbsolutePath());
+            log.info("HTML report generated: {}", path.toAbsolutePath());
         } else if (format.equalsIgnoreCase("markdown")) {
             MarkdownReportGenerator gen = new MarkdownReportGenerator(path);
             coverageData.accept(gen);
-            System.out.println("Markdown report generated: " + path.toAbsolutePath());
+            log.info("Markdown report generated: {}", path.toAbsolutePath());
         } else {
-            System.err.println("Unknown format: " + format);
-            System.err.println("Supported formats: html, markdown");
+            log.error("{}", "Unknown format: " + format);
+            log.error("Supported formats: html, markdown");
         }
     }
 
@@ -351,14 +355,14 @@ public class ApiDiff {
         if (format.equalsIgnoreCase("html")) {
             HtmlReportGenerator gen = new HtmlReportGenerator(path);
             missingData.accept(gen);
-            System.out.println("Missing classes HTML report generated: " + path.toAbsolutePath());
+            log.info("Missing classes HTML report generated: {}", path.toAbsolutePath());
         } else if (format.equalsIgnoreCase("markdown")) {
             MarkdownReportGenerator gen = new MarkdownReportGenerator(path);
             missingData.accept(gen);
-            System.out.println("Missing classes Markdown report generated: " + path.toAbsolutePath());
+            log.info("Missing classes Markdown report generated: {}", path.toAbsolutePath());
         } else {
-            System.err.println("Unknown format: " + format);
-            System.err.println("Supported formats: html, markdown");
+            log.error("{}", "Unknown format: " + format);
+            log.error("Supported formats: html, markdown");
         }
     }
 
@@ -498,31 +502,31 @@ public class ApiDiff {
         if (coverageData == null) {
             // If class fully covered, you can skip printing
             if (missingMethods.isEmpty() && missingFields.isEmpty() && missingCtors.isEmpty()) {
-                System.out.printf("=== %s: FULL COVERAGE (%d/%d = 100%%)%n",
+                log.info("=== %s: FULL COVERAGE (%d/%d = 100%%)%n",
                         runtimeClass.getName(), implementedTotal, runtimeTotal);
                 return;
             }
 
             // Print diff
-            System.out.printf("=== %s vs %s ===%n", teavmClass.getName(), runtimeClass.getName());
-            System.out.printf("Coverage: %d/%d = %.1f%%%n",
+            log.info("=== %s vs %s ===%n", teavmClass.getName(), runtimeClass.getName());
+            log.info("Coverage: %d/%d = %.1f%%%n",
                     implementedTotal, runtimeTotal,
                     (runtimeTotal == 0 ? 100.0 : (100.0 * implementedTotal / runtimeTotal)));
 
             if (!missingMethods.isEmpty()) {
-                System.out.println("  Missing methods:");
-                missingMethods.forEach(m -> System.out.println("    " + m));
+                log.info("  Missing methods:");
+                missingMethods.forEach(m -> log.info("    {}", m));
             }
             if (!missingFields.isEmpty()) {
-                System.out.println("  Missing fields:");
-                missingFields.forEach(f -> System.out.println("    " + f));
+                log.info("  Missing fields:");
+                missingFields.forEach(f -> log.info("    {}", f));
             }
             if (!missingCtors.isEmpty()) {
-                System.out.println("  Missing ctors:");
-                missingCtors.forEach(c -> System.out.println("    " + c));
+                log.info("  Missing ctors:");
+                missingCtors.forEach(c -> log.info("    {}", c));
             }
 
-            System.out.println();
+            log.info("");
         }
     }
 

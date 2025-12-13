@@ -127,8 +127,6 @@ public final class TEventManager implements AutoCloseable {
 				rotation
 			);
 			post(event);
-
-			System.out.println("Dispatched mouse wheel event: " + event);
 		}).track(registrations);
 
 		return this;

@@ -3,11 +3,13 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import me.mdbell.awtea.classlib.java.awt.image.TFontFormatException;
+import me.mdbell.awtea.font.FontLoader;
 import me.mdbell.awtea.font.FontPeer;
 import me.mdbell.awtea.font.FontRendererFactory;
-import me.mdbell.awtea.font.FontLoader;
 import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.impl.Debug;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +25,8 @@ import java.util.Objects;
 @Getter
 public class TFont {
 
+	private static final Logger log = LoggerFactory.getLogger(TFont.class);
+
 	private static final String TTF_DIR = "/fonts/";
 
 	private static final String FALLBACK_FONT_NAME = "NotoSans";
@@ -31,9 +35,9 @@ public class TFont {
 
 	public static final int TYPE1_FONT = 1;
 
-    public static final int PLAIN = 0;
-    public static final int BOLD = 1;
-    public static final int ITALIC = 2;
+	public static final int PLAIN = 0;
+	public static final int BOLD = 1;
+	public static final int ITALIC = 2;
 
 	public static final int ROMAN_BASELINE = 0;
 	public static final int CENTER_BASELINE = 1;
@@ -44,10 +48,15 @@ public class TFont {
 	public static final int LAYOUT_NO_START_CONTEXT = 2;
 	public static final int LAYOUT_NO_LIMIT_CONTEXT = 4;
 
-    private final String name;
-    private final int style;
-    private final int size;
+	private final String name;
+	private final int style;
+	private final int size;
 
+	/**
+	 * -- GETTER --
+	 * Get the FontPeer for this font, which provides access to rendering capabilities.
+	 */
+	@Getter
 	private final FontPeer fontPeer;
 
 	public static final String SERIF = "Serif";
@@ -56,15 +65,15 @@ public class TFont {
 	public static final String DIALOG = "Dialog";
 	public static final String DIALOG_INPUT = "DialogInput";
 
-    public TFont(String name, int style, int size) {
+	public TFont(String name, int style, int size) {
 		name = "NotoSans";
 		style = 0;
-        this.name = name;
-        this.style = style;
-        this.size = size;
+		this.name = name;
+		this.style = style;
+		this.size = size;
 
 		String styleStr = isBold() ? "Bold" : "";
-		if(isItalic()) {
+		if (isItalic()) {
 			styleStr += "Italic";
 		}
 
@@ -72,7 +81,7 @@ public class TFont {
 		this.fontPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
 	}
 
-	public TFont(Map<? extends AttributedCharacterIterator.Attribute,?> attributes) {
+	public TFont(Map<? extends AttributedCharacterIterator.Attribute, ?> attributes) {
 		throw Debug.unimplemented();
 	}
 
@@ -80,16 +89,14 @@ public class TFont {
 		this.name = trueType.getFamily();
 		this.size = size;
 
-		int style = 0;
-		if(trueType.isBold()){
+		int style = PLAIN;
+		if (trueType.isBold()) {
 			style |= BOLD;
 		}
-		if(trueType.isItalic()){
+		if (trueType.isItalic()) {
 			style |= ITALIC;
 		}
-		if(style == 0){
-			style = PLAIN;
-		}
+
 		this.style = style;
 		this.fontPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
 	}
@@ -102,18 +109,19 @@ public class TFont {
 		return fontPeer.getFont().getFamily();
 	}
 
-	public String getPSName(){
+	public String getPSName() {
 		return fontPeer.getFont().getPostScriptName();
 	}
 
 	public String getFontName() {
 		return fontPeer.getFont().getFullName(); // this may not be right
 	}
-	
+
 	/**
 	 * Get the underlying TrueType font data.
-	 * @deprecated Use getFontPeer().getFont() instead for better encapsulation
+	 *
 	 * @return the TrueType font
+	 * @deprecated Use getFontPeer().getFont() instead for better encapsulation
 	 */
 	@Deprecated
 	public TrueTypeFont getTrueType() {
@@ -122,14 +130,6 @@ public class TFont {
 
 	public TFontMetrics getFontMetrics() {
 		return new TFontMetrics(this);
-	}
-
-	/**
-	 * Get the FontPeer for this font, which provides access to rendering capabilities.
-	 * @return the font peer
-	 */
-	public FontPeer getFontPeer() {
-		return fontPeer;
 	}
 
 	public TFont deriveFont(int newStyle) {
@@ -150,16 +150,16 @@ public class TFont {
 	}
 
 	public boolean isBold() {
-        return (style & BOLD) != 0;
-    }
+		return (style & BOLD) != 0;
+	}
 
-    public boolean isPlain() {
-        return style == PLAIN;
-    }
+	public boolean isPlain() {
+		return style == PLAIN;
+	}
 
-    public boolean isItalic() {
-        return (style & ITALIC) != 0;
-    }
+	public boolean isItalic() {
+		return (style & ITALIC) != 0;
+	}
 
 	public boolean equals(Object o) {
 		if (this == o) return true;
@@ -177,12 +177,13 @@ public class TFont {
 	}
 
 	public static TFont createFont(int fontFormat, InputStream in) throws TFontFormatException, IOException {
-		if(fontFormat != TRUETYPE_FONT) {
+		if (fontFormat != TRUETYPE_FONT) {
+			log.error("Unsupported font format: {}", fontFormat);
 			throw new TFontFormatException("Only TrueType fonts are supported");
 		}
-			byte[] fontData = in.readAllBytes();
-			TrueTypeFont ttf = TrueTypeFont.read(fontData);
-			return new TFont(ttf, 1); // default size
+		byte[] fontData = in.readAllBytes();
+		TrueTypeFont ttf = TrueTypeFont.read(fontData);
+		return new TFont(ttf, 1); // default size
 	}
 
 	public static TFont createFont(int fontFormat, File fontFile) throws TFontFormatException, IOException {
@@ -208,7 +209,7 @@ public class TFont {
 		int style = PLAIN;
 		int size = 12;
 
-		if(str == null) {
+		if (str == null) {
 			return new TFont(DIALOG, style, size);
 		}
 
@@ -217,7 +218,7 @@ public class TFont {
 		String seperator = Character.toString((lastHyphen > lastSpace) ? '-' : ' ');
 
 		String[] parts = str.split(seperator);
-		if(parts.length >= 2) {
+		if (parts.length >= 2) {
 			// check if last part is size
 			try {
 				size = Integer.parseInt(parts[parts.length - 1]);
@@ -226,7 +227,7 @@ public class TFont {
 				// not a size
 			}
 		}
-		if(parts.length >= 2) {
+		if (parts.length >= 2) {
 			// check if last part is style
 			String stylePart = parts[parts.length - 1].toLowerCase();
 			switch (stylePart) {
@@ -254,7 +255,7 @@ public class TFont {
 
 	public static TFont getFont(String nm, TFont defaultFont) {
 		String property = System.getProperty(nm);
-		if(property == null || property.isEmpty()) {
+		if (property == null || property.isEmpty()) {
 			return defaultFont;
 		}
 		return decode(property);
@@ -265,17 +266,17 @@ public class TFont {
 	}
 
 	@SneakyThrows
-	private static TrueTypeFont loadSafeFont(String name, String style){
+	private static TrueTypeFont loadSafeFont(String name, String style) {
 		String fontname = name + "-" + style;
 		try {
 			return FontLoader.loadFont(fontname);
 		} catch (IOException e) {
-			System.err.println("Missing font:" + fontname + " - falling back");
+			log.warn("Missing font:{}", fontname + " - falling back");
 			try {
 				return FontLoader.loadFont(FALLBACK_FONT_NAME);
 			} catch (IOException fallbackError) {
 				// If even fallback fails, try legacy resource loading as last resort
-				System.err.println("Fallback font also failed, trying legacy resource loading");
+				log.error("Fallback font also failed, trying legacy resource loading");
 				return TrueTypeFont.read(getFontBytes(FALLBACK_FONT_NAME));
 			}
 		}
@@ -283,8 +284,8 @@ public class TFont {
 
 	private static byte[] getFontBytes(String name) throws IOException {
 		String path = TTF_DIR + name + ".ttf";
-		try(InputStream in = TFont.class.getResourceAsStream(path)) {
-			if(in == null){
+		try (InputStream in = TFont.class.getResourceAsStream(path)) {
+			if (in == null) {
 				throw new IOException("No font");
 			}
 			return in.readAllBytes();

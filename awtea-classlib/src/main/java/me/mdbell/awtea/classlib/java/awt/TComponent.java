@@ -7,6 +7,8 @@ import me.mdbell.awtea.classlib.java.awt.event.*;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.classlib.java.awt.image.TImageProducer;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.awt.*;
 import java.util.LinkedList;
@@ -17,6 +19,8 @@ import java.util.function.BiConsumer;
  * @see java.awt.Component
  */
 public abstract class TComponent implements TImageObserver {
+
+	private static final Logger log = LoggerFactory.getLogger(TComponent.class);
 
 	@Getter
 	@Setter
@@ -114,7 +118,7 @@ public abstract class TComponent implements TImageObserver {
 		} else if ((!(event instanceof TActionEvent))) {
 			// action events are handled at higher level component directly, so we should
 			// be ignoring them here to avoid noisy logs.
-			System.err.println("Unhandled event type: " + event.getClass().getName());
+			log.warn("Unhandled event type: {}", event.getClass().getName());
 		}
 	}
 
@@ -132,7 +136,7 @@ public abstract class TComponent implements TImageObserver {
 		} else if (event.getID() == TPaintEvent.UPDATE) {
 			update(graphics);
 		} else {
-			System.err.println("Unhandled paint event id: " + event.getID());
+			log.warn("Unhandled paint event id: {}", event.getID());
 		}
 		graphics.dispose();
 	}
@@ -154,7 +158,7 @@ public abstract class TComponent implements TImageObserver {
 				dispatchEvent(e, keyListeners, TKeyListener::keyTyped);
 				break;
 			default:
-				System.err.println("Unhandled key event:" + id);
+				log.warn("Unhandled key event: {}", id);
 		}
 	}
 
@@ -184,7 +188,7 @@ public abstract class TComponent implements TImageObserver {
 				dispatchEvent(e, mouseListeners, TMouseListener::mouseExited);
 				break;
 			default:
-				System.err.println("Unhandled mouse event:" + id);
+				log.warn("Unhandled mouse event: {}", id);
 		}
 	}
 
@@ -203,7 +207,7 @@ public abstract class TComponent implements TImageObserver {
 				dispatchEvent(e, focusListeners, TFocusListener::focusLost);
 				break;
 			default:
-				System.err.println("Unhandled focus event:" + id);
+				log.warn("Unhandled focus event: {}", id);
 		}
 	}
 

@@ -1,5 +1,8 @@
 package me.mdbell.awtea.gfx.software;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
@@ -27,6 +30,8 @@ import java.util.List;
  */
 @Monitored.AllMethods
 public class SoftwareRasterizer implements Rasterizer {
+
+	private static final Logger log = LoggerFactory.getLogger(SoftwareRasterizer.class);
 
 	/**
 	 * Functional interface for optimized pixel setting operations.
@@ -156,7 +161,7 @@ public class SoftwareRasterizer implements Rasterizer {
 				case NO_OP:
 					break;
 				default:
-					System.err.println("SoftwareRasterizer: Unhandled command type: " + cmd.type);
+					log.error("SoftwareRasterizer: Unhandled command type: {}", cmd.type);
 					break;
 			}
 		}
