@@ -62,6 +62,35 @@ Build a specific module:
 ./gradlew :awtea-graphics:build
 ```
 
+## Using as a Dependency
+
+### In Another Gradle Project
+
+To use AWTea modules in your project, you can include them as a composite build or submodule:
+
+**As a composite build:**
+```kotlin
+// settings.gradle.kts
+includeBuild("path/to/awtea")
+```
+
+**As a submodule:**
+```kotlin
+// settings.gradle.kts
+includeBuild("awtea")  // if awtea is in a subdirectory
+```
+
+Then declare dependencies on the specific modules you need:
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("me.mdbell:awtea-classlib:0.1.0")
+    // Add other modules as needed
+}
+```
+
+Most projects will primarily need `awtea-classlib`, which transitively includes the other required modules.
+
 ## Module Dependencies
 
 ```

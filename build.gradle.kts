@@ -35,19 +35,6 @@ subprojects {
     }
 }
 
-// Aggregate all submodules into a single JAR
-dependencies {
-    implementation(project(":awtea-core"))
-    implementation(project(":awtea-classlib"))
-    implementation(project(":awtea-instrument"))
-    implementation(project(":awtea-graphics"))
-    implementation(project(":awtea-sound"))
-    implementation(project(":awtea-input"))
-    implementation(project(":awtea-net"))
-    implementation(project(":awtea-ui"))
-    implementation(project(":awtea-util"))
-}
-
 tasks.register<JavaExec>("generateDocs") {
     group = "documentation"
     description = "Generate API coverage reports in HTML and Markdown formats"
