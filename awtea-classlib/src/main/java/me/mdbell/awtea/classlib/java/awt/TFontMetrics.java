@@ -2,7 +2,6 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import lombok.Getter;
 import me.mdbell.awtea.font.TrueTypeFont;
-import me.mdbell.awtea.util.GlyphRasterizer;
 
 /**
  * @see java.awt.FontMetrics
@@ -18,7 +17,7 @@ public class TFontMetrics {
 
 	TFontMetrics(TFont font){
 		this.font = font;
-		TrueTypeFont ttf = font.getTrueType();
+		TrueTypeFont ttf = font.getFontPeer().getFont();
 
 		float size = font.getSize();
 		float ascent = ttf.getAscentPx(size);
@@ -32,6 +31,6 @@ public class TFontMetrics {
 	}
 
     public int stringWidth(String str) {
-        return GlyphRasterizer.measureString(this.font.getTrueType(), str, this.font.getSize());
+        return font.getFontPeer().measureString(str, font.getSize());
     }
 }
