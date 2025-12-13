@@ -11,7 +11,6 @@ import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceContainer;
 import me.mdbell.awtea.instrument.Monitored;
-import me.mdbell.awtea.util.GlyphRasterizer;
 import org.teavm.classlib.java.awt.TPoint;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
@@ -23,7 +22,7 @@ import java.util.Hashtable;
  */
 @Getter
 @Monitored.AllMethods
-public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarget, FontRenderer.RasterTarget, SurfaceContainer {
+public class TBufferedImage extends TImage implements FontRenderer.RasterTarget, SurfaceContainer {
 
 	public static final int TYPE_CUSTOM = 0;
 	public static final int TYPE_INT_RGB = 1;
