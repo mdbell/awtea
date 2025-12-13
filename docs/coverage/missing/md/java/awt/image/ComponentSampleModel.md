@@ -1,0 +1,57 @@
+# Class: `ComponentSampleModel` ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Full Name:** `java.awt.image.ComponentSampleModel`
+
+**Coverage:** 0 / 36 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+## ✗ Missing Methods
+
+- `public boolean equals(java.lang.Object)`
+- `public int hashCode()`
+- `public int getOffset(int, int, int)`
+- `public int getOffset(int, int)`
+- `public java.lang.Object getDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)`
+- `public java.awt.image.SampleModel createCompatibleSampleModel(int, int)`
+- `public final int getPixelStride()`
+- `public final int[] getBandOffsets()`
+- `public void setDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)`
+- `public int[] getPixels(int, int, int, int, int[], java.awt.image.DataBuffer)`
+- `public void setPixels(int, int, int, int, int[], java.awt.image.DataBuffer)`
+- `public int[] getPixel(int, int, int[], java.awt.image.DataBuffer)`
+- `public void setPixel(int, int, int[], java.awt.image.DataBuffer)`
+- `public final int getScanlineStride()`
+- `public int getSample(int, int, int, java.awt.image.DataBuffer)`
+- `public final int getNumDataElements()`
+- `public float getSampleFloat(int, int, int, java.awt.image.DataBuffer)`
+- `public double getSampleDouble(int, int, int, java.awt.image.DataBuffer)`
+- `public void setSample(int, int, int, float, java.awt.image.DataBuffer)`
+- `public void setSample(int, int, int, double, java.awt.image.DataBuffer)`
+- `public void setSample(int, int, int, int, java.awt.image.DataBuffer)`
+- `public int[] getSamples(int, int, int, int, int, int[], java.awt.image.DataBuffer)`
+- `public void setSamples(int, int, int, int, int, int[], java.awt.image.DataBuffer)`
+- `public java.awt.image.SampleModel createSubsetSampleModel(int[])`
+- `public java.awt.image.DataBuffer createDataBuffer()`
+- `public final int[] getSampleSize()`
+- `public final int getSampleSize(int)`
+- `public final int[] getBankIndices()`
+
+## ✗ Missing Fields
+
+- `protected int[] bandOffsets`
+- `protected int[] bankIndices`
+- `protected int numBands`
+- `protected int numBanks`
+- `protected int scanlineStride`
+- `protected int pixelStride`
+
+## ✗ Missing Constructors
+
+- `public java.awt.image.ComponentSampleModel(int, int, int, int, int, int[])`
+- `public java.awt.image.ComponentSampleModel(int, int, int, int, int, int[], int[])`
+
+
+[← Back to Package](index.md)

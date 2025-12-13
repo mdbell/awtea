@@ -1,0 +1,52 @@
+# Package: `java.net`
+
+**Coverage:** 14 / 85 (16.5%)
+
+```
+[████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 16.5%
+```
+
+## Classes
+
+### [`InetAddress`](InetAddress.md) ![Coverage](https://img.shields.io/badge/coverage-8.0%25-red)
+
+**Coverage:** 2 / 25 (8.0%)
+
+```
+[████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 8.0%
+```
+
+### [`Socket`](Socket.md) ![Coverage](https://img.shields.io/badge/coverage-13.0%25-red)
+
+**Coverage:** 7 / 54 (13.0%)
+
+```
+[██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 13.0%
+```
+
+### [`SocketException`](SocketException.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 2 / 2 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`SocketTimeoutException`](SocketTimeoutException.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 2 / 2 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`UnknownHostException`](UnknownHostException.md) ![Coverage](https://img.shields.io/badge/coverage-50.0%25-yellow)
+
+**Coverage:** 1 / 2 (50.0%)
+
+```
+[█████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░] 50.0%
+```
+
+
+[← Back to Index](../../../../report.md)

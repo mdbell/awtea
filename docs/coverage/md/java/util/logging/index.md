@@ -1,0 +1,52 @@
+# Package: `java.util.logging`
+
+**Coverage:** 70 / 134 (52.2%)
+
+```
+[██████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░] 52.2%
+```
+
+## Classes
+
+### [`Formatter`](Formatter.md) ![Coverage](https://img.shields.io/badge/coverage-20.0%25-red)
+
+**Coverage:** 1 / 5 (20.0%)
+
+```
+[██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 20.0%
+```
+
+### [`Level`](Level.md) ![Coverage](https://img.shields.io/badge/coverage-68.4%25-yellow)
+
+**Coverage:** 13 / 19 (68.4%)
+
+```
+[██████████████████████████████████░░░░░░░░░░░░░░░░] 68.4%
+```
+
+### [`LogManager`](LogManager.md) ![Coverage](https://img.shields.io/badge/coverage-12.5%25-red)
+
+**Coverage:** 2 / 16 (12.5%)
+
+```
+[██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 12.5%
+```
+
+### [`LogRecord`](LogRecord.md) ![Coverage](https://img.shields.io/badge/coverage-65.5%25-yellow)
+
+**Coverage:** 19 / 29 (65.5%)
+
+```
+[████████████████████████████████░░░░░░░░░░░░░░░░░░] 65.5%
+```
+
+### [`Logger`](Logger.md) ![Coverage](https://img.shields.io/badge/coverage-53.8%25-yellow)
+
+**Coverage:** 35 / 65 (53.8%)
+
+```
+[██████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░] 53.8%
+```
+
+
+[← Back to Index](../../../../../report.md)

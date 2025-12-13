@@ -1,0 +1,44 @@
+# Package: `java.util.regex`
+
+**Coverage:** 61 / 73 (83.6%)
+
+```
+[█████████████████████████████████████████░░░░░░░░░] 83.6%
+```
+
+## Classes
+
+### [`MatchResult`](MatchResult.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 7 / 7 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`Matcher`](Matcher.md) ![Coverage](https://img.shields.io/badge/coverage-79.5%25-green)
+
+**Coverage:** 31 / 39 (79.5%)
+
+```
+[███████████████████████████████████████░░░░░░░░░░░] 79.5%
+```
+
+### [`Pattern`](Pattern.md) ![Coverage](https://img.shields.io/badge/coverage-81.8%25-green)
+
+**Coverage:** 18 / 22 (81.8%)
+
+```
+[████████████████████████████████████████░░░░░░░░░░] 81.8%
+```
+
+### [`PatternSyntaxException`](PatternSyntaxException.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 5 / 5 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+
+[← Back to Index](../../../../../report.md)

@@ -1,0 +1,256 @@
+# Class: `Component` ![Coverage](https://img.shields.io/badge/coverage-20.7%25-red)
+
+**Full Name:** `java.awt.Component`
+
+**Coverage:** 48 / 232 (20.7%)
+
+```
+[██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 20.7%
+```
+
+## ✓ Implemented Methods
+
+- `protected void firePropertyChange(java.lang.String, java.lang.Object, java.lang.Object)`
+- `public boolean imageUpdate(java.awt.Image, int, int, int, int, int)`
+- `public boolean isFocusable()`
+- `public boolean isValid()`
+- `public boolean prepareImage(java.awt.Image, int, int, java.awt.image.ImageObserver)`
+- `public boolean prepareImage(java.awt.Image, java.awt.image.ImageObserver)`
+- `public int checkImage(java.awt.Image, int, int, java.awt.image.ImageObserver)`
+- `public int checkImage(java.awt.Image, java.awt.image.ImageObserver)`
+- `public int getHeight()`
+- `public int getWidth()`
+- `public int getX()`
+- `public int getY()`
+- `public java.awt.Color getBackground()`
+- `public java.awt.Color getForeground()`
+- `public java.awt.Container getParent()`
+- `public java.awt.Dimension getPreferredSize()`
+- `public java.awt.FontMetrics getFontMetrics(java.awt.Font)`
+- `public java.awt.Graphics getGraphics()`
+- `public java.awt.Image createImage(int, int)`
+- `public java.awt.Image createImage(java.awt.image.ImageProducer)`
+- `public java.awt.Point getLocationOnScreen()`
+- `public void addFocusListener(java.awt.event.FocusListener)`
+- `public void addKeyListener(java.awt.event.KeyListener)`
+- `public void addMouseListener(java.awt.event.MouseListener)`
+- `public void addMouseMotionListener(java.awt.event.MouseMotionListener)`
+- `public void addMouseWheelListener(java.awt.event.MouseWheelListener)`
+- `public void invalidate()`
+- `public void paint(java.awt.Graphics)`
+- `public void removeFocusListener(java.awt.event.FocusListener)`
+- `public void removeKeyListener(java.awt.event.KeyListener)`
+- `public void removeMouseListener(java.awt.event.MouseListener)`
+- `public void removeMouseMotionListener(java.awt.event.MouseMotionListener)`
+- `public void removeMouseWheelListener(java.awt.event.MouseWheelListener)`
+- `public void repaint()`
+- `public void repaint(int, int, int, int)`
+- `public void repaint(long, int, int, int, int)`
+- `public void requestFocus()`
+- `public void revalidate()`
+- `public void setBackground(java.awt.Color)`
+- `public void setFocusTraversalKeysEnabled(boolean)`
+- `public void setFocusable(boolean)`
+- `public void setForeground(java.awt.Color)`
+- `public void setLocation(int, int)`
+- `public void setPreferredSize(java.awt.Dimension)`
+- `public void setSize(int, int)`
+- `public void setVisible(boolean)`
+- `public void update(java.awt.Graphics)`
+- `public void validate()`
+
+## ✗ Missing Methods
+
+- `protected boolean requestFocus(boolean)`
+- `protected boolean requestFocus(boolean, java.awt.event.FocusEvent$Cause)`
+- `protected boolean requestFocusInWindow(boolean)`
+- `protected final void disableEvents(long)`
+- `protected final void enableEvents(long)`
+- `protected java.awt.AWTEvent coalesceEvents(java.awt.AWTEvent, java.awt.AWTEvent)`
+- `protected java.lang.String paramString()`
+- `protected void firePropertyChange(java.lang.String, boolean, boolean)`
+- `protected void firePropertyChange(java.lang.String, int, int)`
+- `protected void processComponentEvent(java.awt.event.ComponentEvent)`
+- `protected void processEvent(java.awt.AWTEvent)`
+- `protected void processFocusEvent(java.awt.event.FocusEvent)`
+- `protected void processHierarchyBoundsEvent(java.awt.event.HierarchyEvent)`
+- `protected void processHierarchyEvent(java.awt.event.HierarchyEvent)`
+- `protected void processInputMethodEvent(java.awt.event.InputMethodEvent)`
+- `protected void processKeyEvent(java.awt.event.KeyEvent)`
+- `protected void processMouseEvent(java.awt.event.MouseEvent)`
+- `protected void processMouseMotionEvent(java.awt.event.MouseEvent)`
+- `protected void processMouseWheelEvent(java.awt.event.MouseWheelEvent)`
+- `public boolean action(java.awt.Event, java.lang.Object)`
+- `public boolean areFocusTraversalKeysSet(int)`
+- `public boolean contains(int, int)`
+- `public boolean contains(java.awt.Point)`
+- `public boolean getFocusTraversalKeysEnabled()`
+- `public boolean getIgnoreRepaint()`
+- `public boolean gotFocus(java.awt.Event, java.lang.Object)`
+- `public boolean handleEvent(java.awt.Event)`
+- `public boolean hasFocus()`
+- `public boolean inside(int, int)`
+- `public boolean isBackgroundSet()`
+- `public boolean isCursorSet()`
+- `public boolean isDisplayable()`
+- `public boolean isDoubleBuffered()`
+- `public boolean isEnabled()`
+- `public boolean isFocusCycleRoot(java.awt.Container)`
+- `public boolean isFocusOwner()`
+- `public boolean isFocusTraversable()`
+- `public boolean isFontSet()`
+- `public boolean isForegroundSet()`
+- `public boolean isLightweight()`
+- `public boolean isMaximumSizeSet()`
+- `public boolean isMinimumSizeSet()`
+- `public boolean isOpaque()`
+- `public boolean isPreferredSizeSet()`
+- `public boolean isShowing()`
+- `public boolean isVisible()`
+- `public boolean keyDown(java.awt.Event, int)`
+- `public boolean keyUp(java.awt.Event, int)`
+- `public boolean lostFocus(java.awt.Event, java.lang.Object)`
+- `public boolean mouseDown(java.awt.Event, int, int)`
+- `public boolean mouseDrag(java.awt.Event, int, int)`
+- `public boolean mouseEnter(java.awt.Event, int, int)`
+- `public boolean mouseExit(java.awt.Event, int, int)`
+- `public boolean mouseMove(java.awt.Event, int, int)`
+- `public boolean mouseUp(java.awt.Event, int, int)`
+- `public boolean postEvent(java.awt.Event)`
+- `public boolean requestFocusInWindow()`
+- `public boolean requestFocusInWindow(java.awt.event.FocusEvent$Cause)`
+- `public final java.lang.Object getTreeLock()`
+- `public final void dispatchEvent(java.awt.AWTEvent)`
+- `public float getAlignmentX()`
+- `public float getAlignmentY()`
+- `public int getBaseline(int, int)`
+- `public java.awt.Component getComponentAt(int, int)`
+- `public java.awt.Component getComponentAt(java.awt.Point)`
+- `public java.awt.Component locate(int, int)`
+- `public java.awt.Component$BaselineResizeBehavior getBaselineResizeBehavior()`
+- `public java.awt.ComponentOrientation getComponentOrientation()`
+- `public java.awt.Container getFocusCycleRootAncestor()`
+- `public java.awt.Cursor getCursor()`
+- `public java.awt.Dimension getMaximumSize()`
+- `public java.awt.Dimension getMinimumSize()`
+- `public java.awt.Dimension getSize()`
+- `public java.awt.Dimension getSize(java.awt.Dimension)`
+- `public java.awt.Dimension minimumSize()`
+- `public java.awt.Dimension preferredSize()`
+- `public java.awt.Dimension size()`
+- `public java.awt.Font getFont()`
+- `public java.awt.GraphicsConfiguration getGraphicsConfiguration()`
+- `public java.awt.Point getLocation()`
+- `public java.awt.Point getLocation(java.awt.Point)`
+- `public java.awt.Point getMousePosition()`
+- `public java.awt.Point location()`
+- `public java.awt.Rectangle bounds()`
+- `public java.awt.Rectangle getBounds()`
+- `public java.awt.Rectangle getBounds(java.awt.Rectangle)`
+- `public java.awt.Toolkit getToolkit()`
+- `public java.awt.dnd.DropTarget getDropTarget()`
+- `public java.awt.event.ComponentListener[] getComponentListeners()`
+- `public java.awt.event.FocusListener[] getFocusListeners()`
+- `public java.awt.event.HierarchyBoundsListener[] getHierarchyBoundsListeners()`
+- `public java.awt.event.HierarchyListener[] getHierarchyListeners()`
+- `public java.awt.event.InputMethodListener[] getInputMethodListeners()`
+- `public java.awt.event.KeyListener[] getKeyListeners()`
+- `public java.awt.event.MouseListener[] getMouseListeners()`
+- `public java.awt.event.MouseMotionListener[] getMouseMotionListeners()`
+- `public java.awt.event.MouseWheelListener[] getMouseWheelListeners()`
+- `public java.awt.im.InputContext getInputContext()`
+- `public java.awt.im.InputMethodRequests getInputMethodRequests()`
+- `public java.awt.image.ColorModel getColorModel()`
+- `public java.awt.image.VolatileImage createVolatileImage(int, int)`
+- `public java.awt.image.VolatileImage createVolatileImage(int, int, java.awt.ImageCapabilities)`
+- `public java.beans.PropertyChangeListener[] getPropertyChangeListeners()`
+- `public java.beans.PropertyChangeListener[] getPropertyChangeListeners(java.lang.String)`
+- `public java.lang.String getName()`
+- `public java.lang.String toString()`
+- `public java.util.EventListener[] getListeners(java.lang.Class)`
+- `public java.util.Locale getLocale()`
+- `public java.util.Set getFocusTraversalKeys(int)`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public void add(java.awt.PopupMenu)`
+- `public void addComponentListener(java.awt.event.ComponentListener)`
+- `public void addHierarchyBoundsListener(java.awt.event.HierarchyBoundsListener)`
+- `public void addHierarchyListener(java.awt.event.HierarchyListener)`
+- `public void addInputMethodListener(java.awt.event.InputMethodListener)`
+- `public void addNotify()`
+- `public void addPropertyChangeListener(java.beans.PropertyChangeListener)`
+- `public void addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
+- `public void applyComponentOrientation(java.awt.ComponentOrientation)`
+- `public void deliverEvent(java.awt.Event)`
+- `public void disable()`
+- `public void doLayout()`
+- `public void enable()`
+- `public void enable(boolean)`
+- `public void enableInputMethods(boolean)`
+- `public void firePropertyChange(java.lang.String, byte, byte)`
+- `public void firePropertyChange(java.lang.String, char, char)`
+- `public void firePropertyChange(java.lang.String, double, double)`
+- `public void firePropertyChange(java.lang.String, float, float)`
+- `public void firePropertyChange(java.lang.String, long, long)`
+- `public void firePropertyChange(java.lang.String, short, short)`
+- `public void hide()`
+- `public void layout()`
+- `public void list()`
+- `public void list(java.io.PrintStream)`
+- `public void list(java.io.PrintStream, int)`
+- `public void list(java.io.PrintWriter)`
+- `public void list(java.io.PrintWriter, int)`
+- `public void move(int, int)`
+- `public void nextFocus()`
+- `public void paintAll(java.awt.Graphics)`
+- `public void print(java.awt.Graphics)`
+- `public void printAll(java.awt.Graphics)`
+- `public void remove(java.awt.MenuComponent)`
+- `public void removeComponentListener(java.awt.event.ComponentListener)`
+- `public void removeHierarchyBoundsListener(java.awt.event.HierarchyBoundsListener)`
+- `public void removeHierarchyListener(java.awt.event.HierarchyListener)`
+- `public void removeInputMethodListener(java.awt.event.InputMethodListener)`
+- `public void removeNotify()`
+- `public void removePropertyChangeListener(java.beans.PropertyChangeListener)`
+- `public void removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
+- `public void repaint(long)`
+- `public void requestFocus(java.awt.event.FocusEvent$Cause)`
+- `public void reshape(int, int, int, int)`
+- `public void resize(int, int)`
+- `public void resize(java.awt.Dimension)`
+- `public void setBounds(int, int, int, int)`
+- `public void setBounds(java.awt.Rectangle)`
+- `public void setComponentOrientation(java.awt.ComponentOrientation)`
+- `public void setCursor(java.awt.Cursor)`
+- `public void setDropTarget(java.awt.dnd.DropTarget)`
+- `public void setEnabled(boolean)`
+- `public void setFocusTraversalKeys(int, java.util.Set)`
+- `public void setFont(java.awt.Font)`
+- `public void setIgnoreRepaint(boolean)`
+- `public void setLocale(java.util.Locale)`
+- `public void setLocation(java.awt.Point)`
+- `public void setMaximumSize(java.awt.Dimension)`
+- `public void setMinimumSize(java.awt.Dimension)`
+- `public void setMixingCutoutShape(java.awt.Shape)`
+- `public void setName(java.lang.String)`
+- `public void setSize(java.awt.Dimension)`
+- `public void show()`
+- `public void show(boolean)`
+- `public void transferFocus()`
+- `public void transferFocusBackward()`
+- `public void transferFocusUpCycle()`
+
+## ✗ Missing Fields
+
+- `protected javax.accessibility.AccessibleContext accessibleContext`
+- `public static final float BOTTOM_ALIGNMENT`
+- `public static final float CENTER_ALIGNMENT`
+- `public static final float LEFT_ALIGNMENT`
+- `public static final float RIGHT_ALIGNMENT`
+- `public static final float TOP_ALIGNMENT`
+
+## ✗ Missing Constructors
+
+- `protected java.awt.Component()`
+
+
+[← Back to Package](index.md)
