@@ -703,11 +703,26 @@ public class SoftwareRasterizer implements Rasterizer {
                 return dstColor;
 
             case AlphaComposite.SRC_OVER:
-                // Source over destination (default blending)
+                // Source over destination (default blending  - inline calculation for clarity)
                 outAlpha = srcAlpha + dstAlpha * (1.0f - srcAlpha);
-                srcFactor = 1.0f;
-                dstFactor = 1.0f - srcAlpha;
-                break;
+                
+                // Calculate output colors directly using SRC_OVER formula
+                int tempA = (int) (outAlpha * 255.0f + 0.5f);
+                int tempR, tempG, tempB;
+                if (outAlpha > 0.0f) {
+                    tempR = (int) ((sr * srcAlpha + dr * dstAlpha * (1.0f - srcAlpha)) / outAlpha + 0.5f);
+                    tempG = (int) ((sg * srcAlpha + dg * dstAlpha * (1.0f - srcAlpha)) / outAlpha + 0.5f);
+                    tempB = (int) ((sb * srcAlpha + db * dstAlpha * (1.0f - srcAlpha)) / outAlpha + 0.5f);
+                } else {
+                    tempR = tempG = tempB = 0;
+                }
+                
+                // Clamp and return directly
+                tempA = Math.min(255, Math.max(0, tempA));
+                tempR = Math.min(255, Math.max(0, tempR));
+                tempG = Math.min(255, Math.max(0, tempG));
+                tempB = Math.min(255, Math.max(0, tempB));
+                return (tempA << 24) | (tempR << 16) | (tempG << 8) | tempB;
 
             case AlphaComposite.DST_OVER:
                 // Destination over source
