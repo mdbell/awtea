@@ -6,7 +6,7 @@ import org.teavm.jso.dom.html.HTMLInputElement;
 
 import java.util.List;
 
-public final class PcmDockWindow extends FloatingWindow {
+public final class PcmDockFrame extends FloatingFrame {
 
 	private final PcmMonitor monitor = PcmMonitor.get();
 
@@ -59,7 +59,7 @@ public final class PcmDockWindow extends FloatingWindow {
 			.inject();
 	}
 
-	public PcmDockWindow() {
+	public PcmDockFrame() {
 		super(
 			"audio.pcmDock",
 			"PCM Dock",

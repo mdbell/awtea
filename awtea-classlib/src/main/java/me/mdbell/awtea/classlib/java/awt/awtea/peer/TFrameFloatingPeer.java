@@ -6,11 +6,11 @@ import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Surface;
-import me.mdbell.awtea.ui.FloatingWindow;
+import me.mdbell.awtea.ui.FloatingFrame;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLElement;
 
-public final class TFrameFloatingPeer extends FloatingWindow {
+public final class TFrameFloatingPeer extends FloatingFrame {
 
 	private final HTMLCanvasElement canvasElement;
 	private final TEventManager eventManager;

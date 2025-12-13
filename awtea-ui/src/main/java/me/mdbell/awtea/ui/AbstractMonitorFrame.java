@@ -7,11 +7,11 @@ import org.teavm.jso.dom.html.HTMLElement;
 
 import java.util.List;
 
-public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends MonitorSnapshot<E>> extends FloatingWindow {
+public abstract class AbstractMonitorFrame<E extends MonitorEntry, S extends MonitorSnapshot<E>> extends FloatingFrame {
 
 	protected final AbstractMonitor<E, S> monitor;
 
-	protected AbstractMonitorWindow(
+	protected AbstractMonitorFrame(
 		String windowId,
 		String title,
 		int widthPx,
@@ -269,7 +269,7 @@ public abstract class AbstractMonitorWindow<E extends MonitorEntry, S extends Mo
 			.prop("background", Theme.Var.TABLE_ROW_HOVER_BACKGROUND)
 
 			.end()
-			
+
 			.inject();
 	}
 }

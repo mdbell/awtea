@@ -3,7 +3,7 @@ package me.mdbell.awtea.ui;
 import me.mdbell.awtea.monitor.ThreadMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 
-public final class ThreadMonitorWindow extends AbstractMonitorWindow<
+public final class ThreadMonitorFrame extends AbstractMonitorFrame<
 	ThreadMonitor.Entry, ThreadMonitor.Snapshot> {
 
 	public static String[] HEADERS = {
@@ -16,7 +16,7 @@ public final class ThreadMonitorWindow extends AbstractMonitorWindow<
 		"Age"
 	};
 
-	public ThreadMonitorWindow() {
+	public ThreadMonitorFrame() {
 		super(
 			"thread.monitor",
 			"Thread Monitor",

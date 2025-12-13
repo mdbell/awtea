@@ -3,8 +3,8 @@ package me.mdbell.awtea.ui;
 import me.mdbell.awtea.monitor.EventQueueMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 
-public final class EventQueueMonitorWindow
-	extends AbstractMonitorWindow<EventQueueMonitor.Entry, EventQueueMonitor.Snapshot> {
+public final class EventQueueMonitorFrame
+	extends AbstractMonitorFrame<EventQueueMonitor.Entry, EventQueueMonitor.Snapshot> {
 
 	private static final String[] HEADERS = {
 		"Total",
@@ -18,7 +18,7 @@ public final class EventQueueMonitorWindow
 		"Last Event"
 	};
 
-	public EventQueueMonitorWindow() {
+	public EventQueueMonitorFrame() {
 		super(
 			"awt.queue.monitor",
 			"AWT Event Queue",

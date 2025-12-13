@@ -3,7 +3,7 @@ package me.mdbell.awtea.ui;
 import me.mdbell.awtea.monitor.NetworkMonitor;
 import org.teavm.jso.dom.html.HTMLElement;
 
-public final class NetworkMonitorWindow extends AbstractMonitorWindow<NetworkMonitor.Entry, NetworkMonitor.Snapshot> {
+public final class NetworkMonitorFrame extends AbstractMonitorFrame<NetworkMonitor.Entry, NetworkMonitor.Snapshot> {
 
 	private static String[] HEADERS = new String[]{
 		"ID",
@@ -21,7 +21,7 @@ public final class NetworkMonitorWindow extends AbstractMonitorWindow<NetworkMon
 		"Last Activity"
 	};
 
-	public NetworkMonitorWindow() {
+	public NetworkMonitorFrame() {
 		super(
 			"network.monitor",
 			"Network Monitor",
