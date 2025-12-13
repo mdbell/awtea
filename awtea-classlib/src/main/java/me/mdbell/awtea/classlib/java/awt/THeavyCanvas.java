@@ -176,10 +176,7 @@ public class THeavyCanvas {
 	public void resize(int width, int height) {
 		canvasElement.setWidth(width);
 		canvasElement.setHeight(height);
-		
-		if (surface != null) {
-			surface.resize(width, height);
-		}
+		surface.resize(width, height);
 	}
 
 	/**
@@ -207,8 +204,6 @@ public class THeavyCanvas {
 	 */
 	public void destroy() {
 		eventManager.detach();
-		if (surface != null) {
-			surface.destroy();
-		}
+		surface.destroy();
 	}
 }
