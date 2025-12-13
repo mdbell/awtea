@@ -9,6 +9,18 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/awtea-classlib" />
+            <option value="$PROJECT_DIR$/awtea-core" />
+            <option value="$PROJECT_DIR$/awtea-graphics" />
+            <option value="$PROJECT_DIR$/awtea-input" />
+            <option value="$PROJECT_DIR$/awtea-instrument" />
+            <option value="$PROJECT_DIR$/awtea-net" />
+            <option value="$PROJECT_DIR$/awtea-sound" />
+            <option value="$PROJECT_DIR$/awtea-ui" />
+            <option value="$PROJECT_DIR$/awtea-util" />
+            <option value="$PROJECT_DIR$/examples" />
+            <option value="$PROJECT_DIR$/examples/gui-demo" />
+            <option value="$PROJECT_DIR$/examples/hello-world" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -1,7 +1,7 @@
 package me.mdbell.awtea.gfx;
 
 public class SurfaceCommand {
-    
+
     public Operation type;
     public Object obj;
     public int arg1;
@@ -53,6 +53,7 @@ public class SurfaceCommand {
         SET_COLOR, // arg1: mode (0=normal, 1=bg), obj: Color
         SET_TRANSFORM,
         SET_CLIP_RECT, // replace current clip with rect
+        SET_COMPOSITE, // obj: TComposite (TAlphaComposite)
 
         // Drawing operations
         BLIT_IMAGE,

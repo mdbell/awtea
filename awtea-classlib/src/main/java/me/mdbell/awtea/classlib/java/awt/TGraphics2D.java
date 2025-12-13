@@ -50,6 +50,10 @@ public abstract class TGraphics2D extends TGraphics {
 
 	public abstract TRenderingHints getRenderingHints();
 
+	public abstract TComposite getComposite();
+
+	public abstract void setComposite(TComposite comp);
+
 //	public abstract TStroke getStroke();
 
 	public abstract void clearRect(int x, int y, int width, int height);

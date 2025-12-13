@@ -20,8 +20,10 @@ java {
 dependencies {
     // awtea dependencies - now as project dependencies
     implementation(project(":awtea-classlib"))
+    implementation(project(":awtea-graphics"))
     // needed for logging
     implementation(project(":awtea-util"))
+    implementation(project(":awtea-ui"))
 
     // TeaVM dependencies
     implementation("org.teavm:teavm-classlib:0.13.0")

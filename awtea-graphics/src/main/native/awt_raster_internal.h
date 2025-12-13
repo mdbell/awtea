@@ -30,6 +30,7 @@ typedef enum {
     CMD_SET_COLOR,
     CMD_SET_TRANSFORM,
     CMD_SET_CLIP_RECT,
+    CMD_SET_COMPOSITE, // unimplemented in wasm backend, only in software right now
 
     // Drawing commands
     CMD_BLIT_IMAGE,

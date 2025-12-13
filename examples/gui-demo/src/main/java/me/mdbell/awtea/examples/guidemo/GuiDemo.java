@@ -1,8 +1,5 @@
 package me.mdbell.awtea.examples.guidemo;
 
-import me.mdbell.awtea.util.logging.LogLevel;
-import me.mdbell.awtea.util.logging.LoggerFactory;
-
 import java.awt.*;
 
 /**
@@ -17,8 +14,9 @@ public class GuiDemo {
 
     public static void main(String[] args) {
 
-        LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
+//        LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
         System.setProperty("me.mdbell.awtea.wasm.module_path", "awt_raster.wasm");
+
 
         // Create the main window
         Frame frame = new Frame();
@@ -53,8 +51,13 @@ public class GuiDemo {
 
         // Add graphics demo panel
         GraphicsDemoPanel demoPanel = new GraphicsDemoPanel();
-        demoPanel.setBounds(520, 80, 270, 500);
+        demoPanel.setBounds(520, 80, 270, 240);
         mainPanel.add(demoPanel);
+
+        // Add alpha blending demo panel
+        AlphaBlendingDemoPanel alphaPanel = new AlphaBlendingDemoPanel();
+        alphaPanel.setBounds(520, 330, 270, 250);
+        mainPanel.add(alphaPanel);
 
         // Add info panel at the bottom
         Container infoPanel = new Container() {
@@ -74,7 +77,7 @@ public class GuiDemo {
                 g.setFont(new Font("SansSerif", Font.PLAIN, 11));
                 g.drawString("• Click on the left canvas to draw colored squares", 10, 40);
                 g.drawString("• Move your mouse to see real-time coordinates", 10, 55);
-                g.drawString("• View graphics primitives on the right panel", 10, 70);
+                g.drawString("• View graphics primitives and alpha blending on right", 10, 70);
 
                 g.setFont(new Font("SansSerif", Font.ITALIC, 10));
                 g.setColor(Color.GRAY);
