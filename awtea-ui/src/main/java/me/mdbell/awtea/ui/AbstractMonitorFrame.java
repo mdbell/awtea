@@ -3,6 +3,7 @@ package me.mdbell.awtea.ui;
 import me.mdbell.awtea.monitor.AbstractMonitor;
 import me.mdbell.awtea.monitor.MonitorEntry;
 import me.mdbell.awtea.monitor.MonitorSnapshot;
+import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLElement;
 
 import java.util.List;
@@ -224,11 +225,11 @@ public abstract class AbstractMonitorFrame<E extends MonitorEntry, S extends Mon
 
 	static {
 		// Inject the CSS from embedded file
-		HTMLElement style = org.teavm.jso.browser.Window.current()
+		HTMLElement style = Window.current()
 			.getDocument()
 			.createElement("style");
 		style.setTextContent(UiStyles.monitorFrameCSS());
-		org.teavm.jso.browser.Window.current()
+		Window.current()
 			.getDocument()
 			.getHead()
 			.appendChild(style);

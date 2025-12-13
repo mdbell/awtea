@@ -2,6 +2,7 @@ package me.mdbell.awtea.ui;
 
 import lombok.*;
 import me.mdbell.awtea.util.ConsoleBridge;
+import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLElement;
 
 import java.util.ArrayList;
@@ -17,11 +18,11 @@ public class LogFrame extends FloatingFrame {
 
 	static {
 		// Inject the CSS from embedded file
-		HTMLElement style = org.teavm.jso.browser.Window.current()
+		HTMLElement style = Window.current()
 			.getDocument()
 			.createElement("style");
 		style.setTextContent(UiStyles.logFrameCSS());
-		org.teavm.jso.browser.Window.current()
+		Window.current()
 			.getDocument()
 			.getHead()
 			.appendChild(style);
