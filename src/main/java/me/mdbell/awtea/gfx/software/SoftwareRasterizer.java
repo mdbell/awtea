@@ -5,6 +5,7 @@ import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import me.mdbell.awtea.gfx.SurfaceContainer;
 import me.mdbell.awtea.instrument.Monitored;
+import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.awt.*;
@@ -281,12 +282,16 @@ public class SoftwareRasterizer implements Rasterizer {
 		int tx = (int) (destX + transform.getTranslateX());
 		int ty = (int) (destY + transform.getTranslateY());
 
-		Uint8ClampedArray srcPixels = srcSurface.getPixelData();
+		Uint8ClampedArray srcPixelsBytes = srcSurface.getPixelData();
 		int[] destPixels = surface.getPixelDataAsInt32Array();
 
-		if (srcPixels == null || destPixels == null) {
+		if (srcPixelsBytes == null || destPixels == null) {
 			return;
 		}
+
+		// Create Int32Array view of source pixels for faster access
+		Int32Array srcPixels = new Int32Array(srcPixelsBytes.getBuffer(), 
+			srcPixelsBytes.getByteOffset(), srcPixelsBytes.getByteLength() / 4);
 
 		int srcWidth = srcSurface.getWidth();
 		int srcHeight = srcSurface.getHeight();
@@ -340,9 +345,11 @@ public class SoftwareRasterizer implements Rasterizer {
 					continue;
 				}
 
-				int srcColor = getPixel(srcPixels, srcCol, srcRow, srcWidth, srcFormat);
-				int idx = (destRow * destSurfaceWidth + destCol);
-				destPixels[idx] = convertColor(srcColor, srcFormat, destFormat);
+				// Read directly from Int32Array instead of reconstructing from bytes
+				int srcIdx = srcRow * srcWidth + srcCol;
+				int srcColor = srcPixels.get(srcIdx);
+				int destIdx = destRow * destSurfaceWidth + destCol;
+				destPixels[destIdx] = convertColor(srcColor, srcFormat, destFormat);
 			}
 		}
 	}
@@ -367,31 +374,6 @@ public class SoftwareRasterizer implements Rasterizer {
 			default:
 				return (a << 24) | (r << 16) | (g << 8) | b;
 		}
-	}
-
-	private int getPixel(Uint8ClampedArray pixels, int x, int y, int width, int format) {
-		int idx = (y * width + x) * 4;
-		int b0 = pixels.get(idx) & 0xFF;
-		int b1 = pixels.get(idx + 1) & 0xFF;
-		int b2 = pixels.get(idx + 2) & 0xFF;
-		int b3 = pixels.get(idx + 3) & 0xFF;
-
-		// All formats are stored in little-endian byte order in memory.
-		// We reconstruct the 32-bit integer by reversing the byte order.
-		// The format parameter determines how to INTERPRET the reconstructed value,
-		// not how it's stored in memory.
-		//
-		// For all formats, little-endian 0x12345678 is stored as: [78, 56, 34, 12]
-		// So we always reconstruct as: (b3 << 24) | (b2 << 16) | (b1 << 8) | b0
-		//
-		// The format then tells us what each byte position MEANS:
-		// - ARGB: bits 24-31=A, 16-23=R, 8-15=G, 0-7=B
-		// - RGBA: bits 24-31=R, 16-23=G, 8-15=B, 0-7=A  
-		// - ABGR: bits 24-31=A, 16-23=B, 8-15=G, 0-7=R
-		// - etc.
-		
-		// Reconstruct the 32-bit value from little-endian bytes
-		return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
 	}
 
 	/**
