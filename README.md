@@ -173,6 +173,7 @@ canvas.destroy();
 ### Architecture Documentation
 - [Component Mapping Strategy](docs/COMPONENT_MAPPING.md) - How AWT components map to web technologies
 - [Rendering Backends](docs/RENDERING_BACKENDS.md) - WebGL, WASM, and Software rendering systems
+- [Font Loading Strategy](docs/FONT_LOADING.md) - Runtime font loading with browser HTTP caching
 - [CSS Embedding](docs/CSS_EMBEDDING.md) - Embedding CSS files with CSS custom properties for theming
 
 ### Development Tools

@@ -3,6 +3,7 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import me.mdbell.awtea.classlib.java.awt.image.TFontFormatException;
+import me.mdbell.awtea.font.FontLoader;
 import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.impl.Debug;
 
@@ -246,12 +247,16 @@ public class TFont {
 	private static TrueTypeFont loadSafeFont(String name, String style){
 		String fontname = name + "-" + style;
 		try {
-			byte[] b = getFontBytes(fontname);
-			return TrueTypeFont.read(b);
+			return FontLoader.loadFont(fontname);
 		} catch (IOException e) {
 			System.err.println("Missing font:" + fontname + " - falling back");
-			// shouldn't actually throw, so we sneaky throw
-			return TrueTypeFont.read(getFontBytes(FALLBACK_FONT_NAME));
+			try {
+				return FontLoader.loadFont(FALLBACK_FONT_NAME);
+			} catch (IOException fallbackError) {
+				// If even fallback fails, try legacy resource loading as last resort
+				System.err.println("Fallback font also failed, trying legacy resource loading");
+				return TrueTypeFont.read(getFontBytes(FALLBACK_FONT_NAME));
+			}
 		}
 	}
 
