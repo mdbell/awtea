@@ -298,12 +298,7 @@ public abstract class FloatingFrame extends FloatingWindow {
 
 	@Override
 	protected void renderIfChanged() {
-		String sig = computeSignature();
-		if (sig != null && sig.equals(lastSignature)) {
-			return; // no-op, no flicker
-		}
-		lastSignature = sig;
-
+		// Handle menu bar positioning before parent rendering
 		if (menuBar != null) {
 			HTMLElement element = menuBar.getElement();
 			HTMLElement menuParent = element.getParentNode() != null ? (HTMLElement) element.getParentNode() : null;
@@ -312,10 +307,17 @@ public abstract class FloatingFrame extends FloatingWindow {
 				if (menuParent != null) {
 					menuParent.removeChild(element);
 				}
-				container.insertBefore(element, bodyEl);
+				// Insert before bodyEl (which comes after header in decorated windows)
+				HTMLElement header = container.querySelector(".aw-window-header");
+				if (header != null && header.getNextSibling() != null) {
+					container.insertBefore(element, header.getNextSibling());
+				} else {
+					container.insertBefore(element, bodyEl);
+				}
 			}
 		}
 
+		// Delegate to parent for actual content rendering
 		super.renderIfChanged();
 	}
 
@@ -369,8 +371,9 @@ public abstract class FloatingFrame extends FloatingWindow {
 		this.stickToBottom = stickToBottom;
 	}
 
+	@Override
 	protected void savePersistentData() {
-		// Delegate to parent but ensure we're not resizing
+		// Don't save while resizing (parent will check dragging)
 		if (resizing) {
 			return;
 		}
