@@ -2,6 +2,7 @@ package me.mdbell.awtea.ui;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.MouseEvent;
 import org.teavm.jso.dom.html.HTMLButtonElement;
 import org.teavm.jso.dom.html.HTMLElement;
@@ -45,67 +46,15 @@ public abstract class FloatingFrame extends FloatingWindow {
 	private MenuBar menuBar;
 
 	static {
-		AwCss.sheet()
-			.createClass("aw-window-header")
-			.prop("display", "flex")
-			.prop("align-items", "center")
-			.prop("justify-content", "space-between")
-			.prop("padding", "0.25rem 0.5rem")
-			.prop("background", Theme.Var.HEADER_BACKGROUND)
-			.prop("border-bottom")
-			.value("1px solid")
-			.value(Theme.Var.HEADER_BORDER)
-			.end()
-			.prop("border-radius", "4px 4px 0 0")
-			.prop("cursor", "move")
-			.createClass("aw-window-title")
-			.prop("margin", "0")
-			.prop("font-size", "13px")
-			.prop("font-weight", "600")
-			.createClass("aw-window-header-controls")
-			.prop("display", "flex")
-			.prop("gap", "4px")
-			.createClass("aw-window-button")
-			.prop("min-width", "1.2rem")
-			.prop("height", "1.2rem")
-			.prop("padding", "0.1rem 0.4rem")
-			.prop("border-radius", "3px")
-			.prop("border")
-			.value("1px solid")
-			.value(Theme.Var.BUTTON_BORDER)
-			.end()
-			.prop("background", Theme.Var.BUTTON_BACKGROUND)
-			.prop("color", Theme.Var.FOREGROUND)
-			.prop("cursor", "pointer")
-			.prop("font-size", "12px")
-			.createClass("aw-window-body:has(.aw-menubar)")
-			.prop("padding-top", "0")
-			.createClass("aw-window-resizer")
-			.prop("position", "absolute")
-			.prop("right", "0")
-			.prop("bottom", "0")
-			.prop("width", "12px")
-			.prop("height", "12px")
-			.prop("cursor", "se-resize")
-			.prop("background", "transparent")
-			.before()
-			.prop("content", "''")
-			.prop("position", "absolute")
-			.prop("right", "3px")
-			.prop("bottom", "3px")
-			.prop("width", "8px")
-			.prop("height", "8px")
-			.prop("border-right")
-			.value("2px", "solid")
-			.value(Theme.Var.FOREGROUND)
-			.end()
-			.prop("border-bottom")
-			.value("2px", "solid")
-			.value(Theme.Var.FOREGROUND)
-			.end()
-			.prop("pointer-events", "none")
-			.end()
-			.inject();
+		// Inject the CSS from embedded file
+		HTMLElement style = Window.current()
+			.getDocument()
+			.createElement("style");
+		style.setTextContent(UiStyles.floatingFrameCSS());
+		Window.current()
+			.getDocument()
+			.getHead()
+			.appendChild(style);
 	}
 
 	protected FloatingFrame(String windowId) {

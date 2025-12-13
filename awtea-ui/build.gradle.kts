@@ -23,8 +23,10 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.36")
 
     implementation("org.teavm:teavm-jso-apis:0.13.0")
+    implementation("org.teavm:teavm-core:0.13.0")
     
     implementation(project(":awtea-util"))
     implementation(project(":awtea-core"))
     implementation(project(":awtea-instrument"))
+    implementation(project(":awtea-graphics"))
 }

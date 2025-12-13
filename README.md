@@ -38,6 +38,9 @@ This project is organized into multiple modules for better maintainability and m
 - **awtea-classlib**: Java AWT class library reimplementations
   - Reimplementations of `java.awt.*`, `javax.swing.*`, and related packages
   - Browser-compatible versions of AWT classes
+  - Canvas components:
+    - `TCanvas`: Lightweight canvas for embedding in AWT containers
+    - `THeavyCanvas`: Heavyweight hardware-backed canvas for top-level windows
 
 ### Specialized Modules
 
@@ -132,10 +135,46 @@ awtea-classlib (depends on most modules)
 
 ## Documentation
 
+### Canvas Components
+
+AWTea provides two canvas implementations for different use cases:
+
+#### TCanvas (Lightweight)
+- For embedding within AWT containers (panels, frames' content panes, etc.)
+- Participates in AWT's component hierarchy and layout management
+- Suitable for custom drawing components within an application
+
+#### THeavyCanvas (Heavyweight)
+- For top-level heavyweight windows (Frame, Dialog, Applet windows)
+- Manages its own HTML canvas element and hardware rendering surface
+- Handles native events directly via TEventManager
+- Used internally by heavyweight peers like `TFrameFloatingPeer`
+- Can be used for advanced use cases requiring direct canvas control (games, visualization, etc.)
+
+**Example usage of THeavyCanvas:**
+```java
+// Create a heavyweight canvas for a container
+THeavyCanvas canvas = new THeavyCanvas(document, container);
+canvas.configureStandardEvents();
+
+// Get the canvas element to attach to DOM
+HTMLCanvasElement element = canvas.getCanvasElement();
+
+// Resize the canvas
+canvas.resize(800, 600);
+
+// Get graphics context for rendering
+TGraphics graphics = canvas.getGraphics();
+
+// Clean up when done
+canvas.destroy();
+```
+
 ### Architecture Documentation
 - [Component Mapping Strategy](docs/COMPONENT_MAPPING.md) - How AWT components map to web technologies
 - [Rendering Backends](docs/RENDERING_BACKENDS.md) - WebGL, WASM, and Software rendering systems
 - [Font Loading Strategy](docs/FONT_LOADING.md) - Runtime font loading with browser HTTP caching
+- [CSS Embedding](docs/CSS_EMBEDDING.md) - Embedding CSS files with CSS custom properties for theming
 
 ### Development Tools
 
