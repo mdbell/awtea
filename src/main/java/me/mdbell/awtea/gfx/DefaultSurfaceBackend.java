@@ -13,7 +13,7 @@ public class DefaultSurfaceBackend implements SurfaceBackend {
 
 	/**
 	 * System property to force a specific rendering backend.
-	 * Valid values: "wasm", "software"
+	 * Valid values: "wasm", "webassembly", "software", "java"
 	 * Example: -Dme.mdbell.awtea.gfx.backend=software
 	 */
 	private static final String BACKEND_PROPERTY = "me.mdbell.awtea.gfx.backend";
