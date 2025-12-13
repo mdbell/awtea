@@ -4,10 +4,8 @@ import lombok.*;
 import me.mdbell.awtea.classlib.java.awt.*;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.geom.TPoint2D;
-import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.impl.Debug;
 import me.mdbell.awtea.support.ImageDataProvider;
-import me.mdbell.awtea.util.GlyphRasterizer;
 import org.teavm.jso.canvas.ImageData;
 
 import java.awt.*;
@@ -70,12 +68,12 @@ public class TSoftwareGraphics extends TGraphics {
 
 		TFont font = getFont();
 
-		TrueTypeFont trueTypeFont = font.getTrueType();
-
 		TPoint2D point = this.transform.deltaTransform(new TPoint2D.Double(x, y), null);
 
 		float sizePx = getFont().getSize();
-		GlyphRasterizer.drawString(trueTypeFont, str, (GlyphRasterizer.RasterTarget) image,
+		
+		// Use the FontPeer for rendering instead of directly calling GlyphRasterizer
+		font.getFontPeer().renderString(str, (me.mdbell.awtea.font.FontRenderer.RasterTarget) image,
 			sizePx, (int) point.getX(), (int) point.getY(), color.getRGB());
 	}
 

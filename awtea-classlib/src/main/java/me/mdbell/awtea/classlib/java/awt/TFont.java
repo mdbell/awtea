@@ -3,6 +3,8 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import me.mdbell.awtea.classlib.java.awt.image.TFontFormatException;
+import me.mdbell.awtea.font.FontPeer;
+import me.mdbell.awtea.font.FontRendererFactory;
 import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.impl.Debug;
 
@@ -46,6 +48,7 @@ public class TFont {
     private final int size;
 
 	private final TrueTypeFont trueType;
+	private final FontPeer fontPeer;
 
 	public static final String SERIF = "Serif";
 	public static final String SANS_SERIF = "SansSerif";
@@ -66,6 +69,7 @@ public class TFont {
 		}
 
 		this.trueType = loadSafeFont(name, styleStr);
+		this.fontPeer = new FontPeer(this.trueType, FontRendererFactory.getDefaultRenderer());
 	}
 
 	public TFont(Map<? extends AttributedCharacterIterator.Attribute,?> attributes) {
@@ -88,6 +92,7 @@ public class TFont {
 			style = PLAIN;
 		}
 		this.style = style;
+		this.fontPeer = new FontPeer(this.trueType, FontRendererFactory.getDefaultRenderer());
 	}
 
 	public static TFont getDefaultFont() {
@@ -108,6 +113,14 @@ public class TFont {
 
 	public TFontMetrics getFontMetrics() {
 		return new TFontMetrics(this);
+	}
+
+	/**
+	 * Get the FontPeer for this font, which provides access to rendering capabilities.
+	 * @return the font peer
+	 */
+	public FontPeer getFontPeer() {
+		return fontPeer;
 	}
 
 	public TFont deriveFont(int newStyle) {

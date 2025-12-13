@@ -6,6 +6,7 @@ import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.TImage;
 import me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
+import me.mdbell.awtea.font.FontRenderer;
 import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceContainer;
@@ -22,7 +23,7 @@ import java.util.Hashtable;
  */
 @Getter
 @Monitored.AllMethods
-public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarget, SurfaceContainer {
+public class TBufferedImage extends TImage implements GlyphRasterizer.RasterTarget, FontRenderer.RasterTarget, SurfaceContainer {
 
 	public static final int TYPE_CUSTOM = 0;
 	public static final int TYPE_INT_RGB = 1;
