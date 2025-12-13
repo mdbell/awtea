@@ -16,8 +16,8 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.image.ShortLookupTable(int, short[][])`
 - `public java.awt.image.ShortLookupTable(int, short[])`
+- `public java.awt.image.ShortLookupTable(int, short[][])`
 
 
 [← Back to Package](index.md)

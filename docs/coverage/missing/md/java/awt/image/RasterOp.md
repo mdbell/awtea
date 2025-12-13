@@ -10,11 +10,11 @@
 
 ## ✗ Missing Methods
 
-- `public abstract java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)`
 - `public abstract java.awt.geom.Rectangle2D getBounds2D(java.awt.image.Raster)`
-- `public abstract java.awt.RenderingHints getRenderingHints()`
 - `public abstract java.awt.image.WritableRaster createCompatibleDestRaster(java.awt.image.Raster)`
 - `public abstract java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)`
+- `public abstract java.awt.RenderingHints getRenderingHints()`
+- `public abstract java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)`
 
 
 [← Back to Package](index.md)

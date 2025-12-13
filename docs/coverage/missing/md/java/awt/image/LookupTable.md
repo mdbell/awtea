@@ -10,9 +10,9 @@
 
 ## ✗ Missing Methods
 
-- `public int getOffset()`
 - `public int getNumComponents()`
 - `public abstract int[] lookupPixel(int[], int[])`
+- `public int getOffset()`
 
 ## ✗ Missing Constructors
 

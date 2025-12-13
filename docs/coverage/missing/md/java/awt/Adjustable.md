@@ -10,10 +10,6 @@
 
 ## ✗ Missing Methods
 
-- `public abstract int getValue()`
-- `public abstract void setValue(int)`
-- `public abstract int getMaximum()`
-- `public abstract int getMinimum()`
 - `public abstract int getOrientation()`
 - `public abstract void setMinimum(int)`
 - `public abstract void setMaximum(int)`
@@ -25,6 +21,10 @@
 - `public abstract int getVisibleAmount()`
 - `public abstract void addAdjustmentListener(java.awt.event.AdjustmentListener)`
 - `public abstract void removeAdjustmentListener(java.awt.event.AdjustmentListener)`
+- `public abstract int getMinimum()`
+- `public abstract int getMaximum()`
+- `public abstract int getValue()`
+- `public abstract void setValue(int)`
 
 ## ✗ Missing Fields
 

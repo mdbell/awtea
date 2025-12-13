@@ -10,8 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public java.awt.Point getLocation()`
 - `public java.awt.GraphicsDevice getDevice()`
+- `public java.awt.Point getLocation()`
 
 
 [← Back to Package](index.md)

@@ -10,14 +10,14 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String paramString()`
-- `public java.text.AttributedCharacterIterator getText()`
-- `public void consume()`
 - `public boolean isConsumed()`
 - `public long getWhen()`
 - `public int getCommittedCharacterCount()`
 - `public java.awt.font.TextHitInfo getCaret()`
 - `public java.awt.font.TextHitInfo getVisiblePosition()`
+- `public void consume()`
+- `public java.text.AttributedCharacterIterator getText()`
+- `public java.lang.String paramString()`
 
 ## ✗ Missing Fields
 
@@ -28,9 +28,9 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.event.InputMethodEvent(java.awt.Component, int, java.awt.font.TextHitInfo, java.awt.font.TextHitInfo)`
 - `public java.awt.event.InputMethodEvent(java.awt.Component, int, java.text.AttributedCharacterIterator, int, java.awt.font.TextHitInfo, java.awt.font.TextHitInfo)`
 - `public java.awt.event.InputMethodEvent(java.awt.Component, int, long, java.text.AttributedCharacterIterator, int, java.awt.font.TextHitInfo, java.awt.font.TextHitInfo)`
+- `public java.awt.event.InputMethodEvent(java.awt.Component, int, java.awt.font.TextHitInfo, java.awt.font.TextHitInfo)`
 
 
 [← Back to Package](index.md)

@@ -23,7 +23,7 @@
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.event.WindowAdapter()`
+- `public java.awt.event.WindowAdapter()`
 
 
 [← Back to Package](index.md)

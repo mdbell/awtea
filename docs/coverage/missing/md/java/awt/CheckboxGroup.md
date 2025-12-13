@@ -10,11 +10,11 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String toString()`
-- `public java.awt.Checkbox getCurrent()`
-- `public void setCurrent(java.awt.Checkbox)`
 - `public java.awt.Checkbox getSelectedCheckbox()`
+- `public java.awt.Checkbox getCurrent()`
 - `public void setSelectedCheckbox(java.awt.Checkbox)`
+- `public void setCurrent(java.awt.Checkbox)`
+- `public java.lang.String toString()`
 
 ## ✗ Missing Constructors
 

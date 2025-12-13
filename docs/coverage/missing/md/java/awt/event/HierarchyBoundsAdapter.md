@@ -15,7 +15,7 @@
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.event.HierarchyBoundsAdapter()`
+- `public java.awt.event.HierarchyBoundsAdapter()`
 
 
 [← Back to Package](index.md)

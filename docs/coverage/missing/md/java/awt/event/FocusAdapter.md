@@ -15,7 +15,7 @@
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.event.FocusAdapter()`
+- `public java.awt.event.FocusAdapter()`
 
 
 [← Back to Package](index.md)

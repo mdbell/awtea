@@ -15,7 +15,7 @@
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.event.ContainerAdapter()`
+- `public java.awt.event.ContainerAdapter()`
 
 
 [← Back to Package](index.md)

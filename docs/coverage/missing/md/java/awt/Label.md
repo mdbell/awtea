@@ -10,13 +10,13 @@
 
 ## ✗ Missing Methods
 
-- `protected java.lang.String paramString()`
-- `public java.lang.String getText()`
+- `public int getAlignment()`
+- `public void setAlignment(int)`
 - `public void setText(java.lang.String)`
 - `public void addNotify()`
 - `public javax.accessibility.AccessibleContext getAccessibleContext()`
-- `public void setAlignment(int)`
-- `public int getAlignment()`
+- `public java.lang.String getText()`
+- `protected java.lang.String paramString()`
 
 ## ✗ Missing Fields
 
@@ -26,9 +26,9 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.Label(java.lang.String, int)`
-- `public java.awt.Label(java.lang.String)`
 - `public java.awt.Label()`
+- `public java.awt.Label(java.lang.String)`
+- `public java.awt.Label(java.lang.String, int)`
 
 
 [← Back to Package](index.md)

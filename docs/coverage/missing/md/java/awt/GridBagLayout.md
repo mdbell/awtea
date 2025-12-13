@@ -10,10 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String toString()`
-- `public java.awt.Point location(int, int)`
-- `public void addLayoutComponent(java.awt.Component, java.lang.Object)`
 - `public void addLayoutComponent(java.lang.String, java.awt.Component)`
+- `public void addLayoutComponent(java.awt.Component, java.lang.Object)`
 - `public java.awt.Dimension maximumLayoutSize(java.awt.Container)`
 - `public float getLayoutAlignmentX(java.awt.Container)`
 - `public float getLayoutAlignmentY(java.awt.Container)`
@@ -23,19 +21,21 @@
 - `public java.awt.Dimension minimumLayoutSize(java.awt.Container)`
 - `public void layoutContainer(java.awt.Container)`
 - `public void setConstraints(java.awt.Component, java.awt.GridBagConstraints)`
-- `protected java.awt.GridBagLayoutInfo getLayoutInfo(java.awt.Container, int)`
-- `protected java.awt.Dimension getMinSize(java.awt.Container, java.awt.GridBagLayoutInfo)`
-- `protected void arrangeGrid(java.awt.Container)`
-- `protected java.awt.GridBagLayoutInfo GetLayoutInfo(java.awt.Container, int)`
-- `protected java.awt.GridBagConstraints lookupConstraints(java.awt.Component)`
-- `protected void AdjustForGravity(java.awt.GridBagConstraints, java.awt.Rectangle)`
-- `protected java.awt.Dimension GetMinSize(java.awt.Container, java.awt.GridBagLayoutInfo)`
-- `protected void ArrangeGrid(java.awt.Container)`
-- `protected void adjustForGravity(java.awt.GridBagConstraints, java.awt.Rectangle)`
 - `public java.awt.GridBagConstraints getConstraints(java.awt.Component)`
+- `protected java.awt.GridBagConstraints lookupConstraints(java.awt.Component)`
 - `public java.awt.Point getLayoutOrigin()`
 - `public int[][] getLayoutDimensions()`
 - `public double[][] getLayoutWeights()`
+- `protected java.awt.GridBagLayoutInfo getLayoutInfo(java.awt.Container, int)`
+- `protected java.awt.GridBagLayoutInfo GetLayoutInfo(java.awt.Container, int)`
+- `protected void adjustForGravity(java.awt.GridBagConstraints, java.awt.Rectangle)`
+- `protected void AdjustForGravity(java.awt.GridBagConstraints, java.awt.Rectangle)`
+- `protected java.awt.Dimension getMinSize(java.awt.Container, java.awt.GridBagLayoutInfo)`
+- `protected java.awt.Dimension GetMinSize(java.awt.Container, java.awt.GridBagLayoutInfo)`
+- `protected void arrangeGrid(java.awt.Container)`
+- `protected void ArrangeGrid(java.awt.Container)`
+- `public java.lang.String toString()`
+- `public java.awt.Point location(int, int)`
 
 ## ✗ Missing Fields
 

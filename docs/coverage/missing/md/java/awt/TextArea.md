@@ -10,28 +10,28 @@
 
 ## ✗ Missing Methods
 
-- `public void append(java.lang.String)`
-- `public void insert(java.lang.String, int)`
-- `protected java.lang.String paramString()`
-- `public void appendText(java.lang.String)`
-- `public void addNotify()`
-- `public javax.accessibility.AccessibleContext getAccessibleContext()`
-- `public java.awt.Dimension preferredSize(int, int)`
-- `public java.awt.Dimension preferredSize()`
-- `public java.awt.Dimension getPreferredSize()`
-- `public java.awt.Dimension getPreferredSize(int, int)`
-- `public java.awt.Dimension getMinimumSize(int, int)`
-- `public java.awt.Dimension getMinimumSize()`
-- `public java.awt.Dimension minimumSize(int, int)`
-- `public java.awt.Dimension minimumSize()`
 - `public void insertText(java.lang.String, int)`
-- `public void replaceText(java.lang.String, int, int)`
 - `public void replaceRange(java.lang.String, int, int)`
+- `public void replaceText(java.lang.String, int, int)`
 - `public int getRows()`
 - `public void setRows(int)`
 - `public int getColumns()`
 - `public void setColumns(int)`
 - `public int getScrollbarVisibility()`
+- `public void appendText(java.lang.String)`
+- `public void addNotify()`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public java.awt.Dimension preferredSize(int, int)`
+- `public java.awt.Dimension preferredSize()`
+- `public java.awt.Dimension getPreferredSize(int, int)`
+- `public java.awt.Dimension getPreferredSize()`
+- `public java.awt.Dimension minimumSize(int, int)`
+- `public java.awt.Dimension minimumSize()`
+- `public java.awt.Dimension getMinimumSize(int, int)`
+- `public java.awt.Dimension getMinimumSize()`
+- `public void append(java.lang.String)`
+- `public void insert(java.lang.String, int)`
+- `protected java.lang.String paramString()`
 
 ## ✗ Missing Fields
 
@@ -42,11 +42,11 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.TextArea(java.lang.String, int, int)`
 - `public java.awt.TextArea(int, int)`
+- `public java.awt.TextArea(java.lang.String, int, int)`
+- `public java.awt.TextArea(java.lang.String, int, int, int)`
 - `public java.awt.TextArea(java.lang.String)`
 - `public java.awt.TextArea()`
-- `public java.awt.TextArea(java.lang.String, int, int, int)`
 
 
 [← Back to Package](index.md)

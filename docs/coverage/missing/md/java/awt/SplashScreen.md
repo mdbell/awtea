@@ -10,15 +10,15 @@
 
 ## ✗ Missing Methods
 
-- `public void update()`
-- `public java.awt.Rectangle getBounds()`
-- `public void close()`
-- `public java.awt.Dimension getSize()`
-- `public boolean isVisible()`
 - `public java.awt.Graphics2D createGraphics()`
 - `public static java.awt.SplashScreen getSplashScreen()`
 - `public void setImageURL(java.net.URL)`
 - `public java.net.URL getImageURL()`
+- `public boolean isVisible()`
+- `public java.awt.Rectangle getBounds()`
+- `public void update()`
+- `public void close()`
+- `public java.awt.Dimension getSize()`
 
 
 [← Back to Package](index.md)

@@ -10,20 +10,20 @@
 
 ## ✗ Missing Methods
 
-- `public java.awt.Menu add(java.awt.Menu)`
-- `public void remove(int)`
-- `public void remove(java.awt.MenuComponent)`
-- `public void addNotify()`
-- `public javax.accessibility.AccessibleContext getAccessibleContext()`
-- `public void removeNotify()`
 - `public java.awt.MenuItem getShortcutMenuItem(java.awt.MenuShortcut)`
 - `public java.util.Enumeration shortcuts()`
 - `public void deleteShortcut(java.awt.MenuShortcut)`
-- `public int getMenuCount()`
-- `public java.awt.Menu getMenu(int)`
-- `public int countMenus()`
 - `public java.awt.Menu getHelpMenu()`
 - `public void setHelpMenu(java.awt.Menu)`
+- `public int getMenuCount()`
+- `public int countMenus()`
+- `public java.awt.Menu getMenu(int)`
+- `public void addNotify()`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public void removeNotify()`
+- `public java.awt.Menu add(java.awt.Menu)`
+- `public void remove(int)`
+- `public void remove(java.awt.MenuComponent)`
 
 ## ✗ Missing Constructors
 

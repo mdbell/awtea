@@ -10,12 +10,12 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String getName()`
-- `public java.lang.String toString()`
-- `public int getType()`
-- `public static java.awt.Cursor getPredefinedCursor(int)`
 - `public static java.awt.Cursor getSystemCustomCursor(java.lang.String)`
 - `public static java.awt.Cursor getDefaultCursor()`
+- `public static java.awt.Cursor getPredefinedCursor(int)`
+- `public java.lang.String toString()`
+- `public java.lang.String getName()`
+- `public int getType()`
 
 ## ✗ Missing Fields
 
@@ -39,8 +39,8 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.Cursor(int)`
 - `protected java.awt.Cursor(java.lang.String)`
+- `public java.awt.Cursor(int)`
 
 
 [← Back to Package](index.md)

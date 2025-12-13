@@ -10,50 +10,26 @@
 
 ## ✗ Missing Methods
 
-- `protected void firePropertyChange(java.lang.String, java.lang.Object, java.lang.Object)`
-- `public abstract boolean dispatchEvent(java.awt.AWTEvent)`
+- `public abstract boolean postProcessKeyEvent(java.awt.event.KeyEvent)`
+- `protected abstract void enqueueKeyEvents(long, java.awt.Component)`
+- `public java.awt.Container getCurrentFocusCycleRoot()`
+- `public java.awt.FocusTraversalPolicy getDefaultFocusTraversalPolicy()`
 - `public static java.awt.KeyboardFocusManager getCurrentKeyboardFocusManager()`
-- `public abstract void processKeyEvent(java.awt.Component, java.awt.event.KeyEvent)`
-- `public java.beans.PropertyChangeListener[] getPropertyChangeListeners()`
-- `public java.beans.PropertyChangeListener[] getPropertyChangeListeners(java.lang.String)`
 - `public java.awt.Component getPermanentFocusOwner()`
 - `protected void setGlobalPermanentFocusOwner(java.awt.Component)`
 - `protected abstract void discardKeyEvents(java.awt.Component)`
 - `public java.util.Set getDefaultFocusTraversalKeys(int)`
 - `protected abstract void dequeueKeyEvents(long, java.awt.Component)`
 - `public java.awt.Component getFocusOwner()`
-- `public void addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
-- `public void addPropertyChangeListener(java.beans.PropertyChangeListener)`
-- `public void removePropertyChangeListener(java.beans.PropertyChangeListener)`
-- `public void removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
-- `protected abstract void enqueueKeyEvents(long, java.awt.Component)`
-- `public java.awt.Container getCurrentFocusCycleRoot()`
-- `public java.awt.FocusTraversalPolicy getDefaultFocusTraversalPolicy()`
-- `public abstract boolean postProcessKeyEvent(java.awt.event.KeyEvent)`
 - `public java.awt.Window getActiveWindow()`
 - `protected java.awt.Window getGlobalFocusedWindow()`
-- `protected void fireVetoableChange(java.lang.String, java.lang.Object, java.lang.Object)`
-- `public void clearGlobalFocusOwner()`
-- `public java.awt.Window getFocusedWindow()`
-- `public void addVetoableChangeListener(java.beans.VetoableChangeListener)`
-- `public void addVetoableChangeListener(java.lang.String, java.beans.VetoableChangeListener)`
-- `public void removeVetoableChangeListener(java.lang.String, java.beans.VetoableChangeListener)`
-- `public void removeVetoableChangeListener(java.beans.VetoableChangeListener)`
-- `public java.beans.VetoableChangeListener[] getVetoableChangeListeners(java.lang.String)`
-- `public java.beans.VetoableChangeListener[] getVetoableChangeListeners()`
-- `public abstract void focusNextComponent(java.awt.Component)`
-- `public final void focusNextComponent()`
-- `public abstract void focusPreviousComponent(java.awt.Component)`
-- `public final void focusPreviousComponent()`
-- `public abstract void upFocusCycle(java.awt.Component)`
-- `public final void upFocusCycle()`
-- `public final void downFocusCycle()`
-- `public abstract void downFocusCycle(java.awt.Container)`
-- `protected java.awt.Component getGlobalFocusOwner()`
 - `public static void setCurrentKeyboardFocusManager(java.awt.KeyboardFocusManager)`
+- `protected java.awt.Component getGlobalFocusOwner()`
 - `protected void setGlobalFocusOwner(java.awt.Component)`
 - `public void clearFocusOwner()`
+- `public void clearGlobalFocusOwner()`
 - `protected java.awt.Component getGlobalPermanentFocusOwner()`
+- `public java.awt.Window getFocusedWindow()`
 - `protected void setGlobalFocusedWindow(java.awt.Window)`
 - `protected java.awt.Window getGlobalActiveWindow()`
 - `protected void setGlobalActiveWindow(java.awt.Window)`
@@ -61,6 +37,13 @@
 - `public void setDefaultFocusTraversalKeys(int, java.util.Set)`
 - `protected java.awt.Container getGlobalCurrentFocusCycleRoot()`
 - `public void setGlobalCurrentFocusCycleRoot(java.awt.Container)`
+- `public void addVetoableChangeListener(java.lang.String, java.beans.VetoableChangeListener)`
+- `public void addVetoableChangeListener(java.beans.VetoableChangeListener)`
+- `public void removeVetoableChangeListener(java.lang.String, java.beans.VetoableChangeListener)`
+- `public void removeVetoableChangeListener(java.beans.VetoableChangeListener)`
+- `public java.beans.VetoableChangeListener[] getVetoableChangeListeners(java.lang.String)`
+- `public java.beans.VetoableChangeListener[] getVetoableChangeListeners()`
+- `protected void fireVetoableChange(java.lang.String, java.lang.Object, java.lang.Object)`
 - `public void addKeyEventDispatcher(java.awt.KeyEventDispatcher)`
 - `public void removeKeyEventDispatcher(java.awt.KeyEventDispatcher)`
 - `protected java.util.List getKeyEventDispatchers()`
@@ -69,6 +52,23 @@
 - `protected java.util.List getKeyEventPostProcessors()`
 - `public final void redispatchEvent(java.awt.Component, java.awt.AWTEvent)`
 - `public abstract boolean dispatchKeyEvent(java.awt.event.KeyEvent)`
+- `public final void focusNextComponent()`
+- `public abstract void focusNextComponent(java.awt.Component)`
+- `public abstract void focusPreviousComponent(java.awt.Component)`
+- `public final void focusPreviousComponent()`
+- `public final void upFocusCycle()`
+- `public abstract void upFocusCycle(java.awt.Component)`
+- `public abstract void downFocusCycle(java.awt.Container)`
+- `public final void downFocusCycle()`
+- `public abstract boolean dispatchEvent(java.awt.AWTEvent)`
+- `public abstract void processKeyEvent(java.awt.Component, java.awt.event.KeyEvent)`
+- `public void addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
+- `public void addPropertyChangeListener(java.beans.PropertyChangeListener)`
+- `public void removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
+- `public void removePropertyChangeListener(java.beans.PropertyChangeListener)`
+- `public java.beans.PropertyChangeListener[] getPropertyChangeListeners(java.lang.String)`
+- `public java.beans.PropertyChangeListener[] getPropertyChangeListeners()`
+- `protected void firePropertyChange(java.lang.String, java.lang.Object, java.lang.Object)`
 
 ## ✗ Missing Fields
 

@@ -1,0 +1,167 @@
+# Class: `PageAttributes$MediaType` ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Full Name:** `java.awt.PageAttributes$MediaType`
+
+**Coverage:** 0 / 149 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+## ✗ Missing Methods
+
+- `public java.lang.String toString()`
+- `public int hashCode()`
+
+## ✗ Missing Fields
+
+- `public static final java.awt.PageAttributes$MediaType ISO_4A0`
+- `public static final java.awt.PageAttributes$MediaType ISO_2A0`
+- `public static final java.awt.PageAttributes$MediaType ISO_A0`
+- `public static final java.awt.PageAttributes$MediaType ISO_A1`
+- `public static final java.awt.PageAttributes$MediaType ISO_A2`
+- `public static final java.awt.PageAttributes$MediaType ISO_A3`
+- `public static final java.awt.PageAttributes$MediaType ISO_A4`
+- `public static final java.awt.PageAttributes$MediaType ISO_A5`
+- `public static final java.awt.PageAttributes$MediaType ISO_A6`
+- `public static final java.awt.PageAttributes$MediaType ISO_A7`
+- `public static final java.awt.PageAttributes$MediaType ISO_A8`
+- `public static final java.awt.PageAttributes$MediaType ISO_A9`
+- `public static final java.awt.PageAttributes$MediaType ISO_A10`
+- `public static final java.awt.PageAttributes$MediaType ISO_B0`
+- `public static final java.awt.PageAttributes$MediaType ISO_B1`
+- `public static final java.awt.PageAttributes$MediaType ISO_B2`
+- `public static final java.awt.PageAttributes$MediaType ISO_B3`
+- `public static final java.awt.PageAttributes$MediaType ISO_B4`
+- `public static final java.awt.PageAttributes$MediaType ISO_B5`
+- `public static final java.awt.PageAttributes$MediaType ISO_B6`
+- `public static final java.awt.PageAttributes$MediaType ISO_B7`
+- `public static final java.awt.PageAttributes$MediaType ISO_B8`
+- `public static final java.awt.PageAttributes$MediaType ISO_B9`
+- `public static final java.awt.PageAttributes$MediaType ISO_B10`
+- `public static final java.awt.PageAttributes$MediaType JIS_B0`
+- `public static final java.awt.PageAttributes$MediaType JIS_B1`
+- `public static final java.awt.PageAttributes$MediaType JIS_B2`
+- `public static final java.awt.PageAttributes$MediaType JIS_B3`
+- `public static final java.awt.PageAttributes$MediaType JIS_B4`
+- `public static final java.awt.PageAttributes$MediaType JIS_B5`
+- `public static final java.awt.PageAttributes$MediaType JIS_B6`
+- `public static final java.awt.PageAttributes$MediaType JIS_B7`
+- `public static final java.awt.PageAttributes$MediaType JIS_B8`
+- `public static final java.awt.PageAttributes$MediaType JIS_B9`
+- `public static final java.awt.PageAttributes$MediaType JIS_B10`
+- `public static final java.awt.PageAttributes$MediaType ISO_C0`
+- `public static final java.awt.PageAttributes$MediaType ISO_C1`
+- `public static final java.awt.PageAttributes$MediaType ISO_C2`
+- `public static final java.awt.PageAttributes$MediaType ISO_C3`
+- `public static final java.awt.PageAttributes$MediaType ISO_C4`
+- `public static final java.awt.PageAttributes$MediaType ISO_C5`
+- `public static final java.awt.PageAttributes$MediaType ISO_C6`
+- `public static final java.awt.PageAttributes$MediaType ISO_C7`
+- `public static final java.awt.PageAttributes$MediaType ISO_C8`
+- `public static final java.awt.PageAttributes$MediaType ISO_C9`
+- `public static final java.awt.PageAttributes$MediaType ISO_C10`
+- `public static final java.awt.PageAttributes$MediaType ISO_DESIGNATED_LONG`
+- `public static final java.awt.PageAttributes$MediaType EXECUTIVE`
+- `public static final java.awt.PageAttributes$MediaType FOLIO`
+- `public static final java.awt.PageAttributes$MediaType INVOICE`
+- `public static final java.awt.PageAttributes$MediaType LEDGER`
+- `public static final java.awt.PageAttributes$MediaType NA_LETTER`
+- `public static final java.awt.PageAttributes$MediaType NA_LEGAL`
+- `public static final java.awt.PageAttributes$MediaType QUARTO`
+- `public static final java.awt.PageAttributes$MediaType A`
+- `public static final java.awt.PageAttributes$MediaType B`
+- `public static final java.awt.PageAttributes$MediaType C`
+- `public static final java.awt.PageAttributes$MediaType D`
+- `public static final java.awt.PageAttributes$MediaType E`
+- `public static final java.awt.PageAttributes$MediaType NA_10X15_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_10X14_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_10X13_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_9X12_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_9X11_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_7X9_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_6X9_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_NUMBER_9_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_NUMBER_10_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_NUMBER_11_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_NUMBER_12_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType NA_NUMBER_14_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType INVITE_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType ITALY_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType MONARCH_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType PERSONAL_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType A0`
+- `public static final java.awt.PageAttributes$MediaType A1`
+- `public static final java.awt.PageAttributes$MediaType A2`
+- `public static final java.awt.PageAttributes$MediaType A3`
+- `public static final java.awt.PageAttributes$MediaType A4`
+- `public static final java.awt.PageAttributes$MediaType A5`
+- `public static final java.awt.PageAttributes$MediaType A6`
+- `public static final java.awt.PageAttributes$MediaType A7`
+- `public static final java.awt.PageAttributes$MediaType A8`
+- `public static final java.awt.PageAttributes$MediaType A9`
+- `public static final java.awt.PageAttributes$MediaType A10`
+- `public static final java.awt.PageAttributes$MediaType B0`
+- `public static final java.awt.PageAttributes$MediaType B1`
+- `public static final java.awt.PageAttributes$MediaType B2`
+- `public static final java.awt.PageAttributes$MediaType B3`
+- `public static final java.awt.PageAttributes$MediaType B4`
+- `public static final java.awt.PageAttributes$MediaType ISO_B4_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType B5`
+- `public static final java.awt.PageAttributes$MediaType ISO_B5_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType B6`
+- `public static final java.awt.PageAttributes$MediaType B7`
+- `public static final java.awt.PageAttributes$MediaType B8`
+- `public static final java.awt.PageAttributes$MediaType B9`
+- `public static final java.awt.PageAttributes$MediaType B10`
+- `public static final java.awt.PageAttributes$MediaType C0`
+- `public static final java.awt.PageAttributes$MediaType ISO_C0_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C1`
+- `public static final java.awt.PageAttributes$MediaType ISO_C1_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C2`
+- `public static final java.awt.PageAttributes$MediaType ISO_C2_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C3`
+- `public static final java.awt.PageAttributes$MediaType ISO_C3_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C4`
+- `public static final java.awt.PageAttributes$MediaType ISO_C4_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C5`
+- `public static final java.awt.PageAttributes$MediaType ISO_C5_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C6`
+- `public static final java.awt.PageAttributes$MediaType ISO_C6_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C7`
+- `public static final java.awt.PageAttributes$MediaType ISO_C7_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C8`
+- `public static final java.awt.PageAttributes$MediaType ISO_C8_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C9`
+- `public static final java.awt.PageAttributes$MediaType ISO_C9_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType C10`
+- `public static final java.awt.PageAttributes$MediaType ISO_C10_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType ISO_DESIGNATED_LONG_ENVELOPE`
+- `public static final java.awt.PageAttributes$MediaType STATEMENT`
+- `public static final java.awt.PageAttributes$MediaType TABLOID`
+- `public static final java.awt.PageAttributes$MediaType LETTER`
+- `public static final java.awt.PageAttributes$MediaType NOTE`
+- `public static final java.awt.PageAttributes$MediaType LEGAL`
+- `public static final java.awt.PageAttributes$MediaType ENV_10X15`
+- `public static final java.awt.PageAttributes$MediaType ENV_10X14`
+- `public static final java.awt.PageAttributes$MediaType ENV_10X13`
+- `public static final java.awt.PageAttributes$MediaType ENV_9X12`
+- `public static final java.awt.PageAttributes$MediaType ENV_9X11`
+- `public static final java.awt.PageAttributes$MediaType ENV_7X9`
+- `public static final java.awt.PageAttributes$MediaType ENV_6X9`
+- `public static final java.awt.PageAttributes$MediaType ENV_9`
+- `public static final java.awt.PageAttributes$MediaType ENV_10`
+- `public static final java.awt.PageAttributes$MediaType ENV_11`
+- `public static final java.awt.PageAttributes$MediaType ENV_12`
+- `public static final java.awt.PageAttributes$MediaType ENV_14`
+- `public static final java.awt.PageAttributes$MediaType ENV_INVITE`
+- `public static final java.awt.PageAttributes$MediaType ENV_ITALY`
+- `public static final java.awt.PageAttributes$MediaType ENV_MONARCH`
+- `public static final java.awt.PageAttributes$MediaType ENV_PERSONAL`
+- `public static final java.awt.PageAttributes$MediaType INVITE`
+- `public static final java.awt.PageAttributes$MediaType ITALY`
+- `public static final java.awt.PageAttributes$MediaType MONARCH`
+- `public static final java.awt.PageAttributes$MediaType PERSONAL`
+
+
+[← Back to Package](index.md)

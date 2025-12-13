@@ -10,8 +10,6 @@
 
 ## ✗ Missing Methods
 
-- `public boolean equals(java.lang.Object)`
-- `public int hashCode()`
 - `public java.awt.Shape createStrokedShape(java.awt.Shape)`
 - `public float getLineWidth()`
 - `public int getEndCap()`
@@ -19,6 +17,8 @@
 - `public float getMiterLimit()`
 - `public float[] getDashArray()`
 - `public float getDashPhase()`
+- `public boolean equals(java.lang.Object)`
+- `public int hashCode()`
 
 ## ✗ Missing Fields
 
@@ -31,11 +31,11 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.BasicStroke()`
-- `public java.awt.BasicStroke(float)`
-- `public java.awt.BasicStroke(float, int, int)`
-- `public java.awt.BasicStroke(float, int, int, float)`
 - `public java.awt.BasicStroke(float, int, int, float, float[], float)`
+- `public java.awt.BasicStroke(float, int, int, float)`
+- `public java.awt.BasicStroke(float, int, int)`
+- `public java.awt.BasicStroke(float)`
+- `public java.awt.BasicStroke()`
 
 
 [← Back to Package](index.md)

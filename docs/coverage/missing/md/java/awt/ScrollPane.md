@@ -10,27 +10,27 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String paramString()`
-- `public void addNotify()`
-- `public javax.accessibility.AccessibleContext getAccessibleContext()`
-- `public void layout()`
-- `protected boolean eventTypeEnabled(int)`
-- `protected void processMouseWheelEvent(java.awt.event.MouseWheelEvent)`
-- `public void doLayout()`
 - `protected final void addImpl(java.awt.Component, java.lang.Object, int)`
 - `public final void setLayout(java.awt.LayoutManager)`
 - `public void printComponents(java.awt.Graphics)`
-- `public void setWheelScrollingEnabled(boolean)`
+- `public int getScrollbarDisplayPolicy()`
+- `public java.awt.Dimension getViewportSize()`
 - `public int getHScrollbarHeight()`
 - `public int getVScrollbarWidth()`
-- `public void setScrollPosition(int, int)`
-- `public void setScrollPosition(java.awt.Point)`
-- `public java.awt.Point getScrollPosition()`
-- `public java.awt.Dimension getViewportSize()`
-- `public boolean isWheelScrollingEnabled()`
-- `public int getScrollbarDisplayPolicy()`
 - `public java.awt.Adjustable getVAdjustable()`
 - `public java.awt.Adjustable getHAdjustable()`
+- `public void setScrollPosition(java.awt.Point)`
+- `public void setScrollPosition(int, int)`
+- `public java.awt.Point getScrollPosition()`
+- `public void setWheelScrollingEnabled(boolean)`
+- `public boolean isWheelScrollingEnabled()`
+- `public void addNotify()`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public void doLayout()`
+- `public void layout()`
+- `protected boolean eventTypeEnabled(int)`
+- `protected void processMouseWheelEvent(java.awt.event.MouseWheelEvent)`
+- `public java.lang.String paramString()`
 
 ## ✗ Missing Fields
 
@@ -40,8 +40,8 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.ScrollPane(int)`
 - `public java.awt.ScrollPane()`
+- `public java.awt.ScrollPane(int)`
 
 
 [← Back to Package](index.md)

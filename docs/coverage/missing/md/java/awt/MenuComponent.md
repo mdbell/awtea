@@ -10,19 +10,19 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String getName()`
+- `protected void processEvent(java.awt.AWTEvent)`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `protected final java.lang.Object getTreeLock()`
+- `public java.awt.Font getFont()`
+- `public void setFont(java.awt.Font)`
+- `public final void dispatchEvent(java.awt.AWTEvent)`
+- `public boolean postEvent(java.awt.Event)`
+- `public void removeNotify()`
 - `public java.lang.String toString()`
+- `public java.lang.String getName()`
 - `public java.awt.MenuContainer getParent()`
 - `public void setName(java.lang.String)`
 - `protected java.lang.String paramString()`
-- `protected final java.lang.Object getTreeLock()`
-- `protected void processEvent(java.awt.AWTEvent)`
-- `public javax.accessibility.AccessibleContext getAccessibleContext()`
-- `public void removeNotify()`
-- `public final void dispatchEvent(java.awt.AWTEvent)`
-- `public boolean postEvent(java.awt.Event)`
-- `public java.awt.Font getFont()`
-- `public void setFont(java.awt.Font)`
 
 ## ✗ Missing Constructors
 

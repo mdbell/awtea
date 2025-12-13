@@ -10,17 +10,17 @@
 
 ## ✗ Missing Methods
 
-- `public boolean equals(java.lang.Object)`
-- `public int hashCode()`
-- `public boolean contains(double, double, double, double)`
-- `public boolean contains(double, double)`
+- `public void setFrame(double, double, double, double)`
 - `public boolean intersects(double, double, double, double)`
 - `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)`
-- `public void setFrame(double, double, double, double)`
 - `public abstract double getArcWidth()`
 - `public abstract double getArcHeight()`
-- `public abstract void setRoundRect(double, double, double, double, double, double)`
 - `public void setRoundRect(java.awt.geom.RoundRectangle2D)`
+- `public abstract void setRoundRect(double, double, double, double, double, double)`
+- `public boolean equals(java.lang.Object)`
+- `public int hashCode()`
+- `public boolean contains(double, double)`
+- `public boolean contains(double, double, double, double)`
 
 ## ✗ Missing Constructors
 

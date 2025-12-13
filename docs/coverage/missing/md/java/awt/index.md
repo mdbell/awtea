@@ -1,6 +1,6 @@
 # Package: `java.awt`
 
-**Coverage:** 0 / 1451 (0.0%)
+**Coverage:** 0 / 1754 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -8,17 +8,17 @@
 
 ## Classes
 
-### [`Color`](Color.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+### [`Choice`](Choice.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
-**Coverage:** 0 / 59 (0.0%)
+**Coverage:** 0 / 24 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
-### [`Choice`](Choice.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+### [`BufferCapabilities$FlipContents`](BufferCapabilities_FlipContents.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
-**Coverage:** 0 / 24 (0.0%)
+**Coverage:** 0 / 6 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -35,6 +35,14 @@
 ### [`LayoutManager2`](LayoutManager2.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 5 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`JobAttributes$MultipleDocumentHandlingType`](JobAttributes_MultipleDocumentHandlingType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 4 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -88,6 +96,14 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`Event`](Event.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 83 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
 ### [`MenuShortcut`](MenuShortcut.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 9 (0.0%)
@@ -115,6 +131,14 @@
 ### [`IllegalComponentStateException`](IllegalComponentStateException.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 2 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`PageAttributes$OriginType`](PageAttributes_OriginType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 4 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -168,9 +192,33 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`JobAttributes$DestinationType`](JobAttributes_DestinationType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 4 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`GraphicsDevice$WindowTranslucency`](GraphicsDevice_WindowTranslucency.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
 ### [`BasicStroke`](BasicStroke.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 20 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`PageAttributes$OrientationRequestedType`](PageAttributes_OrientationRequestedType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 4 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -216,6 +264,14 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`MultipleGradientPaint$ColorSpaceType`](MultipleGradientPaint_ColorSpaceType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 4 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
 ### [`AWTKeyStroke`](AWTKeyStroke.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 18 (0.0%)
@@ -227,6 +283,14 @@
 ### [`AlphaComposite`](AlphaComposite.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 33 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`Dialog$ModalityType`](Dialog_ModalityType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 6 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -304,6 +368,14 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`PageAttributes$MediaType`](PageAttributes_MediaType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 149 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
 ### [`ComponentOrientation`](ComponentOrientation.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 7 (0.0%)
@@ -323,6 +395,14 @@
 ### [`KeyEventDispatcher`](KeyEventDispatcher.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 1 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`RenderingHints$Key`](RenderingHints_Key.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -368,14 +448,6 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
-### [`Point`](Point.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
-
-**Coverage:** 0 / 15 (0.0%)
-
-```
-[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
-```
-
 ### [`PointerInfo`](PointerInfo.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 2 (0.0%)
@@ -403,6 +475,14 @@
 ### [`PopupMenu`](PopupMenu.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 6 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`Window$Type`](Window_Type.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -448,6 +528,22 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`JobAttributes$DialogType`](JobAttributes_DialogType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`Taskbar`](Taskbar.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 14 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
 ### [`Composite`](Composite.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 1 (0.0%)
@@ -480,14 +576,6 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
-### [`Dimension`](Dimension.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
-
-**Coverage:** 0 / 14 (0.0%)
-
-```
-[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
-```
-
 ### [`PageAttributes`](PageAttributes.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 27 (0.0%)
@@ -504,9 +592,25 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`JobAttributes$DefaultSelectionType`](JobAttributes_DefaultSelectionType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
 ### [`AWTException`](AWTException.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 1 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`MultipleGradientPaint$CycleMethod`](MultipleGradientPaint_CycleMethod.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -521,6 +625,14 @@
 ```
 
 ### [`TexturePaint`](TexturePaint.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`PageAttributes$PrintQualityType`](PageAttributes_PrintQualityType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 5 (0.0%)
 
@@ -555,6 +667,14 @@
 ### [`Robot`](Robot.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 18 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`JobAttributes$SidesType`](JobAttributes_SidesType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -608,6 +728,14 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`Component$BaselineResizeBehavior`](Component_BaselineResizeBehavior.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 6 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
 ### [`Checkbox`](Checkbox.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 21 (0.0%)
@@ -624,9 +752,41 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`EventFilter$FilterAction`](EventFilter_FilterAction.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`Desktop$Action`](Desktop_Action.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 26 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
 ### [`List`](List.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 56 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`Taskbar$Feature`](Taskbar_Feature.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 12 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`PageAttributes$ColorType`](PageAttributes_ColorType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 4 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
@@ -656,9 +816,41 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`CompositeContext`](CompositeContext.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 2 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`Dialog$ModalExclusionType`](Dialog_ModalExclusionType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 5 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`TrayIcon$MessageType`](TrayIcon_MessageType.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 6 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
 ### [`ImageCapabilities`](ImageCapabilities.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
 
 **Coverage:** 0 / 4 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`Taskbar$State`](Taskbar_State.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 7 (0.0%)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%

@@ -16,8 +16,8 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.image.ByteLookupTable(int, byte[][])`
 - `public java.awt.image.ByteLookupTable(int, byte[])`
+- `public java.awt.image.ByteLookupTable(int, byte[][])`
 
 
 [← Back to Package](index.md)

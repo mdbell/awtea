@@ -10,11 +10,11 @@
 
 ## ✗ Missing Methods
 
-- `public int getValue()`
-- `public java.lang.String paramString()`
 - `public int getAdjustmentType()`
 - `public boolean getValueIsAdjusting()`
 - `public java.awt.Adjustable getAdjustable()`
+- `public int getValue()`
+- `public java.lang.String paramString()`
 
 ## ✗ Missing Fields
 
@@ -29,8 +29,8 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.event.AdjustmentEvent(java.awt.Adjustable, int, int, int)`
 - `public java.awt.event.AdjustmentEvent(java.awt.Adjustable, int, int, int, boolean)`
+- `public java.awt.event.AdjustmentEvent(java.awt.Adjustable, int, int, int)`
 
 
 [← Back to Package](index.md)

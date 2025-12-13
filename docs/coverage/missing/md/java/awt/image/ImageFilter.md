@@ -10,16 +10,16 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.Object clone()`
-- `public void setProperties(java.util.Hashtable)`
+- `public void setColorModel(java.awt.image.ColorModel)`
 - `public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)`
 - `public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)`
-- `public void setColorModel(java.awt.image.ColorModel)`
+- `public java.awt.image.ImageFilter getFilterInstance(java.awt.image.ImageConsumer)`
 - `public void setDimensions(int, int)`
 - `public void setHints(int)`
 - `public void imageComplete(int)`
-- `public java.awt.image.ImageFilter getFilterInstance(java.awt.image.ImageConsumer)`
 - `public void resendTopDownLeftRight(java.awt.image.ImageProducer)`
+- `public java.lang.Object clone()`
+- `public void setProperties(java.util.Hashtable)`
 
 ## ✗ Missing Fields
 

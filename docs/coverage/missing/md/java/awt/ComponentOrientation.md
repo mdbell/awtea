@@ -10,8 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public static java.awt.ComponentOrientation getOrientation(java.util.ResourceBundle)`
 - `public static java.awt.ComponentOrientation getOrientation(java.util.Locale)`
+- `public static java.awt.ComponentOrientation getOrientation(java.util.ResourceBundle)`
 - `public boolean isLeftToRight()`
 - `public boolean isHorizontal()`
 

@@ -10,16 +10,16 @@
 
 ## ✗ Missing Methods
 
-- `public abstract int validate(java.awt.GraphicsConfiguration)`
+- `public abstract java.awt.Graphics2D createGraphics()`
 - `public java.awt.image.ImageProducer getSource()`
+- `public abstract java.awt.ImageCapabilities getCapabilities()`
+- `public abstract boolean contentsLost()`
 - `public int getTransparency()`
 - `public abstract int getWidth()`
 - `public abstract int getHeight()`
 - `public java.awt.Graphics getGraphics()`
-- `public abstract java.awt.Graphics2D createGraphics()`
-- `public abstract java.awt.ImageCapabilities getCapabilities()`
-- `public abstract boolean contentsLost()`
 - `public abstract java.awt.image.BufferedImage getSnapshot()`
+- `public abstract int validate(java.awt.GraphicsConfiguration)`
 
 ## ✗ Missing Fields
 
@@ -30,7 +30,7 @@
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.image.VolatileImage()`
+- `public java.awt.image.VolatileImage()`
 
 
 [← Back to Package](index.md)

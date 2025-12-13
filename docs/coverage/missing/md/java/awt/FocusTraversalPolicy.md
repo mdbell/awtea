@@ -19,7 +19,7 @@
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.FocusTraversalPolicy()`
+- `public java.awt.FocusTraversalPolicy()`
 
 
 [← Back to Package](index.md)

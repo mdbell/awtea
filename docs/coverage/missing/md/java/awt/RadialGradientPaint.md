@@ -10,21 +10,21 @@
 
 ## ✗ Missing Methods
 
-- `public java.awt.PaintContext createContext(java.awt.image.ColorModel, java.awt.Rectangle, java.awt.geom.Rectangle2D, java.awt.geom.AffineTransform, java.awt.RenderingHints)`
 - `public java.awt.geom.Point2D getCenterPoint()`
 - `public java.awt.geom.Point2D getFocusPoint()`
 - `public float getRadius()`
+- `public java.awt.PaintContext createContext(java.awt.image.ColorModel, java.awt.Rectangle, java.awt.geom.Rectangle2D, java.awt.geom.AffineTransform, java.awt.RenderingHints)`
 
 ## ✗ Missing Constructors
 
-- `public java.awt.RadialGradientPaint(float, float, float, float, float, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod)`
-- `public java.awt.RadialGradientPaint(java.awt.geom.Point2D, float, java.awt.geom.Point2D, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod)`
-- `public java.awt.RadialGradientPaint(java.awt.geom.Point2D, float, java.awt.geom.Point2D, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod, java.awt.MultipleGradientPaint$ColorSpaceType, java.awt.geom.AffineTransform)`
-- `public java.awt.RadialGradientPaint(java.awt.geom.Rectangle2D, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod)`
 - `public java.awt.RadialGradientPaint(float, float, float, float[], java.awt.Color[])`
+- `public java.awt.RadialGradientPaint(java.awt.geom.Rectangle2D, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod)`
 - `public java.awt.RadialGradientPaint(java.awt.geom.Point2D, float, float[], java.awt.Color[])`
 - `public java.awt.RadialGradientPaint(float, float, float, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod)`
 - `public java.awt.RadialGradientPaint(java.awt.geom.Point2D, float, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod)`
+- `public java.awt.RadialGradientPaint(float, float, float, float, float, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod)`
+- `public java.awt.RadialGradientPaint(java.awt.geom.Point2D, float, java.awt.geom.Point2D, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod)`
+- `public java.awt.RadialGradientPaint(java.awt.geom.Point2D, float, java.awt.geom.Point2D, float[], java.awt.Color[], java.awt.MultipleGradientPaint$CycleMethod, java.awt.MultipleGradientPaint$ColorSpaceType, java.awt.geom.AffineTransform)`
 
 
 [← Back to Package](index.md)
