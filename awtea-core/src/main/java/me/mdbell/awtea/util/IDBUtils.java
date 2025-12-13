@@ -1,6 +1,8 @@
 package me.mdbell.awtea.util;
 
 import lombok.experimental.UtilityClass;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
@@ -15,6 +17,8 @@ import me.mdbell.awtea.impl.idb.IndexDBVirtualFSException;
 
 @UtilityClass
 public class IDBUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(IDBUtils.class);
 
     private final IDBFactory factory = IDBFactory.getInstance();
 
@@ -32,7 +36,7 @@ public class IDBUtils {
         request.setOnUpgradeNeeded(upgradeHandler);
 
         request.setOnError(() -> {
-            System.err.println(request.getError());
+            log.error("Failed to open database: {}", request.getError());
             callback.error(new IndexDBVirtualFSException("Failed to open database"));
         });
 

@@ -7,6 +7,8 @@ import me.mdbell.awtea.impl.Debug;
 import me.mdbell.awtea.util.ArrayUtils;
 import me.mdbell.awtea.util.IDBUtils;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSByRef;
@@ -23,6 +25,8 @@ import java.util.*;
 @UtilityClass
 @ExtensionMethod({JSObjectsExtensions.class})
 public class IndexedDBHelper {
+
+	private static final Logger logger = LoggerFactory.getLogger(IndexedDBHelper.class);
 
 	public final String DB_NAME = "vfs";
 
@@ -430,7 +434,7 @@ public class IndexedDBHelper {
 			});
 
 			transaction.setOnError(() -> {
-				System.err.println("Transaction failed: " + transaction.getError());
+				logger.error("Transaction failed: {}", transaction.getError());
 				resolve.accept(false);
 			});
 		});
@@ -724,7 +728,7 @@ public class IndexedDBHelper {
 			});
 
 			getRequest.setOnError(() -> {
-				System.err.println(getRequest.getError().toString());
+				logger.debug("Chunk read error (treated as null): {}", getRequest.getError());
 				// we resolve still instead of rejecting, as missing chunks are valid
 				// and we don't want to treat them as errors.
 				resolve.accept(null);
