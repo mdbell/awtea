@@ -7,8 +7,6 @@ import org.teavm.jso.dom.html.HTMLButtonElement;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.css.CSSStyleDeclaration;
 
-import java.awt.*;
-
 /**
  * Decorated floating window with title bar, controls, and resize handle.
  * Extends the base undecorated FloatingWindow class.
