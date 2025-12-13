@@ -2,6 +2,7 @@ package me.mdbell.awtea.ui;
 
 import lombok.*;
 import me.mdbell.awtea.util.ConsoleBridge;
+import me.mdbell.awtea.util.logging.LogLevel;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLElement;
 
@@ -39,7 +40,7 @@ public class LogFrame extends FloatingFrame {
 		});
 	}
 
-	private void appendLine(String level, String msg) {
+	void appendLine(String level, String msg) {
 		LogLevel logLevel = LogLevel.parse(level);
 		LogEntry entry = new LogEntry(logLevel, msg);
 		lines.add(entry);
@@ -80,7 +81,7 @@ public class LogFrame extends FloatingFrame {
 				continue;
 			}
 			HTMLElement span = createElement("li");
-			span.setClassName("log-entry log-entry-" + line.getLevel().getName());
+			span.setClassName("log-entry log-entry-" + line.getLevel().name().toLowerCase());
 			span.setTextContent("[" +
 				Theme.formatTimestamp(line.getTimestamp(), false) +
 				"]: " +
@@ -94,28 +95,7 @@ public class LogFrame extends FloatingFrame {
 		return body;
 	}
 
-	@Getter
-	public enum LogLevel {
-		ERROR("error"),
-		WARN("warn"),
-		INFO("info"),
-		DEBUG("debug");
 
-		private final String name;
-
-		LogLevel(String name) {
-			this.name = name;
-		}
-
-		public static LogLevel parse(String name) {
-			for (LogLevel level : values()) {
-				if (level.name.equalsIgnoreCase(name)) {
-					return level;
-				}
-			}
-			return DEBUG; // default
-		}
-	}
 
 	@Getter
 	@EqualsAndHashCode
