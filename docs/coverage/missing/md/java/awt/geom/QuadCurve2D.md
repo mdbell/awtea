@@ -20,13 +20,13 @@
 - `public abstract double getY2()`
 - `public abstract java.awt.geom.Point2D getP1()`
 - `public abstract java.awt.geom.Point2D getP2()`
-- `public void setCurve(java.awt.geom.QuadCurve2D)`
 - `public void setCurve(java.awt.geom.Point2D[], int)`
-- `public abstract void setCurve(double, double, double, double, double, double)`
-- `public void setCurve(double[], int)`
 - `public void setCurve(java.awt.geom.Point2D, java.awt.geom.Point2D, java.awt.geom.Point2D)`
-- `public double getFlatnessSq()`
+- `public void setCurve(java.awt.geom.QuadCurve2D)`
+- `public void setCurve(double[], int)`
+- `public abstract void setCurve(double, double, double, double, double, double)`
 - `public static double getFlatnessSq(double[], int)`
+- `public double getFlatnessSq()`
 - `public static double getFlatnessSq(double, double, double, double, double, double)`
 - `public double getFlatness()`
 - `public static double getFlatness(double, double, double, double, double, double)`

@@ -47,7 +47,7 @@
 <body>
     <div class="container">
         <h1>AWT API Coverage Report</h1>
-        <p class="timestamp">Generated: 2025-12-12 20:45:52</p>
+        <p class="timestamp">Generated: 2025-12-12 20:51:31</p>
         <div class="summary">
             <h2>Summary</h2>
             <div class="summary-item"><strong>Total Coverage:</strong> 1430 / 2910 (49.1%)</div>
@@ -314,6 +314,97 @@
                             </div>
                             <ul class="item-list missing" id="java_awt_Canvas_miss_ctors" style="display: none;">
                                 <li>public java.awt.Canvas(java.awt.GraphicsConfiguration)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="class">
+                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_Color')">
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Color">▶</span>Color <span class="coverage-badge full">100.0%</span></h3>
+                        <div>Coverage: 59 / 59 (100.0%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100.0%">100.0%</div>
+                </div>
+                    </div>
+                    <div class="class-content" id="cls-rt_class_java_awt_Color">
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Color_impl_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_Color_impl_methods">▶</span> ✓ Implemented Methods (26)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Color_impl_methods" style="display: none;">
+                                <li>public boolean equals(java.lang.Object)</li>
+                                <li>public float[] getColorComponents(float[])</li>
+                                <li>public float[] getColorComponents(java.awt.color.ColorSpace, float[])</li>
+                                <li>public float[] getComponents(float[])</li>
+                                <li>public float[] getComponents(java.awt.color.ColorSpace, float[])</li>
+                                <li>public float[] getRGBColorComponents(float[])</li>
+                                <li>public float[] getRGBComponents(float[])</li>
+                                <li>public int getAlpha()</li>
+                                <li>public int getBlue()</li>
+                                <li>public int getGreen()</li>
+                                <li>public int getRGB()</li>
+                                <li>public int getRed()</li>
+                                <li>public int getTransparency()</li>
+                                <li>public int hashCode()</li>
+                                <li>public java.awt.Color brighter()</li>
+                                <li>public java.awt.Color darker()</li>
+                                <li>public java.awt.PaintContext createContext(java.awt.image.ColorModel, java.awt.Rectangle, java.awt.geom.Rectangle2D, java.awt.geom.AffineTransform, java.awt.RenderingHints)</li>
+                                <li>public java.awt.color.ColorSpace getColorSpace()</li>
+                                <li>public java.lang.String toString()</li>
+                                <li>public static float[] RGBtoHSB(int, int, int, float[])</li>
+                                <li>public static int HSBtoRGB(float, float, float)</li>
+                                <li>public static java.awt.Color decode(java.lang.String)</li>
+                                <li>public static java.awt.Color getColor(java.lang.String)</li>
+                                <li>public static java.awt.Color getColor(java.lang.String, int)</li>
+                                <li>public static java.awt.Color getColor(java.lang.String, java.awt.Color)</li>
+                                <li>public static java.awt.Color getHSBColor(float, float, float)</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Color_impl_fields')">
+                                <span class="toggle-icon" id="icon-java_awt_Color_impl_fields">▶</span> ✓ Implemented Fields (26)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Color_impl_fields" style="display: none;">
+                                <li>public static final java.awt.Color BLACK</li>
+                                <li>public static final java.awt.Color BLUE</li>
+                                <li>public static final java.awt.Color CYAN</li>
+                                <li>public static final java.awt.Color DARK_GRAY</li>
+                                <li>public static final java.awt.Color GRAY</li>
+                                <li>public static final java.awt.Color GREEN</li>
+                                <li>public static final java.awt.Color LIGHT_GRAY</li>
+                                <li>public static final java.awt.Color MAGENTA</li>
+                                <li>public static final java.awt.Color ORANGE</li>
+                                <li>public static final java.awt.Color PINK</li>
+                                <li>public static final java.awt.Color RED</li>
+                                <li>public static final java.awt.Color WHITE</li>
+                                <li>public static final java.awt.Color YELLOW</li>
+                                <li>public static final java.awt.Color black</li>
+                                <li>public static final java.awt.Color blue</li>
+                                <li>public static final java.awt.Color cyan</li>
+                                <li>public static final java.awt.Color darkGray</li>
+                                <li>public static final java.awt.Color gray</li>
+                                <li>public static final java.awt.Color green</li>
+                                <li>public static final java.awt.Color lightGray</li>
+                                <li>public static final java.awt.Color magenta</li>
+                                <li>public static final java.awt.Color orange</li>
+                                <li>public static final java.awt.Color pink</li>
+                                <li>public static final java.awt.Color red</li>
+                                <li>public static final java.awt.Color white</li>
+                                <li>public static final java.awt.Color yellow</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Color_impl_ctors')">
+                                <span class="toggle-icon" id="icon-java_awt_Color_impl_ctors">▶</span> ✓ Implemented Constructors (7)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Color_impl_ctors" style="display: none;">
+                                <li>public java.awt.Color(float, float, float)</li>
+                                <li>public java.awt.Color(float, float, float, float)</li>
+                                <li>public java.awt.Color(int)</li>
+                                <li>public java.awt.Color(int, boolean)</li>
+                                <li>public java.awt.Color(int, int, int)</li>
+                                <li>public java.awt.Color(int, int, int, int)</li>
+                                <li>public java.awt.Color(java.awt.color.ColorSpace, float[], float)</li>
                             </ul>
                         </div>
                     </div>
@@ -690,6 +781,52 @@
                             </div>
                             <ul class="item-list implemented" id="java_awt_Container_impl_ctors" style="display: none;">
                                 <li>public java.awt.Container()</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="class">
+                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_Dimension')">
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Dimension">▶</span>Dimension <span class="coverage-badge full">100.0%</span></h3>
+                        <div>Coverage: 14 / 14 (100.0%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100.0%">100.0%</div>
+                </div>
+                    </div>
+                    <div class="class-content" id="cls-rt_class_java_awt_Dimension">
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Dimension_impl_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_Dimension_impl_methods">▶</span> ✓ Implemented Methods (9)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Dimension_impl_methods" style="display: none;">
+                                <li>public boolean equals(java.lang.Object)</li>
+                                <li>public double getHeight()</li>
+                                <li>public double getWidth()</li>
+                                <li>public int hashCode()</li>
+                                <li>public java.awt.Dimension getSize()</li>
+                                <li>public java.lang.String toString()</li>
+                                <li>public void setSize(double, double)</li>
+                                <li>public void setSize(int, int)</li>
+                                <li>public void setSize(java.awt.Dimension)</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Dimension_impl_fields')">
+                                <span class="toggle-icon" id="icon-java_awt_Dimension_impl_fields">▶</span> ✓ Implemented Fields (2)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Dimension_impl_fields" style="display: none;">
+                                <li>public int height</li>
+                                <li>public int width</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Dimension_impl_ctors')">
+                                <span class="toggle-icon" id="icon-java_awt_Dimension_impl_ctors">▶</span> ✓ Implemented Constructors (3)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Dimension_impl_ctors" style="display: none;">
+                                <li>public java.awt.Dimension()</li>
+                                <li>public java.awt.Dimension(int, int)</li>
+                                <li>public java.awt.Dimension(java.awt.Dimension)</li>
                             </ul>
                         </div>
                     </div>
@@ -1585,6 +1722,53 @@
                         </div>
                     </div>
                 </div>
+                <div class="class">
+                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_Point')">
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Point">▶</span>Point <span class="coverage-badge full">100.0%</span></h3>
+                        <div>Coverage: 15 / 15 (100.0%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100.0%">100.0%</div>
+                </div>
+                    </div>
+                    <div class="class-content" id="cls-rt_class_java_awt_Point">
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Point_impl_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_Point_impl_methods">▶</span> ✓ Implemented Methods (10)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Point_impl_methods" style="display: none;">
+                                <li>public boolean equals(java.lang.Object)</li>
+                                <li>public double getX()</li>
+                                <li>public double getY()</li>
+                                <li>public java.awt.Point getLocation()</li>
+                                <li>public java.lang.String toString()</li>
+                                <li>public void move(int, int)</li>
+                                <li>public void setLocation(double, double)</li>
+                                <li>public void setLocation(int, int)</li>
+                                <li>public void setLocation(java.awt.Point)</li>
+                                <li>public void translate(int, int)</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Point_impl_fields')">
+                                <span class="toggle-icon" id="icon-java_awt_Point_impl_fields">▶</span> ✓ Implemented Fields (2)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Point_impl_fields" style="display: none;">
+                                <li>public int x</li>
+                                <li>public int y</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Point_impl_ctors')">
+                                <span class="toggle-icon" id="icon-java_awt_Point_impl_ctors">▶</span> ✓ Implemented Constructors (3)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Point_impl_ctors" style="display: none;">
+                                <li>public java.awt.Point()</li>
+                                <li>public java.awt.Point(int, int)</li>
+                                <li>public java.awt.Point(java.awt.Point)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
                 <div class="class missing">
                     <div class="class-header" onclick="toggleClass('rt_class_java_awt_Rectangle')">
                         <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Rectangle">▶</span>Rectangle <span class="coverage-badge low">25.0%</span></h3>
@@ -1928,190 +2112,6 @@
                                 <li>public static final int BITMASK</li>
                                 <li>public static final int OPAQUE</li>
                                 <li>public static final int TRANSLUCENT</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="class">
-                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_Color')">
-                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Color">▶</span>Color <span class="coverage-badge full">100.0%</span></h3>
-                        <div>Coverage: 59 / 59 (100.0%)</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: 100.0%">100.0%</div>
-                </div>
-                    </div>
-                    <div class="class-content" id="cls-rt_class_java_awt_Color">
-                        <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Color_impl_methods')">
-                                <span class="toggle-icon" id="icon-java_awt_Color_impl_methods">▶</span> ✓ Implemented Methods (26)
-                            </div>
-                            <ul class="item-list implemented" id="java_awt_Color_impl_methods" style="display: none;">
-                                <li>public boolean equals(java.lang.Object)</li>
-                                <li>public float[] getColorComponents(float[])</li>
-                                <li>public float[] getColorComponents(java.awt.color.ColorSpace, float[])</li>
-                                <li>public float[] getComponents(float[])</li>
-                                <li>public float[] getComponents(java.awt.color.ColorSpace, float[])</li>
-                                <li>public float[] getRGBColorComponents(float[])</li>
-                                <li>public float[] getRGBComponents(float[])</li>
-                                <li>public int getAlpha()</li>
-                                <li>public int getBlue()</li>
-                                <li>public int getGreen()</li>
-                                <li>public int getRGB()</li>
-                                <li>public int getRed()</li>
-                                <li>public int getTransparency()</li>
-                                <li>public int hashCode()</li>
-                                <li>public java.awt.Color brighter()</li>
-                                <li>public java.awt.Color darker()</li>
-                                <li>public java.awt.PaintContext createContext(java.awt.image.ColorModel, java.awt.Rectangle, java.awt.geom.Rectangle2D, java.awt.geom.AffineTransform, java.awt.RenderingHints)</li>
-                                <li>public java.awt.color.ColorSpace getColorSpace()</li>
-                                <li>public java.lang.String toString()</li>
-                                <li>public static float[] RGBtoHSB(int, int, int, float[])</li>
-                                <li>public static int HSBtoRGB(float, float, float)</li>
-                                <li>public static java.awt.Color decode(java.lang.String)</li>
-                                <li>public static java.awt.Color getColor(java.lang.String)</li>
-                                <li>public static java.awt.Color getColor(java.lang.String, int)</li>
-                                <li>public static java.awt.Color getColor(java.lang.String, java.awt.Color)</li>
-                                <li>public static java.awt.Color getHSBColor(float, float, float)</li>
-                            </ul>
-                        </div>
-                        <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Color_impl_fields')">
-                                <span class="toggle-icon" id="icon-java_awt_Color_impl_fields">▶</span> ✓ Implemented Fields (26)
-                            </div>
-                            <ul class="item-list implemented" id="java_awt_Color_impl_fields" style="display: none;">
-                                <li>public static final java.awt.Color BLACK</li>
-                                <li>public static final java.awt.Color BLUE</li>
-                                <li>public static final java.awt.Color CYAN</li>
-                                <li>public static final java.awt.Color DARK_GRAY</li>
-                                <li>public static final java.awt.Color GRAY</li>
-                                <li>public static final java.awt.Color GREEN</li>
-                                <li>public static final java.awt.Color LIGHT_GRAY</li>
-                                <li>public static final java.awt.Color MAGENTA</li>
-                                <li>public static final java.awt.Color ORANGE</li>
-                                <li>public static final java.awt.Color PINK</li>
-                                <li>public static final java.awt.Color RED</li>
-                                <li>public static final java.awt.Color WHITE</li>
-                                <li>public static final java.awt.Color YELLOW</li>
-                                <li>public static final java.awt.Color black</li>
-                                <li>public static final java.awt.Color blue</li>
-                                <li>public static final java.awt.Color cyan</li>
-                                <li>public static final java.awt.Color darkGray</li>
-                                <li>public static final java.awt.Color gray</li>
-                                <li>public static final java.awt.Color green</li>
-                                <li>public static final java.awt.Color lightGray</li>
-                                <li>public static final java.awt.Color magenta</li>
-                                <li>public static final java.awt.Color orange</li>
-                                <li>public static final java.awt.Color pink</li>
-                                <li>public static final java.awt.Color red</li>
-                                <li>public static final java.awt.Color white</li>
-                                <li>public static final java.awt.Color yellow</li>
-                            </ul>
-                        </div>
-                        <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Color_impl_ctors')">
-                                <span class="toggle-icon" id="icon-java_awt_Color_impl_ctors">▶</span> ✓ Implemented Constructors (7)
-                            </div>
-                            <ul class="item-list implemented" id="java_awt_Color_impl_ctors" style="display: none;">
-                                <li>public java.awt.Color(float, float, float)</li>
-                                <li>public java.awt.Color(float, float, float, float)</li>
-                                <li>public java.awt.Color(int)</li>
-                                <li>public java.awt.Color(int, boolean)</li>
-                                <li>public java.awt.Color(int, int, int)</li>
-                                <li>public java.awt.Color(int, int, int, int)</li>
-                                <li>public java.awt.Color(java.awt.color.ColorSpace, float[], float)</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="class">
-                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_Dimension')">
-                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Dimension">▶</span>Dimension <span class="coverage-badge full">100.0%</span></h3>
-                        <div>Coverage: 14 / 14 (100.0%)</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: 100.0%">100.0%</div>
-                </div>
-                    </div>
-                    <div class="class-content" id="cls-rt_class_java_awt_Dimension">
-                        <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Dimension_impl_methods')">
-                                <span class="toggle-icon" id="icon-java_awt_Dimension_impl_methods">▶</span> ✓ Implemented Methods (9)
-                            </div>
-                            <ul class="item-list implemented" id="java_awt_Dimension_impl_methods" style="display: none;">
-                                <li>public boolean equals(java.lang.Object)</li>
-                                <li>public double getHeight()</li>
-                                <li>public double getWidth()</li>
-                                <li>public int hashCode()</li>
-                                <li>public java.awt.Dimension getSize()</li>
-                                <li>public java.lang.String toString()</li>
-                                <li>public void setSize(double, double)</li>
-                                <li>public void setSize(int, int)</li>
-                                <li>public void setSize(java.awt.Dimension)</li>
-                            </ul>
-                        </div>
-                        <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Dimension_impl_fields')">
-                                <span class="toggle-icon" id="icon-java_awt_Dimension_impl_fields">▶</span> ✓ Implemented Fields (2)
-                            </div>
-                            <ul class="item-list implemented" id="java_awt_Dimension_impl_fields" style="display: none;">
-                                <li>public int height</li>
-                                <li>public int width</li>
-                            </ul>
-                        </div>
-                        <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Dimension_impl_ctors')">
-                                <span class="toggle-icon" id="icon-java_awt_Dimension_impl_ctors">▶</span> ✓ Implemented Constructors (3)
-                            </div>
-                            <ul class="item-list implemented" id="java_awt_Dimension_impl_ctors" style="display: none;">
-                                <li>public java.awt.Dimension()</li>
-                                <li>public java.awt.Dimension(int, int)</li>
-                                <li>public java.awt.Dimension(java.awt.Dimension)</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="class">
-                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_Point')">
-                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Point">▶</span>Point <span class="coverage-badge full">100.0%</span></h3>
-                        <div>Coverage: 15 / 15 (100.0%)</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: 100.0%">100.0%</div>
-                </div>
-                    </div>
-                    <div class="class-content" id="cls-rt_class_java_awt_Point">
-                        <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Point_impl_methods')">
-                                <span class="toggle-icon" id="icon-java_awt_Point_impl_methods">▶</span> ✓ Implemented Methods (10)
-                            </div>
-                            <ul class="item-list implemented" id="java_awt_Point_impl_methods" style="display: none;">
-                                <li>public boolean equals(java.lang.Object)</li>
-                                <li>public double getX()</li>
-                                <li>public double getY()</li>
-                                <li>public java.awt.Point getLocation()</li>
-                                <li>public java.lang.String toString()</li>
-                                <li>public void move(int, int)</li>
-                                <li>public void setLocation(double, double)</li>
-                                <li>public void setLocation(int, int)</li>
-                                <li>public void setLocation(java.awt.Point)</li>
-                                <li>public void translate(int, int)</li>
-                            </ul>
-                        </div>
-                        <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Point_impl_fields')">
-                                <span class="toggle-icon" id="icon-java_awt_Point_impl_fields">▶</span> ✓ Implemented Fields (2)
-                            </div>
-                            <ul class="item-list implemented" id="java_awt_Point_impl_fields" style="display: none;">
-                                <li>public int x</li>
-                                <li>public int y</li>
-                            </ul>
-                        </div>
-                        <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Point_impl_ctors')">
-                                <span class="toggle-icon" id="icon-java_awt_Point_impl_ctors">▶</span> ✓ Implemented Constructors (3)
-                            </div>
-                            <ul class="item-list implemented" id="java_awt_Point_impl_ctors" style="display: none;">
-                                <li>public java.awt.Point()</li>
-                                <li>public java.awt.Point(int, int)</li>
-                                <li>public java.awt.Point(java.awt.Point)</li>
                             </ul>
                         </div>
                     </div>

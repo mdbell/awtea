@@ -10,6 +10,9 @@
 
 ## ✗ Missing Methods
 
+- `public void setIconImage(java.awt.Image)`
+- `public java.awt.Image getIconImage()`
+- `public java.awt.PopupMenu getMenu()`
 - `public static java.awt.Taskbar getTaskbar()`
 - `public static boolean isTaskbarSupported()`
 - `public void requestUserAttention(boolean, boolean)`
@@ -20,9 +23,6 @@
 - `public void setProgressValue(int)`
 - `public void setWindowProgressValue(java.awt.Window, int)`
 - `public void setWindowProgressState(java.awt.Window, java.awt.Taskbar$State)`
-- `public void setIconImage(java.awt.Image)`
-- `public java.awt.Image getIconImage()`
-- `public java.awt.PopupMenu getMenu()`
 - `public boolean isSupported(java.awt.Taskbar$Feature)`
 
 

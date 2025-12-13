@@ -10,10 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public java.awt.Component getLayoutComponent(java.lang.Object)`
-- `public java.awt.Component getLayoutComponent(java.awt.Container, java.lang.Object)`
-- `public void addLayoutComponent(java.awt.Component, java.lang.Object)`
 - `public void addLayoutComponent(java.lang.String, java.awt.Component)`
+- `public void addLayoutComponent(java.awt.Component, java.lang.Object)`
 - `public java.awt.Dimension maximumLayoutSize(java.awt.Container)`
 - `public float getLayoutAlignmentX(java.awt.Container)`
 - `public float getLayoutAlignmentY(java.awt.Container)`
@@ -27,6 +25,8 @@
 - `public void setHgap(int)`
 - `public int getVgap()`
 - `public void setVgap(int)`
+- `public java.awt.Component getLayoutComponent(java.awt.Container, java.lang.Object)`
+- `public java.awt.Component getLayoutComponent(java.lang.Object)`
 - `public java.lang.String toString()`
 
 ## ✗ Missing Fields

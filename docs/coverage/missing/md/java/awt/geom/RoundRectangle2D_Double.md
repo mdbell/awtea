@@ -11,14 +11,14 @@
 ## ✗ Missing Methods
 
 - `public java.awt.geom.Rectangle2D getBounds2D()`
+- `public double getArcWidth()`
+- `public double getArcHeight()`
+- `public void setRoundRect(double, double, double, double, double, double)`
+- `public void setRoundRect(java.awt.geom.RoundRectangle2D)`
 - `public double getX()`
 - `public double getY()`
 - `public double getWidth()`
 - `public double getHeight()`
-- `public double getArcWidth()`
-- `public double getArcHeight()`
-- `public void setRoundRect(java.awt.geom.RoundRectangle2D)`
-- `public void setRoundRect(double, double, double, double, double, double)`
 - `public boolean isEmpty()`
 
 ## ✗ Missing Fields

@@ -10,9 +10,9 @@
 
 ## ✗ Missing Methods
 
-- `public short[] lookupPixel(short[], short[])`
-- `public int[] lookupPixel(int[], int[])`
 - `public final short[][] getTable()`
+- `public int[] lookupPixel(int[], int[])`
+- `public short[] lookupPixel(short[], short[])`
 
 ## ✗ Missing Constructors
 

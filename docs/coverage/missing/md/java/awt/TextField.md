@@ -10,14 +10,17 @@
 
 ## ✗ Missing Methods
 
-- `public char getEchoChar()`
-- `public void setEchoChar(char)`
-- `public void setEchoCharacter(char)`
-- `public boolean echoCharIsSet()`
 - `public void addActionListener(java.awt.event.ActionListener)`
 - `public void removeActionListener(java.awt.event.ActionListener)`
 - `public java.awt.event.ActionListener[] getActionListeners()`
 - `protected void processActionEvent(java.awt.event.ActionEvent)`
+- `public void setText(java.lang.String)`
+- `public int getColumns()`
+- `public void setColumns(int)`
+- `public char getEchoChar()`
+- `public void setEchoChar(char)`
+- `public void setEchoCharacter(char)`
+- `public boolean echoCharIsSet()`
 - `public void addNotify()`
 - `public java.util.EventListener[] getListeners(java.lang.Class)`
 - `protected void processEvent(java.awt.AWTEvent)`
@@ -30,9 +33,6 @@
 - `public java.awt.Dimension minimumSize()`
 - `public java.awt.Dimension getMinimumSize()`
 - `public java.awt.Dimension getMinimumSize(int)`
-- `public void setText(java.lang.String)`
-- `public int getColumns()`
-- `public void setColumns(int)`
 - `protected java.lang.String paramString()`
 
 ## ✗ Missing Constructors

@@ -10,13 +10,13 @@
 
 ## ✗ Missing Methods
 
-- `public void setImplicitDownCycleTraversal(boolean)`
-- `public boolean getImplicitDownCycleTraversal()`
-- `public java.awt.Component getFirstComponent(java.awt.Container)`
-- `public java.awt.Component getLastComponent(java.awt.Container)`
 - `public java.awt.Component getComponentAfter(java.awt.Container, java.awt.Component)`
 - `public java.awt.Component getDefaultComponent(java.awt.Container)`
 - `public java.awt.Component getComponentBefore(java.awt.Container, java.awt.Component)`
+- `public java.awt.Component getFirstComponent(java.awt.Container)`
+- `public java.awt.Component getLastComponent(java.awt.Container)`
+- `public void setImplicitDownCycleTraversal(boolean)`
+- `public boolean getImplicitDownCycleTraversal()`
 - `protected boolean accept(java.awt.Component)`
 
 ## ✗ Missing Constructors

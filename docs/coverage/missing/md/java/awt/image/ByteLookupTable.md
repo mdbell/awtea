@@ -10,9 +10,9 @@
 
 ## ✗ Missing Methods
 
-- `public byte[] lookupPixel(byte[], byte[])`
-- `public int[] lookupPixel(int[], int[])`
 - `public final byte[][] getTable()`
+- `public int[] lookupPixel(int[], int[])`
+- `public byte[] lookupPixel(byte[], byte[])`
 
 ## ✗ Missing Constructors
 

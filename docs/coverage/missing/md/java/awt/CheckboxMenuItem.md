@@ -10,7 +10,6 @@
 
 ## ✗ Missing Methods
 
-- `public void setState(boolean)`
 - `public void addNotify()`
 - `public java.lang.Object[] getSelectedObjects()`
 - `public void addItemListener(java.awt.event.ItemListener)`
@@ -20,6 +19,7 @@
 - `protected void processEvent(java.awt.AWTEvent)`
 - `protected void processItemEvent(java.awt.event.ItemEvent)`
 - `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public void setState(boolean)`
 - `public boolean getState()`
 - `public java.lang.String paramString()`
 

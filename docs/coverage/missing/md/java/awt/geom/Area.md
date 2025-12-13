@@ -16,12 +16,12 @@
 - `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)`
 - `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform, double)`
 - `public boolean isRectangular()`
-- `public void subtract(java.awt.geom.Area)`
-- `public void transform(java.awt.geom.AffineTransform)`
 - `public void exclusiveOr(java.awt.geom.Area)`
 - `public boolean isPolygonal()`
 - `public boolean isSingular()`
 - `public java.awt.geom.Area createTransformedArea(java.awt.geom.AffineTransform)`
+- `public void subtract(java.awt.geom.Area)`
+- `public void transform(java.awt.geom.AffineTransform)`
 - `public java.awt.Rectangle getBounds()`
 - `public void intersect(java.awt.geom.Area)`
 - `public void add(java.awt.geom.Area)`

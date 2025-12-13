@@ -14,8 +14,8 @@
 - `public static boolean isDesktopSupported()`
 - `public void edit(java.io.File)`
 - `public void browse(java.net.URI)`
-- `public void mail()`
 - `public void mail(java.net.URI)`
+- `public void mail()`
 - `public void addAppEventListener(java.awt.desktop.SystemEventListener)`
 - `public void removeAppEventListener(java.awt.desktop.SystemEventListener)`
 - `public void setAboutHandler(java.awt.desktop.AboutHandler)`

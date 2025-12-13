@@ -10,14 +10,14 @@
 
 ## ✗ Missing Methods
 
+- `public java.lang.Object getDataElements(float[], int, java.lang.Object)`
 - `public java.lang.Object getDataElements(int, java.lang.Object)`
 - `public java.lang.Object getDataElements(int[], int, java.lang.Object)`
-- `public java.lang.Object getDataElements(float[], int, java.lang.Object)`
 - `public int[] getUnnormalizedComponents(float[], int, int[], int)`
-- `public float[] getNormalizedComponents(java.lang.Object, float[], int)`
 - `public float[] getNormalizedComponents(int[], int, float[], int)`
-- `public int getDataElement(int[], int)`
+- `public float[] getNormalizedComponents(java.lang.Object, float[], int)`
 - `public int getDataElement(float[], int)`
+- `public int getDataElement(int[], int)`
 - `public java.awt.image.ColorModel coerceData(java.awt.image.WritableRaster, boolean)`
 - `public boolean isCompatibleRaster(java.awt.image.Raster)`
 - `public java.awt.image.WritableRaster createCompatibleWritableRaster(int, int)`
@@ -30,12 +30,12 @@
 - `public int getGreen(java.lang.Object)`
 - `public int getBlue(int)`
 - `public int getBlue(java.lang.Object)`
-- `public int getAlpha(java.lang.Object)`
 - `public int getAlpha(int)`
-- `public int getRGB(java.lang.Object)`
+- `public int getAlpha(java.lang.Object)`
 - `public int getRGB(int)`
-- `public int[] getComponents(int, int[], int)`
+- `public int getRGB(java.lang.Object)`
 - `public int[] getComponents(java.lang.Object, int[], int)`
+- `public int[] getComponents(int, int[], int)`
 - `public boolean equals(java.lang.Object)`
 - `public int hashCode()`
 

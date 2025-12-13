@@ -10,12 +10,12 @@
 
 ## ✗ Missing Methods
 
+- `public boolean isPageFlipping()`
 - `public java.awt.ImageCapabilities getFrontBufferCapabilities()`
 - `public java.awt.ImageCapabilities getBackBufferCapabilities()`
 - `public java.awt.BufferCapabilities$FlipContents getFlipContents()`
 - `public boolean isFullScreenRequired()`
 - `public boolean isMultiBufferAvailable()`
-- `public boolean isPageFlipping()`
 - `public java.lang.Object clone()`
 
 ## ✗ Missing Constructors

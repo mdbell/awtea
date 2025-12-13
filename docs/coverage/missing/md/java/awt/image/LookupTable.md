@@ -10,8 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public abstract int[] lookupPixel(int[], int[])`
 - `public int getNumComponents()`
+- `public abstract int[] lookupPixel(int[], int[])`
 - `public int getOffset()`
 
 ## ✗ Missing Constructors

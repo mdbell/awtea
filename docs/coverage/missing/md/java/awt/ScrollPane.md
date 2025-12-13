@@ -13,12 +13,6 @@
 - `protected final void addImpl(java.awt.Component, java.lang.Object, int)`
 - `public final void setLayout(java.awt.LayoutManager)`
 - `public void printComponents(java.awt.Graphics)`
-- `public void addNotify()`
-- `public javax.accessibility.AccessibleContext getAccessibleContext()`
-- `public void doLayout()`
-- `public void layout()`
-- `protected boolean eventTypeEnabled(int)`
-- `protected void processMouseWheelEvent(java.awt.event.MouseWheelEvent)`
 - `public int getScrollbarDisplayPolicy()`
 - `public java.awt.Dimension getViewportSize()`
 - `public int getHScrollbarHeight()`
@@ -30,6 +24,12 @@
 - `public java.awt.Point getScrollPosition()`
 - `public void setWheelScrollingEnabled(boolean)`
 - `public boolean isWheelScrollingEnabled()`
+- `public void addNotify()`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public void doLayout()`
+- `public void layout()`
+- `protected boolean eventTypeEnabled(int)`
+- `protected void processMouseWheelEvent(java.awt.event.MouseWheelEvent)`
 - `public java.lang.String paramString()`
 
 ## ✗ Missing Fields
@@ -40,8 +40,8 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.ScrollPane(int)`
 - `public java.awt.ScrollPane()`
+- `public java.awt.ScrollPane(int)`
 
 
 [← Back to Package](index.md)

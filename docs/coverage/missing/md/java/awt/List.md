@@ -17,6 +17,9 @@
 - `public java.awt.event.ActionListener[] getActionListeners()`
 - `protected void processActionEvent(java.awt.event.ActionEvent)`
 - `public void delItem(int)`
+- `public int[] getSelectedIndexes()`
+- `public boolean isIndexSelected(int)`
+- `public void deselect(int)`
 - `public boolean isSelected(int)`
 - `public java.lang.String[] getItems()`
 - `public void replaceItem(java.lang.String, int)`
@@ -26,9 +29,7 @@
 - `public int getVisibleIndex()`
 - `public void makeVisible(int)`
 - `public void delItems(int, int)`
-- `public int[] getSelectedIndexes()`
-- `public boolean isIndexSelected(int)`
-- `public void deselect(int)`
+- `public int getRows()`
 - `public void addNotify()`
 - `public int getItemCount()`
 - `public int countItems()`
@@ -55,7 +56,6 @@
 - `public java.awt.Dimension getMinimumSize(int)`
 - `public java.awt.Dimension getMinimumSize()`
 - `public void removeNotify()`
-- `public int getRows()`
 - `public void add(java.lang.String)`
 - `public void add(java.lang.String, int)`
 - `public void remove(java.lang.String)`

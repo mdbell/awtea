@@ -12,10 +12,10 @@
 
 - `public static java.awt.SystemTray getSystemTray()`
 - `public java.awt.Dimension getTrayIconSize()`
+- `public java.awt.TrayIcon[] getTrayIcons()`
 - `public void addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
 - `public void removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
 - `public java.beans.PropertyChangeListener[] getPropertyChangeListeners(java.lang.String)`
-- `public java.awt.TrayIcon[] getTrayIcons()`
 - `public void add(java.awt.TrayIcon)`
 - `public void remove(java.awt.TrayIcon)`
 - `public static boolean isSupported()`

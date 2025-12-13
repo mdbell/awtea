@@ -96,9 +96,9 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.Event(java.lang.Object, int, java.lang.Object)`
-- `public java.awt.Event(java.lang.Object, long, int, int, int, int, int, java.lang.Object)`
 - `public java.awt.Event(java.lang.Object, long, int, int, int, int, int)`
+- `public java.awt.Event(java.lang.Object, long, int, int, int, int, int, java.lang.Object)`
+- `public java.awt.Event(java.lang.Object, int, java.lang.Object)`
 
 
 [← Back to Package](index.md)

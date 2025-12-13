@@ -10,16 +10,16 @@
 
 ## ✗ Missing Methods
 
-- `public double getX()`
-- `public double getY()`
-- `public double getWidth()`
-- `public double getHeight()`
 - `public double getAngleStart()`
 - `public double getAngleExtent()`
 - `public void setArc(double, double, double, double, double, double, int)`
 - `public void setAngleStart(double)`
 - `public void setAngleExtent(double)`
 - `protected java.awt.geom.Rectangle2D makeBounds(double, double, double, double)`
+- `public double getX()`
+- `public double getY()`
+- `public double getWidth()`
+- `public double getHeight()`
 - `public boolean isEmpty()`
 
 ## ✗ Missing Fields

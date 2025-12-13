@@ -11,6 +11,11 @@
 ## ✗ Missing Methods
 
 - `public final void setFocusCycleRoot(boolean)`
+- `public boolean isValidateRoot()`
+- `public void dispose()`
+- `public final boolean isFocusableWindow()`
+- `public java.awt.Component getMostRecentFocusOwner()`
+- `public java.awt.Component getFocusOwner()`
 - `public void toBack()`
 - `public void setOpacity(float)`
 - `public void setShape(java.awt.Shape)`
@@ -50,15 +55,6 @@
 - `public void applyResourceBundle(java.lang.String)`
 - `public void setLocationRelativeTo(java.awt.Component)`
 - `public boolean isLocationByPlatform()`
-- `public boolean isValidateRoot()`
-- `public void dispose()`
-- `public final boolean isFocusableWindow()`
-- `public java.awt.Component getMostRecentFocusOwner()`
-- `public java.awt.Component getFocusOwner()`
-- `public void setSize(java.awt.Dimension)`
-- `public void setSize(int, int)`
-- `public void pack()`
-- `public java.util.Locale getLocale()`
 - `public java.awt.Shape getShape()`
 - `public void addNotify()`
 - `public java.util.EventListener[] getListeners(java.lang.Class)`
@@ -73,14 +69,14 @@
 - `public void setBackground(java.awt.Color)`
 - `public void setLocation(int, int)`
 - `public void setLocation(java.awt.Point)`
-- `public void setBounds(java.awt.Rectangle)`
 - `public void setBounds(int, int, int, int)`
+- `public void setBounds(java.awt.Rectangle)`
 - `public void reshape(int, int, int, int)`
 - `public void setMinimumSize(java.awt.Dimension)`
 - `public void setCursor(java.awt.Cursor)`
 - `public void paint(java.awt.Graphics)`
-- `public void createBufferStrategy(int, java.awt.BufferCapabilities)`
 - `public void createBufferStrategy(int)`
+- `public void createBufferStrategy(int, java.awt.BufferCapabilities)`
 - `public java.awt.image.BufferStrategy getBufferStrategy()`
 - `public boolean postEvent(java.awt.Event)`
 - `public java.awt.im.InputContext getInputContext()`
@@ -91,6 +87,10 @@
 - `public void addPropertyChangeListener(java.beans.PropertyChangeListener)`
 - `public void addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)`
 - `public void setType(java.awt.Window$Type)`
+- `public void pack()`
+- `public void setSize(java.awt.Dimension)`
+- `public void setSize(int, int)`
+- `public java.util.Locale getLocale()`
 - `public java.awt.Window$Type getType()`
 - `public boolean isOpaque()`
 - `public boolean isActive()`
@@ -98,8 +98,8 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.Window(java.awt.Frame)`
 - `public java.awt.Window(java.awt.Window)`
+- `public java.awt.Window(java.awt.Frame)`
 - `public java.awt.Window(java.awt.Window, java.awt.GraphicsConfiguration)`
 
 

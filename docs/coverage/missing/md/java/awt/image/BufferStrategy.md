@@ -10,11 +10,11 @@
 
 ## ✗ Missing Methods
 
+- `public void dispose()`
 - `public abstract java.awt.BufferCapabilities getCapabilities()`
 - `public abstract java.awt.Graphics getDrawGraphics()`
 - `public abstract boolean contentsLost()`
 - `public abstract boolean contentsRestored()`
-- `public void dispose()`
 - `public abstract void show()`
 
 ## ✗ Missing Constructors

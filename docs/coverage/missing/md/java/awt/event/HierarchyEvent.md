@@ -10,10 +10,10 @@
 
 ## ✗ Missing Methods
 
+- `public java.awt.Component getComponent()`
 - `public java.awt.Component getChanged()`
 - `public java.awt.Container getChangedParent()`
 - `public long getChangeFlags()`
-- `public java.awt.Component getComponent()`
 - `public java.lang.String paramString()`
 
 ## ✗ Missing Fields

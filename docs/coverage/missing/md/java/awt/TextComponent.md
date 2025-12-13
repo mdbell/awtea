@@ -10,17 +10,6 @@
 
 ## ✗ Missing Methods
 
-- `public void addNotify()`
-- `public void select(int, int)`
-- `public java.util.EventListener[] getListeners(java.lang.Class)`
-- `protected void processEvent(java.awt.AWTEvent)`
-- `public javax.accessibility.AccessibleContext getAccessibleContext()`
-- `public void enableInputMethods(boolean)`
-- `public java.awt.Color getBackground()`
-- `public void setBackground(java.awt.Color)`
-- `public java.awt.im.InputMethodRequests getInputMethodRequests()`
-- `public void removeNotify()`
-- `public java.lang.String getText()`
 - `public int getCaretPosition()`
 - `public int getSelectionStart()`
 - `public int getSelectionEnd()`
@@ -36,6 +25,17 @@
 - `public void removeTextListener(java.awt.event.TextListener)`
 - `public java.awt.event.TextListener[] getTextListeners()`
 - `protected void processTextEvent(java.awt.event.TextEvent)`
+- `public void addNotify()`
+- `public void select(int, int)`
+- `public java.util.EventListener[] getListeners(java.lang.Class)`
+- `protected void processEvent(java.awt.AWTEvent)`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public void enableInputMethods(boolean)`
+- `public java.awt.Color getBackground()`
+- `public void setBackground(java.awt.Color)`
+- `public java.awt.im.InputMethodRequests getInputMethodRequests()`
+- `public void removeNotify()`
+- `public java.lang.String getText()`
 - `protected java.lang.String paramString()`
 
 ## ✗ Missing Fields

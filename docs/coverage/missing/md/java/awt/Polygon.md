@@ -15,12 +15,12 @@
 - `public boolean intersects(double, double, double, double)`
 - `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform, double)`
 - `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)`
+- `public void translate(int, int)`
 - `public void addPoint(int, int)`
 - `public java.awt.Rectangle getBoundingBox()`
-- `public void translate(int, int)`
-- `public void invalidate()`
 - `public boolean inside(int, int)`
 - `public java.awt.Rectangle getBounds()`
+- `public void invalidate()`
 - `public boolean contains(double, double, double, double)`
 - `public boolean contains(int, int)`
 - `public boolean contains(java.awt.geom.Rectangle2D)`

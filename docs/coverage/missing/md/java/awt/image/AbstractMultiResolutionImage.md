@@ -10,11 +10,11 @@
 
 ## ✗ Missing Methods
 
-- `protected abstract java.awt.Image getBaseImage()`
 - `public java.awt.image.ImageProducer getSource()`
 - `public int getWidth(java.awt.image.ImageObserver)`
 - `public int getHeight(java.awt.image.ImageObserver)`
 - `public java.awt.Graphics getGraphics()`
+- `protected abstract java.awt.Image getBaseImage()`
 - `public java.lang.Object getProperty(java.lang.String, java.awt.image.ImageObserver)`
 
 ## ✗ Missing Constructors

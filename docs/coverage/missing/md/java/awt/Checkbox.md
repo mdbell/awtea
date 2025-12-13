@@ -10,11 +10,10 @@
 
 ## ✗ Missing Methods
 
+- `public java.lang.String getLabel()`
 - `public void setLabel(java.lang.String)`
 - `public java.awt.CheckboxGroup getCheckboxGroup()`
 - `public void setCheckboxGroup(java.awt.CheckboxGroup)`
-- `public void setState(boolean)`
-- `public java.lang.String getLabel()`
 - `public void addNotify()`
 - `public java.lang.Object[] getSelectedObjects()`
 - `public void addItemListener(java.awt.event.ItemListener)`
@@ -24,16 +23,17 @@
 - `protected void processEvent(java.awt.AWTEvent)`
 - `protected void processItemEvent(java.awt.event.ItemEvent)`
 - `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public void setState(boolean)`
 - `public boolean getState()`
 - `protected java.lang.String paramString()`
 
 ## ✗ Missing Constructors
 
 - `public java.awt.Checkbox(java.lang.String, boolean)`
-- `public java.awt.Checkbox(java.lang.String, java.awt.CheckboxGroup, boolean)`
+- `public java.awt.Checkbox(java.lang.String, boolean, java.awt.CheckboxGroup)`
 - `public java.awt.Checkbox(java.lang.String)`
 - `public java.awt.Checkbox()`
-- `public java.awt.Checkbox(java.lang.String, boolean, java.awt.CheckboxGroup)`
+- `public java.awt.Checkbox(java.lang.String, java.awt.CheckboxGroup, boolean)`
 
 
 [← Back to Package](index.md)

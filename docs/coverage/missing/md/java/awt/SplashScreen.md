@@ -10,10 +10,10 @@
 
 ## ✗ Missing Methods
 
+- `public java.awt.Graphics2D createGraphics()`
 - `public static java.awt.SplashScreen getSplashScreen()`
 - `public void setImageURL(java.net.URL)`
 - `public java.net.URL getImageURL()`
-- `public java.awt.Graphics2D createGraphics()`
 - `public boolean isVisible()`
 - `public java.awt.Rectangle getBounds()`
 - `public void update()`

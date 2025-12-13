@@ -12,10 +12,10 @@
 
 - `public int getAlignment()`
 - `public void setAlignment(int)`
+- `public void setText(java.lang.String)`
 - `public void addNotify()`
 - `public javax.accessibility.AccessibleContext getAccessibleContext()`
 - `public java.lang.String getText()`
-- `public void setText(java.lang.String)`
 - `protected java.lang.String paramString()`
 
 ## ✗ Missing Fields

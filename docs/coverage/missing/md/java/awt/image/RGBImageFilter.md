@@ -10,13 +10,13 @@
 
 ## ✗ Missing Methods
 
-- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)`
-- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)`
-- `public void filterRGBPixels(int, int, int, int, int[], int, int)`
-- `public abstract int filterRGB(int, int, int)`
 - `public void setColorModel(java.awt.image.ColorModel)`
 - `public void substituteColorModel(java.awt.image.ColorModel, java.awt.image.ColorModel)`
 - `public java.awt.image.IndexColorModel filterIndexColorModel(java.awt.image.IndexColorModel)`
+- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)`
+- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)`
+- `public void filterRGBPixels(int, int, int, int, int[], int, int)`
+- `public abstract int filterRGB(int, int, int)`
 
 ## ✗ Missing Fields
 

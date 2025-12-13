@@ -10,11 +10,6 @@
 
 ## ✗ Missing Methods
 
-- `public void setDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)`
-- `public int[] getPixels(int, int, int, int, int[], java.awt.image.DataBuffer)`
-- `public void setPixels(int, int, int, int, int[], java.awt.image.DataBuffer)`
-- `public int[] getPixel(int, int, int[], java.awt.image.DataBuffer)`
-- `public void setPixel(int, int, int[], java.awt.image.DataBuffer)`
 - `public java.lang.Object getDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)`
 - `public java.awt.image.SampleModel createCompatibleSampleModel(int, int)`
 - `public int getSample(int, int, int, java.awt.image.DataBuffer)`
@@ -24,9 +19,14 @@
 - `public java.awt.image.DataBuffer createDataBuffer()`
 - `public java.awt.image.SampleModel createSubsetSampleModel(int[])`
 - `public void setSample(int, int, int, double, java.awt.image.DataBuffer)`
-- `public void setSample(int, int, int, float, java.awt.image.DataBuffer)`
 - `public void setSample(int, int, int, int, java.awt.image.DataBuffer)`
+- `public void setSample(int, int, int, float, java.awt.image.DataBuffer)`
 - `public void setSamples(int, int, int, int, int, int[], java.awt.image.DataBuffer)`
+- `public void setDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)`
+- `public int[] getPixels(int, int, int, int, int[], java.awt.image.DataBuffer)`
+- `public void setPixels(int, int, int, int, int[], java.awt.image.DataBuffer)`
+- `public int[] getPixel(int, int, int[], java.awt.image.DataBuffer)`
+- `public void setPixel(int, int, int[], java.awt.image.DataBuffer)`
 - `public int hashCode()`
 
 ## ✗ Missing Constructors

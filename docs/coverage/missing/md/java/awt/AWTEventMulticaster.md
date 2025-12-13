@@ -12,17 +12,6 @@
 
 - `public void componentAdded(java.awt.event.ContainerEvent)`
 - `public void componentRemoved(java.awt.event.ContainerEvent)`
-- `public void windowOpened(java.awt.event.WindowEvent)`
-- `public void windowClosing(java.awt.event.WindowEvent)`
-- `public void windowClosed(java.awt.event.WindowEvent)`
-- `public void windowIconified(java.awt.event.WindowEvent)`
-- `public void windowDeiconified(java.awt.event.WindowEvent)`
-- `public void windowActivated(java.awt.event.WindowEvent)`
-- `public void windowDeactivated(java.awt.event.WindowEvent)`
-- `public void windowGainedFocus(java.awt.event.WindowEvent)`
-- `public void windowLostFocus(java.awt.event.WindowEvent)`
-- `public void windowStateChanged(java.awt.event.WindowEvent)`
-- `public void actionPerformed(java.awt.event.ActionEvent)`
 - `public void componentResized(java.awt.event.ComponentEvent)`
 - `public void componentMoved(java.awt.event.ComponentEvent)`
 - `public void componentShown(java.awt.event.ComponentEvent)`
@@ -45,13 +34,24 @@
 - `public void hierarchyChanged(java.awt.event.HierarchyEvent)`
 - `public void ancestorMoved(java.awt.event.HierarchyEvent)`
 - `public void ancestorResized(java.awt.event.HierarchyEvent)`
-- `public static java.util.EventListener[] getListeners(java.util.EventListener, java.lang.Class)`
-- `public void itemStateChanged(java.awt.event.ItemEvent)`
+- `public void windowOpened(java.awt.event.WindowEvent)`
+- `public void windowClosing(java.awt.event.WindowEvent)`
+- `public void windowClosed(java.awt.event.WindowEvent)`
+- `public void windowIconified(java.awt.event.WindowEvent)`
+- `public void windowDeiconified(java.awt.event.WindowEvent)`
+- `public void windowActivated(java.awt.event.WindowEvent)`
+- `public void windowDeactivated(java.awt.event.WindowEvent)`
+- `public void windowGainedFocus(java.awt.event.WindowEvent)`
+- `public void windowLostFocus(java.awt.event.WindowEvent)`
+- `public void windowStateChanged(java.awt.event.WindowEvent)`
+- `public void actionPerformed(java.awt.event.ActionEvent)`
 - `public void textValueChanged(java.awt.event.TextEvent)`
 - `public void adjustmentValueChanged(java.awt.event.AdjustmentEvent)`
 - `protected static java.util.EventListener addInternal(java.util.EventListener, java.util.EventListener)`
 - `protected static java.util.EventListener removeInternal(java.util.EventListener, java.util.EventListener)`
 - `protected void saveInternal(java.io.ObjectOutputStream, java.lang.String)`
+- `public static java.util.EventListener[] getListeners(java.util.EventListener, java.lang.Class)`
+- `public void itemStateChanged(java.awt.event.ItemEvent)`
 - `public static java.awt.event.MouseWheelListener add(java.awt.event.MouseWheelListener, java.awt.event.MouseWheelListener)`
 - `public static java.awt.event.HierarchyBoundsListener add(java.awt.event.HierarchyBoundsListener, java.awt.event.HierarchyBoundsListener)`
 - `public static java.awt.event.HierarchyListener add(java.awt.event.HierarchyListener, java.awt.event.HierarchyListener)`

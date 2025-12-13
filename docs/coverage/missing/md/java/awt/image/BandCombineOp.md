@@ -10,11 +10,11 @@
 
 ## ✗ Missing Methods
 
-- `public final java.awt.RenderingHints getRenderingHints()`
 - `public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.Raster)`
 - `public final float[][] getMatrix()`
 - `public java.awt.image.WritableRaster createCompatibleDestRaster(java.awt.image.Raster)`
 - `public final java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)`
+- `public final java.awt.RenderingHints getRenderingHints()`
 - `public java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)`
 
 ## ✗ Missing Constructors

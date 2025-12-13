@@ -10,10 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public int getOrientation()`
-- `public int getMinimum()`
-- `public int getMaximum()`
 - `public boolean getValueIsAdjusting()`
+- `public int getOrientation()`
 - `public void setMinimum(int)`
 - `public void setMaximum(int)`
 - `public void setUnitIncrement(int)`
@@ -26,6 +24,8 @@
 - `public void removeAdjustmentListener(java.awt.event.AdjustmentListener)`
 - `public void setValueIsAdjusting(boolean)`
 - `public java.awt.event.AdjustmentListener[] getAdjustmentListeners()`
+- `public int getMinimum()`
+- `public int getMaximum()`
 - `public java.lang.String toString()`
 - `public int getValue()`
 - `public void setValue(int)`

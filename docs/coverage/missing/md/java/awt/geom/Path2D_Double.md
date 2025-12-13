@@ -12,11 +12,11 @@
 
 - `public final java.awt.geom.Rectangle2D getBounds2D()`
 - `public final java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)`
-- `public final void transform(java.awt.geom.AffineTransform)`
 - `public final void moveTo(double, double)`
 - `public final void lineTo(double, double)`
 - `public final void quadTo(double, double, double, double)`
 - `public final void curveTo(double, double, double, double, double, double)`
+- `public final void transform(java.awt.geom.AffineTransform)`
 - `public final void append(java.awt.geom.PathIterator, boolean)`
 - `public final java.lang.Object clone()`
 - `public final void trimToSize()`

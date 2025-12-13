@@ -47,7 +47,7 @@
 <body>
     <div class="container">
         <h1>AWT API Coverage Report</h1>
-        <p class="timestamp">Generated: 2025-12-12 20:45:55</p>
+        <p class="timestamp">Generated: 2025-12-12 20:51:34</p>
         <div class="summary">
             <h2>Summary</h2>
             <div class="summary-item"><strong>Total Coverage:</strong> 0 / 2711 (0.0%)</div>
@@ -346,9 +346,9 @@
                                 <li>public java.io.FilenameFilter getFilenameFilter()</li>
                                 <li>public void setFilenameFilter(java.io.FilenameFilter)</li>
                                 <li>public void addNotify()</li>
-                                <li>public java.io.File[] getFiles()</li>
                                 <li>protected java.lang.String paramString()</li>
                                 <li>public java.lang.String getFile()</li>
+                                <li>public java.io.File[] getFiles()</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -365,9 +365,9 @@
                                 <span class="toggle-icon" id="icon-java_awt_FileDialog_miss_ctors">▶</span> ✗ Missing Constructors (6)
                             </div>
                             <ul class="item-list missing" id="java_awt_FileDialog_miss_ctors" style="display: none;">
-                                <li>public java.awt.FileDialog(java.awt.Dialog)</li>
-                                <li>public java.awt.FileDialog(java.awt.Dialog, java.lang.String, int)</li>
                                 <li>public java.awt.FileDialog(java.awt.Dialog, java.lang.String)</li>
+                                <li>public java.awt.FileDialog(java.awt.Dialog, java.lang.String, int)</li>
+                                <li>public java.awt.FileDialog(java.awt.Dialog)</li>
                                 <li>public java.awt.FileDialog(java.awt.Frame, java.lang.String, int)</li>
                                 <li>public java.awt.FileDialog(java.awt.Frame, java.lang.String)</li>
                                 <li>public java.awt.FileDialog(java.awt.Frame)</li>
@@ -481,10 +481,10 @@
                                 <span class="toggle-icon" id="icon-java_awt_Event_miss_methods">▶</span> ✗ Missing Methods (6)
                             </div>
                             <ul class="item-list missing" id="java_awt_Event_miss_methods" style="display: none;">
-                                <li>public void translate(int, int)</li>
                                 <li>public boolean shiftDown()</li>
                                 <li>public boolean controlDown()</li>
                                 <li>public boolean metaDown()</li>
+                                <li>public void translate(int, int)</li>
                                 <li>public java.lang.String toString()</li>
                                 <li>protected java.lang.String paramString()</li>
                             </ul>
@@ -632,10 +632,10 @@
                             <ul class="item-list missing" id="java_awt_SystemTray_miss_methods" style="display: none;">
                                 <li>public static java.awt.SystemTray getSystemTray()</li>
                                 <li>public java.awt.Dimension getTrayIconSize()</li>
+                                <li>public java.awt.TrayIcon[] getTrayIcons()</li>
                                 <li>public void addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)</li>
                                 <li>public void removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)</li>
                                 <li>public java.beans.PropertyChangeListener[] getPropertyChangeListeners(java.lang.String)</li>
-                                <li>public java.awt.TrayIcon[] getTrayIcons()</li>
                                 <li>public void add(java.awt.TrayIcon)</li>
                                 <li>public void remove(java.awt.TrayIcon)</li>
                                 <li>public static boolean isSupported()</li>
@@ -773,15 +773,6 @@
                                 <span class="toggle-icon" id="icon-java_awt_ScrollPane_miss_methods">▶</span> ✗ Missing Methods (21)
                             </div>
                             <ul class="item-list missing" id="java_awt_ScrollPane_miss_methods" style="display: none;">
-                                <li>protected final void addImpl(java.awt.Component, java.lang.Object, int)</li>
-                                <li>public final void setLayout(java.awt.LayoutManager)</li>
-                                <li>public void printComponents(java.awt.Graphics)</li>
-                                <li>public void addNotify()</li>
-                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
-                                <li>public void doLayout()</li>
-                                <li>public void layout()</li>
-                                <li>protected boolean eventTypeEnabled(int)</li>
-                                <li>protected void processMouseWheelEvent(java.awt.event.MouseWheelEvent)</li>
                                 <li>public int getScrollbarDisplayPolicy()</li>
                                 <li>public java.awt.Dimension getViewportSize()</li>
                                 <li>public int getHScrollbarHeight()</li>
@@ -793,6 +784,15 @@
                                 <li>public java.awt.Point getScrollPosition()</li>
                                 <li>public void setWheelScrollingEnabled(boolean)</li>
                                 <li>public boolean isWheelScrollingEnabled()</li>
+                                <li>protected final void addImpl(java.awt.Component, java.lang.Object, int)</li>
+                                <li>public final void setLayout(java.awt.LayoutManager)</li>
+                                <li>public void printComponents(java.awt.Graphics)</li>
+                                <li>public void addNotify()</li>
+                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
+                                <li>public void doLayout()</li>
+                                <li>public void layout()</li>
+                                <li>protected boolean eventTypeEnabled(int)</li>
+                                <li>protected void processMouseWheelEvent(java.awt.event.MouseWheelEvent)</li>
                                 <li>public java.lang.String paramString()</li>
                             </ul>
                         </div>
@@ -834,14 +834,14 @@
                                 <li>public java.awt.MenuItem getShortcutMenuItem(java.awt.MenuShortcut)</li>
                                 <li>public java.util.Enumeration shortcuts()</li>
                                 <li>public void deleteShortcut(java.awt.MenuShortcut)</li>
-                                <li>public void addNotify()</li>
-                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
-                                <li>public void removeNotify()</li>
                                 <li>public java.awt.Menu getHelpMenu()</li>
                                 <li>public void setHelpMenu(java.awt.Menu)</li>
                                 <li>public int getMenuCount()</li>
                                 <li>public int countMenus()</li>
                                 <li>public java.awt.Menu getMenu(int)</li>
+                                <li>public void addNotify()</li>
+                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
+                                <li>public void removeNotify()</li>
                                 <li>public java.awt.Menu add(java.awt.Menu)</li>
                                 <li>public void remove(int)</li>
                                 <li>public void remove(java.awt.MenuComponent)</li>
@@ -873,12 +873,6 @@
                             <ul class="item-list missing" id="java_awt_Scrollbar_miss_methods" style="display: none;">
                                 <li>public int getOrientation()</li>
                                 <li>public boolean getValueIsAdjusting()</li>
-                                <li>public void addNotify()</li>
-                                <li>public java.util.EventListener[] getListeners(java.lang.Class)</li>
-                                <li>protected void processEvent(java.awt.AWTEvent)</li>
-                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
-                                <li>public int getMinimum()</li>
-                                <li>public int getMaximum()</li>
                                 <li>public void setMinimum(int)</li>
                                 <li>public void setMaximum(int)</li>
                                 <li>public void setUnitIncrement(int)</li>
@@ -899,6 +893,12 @@
                                 <li>public int getPageIncrement()</li>
                                 <li>public void setValues(int, int, int, int)</li>
                                 <li>protected void processAdjustmentEvent(java.awt.event.AdjustmentEvent)</li>
+                                <li>public void addNotify()</li>
+                                <li>public java.util.EventListener[] getListeners(java.lang.Class)</li>
+                                <li>protected void processEvent(java.awt.AWTEvent)</li>
+                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
+                                <li>public int getMinimum()</li>
+                                <li>public int getMaximum()</li>
                                 <li>public int getValue()</li>
                                 <li>public void setValue(int)</li>
                                 <li>protected java.lang.String paramString()</li>
@@ -918,9 +918,9 @@
                                 <span class="toggle-icon" id="icon-java_awt_Scrollbar_miss_ctors">▶</span> ✗ Missing Constructors (3)
                             </div>
                             <ul class="item-list missing" id="java_awt_Scrollbar_miss_ctors" style="display: none;">
-                                <li>public java.awt.Scrollbar(int)</li>
-                                <li>public java.awt.Scrollbar()</li>
                                 <li>public java.awt.Scrollbar(int, int, int, int, int)</li>
+                                <li>public java.awt.Scrollbar()</li>
+                                <li>public java.awt.Scrollbar(int)</li>
                             </ul>
                         </div>
                     </div>
@@ -939,17 +939,6 @@
                                 <span class="toggle-icon" id="icon-java_awt_TextArea_miss_methods">▶</span> ✗ Missing Methods (22)
                             </div>
                             <ul class="item-list missing" id="java_awt_TextArea_miss_methods" style="display: none;">
-                                <li>public void appendText(java.lang.String)</li>
-                                <li>public void addNotify()</li>
-                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
-                                <li>public java.awt.Dimension preferredSize(int, int)</li>
-                                <li>public java.awt.Dimension preferredSize()</li>
-                                <li>public java.awt.Dimension getPreferredSize()</li>
-                                <li>public java.awt.Dimension getPreferredSize(int, int)</li>
-                                <li>public java.awt.Dimension minimumSize()</li>
-                                <li>public java.awt.Dimension minimumSize(int, int)</li>
-                                <li>public java.awt.Dimension getMinimumSize()</li>
-                                <li>public java.awt.Dimension getMinimumSize(int, int)</li>
                                 <li>public void insertText(java.lang.String, int)</li>
                                 <li>public void replaceRange(java.lang.String, int, int)</li>
                                 <li>public void replaceText(java.lang.String, int, int)</li>
@@ -958,6 +947,17 @@
                                 <li>public int getColumns()</li>
                                 <li>public void setColumns(int)</li>
                                 <li>public int getScrollbarVisibility()</li>
+                                <li>public void appendText(java.lang.String)</li>
+                                <li>public void addNotify()</li>
+                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
+                                <li>public java.awt.Dimension preferredSize(int, int)</li>
+                                <li>public java.awt.Dimension preferredSize()</li>
+                                <li>public java.awt.Dimension getPreferredSize(int, int)</li>
+                                <li>public java.awt.Dimension getPreferredSize()</li>
+                                <li>public java.awt.Dimension minimumSize(int, int)</li>
+                                <li>public java.awt.Dimension minimumSize()</li>
+                                <li>public java.awt.Dimension getMinimumSize(int, int)</li>
+                                <li>public java.awt.Dimension getMinimumSize()</li>
                                 <li>public void append(java.lang.String)</li>
                                 <li>public void insert(java.lang.String, int)</li>
                                 <li>protected java.lang.String paramString()</li>
@@ -979,11 +979,11 @@
                                 <span class="toggle-icon" id="icon-java_awt_TextArea_miss_ctors">▶</span> ✗ Missing Constructors (5)
                             </div>
                             <ul class="item-list missing" id="java_awt_TextArea_miss_ctors" style="display: none;">
-                                <li>public java.awt.TextArea(java.lang.String)</li>
-                                <li>public java.awt.TextArea()</li>
-                                <li>public java.awt.TextArea(java.lang.String, int, int, int)</li>
                                 <li>public java.awt.TextArea(int, int)</li>
                                 <li>public java.awt.TextArea(java.lang.String, int, int)</li>
+                                <li>public java.awt.TextArea(java.lang.String, int, int, int)</li>
+                                <li>public java.awt.TextArea(java.lang.String)</li>
+                                <li>public java.awt.TextArea()</li>
                             </ul>
                         </div>
                     </div>
@@ -1035,15 +1035,15 @@
                                 <li>public void hierarchyChanged(java.awt.event.HierarchyEvent)</li>
                                 <li>public void ancestorMoved(java.awt.event.HierarchyEvent)</li>
                                 <li>public void ancestorResized(java.awt.event.HierarchyEvent)</li>
-                                <li>public void componentAdded(java.awt.event.ContainerEvent)</li>
-                                <li>public void componentRemoved(java.awt.event.ContainerEvent)</li>
-                                <li>public static java.util.EventListener[] getListeners(java.util.EventListener, java.lang.Class)</li>
-                                <li>public void itemStateChanged(java.awt.event.ItemEvent)</li>
                                 <li>public void textValueChanged(java.awt.event.TextEvent)</li>
                                 <li>public void adjustmentValueChanged(java.awt.event.AdjustmentEvent)</li>
                                 <li>protected static java.util.EventListener addInternal(java.util.EventListener, java.util.EventListener)</li>
                                 <li>protected static java.util.EventListener removeInternal(java.util.EventListener, java.util.EventListener)</li>
                                 <li>protected void saveInternal(java.io.ObjectOutputStream, java.lang.String)</li>
+                                <li>public void componentAdded(java.awt.event.ContainerEvent)</li>
+                                <li>public void componentRemoved(java.awt.event.ContainerEvent)</li>
+                                <li>public static java.util.EventListener[] getListeners(java.util.EventListener, java.lang.Class)</li>
+                                <li>public void itemStateChanged(java.awt.event.ItemEvent)</li>
                                 <li>public static java.awt.event.MouseWheelListener add(java.awt.event.MouseWheelListener, java.awt.event.MouseWheelListener)</li>
                                 <li>public static java.awt.event.HierarchyBoundsListener add(java.awt.event.HierarchyBoundsListener, java.awt.event.HierarchyBoundsListener)</li>
                                 <li>public static java.awt.event.HierarchyListener add(java.awt.event.HierarchyListener, java.awt.event.HierarchyListener)</li>
@@ -1307,8 +1307,6 @@
                             </div>
                             <ul class="item-list missing" id="java_awt_Adjustable_miss_methods" style="display: none;">
                                 <li>public abstract int getOrientation()</li>
-                                <li>public abstract int getMinimum()</li>
-                                <li>public abstract int getMaximum()</li>
                                 <li>public abstract void setMinimum(int)</li>
                                 <li>public abstract void setMaximum(int)</li>
                                 <li>public abstract void setUnitIncrement(int)</li>
@@ -1319,6 +1317,8 @@
                                 <li>public abstract int getVisibleAmount()</li>
                                 <li>public abstract void addAdjustmentListener(java.awt.event.AdjustmentListener)</li>
                                 <li>public abstract void removeAdjustmentListener(java.awt.event.AdjustmentListener)</li>
+                                <li>public abstract int getMinimum()</li>
+                                <li>public abstract int getMaximum()</li>
                                 <li>public abstract int getValue()</li>
                                 <li>public abstract void setValue(int)</li>
                             </ul>
@@ -1437,17 +1437,17 @@
                                 <span class="toggle-icon" id="icon-java_awt_Polygon_miss_methods">▶</span> ✗ Missing Methods (18)
                             </div>
                             <ul class="item-list missing" id="java_awt_Polygon_miss_methods" style="display: none;">
+                                <li>public java.awt.Rectangle getBounds()</li>
                                 <li>public java.awt.geom.Rectangle2D getBounds2D()</li>
                                 <li>public boolean intersects(java.awt.geom.Rectangle2D)</li>
                                 <li>public boolean intersects(double, double, double, double)</li>
                                 <li>public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform, double)</li>
                                 <li>public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)</li>
+                                <li>public void invalidate()</li>
                                 <li>public void addPoint(int, int)</li>
                                 <li>public java.awt.Rectangle getBoundingBox()</li>
                                 <li>public boolean inside(int, int)</li>
                                 <li>public void translate(int, int)</li>
-                                <li>public java.awt.Rectangle getBounds()</li>
-                                <li>public void invalidate()</li>
                                 <li>public boolean contains(double, double, double, double)</li>
                                 <li>public boolean contains(int, int)</li>
                                 <li>public boolean contains(java.awt.geom.Rectangle2D)</li>
@@ -1912,15 +1912,18 @@
                                 <li>public void setFocusableWindowState(boolean)</li>
                                 <li>public void setAutoRequestFocus(boolean)</li>
                                 <li>public boolean isAutoRequestFocus()</li>
-                                <li>public void applyResourceBundle(java.util.ResourceBundle)</li>
                                 <li>public void applyResourceBundle(java.lang.String)</li>
+                                <li>public void applyResourceBundle(java.util.ResourceBundle)</li>
                                 <li>public void setLocationRelativeTo(java.awt.Component)</li>
                                 <li>public boolean isLocationByPlatform()</li>
                                 <li>public void dispose()</li>
                                 <li>public final boolean isFocusableWindow()</li>
                                 <li>public java.awt.Component getMostRecentFocusOwner()</li>
                                 <li>public java.awt.Component getFocusOwner()</li>
+                                <li>public void setType(java.awt.Window$Type)</li>
                                 <li>public final void setFocusCycleRoot(boolean)</li>
+                                <li>public void setSize(int, int)</li>
+                                <li>public void setSize(java.awt.Dimension)</li>
                                 <li>public void addNotify()</li>
                                 <li>public java.util.EventListener[] getListeners(java.lang.Class)</li>
                                 <li>protected void processEvent(java.awt.AWTEvent)</li>
@@ -1934,8 +1937,8 @@
                                 <li>public void setBackground(java.awt.Color)</li>
                                 <li>public void setLocation(java.awt.Point)</li>
                                 <li>public void setLocation(int, int)</li>
-                                <li>public void setBounds(java.awt.Rectangle)</li>
                                 <li>public void setBounds(int, int, int, int)</li>
+                                <li>public void setBounds(java.awt.Rectangle)</li>
                                 <li>public void reshape(int, int, int, int)</li>
                                 <li>public void setMinimumSize(java.awt.Dimension)</li>
                                 <li>public void setCursor(java.awt.Cursor)</li>
@@ -1952,16 +1955,13 @@
                                 <li>public void addPropertyChangeListener(java.beans.PropertyChangeListener)</li>
                                 <li>public void addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)</li>
                                 <li>public boolean isValidateRoot()</li>
-                                <li>public void pack()</li>
-                                <li>public void setType(java.awt.Window$Type)</li>
-                                <li>public void setSize(java.awt.Dimension)</li>
-                                <li>public void setSize(int, int)</li>
-                                <li>public java.awt.Shape getShape()</li>
-                                <li>public java.util.Locale getLocale()</li>
                                 <li>public java.awt.Window$Type getType()</li>
                                 <li>public boolean isOpaque()</li>
                                 <li>public boolean isActive()</li>
                                 <li>public java.awt.Window getOwner()</li>
+                                <li>public void pack()</li>
+                                <li>public java.awt.Shape getShape()</li>
+                                <li>public java.util.Locale getLocale()</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -2279,10 +2279,10 @@
                                 <li>public void setGlobalCurrentFocusCycleRoot(java.awt.Container)</li>
                                 <li>public void addVetoableChangeListener(java.lang.String, java.beans.VetoableChangeListener)</li>
                                 <li>public void addVetoableChangeListener(java.beans.VetoableChangeListener)</li>
-                                <li>public void removeVetoableChangeListener(java.lang.String, java.beans.VetoableChangeListener)</li>
                                 <li>public void removeVetoableChangeListener(java.beans.VetoableChangeListener)</li>
-                                <li>public java.beans.VetoableChangeListener[] getVetoableChangeListeners(java.lang.String)</li>
+                                <li>public void removeVetoableChangeListener(java.lang.String, java.beans.VetoableChangeListener)</li>
                                 <li>public java.beans.VetoableChangeListener[] getVetoableChangeListeners()</li>
+                                <li>public java.beans.VetoableChangeListener[] getVetoableChangeListeners(java.lang.String)</li>
                                 <li>protected void fireVetoableChange(java.lang.String, java.lang.Object, java.lang.Object)</li>
                                 <li>public void addKeyEventDispatcher(java.awt.KeyEventDispatcher)</li>
                                 <li>public void removeKeyEventDispatcher(java.awt.KeyEventDispatcher)</li>
@@ -2292,20 +2292,20 @@
                                 <li>protected java.util.List getKeyEventPostProcessors()</li>
                                 <li>public final void redispatchEvent(java.awt.Component, java.awt.AWTEvent)</li>
                                 <li>public abstract boolean dispatchKeyEvent(java.awt.event.KeyEvent)</li>
-                                <li>public final void focusNextComponent()</li>
                                 <li>public abstract void focusNextComponent(java.awt.Component)</li>
+                                <li>public final void focusNextComponent()</li>
                                 <li>public abstract void focusPreviousComponent(java.awt.Component)</li>
                                 <li>public final void focusPreviousComponent()</li>
-                                <li>public final void upFocusCycle()</li>
                                 <li>public abstract void upFocusCycle(java.awt.Component)</li>
+                                <li>public final void upFocusCycle()</li>
                                 <li>public abstract void downFocusCycle(java.awt.Container)</li>
                                 <li>public final void downFocusCycle()</li>
                                 <li>public abstract boolean dispatchEvent(java.awt.AWTEvent)</li>
                                 <li>public abstract void processKeyEvent(java.awt.Component, java.awt.event.KeyEvent)</li>
                                 <li>public void addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)</li>
                                 <li>public void addPropertyChangeListener(java.beans.PropertyChangeListener)</li>
-                                <li>public void removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)</li>
                                 <li>public void removePropertyChangeListener(java.beans.PropertyChangeListener)</li>
+                                <li>public void removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)</li>
                                 <li>public java.beans.PropertyChangeListener[] getPropertyChangeListeners(java.lang.String)</li>
                                 <li>public java.beans.PropertyChangeListener[] getPropertyChangeListeners()</li>
                                 <li>protected void firePropertyChange(java.lang.String, java.lang.Object, java.lang.Object)</li>
@@ -2767,8 +2767,10 @@
                                 <span class="toggle-icon" id="icon-java_awt_BorderLayout_miss_methods">▶</span> ✗ Missing Methods (18)
                             </div>
                             <ul class="item-list missing" id="java_awt_BorderLayout_miss_methods" style="display: none;">
-                                <li>public void addLayoutComponent(java.awt.Component, java.lang.Object)</li>
+                                <li>public java.awt.Component getLayoutComponent(java.lang.Object)</li>
+                                <li>public java.awt.Component getLayoutComponent(java.awt.Container, java.lang.Object)</li>
                                 <li>public void addLayoutComponent(java.lang.String, java.awt.Component)</li>
+                                <li>public void addLayoutComponent(java.awt.Component, java.lang.Object)</li>
                                 <li>public java.awt.Dimension maximumLayoutSize(java.awt.Container)</li>
                                 <li>public float getLayoutAlignmentX(java.awt.Container)</li>
                                 <li>public float getLayoutAlignmentY(java.awt.Container)</li>
@@ -2777,8 +2779,6 @@
                                 <li>public java.awt.Dimension preferredLayoutSize(java.awt.Container)</li>
                                 <li>public java.awt.Dimension minimumLayoutSize(java.awt.Container)</li>
                                 <li>public void layoutContainer(java.awt.Container)</li>
-                                <li>public java.awt.Component getLayoutComponent(java.awt.Container, java.lang.Object)</li>
-                                <li>public java.awt.Component getLayoutComponent(java.lang.Object)</li>
                                 <li>public java.lang.Object getConstraints(java.awt.Component)</li>
                                 <li>public int getHgap()</li>
                                 <li>public void setHgap(int)</li>
@@ -2832,6 +2832,7 @@
                                 <span class="toggle-icon" id="icon-java_awt_CheckboxMenuItem_miss_methods">▶</span> ✗ Missing Methods (12)
                             </div>
                             <ul class="item-list missing" id="java_awt_CheckboxMenuItem_miss_methods" style="display: none;">
+                                <li>public void setState(boolean)</li>
                                 <li>public void addNotify()</li>
                                 <li>public java.lang.Object[] getSelectedObjects()</li>
                                 <li>public void addItemListener(java.awt.event.ItemListener)</li>
@@ -2841,7 +2842,6 @@
                                 <li>protected void processEvent(java.awt.AWTEvent)</li>
                                 <li>protected void processItemEvent(java.awt.event.ItemEvent)</li>
                                 <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
-                                <li>public void setState(boolean)</li>
                                 <li>public boolean getState()</li>
                                 <li>public java.lang.String paramString()</li>
                             </ul>
@@ -2934,8 +2934,6 @@
                                 <span class="toggle-icon" id="icon-java_awt_Taskbar_miss_methods">▶</span> ✗ Missing Methods (14)
                             </div>
                             <ul class="item-list missing" id="java_awt_Taskbar_miss_methods" style="display: none;">
-                                <li>public void setIconImage(java.awt.Image)</li>
-                                <li>public java.awt.Image getIconImage()</li>
                                 <li>public static java.awt.Taskbar getTaskbar()</li>
                                 <li>public static boolean isTaskbarSupported()</li>
                                 <li>public void requestUserAttention(boolean, boolean)</li>
@@ -2946,6 +2944,8 @@
                                 <li>public void setProgressValue(int)</li>
                                 <li>public void setWindowProgressValue(java.awt.Window, int)</li>
                                 <li>public void setWindowProgressState(java.awt.Window, java.awt.Taskbar$State)</li>
+                                <li>public void setIconImage(java.awt.Image)</li>
+                                <li>public java.awt.Image getIconImage()</li>
                                 <li>public java.awt.PopupMenu getMenu()</li>
                                 <li>public boolean isSupported(java.awt.Taskbar$Feature)</li>
                             </ul>
@@ -3108,11 +3108,11 @@
                                 <span class="toggle-icon" id="icon-java_awt_ContainerOrderFocusTraversalPolicy_miss_methods">▶</span> ✗ Missing Methods (8)
                             </div>
                             <ul class="item-list missing" id="java_awt_ContainerOrderFocusTraversalPolicy_miss_methods" style="display: none;">
+                                <li>public void setImplicitDownCycleTraversal(boolean)</li>
+                                <li>public boolean getImplicitDownCycleTraversal()</li>
                                 <li>public java.awt.Component getComponentAfter(java.awt.Container, java.awt.Component)</li>
                                 <li>public java.awt.Component getDefaultComponent(java.awt.Container)</li>
                                 <li>public java.awt.Component getComponentBefore(java.awt.Container, java.awt.Component)</li>
-                                <li>public void setImplicitDownCycleTraversal(boolean)</li>
-                                <li>public boolean getImplicitDownCycleTraversal()</li>
                                 <li>public java.awt.Component getFirstComponent(java.awt.Container)</li>
                                 <li>public java.awt.Component getLastComponent(java.awt.Container)</li>
                                 <li>protected boolean accept(java.awt.Component)</li>
@@ -3159,8 +3159,8 @@
                                 <li>public void setPrinterResolution(int[])</li>
                                 <li>public void setPrinterResolution(int)</li>
                                 <li>public void setPrinterResolutionToDefault()</li>
-                                <li>public java.awt.PageAttributes$ColorType getColor()</li>
                                 <li>public void setColor(java.awt.PageAttributes$ColorType)</li>
+                                <li>public java.awt.PageAttributes$ColorType getColor()</li>
                                 <li>public boolean equals(java.lang.Object)</li>
                                 <li>public java.lang.String toString()</li>
                                 <li>public int hashCode()</li>
@@ -3293,17 +3293,6 @@
                                 <span class="toggle-icon" id="icon-java_awt_TextComponent_miss_methods">▶</span> ✗ Missing Methods (27)
                             </div>
                             <ul class="item-list missing" id="java_awt_TextComponent_miss_methods" style="display: none;">
-                                <li>public void addNotify()</li>
-                                <li>public void select(int, int)</li>
-                                <li>public java.util.EventListener[] getListeners(java.lang.Class)</li>
-                                <li>protected void processEvent(java.awt.AWTEvent)</li>
-                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
-                                <li>public void enableInputMethods(boolean)</li>
-                                <li>public java.awt.Color getBackground()</li>
-                                <li>public void setBackground(java.awt.Color)</li>
-                                <li>public java.awt.im.InputMethodRequests getInputMethodRequests()</li>
-                                <li>public void removeNotify()</li>
-                                <li>public java.lang.String getText()</li>
                                 <li>public int getCaretPosition()</li>
                                 <li>public int getSelectionStart()</li>
                                 <li>public int getSelectionEnd()</li>
@@ -3319,6 +3308,17 @@
                                 <li>public void removeTextListener(java.awt.event.TextListener)</li>
                                 <li>public java.awt.event.TextListener[] getTextListeners()</li>
                                 <li>protected void processTextEvent(java.awt.event.TextEvent)</li>
+                                <li>public java.lang.String getText()</li>
+                                <li>public void addNotify()</li>
+                                <li>public void select(int, int)</li>
+                                <li>public java.util.EventListener[] getListeners(java.lang.Class)</li>
+                                <li>protected void processEvent(java.awt.AWTEvent)</li>
+                                <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
+                                <li>public void enableInputMethods(boolean)</li>
+                                <li>public java.awt.Color getBackground()</li>
+                                <li>public void setBackground(java.awt.Color)</li>
+                                <li>public java.awt.im.InputMethodRequests getInputMethodRequests()</li>
+                                <li>public void removeNotify()</li>
                                 <li>protected java.lang.String paramString()</li>
                             </ul>
                         </div>
@@ -3346,8 +3346,8 @@
                                 <span class="toggle-icon" id="icon-java_awt_TexturePaint_miss_methods">▶</span> ✗ Missing Methods (4)
                             </div>
                             <ul class="item-list missing" id="java_awt_TexturePaint_miss_methods" style="display: none;">
-                                <li>public java.awt.image.BufferedImage getImage()</li>
                                 <li>public java.awt.geom.Rectangle2D getAnchorRect()</li>
+                                <li>public java.awt.image.BufferedImage getImage()</li>
                                 <li>public java.awt.PaintContext createContext(java.awt.image.ColorModel, java.awt.Rectangle, java.awt.geom.Rectangle2D, java.awt.geom.AffineTransform, java.awt.RenderingHints)</li>
                                 <li>public int getTransparency()</li>
                             </ul>
@@ -3406,29 +3406,29 @@
                                 <span class="toggle-icon" id="icon-java_awt_TextField_miss_methods">▶</span> ✗ Missing Methods (24)
                             </div>
                             <ul class="item-list missing" id="java_awt_TextField_miss_methods" style="display: none;">
-                                <li>public void addActionListener(java.awt.event.ActionListener)</li>
-                                <li>public void removeActionListener(java.awt.event.ActionListener)</li>
-                                <li>public java.awt.event.ActionListener[] getActionListeners()</li>
-                                <li>protected void processActionEvent(java.awt.event.ActionEvent)</li>
                                 <li>public char getEchoChar()</li>
                                 <li>public void setEchoChar(char)</li>
                                 <li>public void setEchoCharacter(char)</li>
                                 <li>public boolean echoCharIsSet()</li>
+                                <li>public void addActionListener(java.awt.event.ActionListener)</li>
+                                <li>public void removeActionListener(java.awt.event.ActionListener)</li>
+                                <li>public java.awt.event.ActionListener[] getActionListeners()</li>
+                                <li>protected void processActionEvent(java.awt.event.ActionEvent)</li>
+                                <li>public void setText(java.lang.String)</li>
+                                <li>public int getColumns()</li>
+                                <li>public void setColumns(int)</li>
                                 <li>public void addNotify()</li>
                                 <li>public java.util.EventListener[] getListeners(java.lang.Class)</li>
                                 <li>protected void processEvent(java.awt.AWTEvent)</li>
                                 <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
-                                <li>public java.awt.Dimension preferredSize()</li>
                                 <li>public java.awt.Dimension preferredSize(int)</li>
+                                <li>public java.awt.Dimension preferredSize()</li>
                                 <li>public java.awt.Dimension getPreferredSize()</li>
                                 <li>public java.awt.Dimension getPreferredSize(int)</li>
                                 <li>public java.awt.Dimension minimumSize(int)</li>
                                 <li>public java.awt.Dimension minimumSize()</li>
                                 <li>public java.awt.Dimension getMinimumSize()</li>
                                 <li>public java.awt.Dimension getMinimumSize(int)</li>
-                                <li>public void setText(java.lang.String)</li>
-                                <li>public int getColumns()</li>
-                                <li>public void setColumns(int)</li>
                                 <li>protected java.lang.String paramString()</li>
                             </ul>
                         </div>
@@ -3478,6 +3478,10 @@
                                 <span class="toggle-icon" id="icon-java_awt_GridLayout_miss_methods">▶</span> ✗ Missing Methods (14)
                             </div>
                             <ul class="item-list missing" id="java_awt_GridLayout_miss_methods" style="display: none;">
+                                <li>public int getRows()</li>
+                                <li>public void setRows(int)</li>
+                                <li>public int getColumns()</li>
+                                <li>public void setColumns(int)</li>
                                 <li>public void addLayoutComponent(java.lang.String, java.awt.Component)</li>
                                 <li>public void removeLayoutComponent(java.awt.Component)</li>
                                 <li>public java.awt.Dimension preferredLayoutSize(java.awt.Container)</li>
@@ -3487,10 +3491,6 @@
                                 <li>public void setHgap(int)</li>
                                 <li>public int getVgap()</li>
                                 <li>public void setVgap(int)</li>
-                                <li>public int getRows()</li>
-                                <li>public void setRows(int)</li>
-                                <li>public int getColumns()</li>
-                                <li>public void setColumns(int)</li>
                                 <li>public java.lang.String toString()</li>
                             </ul>
                         </div>
@@ -3595,8 +3595,6 @@
                             <ul class="item-list missing" id="java_awt_ScrollPaneAdjustable_miss_methods" style="display: none;">
                                 <li>public int getOrientation()</li>
                                 <li>public boolean getValueIsAdjusting()</li>
-                                <li>public int getMinimum()</li>
-                                <li>public int getMaximum()</li>
                                 <li>public void setMinimum(int)</li>
                                 <li>public void setMaximum(int)</li>
                                 <li>public void setUnitIncrement(int)</li>
@@ -3609,6 +3607,8 @@
                                 <li>public void removeAdjustmentListener(java.awt.event.AdjustmentListener)</li>
                                 <li>public void setValueIsAdjusting(boolean)</li>
                                 <li>public java.awt.event.AdjustmentListener[] getAdjustmentListeners()</li>
+                                <li>public int getMinimum()</li>
+                                <li>public int getMaximum()</li>
                                 <li>public java.lang.String toString()</li>
                                 <li>public int getValue()</li>
                                 <li>public void setValue(int)</li>
@@ -3631,12 +3631,12 @@
                                 <span class="toggle-icon" id="icon-java_awt_SplashScreen_miss_methods">▶</span> ✗ Missing Methods (9)
                             </div>
                             <ul class="item-list missing" id="java_awt_SplashScreen_miss_methods" style="display: none;">
-                                <li>public java.awt.Graphics2D createGraphics()</li>
                                 <li>public static java.awt.SplashScreen getSplashScreen()</li>
                                 <li>public void setImageURL(java.net.URL)</li>
                                 <li>public java.net.URL getImageURL()</li>
-                                <li>public boolean isVisible()</li>
                                 <li>public java.awt.Rectangle getBounds()</li>
+                                <li>public java.awt.Graphics2D createGraphics()</li>
+                                <li>public boolean isVisible()</li>
                                 <li>public void update()</li>
                                 <li>public void close()</li>
                                 <li>public java.awt.Dimension getSize()</li>
@@ -3801,8 +3801,8 @@
                                 <li>public static boolean isDesktopSupported()</li>
                                 <li>public void edit(java.io.File)</li>
                                 <li>public void browse(java.net.URI)</li>
-                                <li>public void mail(java.net.URI)</li>
                                 <li>public void mail()</li>
+                                <li>public void mail(java.net.URI)</li>
                                 <li>public void addAppEventListener(java.awt.desktop.SystemEventListener)</li>
                                 <li>public void removeAppEventListener(java.awt.desktop.SystemEventListener)</li>
                                 <li>public void setAboutHandler(java.awt.desktop.AboutHandler)</li>
@@ -3873,6 +3873,7 @@
                             <ul class="item-list missing" id="java_awt_Checkbox_miss_methods" style="display: none;">
                                 <li>public void setLabel(java.lang.String)</li>
                                 <li>public java.lang.String getLabel()</li>
+                                <li>public void setState(boolean)</li>
                                 <li>public java.awt.CheckboxGroup getCheckboxGroup()</li>
                                 <li>public void setCheckboxGroup(java.awt.CheckboxGroup)</li>
                                 <li>public void addNotify()</li>
@@ -3884,7 +3885,6 @@
                                 <li>protected void processEvent(java.awt.AWTEvent)</li>
                                 <li>protected void processItemEvent(java.awt.event.ItemEvent)</li>
                                 <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
-                                <li>public void setState(boolean)</li>
                                 <li>public boolean getState()</li>
                                 <li>protected java.lang.String paramString()</li>
                             </ul>
@@ -3895,9 +3895,9 @@
                             </div>
                             <ul class="item-list missing" id="java_awt_Checkbox_miss_ctors" style="display: none;">
                                 <li>public java.awt.Checkbox(java.lang.String, boolean)</li>
-                                <li>public java.awt.Checkbox(java.lang.String, boolean, java.awt.CheckboxGroup)</li>
-                                <li>public java.awt.Checkbox(java.lang.String)</li>
                                 <li>public java.awt.Checkbox()</li>
+                                <li>public java.awt.Checkbox(java.lang.String)</li>
+                                <li>public java.awt.Checkbox(java.lang.String, boolean, java.awt.CheckboxGroup)</li>
                                 <li>public java.awt.Checkbox(java.lang.String, java.awt.CheckboxGroup, boolean)</li>
                             </ul>
                         </div>
@@ -3917,12 +3917,12 @@
                                 <span class="toggle-icon" id="icon-java_awt_Label_miss_methods">▶</span> ✗ Missing Methods (7)
                             </div>
                             <ul class="item-list missing" id="java_awt_Label_miss_methods" style="display: none;">
+                                <li>public void setText(java.lang.String)</li>
+                                <li>public java.lang.String getText()</li>
                                 <li>public int getAlignment()</li>
                                 <li>public void setAlignment(int)</li>
                                 <li>public void addNotify()</li>
                                 <li>public javax.accessibility.AccessibleContext getAccessibleContext()</li>
-                                <li>public java.lang.String getText()</li>
-                                <li>public void setText(java.lang.String)</li>
                                 <li>protected java.lang.String paramString()</li>
                             </ul>
                         </div>
@@ -4050,6 +4050,7 @@
                                 <li>public java.awt.event.ActionListener[] getActionListeners()</li>
                                 <li>protected void processActionEvent(java.awt.event.ActionEvent)</li>
                                 <li>public void delItem(int)</li>
+                                <li>public int getRows()</li>
                                 <li>public boolean isSelected(int)</li>
                                 <li>public java.lang.String[] getItems()</li>
                                 <li>public void replaceItem(java.lang.String, int)</li>
@@ -4088,7 +4089,6 @@
                                 <li>public java.awt.Dimension getMinimumSize(int)</li>
                                 <li>public java.awt.Dimension getMinimumSize()</li>
                                 <li>public void removeNotify()</li>
-                                <li>public int getRows()</li>
                                 <li>public void add(java.lang.String)</li>
                                 <li>public void add(java.lang.String, int)</li>
                                 <li>public void remove(java.lang.String)</li>
@@ -4353,8 +4353,8 @@
                                 <span class="toggle-icon" id="icon-java_awt_ImageCapabilities_miss_methods">▶</span> ✗ Missing Methods (3)
                             </div>
                             <ul class="item-list missing" id="java_awt_ImageCapabilities_miss_methods" style="display: none;">
-                                <li>public boolean isTrueVolatile()</li>
                                 <li>public boolean isAccelerated()</li>
+                                <li>public boolean isTrueVolatile()</li>
                                 <li>public java.lang.Object clone()</li>
                             </ul>
                         </div>
@@ -5052,11 +5052,11 @@
                             <ul class="item-list missing" id="java_awt_event_InputMethodEvent_miss_methods" style="display: none;">
                                 <li>public boolean isConsumed()</li>
                                 <li>public long getWhen()</li>
-                                <li>public java.text.AttributedCharacterIterator getText()</li>
-                                <li>public void consume()</li>
                                 <li>public int getCommittedCharacterCount()</li>
                                 <li>public java.awt.font.TextHitInfo getCaret()</li>
                                 <li>public java.awt.font.TextHitInfo getVisiblePosition()</li>
+                                <li>public java.text.AttributedCharacterIterator getText()</li>
+                                <li>public void consume()</li>
                                 <li>public java.lang.String paramString()</li>
                             </ul>
                         </div>
@@ -5076,8 +5076,8 @@
                                 <span class="toggle-icon" id="icon-java_awt_event_InputMethodEvent_miss_ctors">▶</span> ✗ Missing Constructors (3)
                             </div>
                             <ul class="item-list missing" id="java_awt_event_InputMethodEvent_miss_ctors" style="display: none;">
-                                <li>public java.awt.event.InputMethodEvent(java.awt.Component, int, long, java.text.AttributedCharacterIterator, int, java.awt.font.TextHitInfo, java.awt.font.TextHitInfo)</li>
                                 <li>public java.awt.event.InputMethodEvent(java.awt.Component, int, java.text.AttributedCharacterIterator, int, java.awt.font.TextHitInfo, java.awt.font.TextHitInfo)</li>
+                                <li>public java.awt.event.InputMethodEvent(java.awt.Component, int, long, java.text.AttributedCharacterIterator, int, java.awt.font.TextHitInfo, java.awt.font.TextHitInfo)</li>
                                 <li>public java.awt.event.InputMethodEvent(java.awt.Component, int, java.awt.font.TextHitInfo, java.awt.font.TextHitInfo)</li>
                             </ul>
                         </div>
@@ -5136,8 +5136,8 @@
                             </div>
                             <ul class="item-list missing" id="java_awt_event_ContainerEvent_miss_methods" style="display: none;">
                                 <li>public java.awt.Container getContainer()</li>
-                                <li>public java.awt.Component getChild()</li>
                                 <li>public java.lang.String paramString()</li>
+                                <li>public java.awt.Component getChild()</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -5297,25 +5297,25 @@
                                 <li>public boolean isPolygonal()</li>
                                 <li>public boolean isSingular()</li>
                                 <li>public java.awt.geom.Area createTransformedArea(java.awt.geom.AffineTransform)</li>
+                                <li>public java.awt.Rectangle getBounds()</li>
+                                <li>public void subtract(java.awt.geom.Area)</li>
                                 <li>public java.awt.geom.Rectangle2D getBounds2D()</li>
                                 <li>public boolean intersects(double, double, double, double)</li>
                                 <li>public boolean intersects(java.awt.geom.Rectangle2D)</li>
                                 <li>public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform, double)</li>
                                 <li>public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)</li>
                                 <li>public boolean isRectangular()</li>
-                                <li>public java.awt.Rectangle getBounds()</li>
-                                <li>public void subtract(java.awt.geom.Area)</li>
-                                <li>public void transform(java.awt.geom.AffineTransform)</li>
-                                <li>public void intersect(java.awt.geom.Area)</li>
                                 <li>public void add(java.awt.geom.Area)</li>
                                 <li>public boolean equals(java.awt.geom.Area)</li>
                                 <li>public java.lang.Object clone()</li>
                                 <li>public boolean isEmpty()</li>
-                                <li>public boolean contains(double, double)</li>
-                                <li>public boolean contains(java.awt.geom.Rectangle2D)</li>
-                                <li>public boolean contains(java.awt.geom.Point2D)</li>
                                 <li>public boolean contains(double, double, double, double)</li>
+                                <li>public boolean contains(java.awt.geom.Rectangle2D)</li>
+                                <li>public boolean contains(double, double)</li>
+                                <li>public boolean contains(java.awt.geom.Point2D)</li>
                                 <li>public void reset()</li>
+                                <li>public void transform(java.awt.geom.AffineTransform)</li>
+                                <li>public void intersect(java.awt.geom.Area)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -5717,20 +5717,20 @@
                                 <span class="toggle-icon" id="icon-java_awt_geom_Path2D_Float_miss_methods">▶</span> ✗ Missing Methods (14)
                             </div>
                             <ul class="item-list missing" id="java_awt_geom_Path2D_Float_miss_methods" style="display: none;">
-                                <li>public final void moveTo(double, double)</li>
                                 <li>public final void moveTo(float, float)</li>
-                                <li>public final void lineTo(double, double)</li>
+                                <li>public final void moveTo(double, double)</li>
                                 <li>public final void lineTo(float, float)</li>
+                                <li>public final void lineTo(double, double)</li>
                                 <li>public final void quadTo(float, float, float, float)</li>
                                 <li>public final void quadTo(double, double, double, double)</li>
-                                <li>public final void curveTo(float, float, float, float, float, float)</li>
                                 <li>public final void curveTo(double, double, double, double, double, double)</li>
+                                <li>public final void curveTo(float, float, float, float, float, float)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D()</li>
                                 <li>public final java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)</li>
-                                <li>public final void transform(java.awt.geom.AffineTransform)</li>
                                 <li>public final void append(java.awt.geom.PathIterator, boolean)</li>
                                 <li>public final java.lang.Object clone()</li>
                                 <li>public final void trimToSize()</li>
+                                <li>public final void transform(java.awt.geom.AffineTransform)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -5767,10 +5767,10 @@
                                 <li>public final void curveTo(double, double, double, double, double, double)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D()</li>
                                 <li>public final java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)</li>
-                                <li>public final void transform(java.awt.geom.AffineTransform)</li>
                                 <li>public final void append(java.awt.geom.PathIterator, boolean)</li>
                                 <li>public final java.lang.Object clone()</li>
                                 <li>public final void trimToSize()</li>
+                                <li>public final void transform(java.awt.geom.AffineTransform)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -5778,11 +5778,11 @@
                                 <span class="toggle-icon" id="icon-java_awt_geom_Path2D_Double_miss_ctors">▶</span> ✗ Missing Constructors (5)
                             </div>
                             <ul class="item-list missing" id="java_awt_geom_Path2D_Double_miss_ctors" style="display: none;">
-                                <li>public java.awt.geom.Path2D$Double(java.awt.Shape, java.awt.geom.AffineTransform)</li>
+                                <li>public java.awt.geom.Path2D$Double()</li>
                                 <li>public java.awt.geom.Path2D$Double(java.awt.Shape)</li>
                                 <li>public java.awt.geom.Path2D$Double(int, int)</li>
                                 <li>public java.awt.geom.Path2D$Double(int)</li>
-                                <li>public java.awt.geom.Path2D$Double()</li>
+                                <li>public java.awt.geom.Path2D$Double(java.awt.Shape, java.awt.geom.AffineTransform)</li>
                             </ul>
                         </div>
                     </div>
@@ -5859,28 +5859,28 @@
                                 <li>public final void setWindingRule(int)</li>
                                 <li>public final void closePath()</li>
                                 <li>public final java.awt.geom.Point2D getCurrentPoint()</li>
-                                <li>public final boolean intersects(double, double, double, double)</li>
-                                <li>public static boolean intersects(java.awt.geom.PathIterator, double, double, double, double)</li>
+                                <li>public final java.awt.Rectangle getBounds()</li>
                                 <li>public final boolean intersects(java.awt.geom.Rectangle2D)</li>
                                 <li>public static boolean intersects(java.awt.geom.PathIterator, java.awt.geom.Rectangle2D)</li>
+                                <li>public static boolean intersects(java.awt.geom.PathIterator, double, double, double, double)</li>
+                                <li>public final boolean intersects(double, double, double, double)</li>
                                 <li>public final java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform, double)</li>
                                 <li>public final java.awt.Shape createTransformedShape(java.awt.geom.AffineTransform)</li>
                                 <li>public final int getWindingRule()</li>
-                                <li>public final java.awt.Rectangle getBounds()</li>
-                                <li>public abstract void transform(java.awt.geom.AffineTransform)</li>
                                 <li>public final void append(java.awt.Shape, boolean)</li>
                                 <li>public abstract void append(java.awt.geom.PathIterator, boolean)</li>
                                 <li>public abstract java.lang.Object clone()</li>
-                                <li>public final boolean contains(java.awt.geom.Rectangle2D)</li>
-                                <li>public static boolean contains(java.awt.geom.PathIterator, double, double)</li>
-                                <li>public static boolean contains(java.awt.geom.PathIterator, java.awt.geom.Point2D)</li>
-                                <li>public final boolean contains(double, double)</li>
-                                <li>public final boolean contains(java.awt.geom.Point2D)</li>
                                 <li>public final boolean contains(double, double, double, double)</li>
+                                <li>public final boolean contains(java.awt.geom.Rectangle2D)</li>
+                                <li>public final boolean contains(java.awt.geom.Point2D)</li>
+                                <li>public final boolean contains(double, double)</li>
+                                <li>public static boolean contains(java.awt.geom.PathIterator, java.awt.geom.Point2D)</li>
+                                <li>public static boolean contains(java.awt.geom.PathIterator, double, double)</li>
                                 <li>public static boolean contains(java.awt.geom.PathIterator, java.awt.geom.Rectangle2D)</li>
                                 <li>public static boolean contains(java.awt.geom.PathIterator, double, double, double, double)</li>
                                 <li>public abstract void trimToSize()</li>
                                 <li>public final void reset()</li>
+                                <li>public abstract void transform(java.awt.geom.AffineTransform)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -5969,6 +5969,7 @@
                                 <li>public void subdivide(java.awt.geom.CubicCurve2D, java.awt.geom.CubicCurve2D)</li>
                                 <li>public static int solveCubic(double[], double[])</li>
                                 <li>public static int solveCubic(double[])</li>
+                                <li>public java.awt.Rectangle getBounds()</li>
                                 <li>public boolean intersects(double, double, double, double)</li>
                                 <li>public boolean intersects(java.awt.geom.Rectangle2D)</li>
                                 <li>public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)</li>
@@ -5977,7 +5978,6 @@
                                 <li>public abstract double getY1()</li>
                                 <li>public abstract double getX2()</li>
                                 <li>public abstract double getY2()</li>
-                                <li>public java.awt.Rectangle getBounds()</li>
                                 <li>public java.lang.Object clone()</li>
                                 <li>public boolean contains(double, double, double, double)</li>
                                 <li>public boolean contains(double, double)</li>
@@ -6132,39 +6132,39 @@
                             <ul class="item-list missing" id="java_awt_geom_QuadCurve2D_miss_methods" style="display: none;">
                                 <li>public abstract java.awt.geom.Point2D getP1()</li>
                                 <li>public abstract java.awt.geom.Point2D getP2()</li>
-                                <li>public abstract void setCurve(double, double, double, double, double, double)</li>
-                                <li>public void setCurve(java.awt.geom.QuadCurve2D)</li>
                                 <li>public void setCurve(java.awt.geom.Point2D[], int)</li>
                                 <li>public void setCurve(double[], int)</li>
+                                <li>public abstract void setCurve(double, double, double, double, double, double)</li>
                                 <li>public void setCurve(java.awt.geom.Point2D, java.awt.geom.Point2D, java.awt.geom.Point2D)</li>
-                                <li>public static double getFlatnessSq(double[], int)</li>
+                                <li>public void setCurve(java.awt.geom.QuadCurve2D)</li>
                                 <li>public double getFlatnessSq()</li>
+                                <li>public static double getFlatnessSq(double[], int)</li>
                                 <li>public static double getFlatnessSq(double, double, double, double, double, double)</li>
-                                <li>public double getFlatness()</li>
-                                <li>public static double getFlatness(double[], int)</li>
                                 <li>public static double getFlatness(double, double, double, double, double, double)</li>
-                                <li>public void subdivide(java.awt.geom.QuadCurve2D, java.awt.geom.QuadCurve2D)</li>
+                                <li>public static double getFlatness(double[], int)</li>
+                                <li>public double getFlatness()</li>
                                 <li>public static void subdivide(java.awt.geom.QuadCurve2D, java.awt.geom.QuadCurve2D, java.awt.geom.QuadCurve2D)</li>
+                                <li>public void subdivide(java.awt.geom.QuadCurve2D, java.awt.geom.QuadCurve2D)</li>
                                 <li>public static void subdivide(double[], int, double[], int, double[], int)</li>
                                 <li>public static int solveQuadratic(double[], double[])</li>
                                 <li>public static int solveQuadratic(double[])</li>
                                 <li>public abstract double getCtrlX()</li>
                                 <li>public abstract double getCtrlY()</li>
                                 <li>public abstract java.awt.geom.Point2D getCtrlPt()</li>
-                                <li>public boolean intersects(double, double, double, double)</li>
+                                <li>public java.awt.Rectangle getBounds()</li>
                                 <li>public boolean intersects(java.awt.geom.Rectangle2D)</li>
+                                <li>public boolean intersects(double, double, double, double)</li>
                                 <li>public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform, double)</li>
                                 <li>public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)</li>
                                 <li>public abstract double getX1()</li>
                                 <li>public abstract double getY1()</li>
                                 <li>public abstract double getX2()</li>
                                 <li>public abstract double getY2()</li>
-                                <li>public java.awt.Rectangle getBounds()</li>
                                 <li>public java.lang.Object clone()</li>
-                                <li>public boolean contains(double, double, double, double)</li>
-                                <li>public boolean contains(double, double)</li>
                                 <li>public boolean contains(java.awt.geom.Point2D)</li>
+                                <li>public boolean contains(double, double)</li>
                                 <li>public boolean contains(java.awt.geom.Rectangle2D)</li>
+                                <li>public boolean contains(double, double, double, double)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -6221,13 +6221,13 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_ColorConvertOp_miss_methods">▶</span> ✗ Missing Methods (9)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_ColorConvertOp_miss_methods" style="display: none;">
+                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public final java.awt.color.ICC_Profile[] getICC_Profiles()</li>
                                 <li>public java.awt.image.BufferedImage createCompatibleDestImage(java.awt.image.BufferedImage, java.awt.image.ColorModel)</li>
                                 <li>public java.awt.image.WritableRaster createCompatibleDestRaster(java.awt.image.Raster)</li>
                                 <li>public final java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.BufferedImage)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.Raster)</li>
-                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public final java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)</li>
                                 <li>public final java.awt.image.BufferedImage filter(java.awt.image.BufferedImage, java.awt.image.BufferedImage)</li>
                             </ul>
@@ -6237,8 +6237,8 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_ColorConvertOp_miss_ctors">▶</span> ✗ Missing Constructors (4)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_ColorConvertOp_miss_ctors" style="display: none;">
-                                <li>public java.awt.image.ColorConvertOp(java.awt.color.ColorSpace, java.awt.color.ColorSpace, java.awt.RenderingHints)</li>
                                 <li>public java.awt.image.ColorConvertOp(java.awt.color.ICC_Profile[], java.awt.RenderingHints)</li>
+                                <li>public java.awt.image.ColorConvertOp(java.awt.color.ColorSpace, java.awt.color.ColorSpace, java.awt.RenderingHints)</li>
                                 <li>public java.awt.image.ColorConvertOp(java.awt.color.ColorSpace, java.awt.RenderingHints)</li>
                                 <li>public java.awt.image.ColorConvertOp(java.awt.RenderingHints)</li>
                             </ul>
@@ -6259,13 +6259,13 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_RGBImageFilter_miss_methods">▶</span> ✗ Missing Methods (7)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_RGBImageFilter_miss_methods" style="display: none;">
+                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
+                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
                                 <li>public void setColorModel(java.awt.image.ColorModel)</li>
                                 <li>public void substituteColorModel(java.awt.image.ColorModel, java.awt.image.ColorModel)</li>
                                 <li>public java.awt.image.IndexColorModel filterIndexColorModel(java.awt.image.IndexColorModel)</li>
                                 <li>public void filterRGBPixels(int, int, int, int, int[], int, int)</li>
                                 <li>public abstract int filterRGB(int, int, int)</li>
-                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
-                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -6302,6 +6302,7 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_IndexColorModel_miss_methods">▶</span> ✗ Missing Methods (31)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_IndexColorModel_miss_methods" style="display: none;">
+                                <li>public final int getMapSize()</li>
                                 <li>public java.awt.image.BufferedImage convertToIntDiscrete(java.awt.image.Raster, boolean)</li>
                                 <li>public final void getReds(byte[])</li>
                                 <li>public final void getGreens(byte[])</li>
@@ -6318,17 +6319,16 @@
                                 <li>public java.awt.image.WritableRaster createCompatibleWritableRaster(int, int)</li>
                                 <li>public java.awt.image.SampleModel createCompatibleSampleModel(int, int)</li>
                                 <li>public boolean isCompatibleSampleModel(java.awt.image.SampleModel)</li>
-                                <li>public final int getMapSize()</li>
+                                <li>public boolean isValid(int)</li>
+                                <li>public boolean isValid()</li>
                                 <li>public final int getRed(int)</li>
                                 <li>public final int getGreen(int)</li>
                                 <li>public final int getBlue(int)</li>
                                 <li>public final int getAlpha(int)</li>
                                 <li>public final int getRGB(int)</li>
-                                <li>public int[] getComponents(java.lang.Object, int[], int)</li>
                                 <li>public int[] getComponents(int, int[], int)</li>
+                                <li>public int[] getComponents(java.lang.Object, int[], int)</li>
                                 <li>public int getTransparency()</li>
-                                <li>public boolean isValid(int)</li>
-                                <li>public boolean isValid()</li>
                                 <li>public void finalize()</li>
                                 <li>public boolean equals(java.lang.Object)</li>
                                 <li>public java.lang.String toString()</li>
@@ -6341,12 +6341,12 @@
                             </div>
                             <ul class="item-list missing" id="java_awt_image_IndexColorModel_miss_ctors" style="display: none;">
                                 <li>public java.awt.image.IndexColorModel(int, int, byte[], byte[], byte[], int)</li>
+                                <li>public java.awt.image.IndexColorModel(int, int, byte[], byte[], byte[], byte[])</li>
                                 <li>public java.awt.image.IndexColorModel(int, int, byte[], byte[], byte[])</li>
                                 <li>public java.awt.image.IndexColorModel(int, int, int[], int, int, java.math.BigInteger)</li>
-                                <li>public java.awt.image.IndexColorModel(int, int, int[], int, boolean, int, int)</li>
-                                <li>public java.awt.image.IndexColorModel(int, int, byte[], int, boolean, int)</li>
                                 <li>public java.awt.image.IndexColorModel(int, int, byte[], int, boolean)</li>
-                                <li>public java.awt.image.IndexColorModel(int, int, byte[], byte[], byte[], byte[])</li>
+                                <li>public java.awt.image.IndexColorModel(int, int, byte[], int, boolean, int)</li>
+                                <li>public java.awt.image.IndexColorModel(int, int, int[], int, boolean, int, int)</li>
                             </ul>
                         </div>
                     </div>
@@ -6391,16 +6391,16 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_ConvolveOp_miss_methods">▶</span> ✗ Missing Methods (10)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_ConvolveOp_miss_methods" style="display: none;">
+                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public java.awt.image.BufferedImage createCompatibleDestImage(java.awt.image.BufferedImage, java.awt.image.ColorModel)</li>
                                 <li>public java.awt.image.WritableRaster createCompatibleDestRaster(java.awt.image.Raster)</li>
                                 <li>public final java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)</li>
                                 <li>public int getEdgeCondition()</li>
                                 <li>public final java.awt.image.Kernel getKernel()</li>
-                                <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.BufferedImage)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.Raster)</li>
-                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
-                                <li>public final java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)</li>
+                                <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.BufferedImage)</li>
                                 <li>public final java.awt.image.BufferedImage filter(java.awt.image.BufferedImage, java.awt.image.BufferedImage)</li>
+                                <li>public final java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -6417,8 +6417,8 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_ConvolveOp_miss_ctors">▶</span> ✗ Missing Constructors (2)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_ConvolveOp_miss_ctors" style="display: none;">
-                                <li>public java.awt.image.ConvolveOp(java.awt.image.Kernel)</li>
                                 <li>public java.awt.image.ConvolveOp(java.awt.image.Kernel, int, java.awt.RenderingHints)</li>
+                                <li>public java.awt.image.ConvolveOp(java.awt.image.Kernel)</li>
                             </ul>
                         </div>
                     </div>
@@ -6469,9 +6469,9 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_CropImageFilter_miss_methods">▶</span> ✗ Missing Methods (4)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_CropImageFilter_miss_methods" style="display: none;">
-                                <li>public void setDimensions(int, int)</li>
-                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
                                 <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
+                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
+                                <li>public void setDimensions(int, int)</li>
                                 <li>public void setProperties(java.util.Hashtable)</li>
                             </ul>
                         </div>
@@ -6518,10 +6518,10 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_RasterOp_miss_methods">▶</span> ✗ Missing Methods (5)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_RasterOp_miss_methods" style="display: none;">
+                                <li>public abstract java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public abstract java.awt.image.WritableRaster createCompatibleDestRaster(java.awt.image.Raster)</li>
                                 <li>public abstract java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)</li>
                                 <li>public abstract java.awt.geom.Rectangle2D getBounds2D(java.awt.image.Raster)</li>
-                                <li>public abstract java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public abstract java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)</li>
                             </ul>
                         </div>
@@ -6541,8 +6541,6 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_RenderedImage_miss_methods">▶</span> ✗ Missing Methods (21)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_RenderedImage_miss_methods" style="display: none;">
-                                <li>public abstract int getMinX()</li>
-                                <li>public abstract int getMinY()</li>
                                 <li>public abstract java.util.Vector getSources()</li>
                                 <li>public abstract java.lang.String[] getPropertyNames()</li>
                                 <li>public abstract java.awt.image.SampleModel getSampleModel()</li>
@@ -6556,11 +6554,13 @@
                                 <li>public abstract int getTileGridYOffset()</li>
                                 <li>public abstract java.awt.image.Raster getTile(int, int)</li>
                                 <li>public abstract java.awt.image.WritableRaster copyData(java.awt.image.WritableRaster)</li>
+                                <li>public abstract java.awt.image.Raster getData()</li>
+                                <li>public abstract java.awt.image.Raster getData(java.awt.Rectangle)</li>
+                                <li>public abstract int getMinX()</li>
+                                <li>public abstract int getMinY()</li>
                                 <li>public abstract java.awt.image.ColorModel getColorModel()</li>
                                 <li>public abstract int getWidth()</li>
                                 <li>public abstract int getHeight()</li>
-                                <li>public abstract java.awt.image.Raster getData(java.awt.Rectangle)</li>
-                                <li>public abstract java.awt.image.Raster getData()</li>
                                 <li>public abstract java.lang.Object getProperty(java.lang.String)</li>
                             </ul>
                         </div>
@@ -6580,9 +6580,9 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_ReplicateScaleFilter_miss_methods">▶</span> ✗ Missing Methods (4)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_ReplicateScaleFilter_miss_methods" style="display: none;">
-                                <li>public void setDimensions(int, int)</li>
-                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
                                 <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
+                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
+                                <li>public void setDimensions(int, int)</li>
                                 <li>public void setProperties(java.util.Hashtable)</li>
                             </ul>
                         </div>
@@ -6786,11 +6786,11 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_PackedColorModel_miss_methods">▶</span> ✗ Missing Methods (7)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_PackedColorModel_miss_methods" style="display: none;">
+                                <li>public final int[] getMasks()</li>
+                                <li>public final int getMask(int)</li>
                                 <li>public java.awt.image.SampleModel createCompatibleSampleModel(int, int)</li>
                                 <li>public boolean isCompatibleSampleModel(java.awt.image.SampleModel)</li>
                                 <li>public java.awt.image.WritableRaster getAlphaRaster(java.awt.image.WritableRaster)</li>
-                                <li>public final int[] getMasks()</li>
-                                <li>public final int getMask(int)</li>
                                 <li>public boolean equals(java.lang.Object)</li>
                                 <li>public int hashCode()</li>
                             </ul>
@@ -6820,11 +6820,11 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_BandCombineOp_miss_methods">▶</span> ✗ Missing Methods (6)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_BandCombineOp_miss_methods" style="display: none;">
+                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public java.awt.image.WritableRaster createCompatibleDestRaster(java.awt.image.Raster)</li>
                                 <li>public final java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.Raster)</li>
                                 <li>public final float[][] getMatrix()</li>
-                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)</li>
                             </ul>
                         </div>
@@ -6914,14 +6914,14 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_ImageFilter_miss_methods">▶</span> ✗ Missing Methods (10)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_ImageFilter_miss_methods" style="display: none;">
+                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
+                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
                                 <li>public void setColorModel(java.awt.image.ColorModel)</li>
                                 <li>public java.awt.image.ImageFilter getFilterInstance(java.awt.image.ImageConsumer)</li>
                                 <li>public void setDimensions(int, int)</li>
                                 <li>public void setHints(int)</li>
                                 <li>public void imageComplete(int)</li>
                                 <li>public void resendTopDownLeftRight(java.awt.image.ImageProducer)</li>
-                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
-                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
                                 <li>public java.lang.Object clone()</li>
                                 <li>public void setProperties(java.util.Hashtable)</li>
                             </ul>
@@ -6958,9 +6958,9 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_AreaAveragingScaleFilter_miss_methods">▶</span> ✗ Missing Methods (3)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_AreaAveragingScaleFilter_miss_methods" style="display: none;">
-                                <li>public void setHints(int)</li>
                                 <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
                                 <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
+                                <li>public void setHints(int)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -7050,22 +7050,6 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_ComponentSampleModel_miss_methods">▶</span> ✗ Missing Methods (28)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_ComponentSampleModel_miss_methods" style="display: none;">
-                                <li>public final int[] getSampleSize()</li>
-                                <li>public final int getSampleSize(int)</li>
-                                <li>public java.awt.image.DataBuffer createDataBuffer()</li>
-                                <li>public java.awt.image.SampleModel createSubsetSampleModel(int[])</li>
-                                <li>public void setSample(int, int, int, float, java.awt.image.DataBuffer)</li>
-                                <li>public void setSample(int, int, int, int, java.awt.image.DataBuffer)</li>
-                                <li>public void setSample(int, int, int, double, java.awt.image.DataBuffer)</li>
-                                <li>public void setSamples(int, int, int, int, int, int[], java.awt.image.DataBuffer)</li>
-                                <li>public final int[] getBankIndices()</li>
-                                <li>public final int getNumDataElements()</li>
-                                <li>public int getSample(int, int, int, java.awt.image.DataBuffer)</li>
-                                <li>public float getSampleFloat(int, int, int, java.awt.image.DataBuffer)</li>
-                                <li>public double getSampleDouble(int, int, int, java.awt.image.DataBuffer)</li>
-                                <li>public int[] getSamples(int, int, int, int, int, int[], java.awt.image.DataBuffer)</li>
-                                <li>public java.lang.Object getDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)</li>
-                                <li>public java.awt.image.SampleModel createCompatibleSampleModel(int, int)</li>
                                 <li>public final int getPixelStride()</li>
                                 <li>public final int[] getBandOffsets()</li>
                                 <li>public void setDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)</li>
@@ -7074,6 +7058,22 @@
                                 <li>public int[] getPixel(int, int, int[], java.awt.image.DataBuffer)</li>
                                 <li>public void setPixel(int, int, int[], java.awt.image.DataBuffer)</li>
                                 <li>public final int getScanlineStride()</li>
+                                <li>public final int getSampleSize(int)</li>
+                                <li>public final int[] getSampleSize()</li>
+                                <li>public java.awt.image.DataBuffer createDataBuffer()</li>
+                                <li>public java.awt.image.SampleModel createSubsetSampleModel(int[])</li>
+                                <li>public void setSample(int, int, int, int, java.awt.image.DataBuffer)</li>
+                                <li>public void setSample(int, int, int, double, java.awt.image.DataBuffer)</li>
+                                <li>public void setSample(int, int, int, float, java.awt.image.DataBuffer)</li>
+                                <li>public void setSamples(int, int, int, int, int, int[], java.awt.image.DataBuffer)</li>
+                                <li>public final int getNumDataElements()</li>
+                                <li>public int getSample(int, int, int, java.awt.image.DataBuffer)</li>
+                                <li>public float getSampleFloat(int, int, int, java.awt.image.DataBuffer)</li>
+                                <li>public double getSampleDouble(int, int, int, java.awt.image.DataBuffer)</li>
+                                <li>public int[] getSamples(int, int, int, int, int, int[], java.awt.image.DataBuffer)</li>
+                                <li>public final int[] getBankIndices()</li>
+                                <li>public java.lang.Object getDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)</li>
+                                <li>public java.awt.image.SampleModel createCompatibleSampleModel(int, int)</li>
                                 <li>public boolean equals(java.lang.Object)</li>
                                 <li>public int hashCode()</li>
                                 <li>public int getOffset(int, int)</li>
@@ -7118,6 +7118,7 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_RescaleOp_miss_methods">▶</span> ✗ Missing Methods (11)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_RescaleOp_miss_methods" style="display: none;">
+                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public java.awt.image.BufferedImage createCompatibleDestImage(java.awt.image.BufferedImage, java.awt.image.ColorModel)</li>
                                 <li>public java.awt.image.WritableRaster createCompatibleDestRaster(java.awt.image.Raster)</li>
                                 <li>public final java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)</li>
@@ -7125,7 +7126,6 @@
                                 <li>public final int getNumFactors()</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.BufferedImage)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.Raster)</li>
-                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public final float[] getOffsets(float[])</li>
                                 <li>public final java.awt.image.BufferedImage filter(java.awt.image.BufferedImage, java.awt.image.BufferedImage)</li>
                                 <li>public final java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)</li>
@@ -7156,12 +7156,12 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_BufferedImageFilter_miss_methods">▶</span> ✗ Missing Methods (6)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_BufferedImageFilter_miss_methods" style="display: none;">
+                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
+                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
                                 <li>public void setColorModel(java.awt.image.ColorModel)</li>
                                 <li>public void setDimensions(int, int)</li>
                                 <li>public void imageComplete(int)</li>
                                 <li>public java.awt.image.BufferedImageOp getBufferedImageOp()</li>
-                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)</li>
-                                <li>public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -7188,10 +7188,10 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_BufferedImageOp_miss_methods">▶</span> ✗ Missing Methods (5)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_BufferedImageOp_miss_methods" style="display: none;">
+                                <li>public abstract java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public abstract java.awt.image.BufferedImage createCompatibleDestImage(java.awt.image.BufferedImage, java.awt.image.ColorModel)</li>
                                 <li>public abstract java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)</li>
                                 <li>public abstract java.awt.geom.Rectangle2D getBounds2D(java.awt.image.BufferedImage)</li>
-                                <li>public abstract java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public abstract java.awt.image.BufferedImage filter(java.awt.image.BufferedImage, java.awt.image.BufferedImage)</li>
                             </ul>
                         </div>
@@ -7241,6 +7241,7 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_AffineTransformOp_miss_methods">▶</span> ✗ Missing Methods (10)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_AffineTransformOp_miss_methods" style="display: none;">
+                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public java.awt.image.BufferedImage createCompatibleDestImage(java.awt.image.BufferedImage, java.awt.image.ColorModel)</li>
                                 <li>public java.awt.image.WritableRaster createCompatibleDestRaster(java.awt.image.Raster)</li>
                                 <li>public final java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)</li>
@@ -7248,9 +7249,8 @@
                                 <li>public final java.awt.geom.AffineTransform getTransform()</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.Raster)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.BufferedImage)</li>
-                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
-                                <li>public final java.awt.image.BufferedImage filter(java.awt.image.BufferedImage, java.awt.image.BufferedImage)</li>
                                 <li>public final java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)</li>
+                                <li>public final java.awt.image.BufferedImage filter(java.awt.image.BufferedImage, java.awt.image.BufferedImage)</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -7288,10 +7288,15 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_BandedSampleModel_miss_methods">▶</span> ✗ Missing Methods (18)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_BandedSampleModel_miss_methods" style="display: none;">
+                                <li>public void setDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)</li>
+                                <li>public int[] getPixels(int, int, int, int, int[], java.awt.image.DataBuffer)</li>
+                                <li>public void setPixels(int, int, int, int, int[], java.awt.image.DataBuffer)</li>
+                                <li>public int[] getPixel(int, int, int[], java.awt.image.DataBuffer)</li>
+                                <li>public void setPixel(int, int, int[], java.awt.image.DataBuffer)</li>
                                 <li>public java.awt.image.DataBuffer createDataBuffer()</li>
                                 <li>public java.awt.image.SampleModel createSubsetSampleModel(int[])</li>
-                                <li>public void setSample(int, int, int, float, java.awt.image.DataBuffer)</li>
                                 <li>public void setSample(int, int, int, double, java.awt.image.DataBuffer)</li>
+                                <li>public void setSample(int, int, int, float, java.awt.image.DataBuffer)</li>
                                 <li>public void setSample(int, int, int, int, java.awt.image.DataBuffer)</li>
                                 <li>public void setSamples(int, int, int, int, int, int[], java.awt.image.DataBuffer)</li>
                                 <li>public int getSample(int, int, int, java.awt.image.DataBuffer)</li>
@@ -7300,11 +7305,6 @@
                                 <li>public int[] getSamples(int, int, int, int, int, int[], java.awt.image.DataBuffer)</li>
                                 <li>public java.lang.Object getDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)</li>
                                 <li>public java.awt.image.SampleModel createCompatibleSampleModel(int, int)</li>
-                                <li>public void setDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)</li>
-                                <li>public int[] getPixels(int, int, int, int, int[], java.awt.image.DataBuffer)</li>
-                                <li>public void setPixels(int, int, int, int, int[], java.awt.image.DataBuffer)</li>
-                                <li>public int[] getPixel(int, int, int[], java.awt.image.DataBuffer)</li>
-                                <li>public void setPixel(int, int, int[], java.awt.image.DataBuffer)</li>
                                 <li>public int hashCode()</li>
                             </ul>
                         </div>
@@ -7333,23 +7333,23 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_MultiPixelPackedSampleModel_miss_methods">▶</span> ✗ Missing Methods (20)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_MultiPixelPackedSampleModel_miss_methods" style="display: none;">
+                                <li>public void setDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)</li>
+                                <li>public int[] getPixel(int, int, int[], java.awt.image.DataBuffer)</li>
+                                <li>public void setPixel(int, int, int[], java.awt.image.DataBuffer)</li>
+                                <li>public int getScanlineStride()</li>
                                 <li>public int[] getSampleSize()</li>
                                 <li>public int getSampleSize(int)</li>
                                 <li>public java.awt.image.DataBuffer createDataBuffer()</li>
                                 <li>public java.awt.image.SampleModel createSubsetSampleModel(int[])</li>
                                 <li>public void setSample(int, int, int, int, java.awt.image.DataBuffer)</li>
+                                <li>public int getNumDataElements()</li>
+                                <li>public int getSample(int, int, int, java.awt.image.DataBuffer)</li>
                                 <li>public int getBitOffset(int)</li>
                                 <li>public int getPixelBitStride()</li>
                                 <li>public int getDataBitOffset()</li>
-                                <li>public int getNumDataElements()</li>
-                                <li>public int getSample(int, int, int, java.awt.image.DataBuffer)</li>
                                 <li>public int getTransferType()</li>
                                 <li>public java.lang.Object getDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)</li>
                                 <li>public java.awt.image.SampleModel createCompatibleSampleModel(int, int)</li>
-                                <li>public void setDataElements(int, int, java.lang.Object, java.awt.image.DataBuffer)</li>
-                                <li>public int[] getPixel(int, int, int[], java.awt.image.DataBuffer)</li>
-                                <li>public void setPixel(int, int, int[], java.awt.image.DataBuffer)</li>
-                                <li>public int getScanlineStride()</li>
                                 <li>public boolean equals(java.lang.Object)</li>
                                 <li>public int hashCode()</li>
                                 <li>public int getOffset(int, int)</li>
@@ -7460,9 +7460,9 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_BaseMultiResolutionImage_miss_methods">▶</span> ✗ Missing Methods (3)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_BaseMultiResolutionImage_miss_methods" style="display: none;">
-                                <li>protected java.awt.Image getBaseImage()</li>
                                 <li>public java.awt.Image getResolutionVariant(double, double)</li>
                                 <li>public java.util.List getResolutionVariants()</li>
+                                <li>protected java.awt.Image getBaseImage()</li>
                             </ul>
                         </div>
                         <div class="section">
@@ -7490,12 +7490,12 @@
                                 <span class="toggle-icon" id="icon-java_awt_image_LookupOp_miss_methods">▶</span> ✗ Missing Methods (9)
                             </div>
                             <ul class="item-list missing" id="java_awt_image_LookupOp_miss_methods" style="display: none;">
+                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public java.awt.image.BufferedImage createCompatibleDestImage(java.awt.image.BufferedImage, java.awt.image.ColorModel)</li>
                                 <li>public java.awt.image.WritableRaster createCompatibleDestRaster(java.awt.image.Raster)</li>
                                 <li>public final java.awt.geom.Point2D getPoint2D(java.awt.geom.Point2D, java.awt.geom.Point2D)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.Raster)</li>
                                 <li>public final java.awt.geom.Rectangle2D getBounds2D(java.awt.image.BufferedImage)</li>
-                                <li>public final java.awt.RenderingHints getRenderingHints()</li>
                                 <li>public final java.awt.image.LookupTable getTable()</li>
                                 <li>public final java.awt.image.WritableRaster filter(java.awt.image.Raster, java.awt.image.WritableRaster)</li>
                                 <li>public final java.awt.image.BufferedImage filter(java.awt.image.BufferedImage, java.awt.image.BufferedImage)</li>

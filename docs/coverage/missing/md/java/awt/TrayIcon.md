@@ -10,6 +10,7 @@
 
 ## ✗ Missing Methods
 
+- `public java.lang.String getActionCommand()`
 - `public void setImage(java.awt.Image)`
 - `public java.awt.Image getImage()`
 - `public void setPopupMenu(java.awt.PopupMenu)`
@@ -23,7 +24,6 @@
 - `public void removeActionListener(java.awt.event.ActionListener)`
 - `public java.awt.event.ActionListener[] getActionListeners()`
 - `public void displayMessage(java.lang.String, java.lang.String, java.awt.TrayIcon$MessageType)`
-- `public java.lang.String getActionCommand()`
 - `public void addMouseListener(java.awt.event.MouseListener)`
 - `public void removeMouseListener(java.awt.event.MouseListener)`
 - `public java.awt.event.MouseListener[] getMouseListeners()`

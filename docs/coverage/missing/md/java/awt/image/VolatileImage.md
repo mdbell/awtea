@@ -11,14 +11,14 @@
 ## ✗ Missing Methods
 
 - `public abstract java.awt.Graphics2D createGraphics()`
-- `public abstract java.awt.ImageCapabilities getCapabilities()`
-- `public abstract java.awt.image.BufferedImage getSnapshot()`
-- `public abstract boolean contentsLost()`
 - `public java.awt.image.ImageProducer getSource()`
+- `public abstract java.awt.ImageCapabilities getCapabilities()`
+- `public abstract boolean contentsLost()`
 - `public int getTransparency()`
 - `public abstract int getWidth()`
 - `public abstract int getHeight()`
 - `public java.awt.Graphics getGraphics()`
+- `public abstract java.awt.image.BufferedImage getSnapshot()`
 - `public abstract int validate(java.awt.GraphicsConfiguration)`
 
 ## ✗ Missing Fields

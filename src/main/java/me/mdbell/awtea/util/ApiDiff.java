@@ -116,6 +116,9 @@ public class ApiDiff {
             }
         }
 
+        // Finalize coverage data
+        coverageData.finalizeData();
+
         // Generate report or print to console
         if (outputFormat == null) {
             // Use console generator with visitor pattern

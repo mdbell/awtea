@@ -10,11 +10,11 @@
 
 ## ✗ Missing Methods
 
+- `public final int getWidth()`
+- `public final int getHeight()`
 - `public final int getXOrigin()`
 - `public final int getYOrigin()`
 - `public final float[] getKernelData(float[])`
-- `public final int getWidth()`
-- `public final int getHeight()`
 - `public java.lang.Object clone()`
 
 ## ✗ Missing Constructors
