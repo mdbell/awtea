@@ -342,31 +342,29 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 			return;
 		}
 		
-		try {
-			// Create a TBufferedImage wrapper for the surface to act as a RasterTarget
-			me.mdbell.awtea.classlib.java.awt.image.TBufferedImage textImage = 
-				new me.mdbell.awtea.classlib.java.awt.image.TBufferedImage(textSurface);
-			
-			// Convert AWT Color to ARGB int
-			int argb = (color.getAlpha() << 24) | (color.getRed() << 16) | 
-			           (color.getGreen() << 8) | color.getBlue();
-			
-			// Render the string to the surface
-			// Offset by padding and ascent to position text correctly
-			int renderX = 2;
-			int renderY = (int) Math.ceil(metrics.getAscent()) + 2;
-			peer.renderString(str, textImage, sizePx, renderX, renderY, argb);
-			
-			// Blit the rendered text surface to the screen
-			// Adjust destination position to account for the padding and baseline
-			int destX = x - 2;
-			int destY = y - renderY;
-			pushOp(new SurfaceCommand(SurfaceCommand.Operation.BLIT_IMAGE, textImage, 
-			                          destX, destY, surfaceWidth, surfaceHeight));
-		} finally {
-			// Clean up the temporary surface
-			textSurface.destroy();
-		}
+		// Create a TBufferedImage wrapper for the surface to act as a RasterTarget
+		// The TBufferedImage will own the surface and destroy it when garbage collected
+		me.mdbell.awtea.classlib.java.awt.image.TBufferedImage textImage = 
+			new me.mdbell.awtea.classlib.java.awt.image.TBufferedImage(textSurface);
+		
+		// Convert AWT Color to ARGB int
+		int argb = (color.getAlpha() << 24) | (color.getRed() << 16) | 
+		           (color.getGreen() << 8) | color.getBlue();
+		
+		// Render the string to the surface
+		// Offset by padding and ascent to position text correctly
+		int renderX = 2;
+		int renderY = (int) Math.ceil(metrics.getAscent()) + 2;
+		peer.renderString(str, textImage, sizePx, renderX, renderY, argb);
+		
+		// Blit the rendered text surface to the screen
+		// Adjust destination position to account for the padding and baseline
+		int destX = x - 2;
+		int destY = y - renderY;
+		pushOp(new SurfaceCommand(SurfaceCommand.Operation.BLIT_IMAGE, textImage, 
+		                          destX, destY, surfaceWidth, surfaceHeight));
+		
+		// Note: textImage and its surface will be garbage collected after the blit operation completes
 	}
 
 	@Override
