@@ -189,7 +189,12 @@ System.out.printf("Count: %d, Rate: %.2f%%\n", count, rate);
 
 After:
 ```java
-log.info("Count: %d, Rate: %.2f%%", count, rate);
+// Note: Our logging system uses SLF4J-style {} placeholders, not printf-style format strings
+// For formatted numbers, format them first, then log:
+log.info("Count: {}, Rate: {}%", count, String.format("%.2f", rate));
+
+// Or use simple placeholders:
+log.info("Count: {}, Rate: {}", count, rate);
 ```
 
 ### Replace printStackTrace
