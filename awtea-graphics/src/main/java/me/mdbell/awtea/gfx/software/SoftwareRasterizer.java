@@ -1,5 +1,7 @@
 package me.mdbell.awtea.gfx.software;
 
+import me.mdbell.awtea.gfx.TAlphaComposite;
+import me.mdbell.awtea.gfx.TComposite;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
@@ -27,6 +29,9 @@ import java.util.List;
  * Transform support: Currently only translation is implemented. Full affine transforms
  * (scale, rotation, shear) would require more complex scan conversion and are deferred
  * as a future enhancement for this software fallback renderer.
+ * <p>
+ * Alpha blending: Supports standard Porter-Duff compositing rules via TAlphaComposite.
+ * The default composite is SRC_OVER with alpha = 1.0.
  */
 @Monitored.AllMethods
 public class SoftwareRasterizer implements Rasterizer {
@@ -53,6 +58,9 @@ public class SoftwareRasterizer implements Rasterizer {
 	private int encodedBackground = 0;
 	private int cachedFormat = -1; // Track which format the encoded colors are for
 
+	// Compositing state
+	private TComposite composite = TAlphaComposite.SrcOver;
+
 
 	SoftwareRasterizer(SoftwareSurface surface) {
 		this.surface = surface;
@@ -69,6 +77,7 @@ public class SoftwareRasterizer implements Rasterizer {
 		this.encodedBackground = other.encodedBackground;
 		this.cachedFormat = other.cachedFormat;
 		this.clip = other.clip != null ? new Rectangle(other.clip) : null;
+		this.composite = other.composite;
 	}
 
 	/**
@@ -113,6 +122,7 @@ public class SoftwareRasterizer implements Rasterizer {
 		this.foreground = Color.WHITE;
 		this.background = Color.BLACK;
 		this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
+		this.composite = TAlphaComposite.SrcOver;
 		updateEncodedColors();
 	}
 
@@ -141,6 +151,10 @@ public class SoftwareRasterizer implements Rasterizer {
 					} else {
 						this.clip = shape.getBounds();
 					}
+					break;
+				case SET_COMPOSITE:
+					TComposite comp = (TComposite) cmd.obj;
+					this.composite = comp != null ? comp : TAlphaComposite.SrcOver;
 					break;
 				case BLIT_IMAGE:
 					Surface srcSurface = ((SurfaceContainer) cmd.obj).getSurface();
@@ -195,6 +209,12 @@ public class SoftwareRasterizer implements Rasterizer {
 
 		int surfaceWidth = surface.getWidth();
 		int surfaceHeight = surface.getHeight();
+		int destFormat = surface.getFormat();
+
+		// Convert foreground color to ARGB for blending
+		int srcColorARGB = convertColorToARGB(encodedForeground, destFormat);
+
+		boolean blend = needsBlending();
 
 		for (int row = y0; row < y1; row++) {
 			if (row < 0 || row >= surfaceHeight) {
@@ -205,7 +225,16 @@ public class SoftwareRasterizer implements Rasterizer {
 					continue;
 				}
 				int idx = (row * surfaceWidth + col);
-				pixels[idx] = encodedForeground;
+
+				if (blend) {
+					// Convert destination to ARGB, blend, then convert back
+					int dstColorARGB = convertColorToARGB(pixels[idx], destFormat);
+					int blendedARGB = blendPixel(srcColorARGB, dstColorARGB, composite);
+					pixels[idx] = convertColor(blendedARGB, Surface.FORMAT_INT_ARGB, destFormat);
+				} else {
+					// Fast path: no blending needed
+					pixels[idx] = encodedForeground;
+				}
 			}
 		}
 	}
@@ -254,15 +283,28 @@ public class SoftwareRasterizer implements Rasterizer {
 
 		int surfaceWidth = surface.getWidth();
 		int surfaceHeight = surface.getHeight();
-
+		int destFormat = surface.getFormat();
 
 		Rectangle bounds = clip != null ? clip : new Rectangle(0, 0, surfaceWidth, surfaceHeight);
+
+		// Convert foreground color to ARGB for blending
+		int srcColorARGB = convertColorToARGB(encodedForeground, destFormat);
+		boolean blend = needsBlending();
 
 		while (true) {
 			if (tx1 >= bounds.x && tx1 < bounds.x + bounds.width &&
 				ty1 >= bounds.y && ty1 < bounds.y + bounds.height) {
 				int idx = (ty1 * surfaceWidth + tx1);
-				pixels[idx] = encodedForeground;
+
+				if (blend) {
+					// Convert destination to ARGB, blend, then convert back
+					int dstColorARGB = convertColorToARGB(pixels[idx], destFormat);
+					int blendedARGB = blendPixel(srcColorARGB, dstColorARGB, composite);
+					pixels[idx] = convertColor(blendedARGB, Surface.FORMAT_INT_ARGB, destFormat);
+				} else {
+					// Fast path: no blending needed
+					pixels[idx] = encodedForeground;
+				}
 			}
 
 			if (tx1 == tx2 && ty1 == ty2) {
@@ -331,6 +373,8 @@ public class SoftwareRasterizer implements Rasterizer {
 		float scaleX = (float) srcWidth / destWidth;
 		float scaleY = (float) srcHeight / destHeight;
 
+		boolean blend = needsBlending();
+
 		// Simple nearest-neighbor blit with improved rounding
 		for (int destRow = y0; destRow < y1; destRow++) {
 			if (destRow < 0 || destRow >= destSurfaceHeight) {
@@ -357,7 +401,17 @@ public class SoftwareRasterizer implements Rasterizer {
 				int srcIdx = srcRow * srcWidth + srcCol;
 				int srcColor = srcPixels.get(srcIdx);
 				int destIdx = destRow * destSurfaceWidth + destCol;
-				destPixels[destIdx] = convertColor(srcColor, srcFormat, destFormat);
+
+				if (blend) {
+					// Convert source and destination to ARGB, blend, then convert back
+					int srcColorARGB = convertColorToARGB(srcColor, srcFormat);
+					int dstColorARGB = convertColorToARGB(destPixels[destIdx], destFormat);
+					int blendedARGB = blendPixel(srcColorARGB, dstColorARGB, composite);
+					destPixels[destIdx] = convertColor(blendedARGB, Surface.FORMAT_INT_ARGB, destFormat);
+				} else {
+					// Fast path: no blending needed
+					destPixels[destIdx] = convertColor(srcColor, srcFormat, destFormat);
+				}
 			}
 		}
 	}
@@ -441,6 +495,16 @@ public class SoftwareRasterizer implements Rasterizer {
 		}
 	}
 
+	/**
+	 * Converts a color from any format to ARGB format.
+	 * @param color the color value in the source format
+	 * @param srcFormat the source format
+	 * @return the color in ARGB format
+	 */
+	private int convertColorToARGB(int color, int srcFormat) {
+		return convertColor(color, srcFormat, Surface.FORMAT_INT_ARGB);
+	}
+
 	private int convertColor(int color, int srcFormat, int destFormat) {
 		if (srcFormat == destFormat) {
 			return color;
@@ -502,5 +566,166 @@ public class SoftwareRasterizer implements Rasterizer {
 			default:
 				return (a << 24) | (r << 16) | (g << 8) | b;
 		}
+	}
+
+	/**
+	 * Applies alpha compositing to blend source and destination pixels.
+	 * Supports Porter-Duff compositing rules.
+	 *
+	 * @param srcColor source color in ARGB format
+	 * @param dstColor destination color in ARGB format
+	 * @param composite the composite operation to apply
+	 * @return the blended color in ARGB format
+	 */
+	private int blendPixel(int srcColor, int dstColor, TComposite composite) {
+		if (!(composite instanceof TAlphaComposite)) {
+			// If not an alpha composite, just return source (SRC mode)
+			return srcColor;
+		}
+
+		TAlphaComposite alphaComp = (TAlphaComposite) composite;
+		int rule = alphaComp.getRule();
+		float extraAlpha = alphaComp.getAlpha();
+
+		// Extract source ARGB components
+		int sa = (srcColor >> 24) & 0xFF;
+		int sr = (srcColor >> 16) & 0xFF;
+		int sg = (srcColor >> 8) & 0xFF;
+		int sb = srcColor & 0xFF;
+
+		// Apply extra alpha to source
+		sa = (int) (sa * extraAlpha);
+
+		// Extract destination ARGB components
+		int da = (dstColor >> 24) & 0xFF;
+		int dr = (dstColor >> 16) & 0xFF;
+		int dg = (dstColor >> 8) & 0xFF;
+		int db = dstColor & 0xFF;
+
+		// Normalize alpha values to [0, 1] range
+		float srcAlpha = sa / 255.0f;
+		float dstAlpha = da / 255.0f;
+
+		float outAlpha;
+		float srcFactor;
+		float dstFactor;
+
+		// Apply Porter-Duff compositing rules
+		switch (rule) {
+			case TAlphaComposite.CLEAR:
+				return 0; // Fully transparent
+
+			case TAlphaComposite.SRC:
+				// Replace destination with source
+				return (sa << 24) | (sr << 16) | (sg << 8) | sb;
+
+			case TAlphaComposite.DST:
+				// Leave destination unchanged
+				return dstColor;
+
+			case TAlphaComposite.SRC_OVER:
+				// Source over destination (default blending)
+				outAlpha = srcAlpha + dstAlpha * (1.0f - srcAlpha);
+				srcFactor = 1.0f;
+				dstFactor = 1.0f - srcAlpha;
+				break;
+
+			case TAlphaComposite.DST_OVER:
+				// Destination over source
+				outAlpha = dstAlpha + srcAlpha * (1.0f - dstAlpha);
+				srcFactor = 1.0f - dstAlpha;
+				dstFactor = 1.0f;
+				break;
+
+			case TAlphaComposite.SRC_IN:
+				// Source where destination is opaque
+				outAlpha = srcAlpha * dstAlpha;
+				srcFactor = dstAlpha;
+				dstFactor = 0.0f;
+				break;
+
+			case TAlphaComposite.DST_IN:
+				// Destination where source is opaque
+				outAlpha = dstAlpha * srcAlpha;
+				srcFactor = 0.0f;
+				dstFactor = srcAlpha;
+				break;
+
+			case TAlphaComposite.SRC_OUT:
+				// Source where destination is transparent
+				outAlpha = srcAlpha * (1.0f - dstAlpha);
+				srcFactor = 1.0f - dstAlpha;
+				dstFactor = 0.0f;
+				break;
+
+			case TAlphaComposite.DST_OUT:
+				// Destination where source is transparent
+				outAlpha = dstAlpha * (1.0f - srcAlpha);
+				srcFactor = 0.0f;
+				dstFactor = 1.0f - srcAlpha;
+				break;
+
+			case TAlphaComposite.SRC_ATOP:
+				// Source over destination, only where destination is opaque
+				outAlpha = dstAlpha;
+				srcFactor = dstAlpha;
+				dstFactor = 1.0f - srcAlpha;
+				break;
+
+			case TAlphaComposite.DST_ATOP:
+				// Destination over source, only where source is opaque
+				outAlpha = srcAlpha;
+				srcFactor = 1.0f - dstAlpha;
+				dstFactor = srcAlpha;
+				break;
+
+			case TAlphaComposite.XOR:
+				// Source xor destination
+				outAlpha = srcAlpha + dstAlpha - 2.0f * srcAlpha * dstAlpha;
+				srcFactor = 1.0f - dstAlpha;
+				dstFactor = 1.0f - srcAlpha;
+				break;
+
+			default:
+				// Default to SRC_OVER
+				outAlpha = srcAlpha + dstAlpha * (1.0f - srcAlpha);
+				srcFactor = 1.0f;
+				dstFactor = 1.0f - srcAlpha;
+				break;
+		}
+
+		// Blend color channels
+		int outA = (int) (outAlpha * 255.0f + 0.5f);
+		int outR, outG, outB;
+
+		if (outAlpha > 0.0f) {
+			// Premultiply and blend, then un-premultiply
+			outR = (int) ((sr * srcAlpha * srcFactor + dr * dstAlpha * dstFactor) / outAlpha + 0.5f);
+			outG = (int) ((sg * srcAlpha * srcFactor + dg * dstAlpha * dstFactor) / outAlpha + 0.5f);
+			outB = (int) ((sb * srcAlpha * srcFactor + db * dstAlpha * dstFactor) / outAlpha + 0.5f);
+		} else {
+			outR = outG = outB = 0;
+		}
+
+		// Clamp to [0, 255]
+		outA = Math.min(255, Math.max(0, outA));
+		outR = Math.min(255, Math.max(0, outR));
+		outG = Math.min(255, Math.max(0, outG));
+		outB = Math.min(255, Math.max(0, outB));
+
+		return (outA << 24) | (outR << 16) | (outG << 8) | outB;
+	}
+
+	/**
+	 * Checks if alpha blending is needed based on the current composite.
+	 * @return true if alpha blending should be applied
+	 */
+	private boolean needsBlending() {
+		if (!(composite instanceof TAlphaComposite)) {
+			return false;
+		}
+		TAlphaComposite alphaComp = (TAlphaComposite) composite;
+		// Need blending if not SRC with full alpha, or if source has alpha channel
+		return alphaComp.getRule() != TAlphaComposite.SRC || alphaComp.getAlpha() < 1.0f;
 	}
 }

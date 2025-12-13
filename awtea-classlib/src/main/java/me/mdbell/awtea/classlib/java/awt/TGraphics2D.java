@@ -1,6 +1,7 @@
 package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
+import me.mdbell.awtea.gfx.TComposite;
 
 import java.awt.*;
 import java.text.AttributedCharacterIterator;
@@ -49,6 +50,10 @@ public abstract class TGraphics2D extends TGraphics {
 	public abstract TRectangle getClipBounds();
 
 	public abstract TRenderingHints getRenderingHints();
+
+	public abstract TComposite getComposite();
+
+	public abstract void setComposite(TComposite comp);
 
 //	public abstract TStroke getStroke();
 

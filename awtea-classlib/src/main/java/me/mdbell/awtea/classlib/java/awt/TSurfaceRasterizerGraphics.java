@@ -10,6 +10,8 @@ import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
+import me.mdbell.awtea.gfx.TAlphaComposite;
+import me.mdbell.awtea.gfx.TComposite;
 import org.teavm.jso.browser.Window;
 
 import java.awt.*;
@@ -54,6 +56,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Getter(onMethod_ = @Override)
     protected Color background;
 
+    @Getter(onMethod_ = @Override)
+    protected TComposite composite;
+
     public TSurfaceRasterizerGraphics(Rasterizer rasterizer) {
         this.rasterizer = rasterizer;
         reset();
@@ -67,6 +72,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         this.clip = other.clip;
         this.color = other.color;
         this.background = other.background;
+        this.composite = other.composite;
     }
 
     @Override
@@ -96,6 +102,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         color = Color.WHITE;
         background = Color.BLACK;
         font = TFont.getDefaultFont();
+        composite = TAlphaComposite.SrcOver;
         //TODO: clear ops?
     }
 
@@ -463,6 +470,15 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Override
     public void setPaint(TPaint paint) {
 
+    }
+
+    @Override
+    public void setComposite(TComposite comp) {
+        if (comp == null) {
+            comp = TAlphaComposite.SrcOver;
+        }
+        this.composite = comp;
+        pushOp(new SurfaceCommand(SurfaceCommand.Operation.SET_COMPOSITE, comp));
     }
 
     @Override
