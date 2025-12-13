@@ -16,20 +16,27 @@ public class EmbedGenerator implements Generator {
 	@Override
 	public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
 		Method javaMethod = findJavaMethod(context.getClassLoader(), methodRef);
-		ShaderSource ann = javaMethod.getAnnotation(ShaderSource.class);
-		if (ann == null) {
-			throw new RuntimeException("@ShaderSource missing on " + methodRef);
+		
+		// Check for @ShaderSource first
+		ShaderSource shaderAnn = javaMethod.getAnnotation(ShaderSource.class);
+		CSSSource cssAnn = javaMethod.getAnnotation(CSSSource.class);
+		
+		String path;
+		if (shaderAnn != null) {
+			path = shaderAnn.value();
+		} else if (cssAnn != null) {
+			path = cssAnn.value();
+		} else {
+			throw new RuntimeException("@ShaderSource or @CSSSource missing on " + methodRef);
 		}
 
-		String path = ann.value();
-
 		// 2) Load the file contents from the classpath
-		String shaderText = loadResourceAsString(context.getClassLoader(), path);
+		String resourceText = loadResourceAsString(context.getClassLoader(), path);
 
-		// 3) Emit JS: return "<shaderText>";
+		// 3) Emit JS: return "<resourceText>";
 		writer.append("return $rt_str(");
 		try {
-			emitStringLiteral(writer, shaderText);
+			emitStringLiteral(writer, resourceText);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -98,12 +105,12 @@ public class EmbedGenerator implements Generator {
 	private String loadResourceAsString(ClassLoader cl, String path) {
 		try (InputStream in = cl.getResourceAsStream(path)) {
 			if (in == null) {
-				throw new RuntimeException("Shader resource not found on classpath: " + path);
+				throw new RuntimeException("Resource not found on classpath: " + path);
 			}
 			byte[] bytes = in.readAllBytes();
 			return new String(bytes, StandardCharsets.UTF_8);
 		} catch (IOException e) {
-			throw new RuntimeException("Error reading shader resource: " + path, e);
+			throw new RuntimeException("Error reading resource: " + path, e);
 		}
 	}
 

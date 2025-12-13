@@ -2,6 +2,7 @@ package me.mdbell.awtea.ui;
 
 import lombok.*;
 import me.mdbell.awtea.util.ConsoleBridge;
+import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLElement;
 
 import java.util.ArrayList;
@@ -16,37 +17,15 @@ public class LogFrame extends FloatingFrame {
 	private HTMLElement pre;
 
 	static {
-		AwCss.sheet()
-			.createClass("log-viewer-list")
-			.prop("list-style-type", "none")
-			.prop("padding", "0")
-			.prop("margin", "0")
-			.createClass("log-entry")
-			.prop("font-family", "monospace")
-			.prop("white-space", "pre-wrap")
-			.prop("margin", "0")
-			.createClass("log-entry-error")
-			.prop("color", Theme.Var.ERROR_FOREGROUND)
-			.before()
-			.prop("content", "'[ERR]'")
-			.prop("font-weight", "bold")
-			.createClass("log-entry-warn")
-			.prop("color", Theme.Var.WARNING_FOREGROUND)
-			.before()
-			.prop("content", "'[WRN]'")
-			.prop("font-weight", "bold")
-			.createClass("log-entry-info")
-			.prop("color", Theme.Var.INFO_FOREGROUND)
-			.before()
-			.prop("content", "'[INF]'")
-			.prop("font-weight", "bold")
-			.createClass("log-entry-debug")
-			.prop("color", Theme.Var.DEBUG_FOREGROUND)
-			.before()
-			.prop("content", "'[DBG]'")
-			.prop("font-weight", "bold")
-			.end()
-			.inject();
+		// Inject the CSS from embedded file
+		HTMLElement style = Window.current()
+			.getDocument()
+			.createElement("style");
+		style.setTextContent(UiStyles.logFrameCSS());
+		Window.current()
+			.getDocument()
+			.getHead()
+			.appendChild(style);
 	}
 
 	public LogFrame() {

@@ -18,47 +18,15 @@ public final class Taskbar {
 
 	static {
 
-		AwCss.sheet()
-			.createClass("aw-taskbar")
-			.prop("position", "fixed")
-			.prop("left", "0")
-			.prop("right", "0")
-			.prop("bottom", "0")
-			.prop("height", "30px")
-			.prop("display", "flex")
-			.prop("align-items", "center")
-			.prop("gap", "4px")
-			.prop("padding", "0 6px")
-			.prop("background", Theme.Var.HEADER_BACKGROUND)
-			.prop("border-top")
-			.value("1px solid")
-			.value(Theme.Var.BORDER)
-			.end()
-			.prop("font-family", "sans-serif")
-			.prop("font-size", "12px")
-			.prop("z-index", "9998")
-			.end()
-			.createClass("aw-taskbar-button")
-			.prop("padding", "2px 8px")
-			.prop("border-radius", "3px")
-			.prop("border")
-			.value("1px solid")
-			.value(Theme.Var.BORDER)
-			.end()
-			.prop("background", Theme.Var.BUTTON_BACKGROUND)
-			.prop("color", Theme.Var.FOREGROUND)
-			.prop("cursor", "pointer")
-			.prop("max-width", "160px")
-			.prop("overflow", "hidden")
-			.prop("text-overflow", "ellipsis")
-			.prop("white-space", "nowrap")
-			.prop("margin-right", "4px")
-			.end()
-			.createClass("aw-taskbar-button.aw-active")
-			.prop("font-weight", "600")
-			.prop("border-color", Theme.Var.ACCENT)
-			.end()
-			.inject();
+		// Inject the CSS from embedded file
+		HTMLElement style = Window.current()
+			.getDocument()
+			.createElement("style");
+		style.setTextContent(UiStyles.taskbarCSS());
+		Window.current()
+			.getDocument()
+			.getHead()
+			.appendChild(style);
 	}
 
 	private Taskbar() {
