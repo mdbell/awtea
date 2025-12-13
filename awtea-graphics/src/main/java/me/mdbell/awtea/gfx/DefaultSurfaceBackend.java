@@ -11,15 +11,66 @@ public class DefaultSurfaceBackend implements SurfaceBackend {
 
 	private static DefaultSurfaceBackend instance = null;
 
+	/**
+	 * System property to force a specific rendering backend.
+	 * Valid values: "wasm", "webassembly", "software", "java"
+	 * Example: -Dme.mdbell.awtea.gfx.backend=software
+	 */
+	private static final String BACKEND_PROPERTY = "me.mdbell.awtea.gfx.backend";
+
 	private DefaultSurfaceBackend() {
-		this.backends = new SurfaceBackend[]{
-			new WasmSurfaceBackend(),
-			new SoftwareSurfaceBackend(),
-		};
+		this.backends = createBackends();
 	}
 
 	public DefaultSurfaceBackend(SurfaceBackend[] backends) {
 		this.backends = backends;
+	}
+
+	/**
+	 * Creates the backend array based on system property configuration.
+	 * If me.mdbell.awtea.gfx.backend is set, only that backend is used.
+	 * Otherwise, uses default priority: WASM > Software.
+	 */
+	private static SurfaceBackend[] createBackends() {
+		String forcedBackend = System.getProperty(BACKEND_PROPERTY);
+		
+		if (forcedBackend != null && !forcedBackend.isEmpty()) {
+			forcedBackend = forcedBackend.toLowerCase().trim();
+			
+			switch (forcedBackend) {
+				case "wasm":
+				case "webassembly":
+					System.out.println("Forcing WASM backend via system property");
+					return new SurfaceBackend[]{new WasmSurfaceBackend()};
+				case "software":
+				case "java":
+					System.out.println("Forcing Software backend via system property");
+					return new SurfaceBackend[]{new SoftwareSurfaceBackend()};
+				default:
+					System.err.println("Unknown backend '" + forcedBackend + "' specified in " + 
+						BACKEND_PROPERTY + ". Using default priority.");
+					break;
+			}
+		}
+		
+		// Default priority: WASM > Software
+		// Try to create each backend individually and only include successful ones
+		java.util.ArrayList<SurfaceBackend> backendList = new java.util.ArrayList<>();
+		
+		// Try WASM backend first
+		try {
+			WasmSurfaceBackend wasmBackend = new WasmSurfaceBackend();
+			backendList.add(wasmBackend);
+		} catch (Exception e) {
+			// WASM backend failed to load (e.g., wasm file not found on server)
+			// Continue without it - will use software fallback
+			System.err.println("Failed to load WASM backend, will use software renderer: " + e.getMessage());
+		}
+		
+		// Always add software backend as fallback
+		backendList.add(new SoftwareSurfaceBackend());
+		
+		return backendList.toArray(new SurfaceBackend[0]);
 	}
 
 	public static DefaultSurfaceBackend getDefault() {

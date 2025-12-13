@@ -8,11 +8,13 @@ import java.awt.image.*;
 
 public class SoftwareSurface implements Surface {
 
-	private WritableRaster raster;
-	private ColorModel cm; // not really needed here yet, maybe in software rasterizer?
-	private int format;
+	private final WritableRaster raster;
+	private final ColorModel cm; // not really needed here yet, maybe in software rasterizer?
+	private final int format;
+	private boolean dirty = true;
 
-	private Uint8ClampedArray pixelData;
+	private final Uint8ClampedArray pixelData;
+	private final int[] intPixels;
 
 	public SoftwareSurface(WritableRaster raster, ColorModel cm, int format) {
 		this.raster = raster;
@@ -21,11 +23,22 @@ public class SoftwareSurface implements Surface {
 
 		this.pixelData = getPixelDataFromBuffer(raster.getDataBuffer());
 
+		this.intPixels = this.pixelData == null ? null : new Int32Array(this.pixelData.getBuffer(), this.pixelData.getByteOffset(),
+			this.pixelData.getByteLength() / 4).toJavaArray();
 	}
 
 	@Override
 	public int getFormat() {
 		return format;
+	}
+
+	void markDirty() {
+		this.dirty = true;
+	}
+
+	@Override
+	public boolean isDirty() {
+		return dirty;
 	}
 
 	private Uint8ClampedArray getPixelDataFromBuffer(DataBuffer dataBuffer) {
@@ -113,7 +126,17 @@ public class SoftwareSurface implements Surface {
 
 	@Override
 	public Uint8ClampedArray getPixelData() {
+		// Clear dirty flag when pixel data is accessed
+		// This allows consumers to track if surface has been modified since last read
+		dirty = false;
 		return pixelData;
+	}
+
+	public int[] getPixelDataAsInt32Array() {
+		// Clear dirty flag when pixel data is accessed
+		// This allows consumers to track if surface has been modified since last read
+		dirty = false;
+		return intPixels;
 	}
 
 	@Override
