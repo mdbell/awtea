@@ -9,6 +9,7 @@ awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime 
 ## Features
 - AWT event and component emulation
 - Multi-backend rendering: WebGL, WASM, and Java software renderer
+- Alpha blending and transparency support with Porter-Duff compositing
 - Modular, extensible font rendering architecture with pluggable strategies
 - Bytecode instrumentation for performance and extensibility
 - Zero-copy pixel buffers
@@ -203,6 +204,7 @@ canvas.destroy();
 ### Architecture Documentation
 - [Component Mapping Strategy](docs/COMPONENT_MAPPING.md) - How AWT components map to web technologies
 - [Rendering Backends](docs/RENDERING_BACKENDS.md) - WebGL, WASM, and Software rendering systems
+- [Alpha Blending](docs/ALPHA_BLENDING.md) - Transparency and alpha compositing support
 - [Font Rendering Architecture](docs/FONT_RENDERING_ARCHITECTURE.md) - Modular font rendering with pluggable strategies
 - [Font Loading Strategy](docs/FONT_LOADING.md) - Runtime font loading with browser HTTP caching
 - [CSS Embedding](docs/CSS_EMBEDDING.md) - Embedding CSS files with CSS custom properties for theming
