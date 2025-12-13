@@ -5,7 +5,7 @@ import java.awt.Color;
 
 /**
  * Comprehensive GUI demo showcasing awtea features including:
- * - Multiple panels and components
+ * - Multiple containers and components
  * - Interactive drawing canvas
  * - Graphics primitives
  * - Event handling
@@ -19,12 +19,11 @@ public class GuiDemo {
         frame.setTitle("GUI Demo - awtea Example");
         frame.setSize(800, 600);
         
-        // Create a container panel to hold everything
-        TPanel mainPanel = new TPanel();
-        mainPanel.setLayout(null); // Using absolute positioning for simplicity
+        // Create a container to hold everything
+        TContainer mainPanel = new TContainer();
         
         // Add title panel at the top
-        TPanel titlePanel = new TPanel() {
+        TContainer titlePanel = new TContainer() {
             @Override
             public void paint(TGraphics g) {
                 g.setColor(new Color(70, 130, 180)); // Steel blue
@@ -32,16 +31,10 @@ public class GuiDemo {
                 
                 g.setColor(Color.WHITE);
                 g.setFont(new TFont("SansSerif", TFont.BOLD, 24));
-                String title = "awtea GUI Demo";
-                TFontMetrics metrics = g.getFontMetrics();
-                int x = (getWidth() - metrics.stringWidth(title)) / 2;
-                g.drawString(title, x, 35);
+                g.drawString("awtea GUI Demo", 250, 35);
                 
                 g.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
-                String subtitle = "Interactive AWT components running in your browser";
-                metrics = g.getFontMetrics();
-                x = (getWidth() - metrics.stringWidth(subtitle)) / 2;
-                g.drawString(subtitle, x, 55);
+                g.drawString("Interactive AWT components running in your browser", 200, 55);
             }
         };
         titlePanel.setBounds(0, 0, 800, 70);
@@ -58,7 +51,7 @@ public class GuiDemo {
         mainPanel.add(demoPanel);
         
         // Add info panel at the bottom
-        TPanel infoPanel = new TPanel() {
+        TContainer infoPanel = new TContainer() {
             @Override
             public void paint(TGraphics g) {
                 g.setColor(new Color(245, 245, 245));
@@ -73,7 +66,7 @@ public class GuiDemo {
                 g.drawString("Instructions:", 10, 20);
                 
                 g.setFont(new TFont("SansSerif", TFont.PLAIN, 11));
-                g.drawString("• Click on the left canvas to draw colored circles", 10, 40);
+                g.drawString("• Click on the left canvas to draw colored squares", 10, 40);
                 g.drawString("• Move your mouse to see real-time coordinates", 10, 55);
                 g.drawString("• View graphics primitives on the right panel", 10, 70);
                 

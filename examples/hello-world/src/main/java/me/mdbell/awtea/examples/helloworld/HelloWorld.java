@@ -13,7 +13,7 @@ public class HelloWorld {
         // Create the main window
         TFrame frame = new TFrame();
         frame.setTitle("Hello World - awtea Example");
-        frame.setSize(400, 300);
+        frame.setSize(600, 400);
         
         // Create a canvas for custom drawing
         TCanvas canvas = new TCanvas() {
@@ -28,20 +28,17 @@ public class HelloWorld {
                 g.setFont(new TFont("SansSerif", TFont.BOLD, 32));
                 
                 String message = "Hello, awtea!";
-                TFontMetrics metrics = g.getFontMetrics();
-                int x = (getWidth() - metrics.stringWidth(message)) / 2;
-                int y = (getHeight() + metrics.getAscent()) / 2;
-                
-                g.drawString(message, x, y);
+                g.drawString(message, 150, 150);
                 
                 // Draw a subtitle
-                g.setFont(new TFont("SansSerif", TFont.PLAIN, 14));
-                g.setColor(Color.GRAY);
+                g.setFont(new TFont("SansSerif", TFont.PLAIN, 16));
+                g.setColor(new Color(100, 100, 100));
                 String subtitle = "Java AWT running in your browser!";
-                metrics = g.getFontMetrics();
-                int subX = (getWidth() - metrics.stringWidth(subtitle)) / 2;
-                int subY = y + 40;
-                g.drawString(subtitle, subX, subY);
+                g.drawString(subtitle, 120, 200);
+                
+                // Draw a simple box around the text
+                g.setColor(new Color(70, 130, 180));
+                g.drawRect(100, 100, 400, 150);
             }
         };
         

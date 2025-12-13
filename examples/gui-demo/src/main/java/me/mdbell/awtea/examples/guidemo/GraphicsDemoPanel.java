@@ -6,7 +6,7 @@ import java.awt.Color;
 /**
  * Panel demonstrating various graphics primitives and text rendering.
  */
-public class GraphicsDemoPanel extends TPanel {
+public class GraphicsDemoPanel extends TContainer {
     
     @Override
     public void paint(TGraphics g) {
@@ -15,74 +15,70 @@ public class GraphicsDemoPanel extends TPanel {
         g.fillRect(0, 0, getWidth(), getHeight());
         
         int yPos = 30;
-        int spacing = 80;
+        int spacing = 60;
         
         // Title
         g.setColor(Color.BLACK);
-        g.setFont(new TFont("SansSerif", TFont.BOLD, 18));
-        g.drawString("Graphics Primitives Demo", 10, yPos);
+        g.setFont(new TFont("SansSerif", TFont.BOLD, 16));
+        g.drawString("Graphics Primitives", 10, yPos);
         yPos += spacing;
         
         // Rectangles
         g.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
         g.drawString("Rectangles:", 10, yPos);
         g.setColor(Color.RED);
-        g.fillRect(150, yPos - 20, 60, 40);
+        g.fillRect(150, yPos - 15, 50, 30);
         g.setColor(Color.BLUE);
-        g.drawRect(230, yPos - 20, 60, 40);
-        yPos += spacing;
-        
-        // Ovals
-        g.setColor(Color.BLACK);
-        g.drawString("Ovals:", 10, yPos);
-        g.setColor(Color.GREEN);
-        g.fillOval(150, yPos - 20, 60, 40);
-        g.setColor(Color.ORANGE);
-        g.drawOval(230, yPos - 20, 60, 40);
+        g.drawRect(220, yPos - 15, 50, 30);
         yPos += spacing;
         
         // Lines
         g.setColor(Color.BLACK);
         g.drawString("Lines:", 10, yPos);
         g.setColor(Color.MAGENTA);
-        g.drawLine(150, yPos - 20, 210, yPos + 20);
+        g.drawLine(150, yPos - 15, 200, yPos + 15);
         g.setColor(Color.CYAN);
-        g.drawLine(230, yPos + 20, 290, yPos - 20);
+        g.drawLine(220, yPos + 15, 270, yPos - 15);
         yPos += spacing;
         
         // Arcs
         g.setColor(Color.BLACK);
         g.drawString("Arcs:", 10, yPos);
-        g.setColor(Color.PINK);
-        g.fillArc(150, yPos - 20, 60, 40, 0, 180);
-        g.setColor(new Color(150, 75, 0)); // Brown
-        g.drawArc(230, yPos - 20, 60, 40, 45, 270);
+        g.setColor(new Color(150, 75, 0));
+        g.drawArc(150, yPos - 15, 50, 30, 0, 180);
+        g.drawArc(220, yPos - 15, 50, 30, 45, 270);
         yPos += spacing;
         
-        // Text with different fonts
+        // Polygons
         g.setColor(Color.BLACK);
-        g.drawString("Text Styles:", 10, yPos);
-        g.setFont(new TFont("SansSerif", TFont.PLAIN, 14));
-        g.drawString("Plain", 150, yPos);
-        g.setFont(new TFont("SansSerif", TFont.BOLD, 14));
-        g.drawString("Bold", 210, yPos);
-        g.setFont(new TFont("SansSerif", TFont.ITALIC, 14));
-        g.drawString("Italic", 260, yPos);
-        yPos += spacing;
+        g.drawString("Polygons:", 10, yPos);
+        int[] xPoints = {150, 180, 200, 170};
+        int[] yPoints = {yPos - 10, yPos - 20, yPos, yPos + 10};
+        g.setColor(Color.GREEN);
+        g.fillPolygon(xPoints, yPoints, 4);
         
-        // Color palette
+        // Text styles
+        yPos += spacing;
+        g.setColor(Color.BLACK);
+        g.drawString("Fonts:", 10, yPos);
         g.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
-        g.setColor(Color.BLACK);
+        g.drawString("Plain", 150, yPos);
+        g.setFont(new TFont("SansSerif", TFont.BOLD, 12));
+        g.drawString("Bold", 200, yPos);
+        
+        // Color palette at the bottom
+        yPos += spacing;
+        g.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
         g.drawString("Colors:", 10, yPos);
         
-        Color[] palette = {
+        Color[] colors = {
             Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW,
             Color.ORANGE, Color.PINK, Color.CYAN, Color.MAGENTA
         };
         
-        for (int i = 0; i < palette.length; i++) {
-            g.setColor(palette[i]);
-            g.fillRect(150 + i * 25, yPos - 15, 20, 20);
+        for (int i = 0; i < colors.length; i++) {
+            g.setColor(colors[i]);
+            g.fillRect(150 + i * 22, yPos - 12, 18, 18);
         }
     }
 }
