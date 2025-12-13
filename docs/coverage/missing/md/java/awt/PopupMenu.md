@@ -10,10 +10,10 @@
 
 ## ✗ Missing Methods
 
-- `public java.awt.MenuContainer getParent()`
 - `public void addNotify()`
 - `public javax.accessibility.AccessibleContext getAccessibleContext()`
 - `public void show(java.awt.Component, int, int)`
+- `public java.awt.MenuContainer getParent()`
 
 ## ✗ Missing Constructors
 

@@ -16,7 +16,7 @@
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.event.KeyAdapter()`
+- `public java.awt.event.KeyAdapter()`
 
 
 [← Back to Package](index.md)

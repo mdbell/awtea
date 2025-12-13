@@ -10,8 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public abstract boolean exit()`
 - `public abstract boolean enter()`
+- `public abstract boolean exit()`
 
 
 [← Back to Package](index.md)

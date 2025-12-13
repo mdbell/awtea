@@ -10,14 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String toString()`
-- `public void next(java.awt.Container)`
-- `public void last(java.awt.Container)`
-- `public void first(java.awt.Container)`
-- `public void previous(java.awt.Container)`
-- `public void show(java.awt.Container, java.lang.String)`
-- `public void addLayoutComponent(java.lang.String, java.awt.Component)`
 - `public void addLayoutComponent(java.awt.Component, java.lang.Object)`
+- `public void addLayoutComponent(java.lang.String, java.awt.Component)`
 - `public java.awt.Dimension maximumLayoutSize(java.awt.Container)`
 - `public float getLayoutAlignmentX(java.awt.Container)`
 - `public float getLayoutAlignmentY(java.awt.Container)`
@@ -30,11 +24,17 @@
 - `public void setHgap(int)`
 - `public int getVgap()`
 - `public void setVgap(int)`
+- `public void show(java.awt.Container, java.lang.String)`
+- `public java.lang.String toString()`
+- `public void last(java.awt.Container)`
+- `public void next(java.awt.Container)`
+- `public void first(java.awt.Container)`
+- `public void previous(java.awt.Container)`
 
 ## ✗ Missing Constructors
 
-- `public java.awt.CardLayout()`
 - `public java.awt.CardLayout(int, int)`
+- `public java.awt.CardLayout()`
 
 
 [← Back to Package](index.md)

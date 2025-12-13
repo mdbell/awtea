@@ -10,15 +10,15 @@
 
 ## ✗ Missing Methods
 
-- `public boolean equals(java.lang.Object)`
-- `public int hashCode()`
-- `public static java.awt.AlphaComposite getInstance(int, float)`
-- `public static java.awt.AlphaComposite getInstance(int)`
+- `public int getRule()`
+- `public java.awt.AlphaComposite derive(int)`
+- `public java.awt.AlphaComposite derive(float)`
 - `public float getAlpha()`
 - `public java.awt.CompositeContext createContext(java.awt.image.ColorModel, java.awt.image.ColorModel, java.awt.RenderingHints)`
-- `public int getRule()`
-- `public java.awt.AlphaComposite derive(float)`
-- `public java.awt.AlphaComposite derive(int)`
+- `public boolean equals(java.lang.Object)`
+- `public int hashCode()`
+- `public static java.awt.AlphaComposite getInstance(int)`
+- `public static java.awt.AlphaComposite getInstance(int, float)`
 
 ## ✗ Missing Fields
 

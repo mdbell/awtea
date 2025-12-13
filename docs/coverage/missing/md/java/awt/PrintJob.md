@@ -10,16 +10,16 @@
 
 ## ✗ Missing Methods
 
-- `public void finalize()`
-- `public abstract void end()`
-- `public abstract java.awt.Graphics getGraphics()`
 - `public abstract java.awt.Dimension getPageDimension()`
 - `public abstract int getPageResolution()`
 - `public abstract boolean lastPageFirst()`
+- `public abstract java.awt.Graphics getGraphics()`
+- `public void finalize()`
+- `public abstract void end()`
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.PrintJob()`
+- `public java.awt.PrintJob()`
 
 
 [← Back to Package](index.md)

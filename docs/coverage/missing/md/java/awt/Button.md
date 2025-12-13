@@ -10,19 +10,19 @@
 
 ## ✗ Missing Methods
 
-- `protected java.lang.String paramString()`
-- `public void addNotify()`
-- `public java.util.EventListener[] getListeners(java.lang.Class)`
-- `protected void processEvent(java.awt.AWTEvent)`
-- `public javax.accessibility.AccessibleContext getAccessibleContext()`
-- `public java.lang.String getLabel()`
-- `public java.lang.String getActionCommand()`
-- `protected void processActionEvent(java.awt.event.ActionEvent)`
 - `public void setActionCommand(java.lang.String)`
 - `public void addActionListener(java.awt.event.ActionListener)`
 - `public void removeActionListener(java.awt.event.ActionListener)`
 - `public java.awt.event.ActionListener[] getActionListeners()`
+- `protected void processActionEvent(java.awt.event.ActionEvent)`
 - `public void setLabel(java.lang.String)`
+- `public java.lang.String getLabel()`
+- `public java.lang.String getActionCommand()`
+- `public void addNotify()`
+- `public java.util.EventListener[] getListeners(java.lang.Class)`
+- `protected void processEvent(java.awt.AWTEvent)`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `protected java.lang.String paramString()`
 
 ## ✗ Missing Constructors
 

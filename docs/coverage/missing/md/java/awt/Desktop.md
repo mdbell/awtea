@@ -10,14 +10,12 @@
 
 ## ✗ Missing Methods
 
-- `public void print(java.io.File)`
-- `public void open(java.io.File)`
-- `public boolean isSupported(java.awt.Desktop$Action)`
+- `public static java.awt.Desktop getDesktop()`
 - `public static boolean isDesktopSupported()`
 - `public void edit(java.io.File)`
 - `public void browse(java.net.URI)`
-- `public void mail(java.net.URI)`
 - `public void mail()`
+- `public void mail(java.net.URI)`
 - `public void addAppEventListener(java.awt.desktop.SystemEventListener)`
 - `public void removeAppEventListener(java.awt.desktop.SystemEventListener)`
 - `public void setAboutHandler(java.awt.desktop.AboutHandler)`
@@ -34,7 +32,9 @@
 - `public void setDefaultMenuBar(javax.swing.JMenuBar)`
 - `public void browseFileDirectory(java.io.File)`
 - `public boolean moveToTrash(java.io.File)`
-- `public static java.awt.Desktop getDesktop()`
+- `public void print(java.io.File)`
+- `public void open(java.io.File)`
+- `public boolean isSupported(java.awt.Desktop$Action)`
 
 
 [← Back to Package](index.md)

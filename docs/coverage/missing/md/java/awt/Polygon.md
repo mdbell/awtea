@@ -10,24 +10,24 @@
 
 ## ✗ Missing Methods
 
-- `public boolean contains(int, int)`
-- `public boolean contains(double, double)`
-- `public boolean contains(java.awt.Point)`
-- `public boolean contains(java.awt.geom.Point2D)`
-- `public boolean contains(double, double, double, double)`
-- `public boolean contains(java.awt.geom.Rectangle2D)`
-- `public java.awt.Rectangle getBounds()`
-- `public void reset()`
+- `public java.awt.geom.Rectangle2D getBounds2D()`
+- `public boolean intersects(java.awt.geom.Rectangle2D)`
+- `public boolean intersects(double, double, double, double)`
+- `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform, double)`
+- `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)`
+- `public void addPoint(int, int)`
+- `public java.awt.Rectangle getBoundingBox()`
+- `public void translate(int, int)`
 - `public void invalidate()`
 - `public boolean inside(int, int)`
-- `public java.awt.geom.Rectangle2D getBounds2D()`
-- `public void translate(int, int)`
-- `public boolean intersects(double, double, double, double)`
-- `public boolean intersects(java.awt.geom.Rectangle2D)`
-- `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)`
-- `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform, double)`
-- `public java.awt.Rectangle getBoundingBox()`
-- `public void addPoint(int, int)`
+- `public java.awt.Rectangle getBounds()`
+- `public boolean contains(double, double, double, double)`
+- `public boolean contains(int, int)`
+- `public boolean contains(java.awt.geom.Rectangle2D)`
+- `public boolean contains(double, double)`
+- `public boolean contains(java.awt.geom.Point2D)`
+- `public boolean contains(java.awt.Point)`
+- `public void reset()`
 
 ## ✗ Missing Fields
 
@@ -38,8 +38,8 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.Polygon()`
 - `public java.awt.Polygon(int[], int[], int)`
+- `public java.awt.Polygon()`
 
 
 [← Back to Package](index.md)

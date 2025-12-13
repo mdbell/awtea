@@ -10,16 +10,16 @@
 
 ## ✗ Missing Methods
 
-- `public abstract java.awt.Component getComponentAfter(java.awt.Container, java.awt.Component)`
-- `public abstract java.awt.Component getDefaultComponent(java.awt.Container)`
-- `public abstract java.awt.Component getComponentBefore(java.awt.Container, java.awt.Component)`
 - `public java.awt.Component getInitialComponent(java.awt.Window)`
 - `public abstract java.awt.Component getFirstComponent(java.awt.Container)`
 - `public abstract java.awt.Component getLastComponent(java.awt.Container)`
+- `public abstract java.awt.Component getComponentAfter(java.awt.Container, java.awt.Component)`
+- `public abstract java.awt.Component getDefaultComponent(java.awt.Container)`
+- `public abstract java.awt.Component getComponentBefore(java.awt.Container, java.awt.Component)`
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.FocusTraversalPolicy()`
+- `public java.awt.FocusTraversalPolicy()`
 
 
 [← Back to Package](index.md)

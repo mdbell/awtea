@@ -10,9 +10,9 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.Object clone()`
-- `public boolean isAccelerated()`
 - `public boolean isTrueVolatile()`
+- `public boolean isAccelerated()`
+- `public java.lang.Object clone()`
 
 ## ✗ Missing Constructors
 

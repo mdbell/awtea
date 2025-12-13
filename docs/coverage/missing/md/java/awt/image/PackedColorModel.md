@@ -10,13 +10,13 @@
 
 ## ✗ Missing Methods
 
-- `public boolean equals(java.lang.Object)`
-- `public int hashCode()`
-- `public final int getMask(int)`
+- `public final int[] getMasks()`
 - `public java.awt.image.SampleModel createCompatibleSampleModel(int, int)`
 - `public boolean isCompatibleSampleModel(java.awt.image.SampleModel)`
 - `public java.awt.image.WritableRaster getAlphaRaster(java.awt.image.WritableRaster)`
-- `public final int[] getMasks()`
+- `public final int getMask(int)`
+- `public boolean equals(java.lang.Object)`
+- `public int hashCode()`
 
 ## ✗ Missing Constructors
 

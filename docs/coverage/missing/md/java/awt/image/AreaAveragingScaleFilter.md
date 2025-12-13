@@ -10,8 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)`
 - `public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)`
+- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)`
 - `public void setHints(int)`
 
 ## ✗ Missing Constructors

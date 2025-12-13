@@ -10,10 +10,10 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String paramString()`
-- `public java.lang.Object getItem()`
 - `public int getStateChange()`
 - `public java.awt.ItemSelectable getItemSelectable()`
+- `public java.lang.Object getItem()`
+- `public java.lang.String paramString()`
 
 ## ✗ Missing Fields
 

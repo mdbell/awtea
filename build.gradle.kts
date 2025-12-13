@@ -37,7 +37,7 @@ dependencies {
     implementation("org.teavm:teavm-core:0.13.0")
     implementation("org.teavm:teavm-classlib:0.13.0")
     implementation("org.teavm:teavm-jso-apis:0.13.0")
-    
+
     // ClassGraph for class scanning
     implementation("io.github.classgraph:classgraph:4.8.177")
 }
@@ -112,25 +112,39 @@ tasks.named<ProcessResources>("processResources") {
 tasks.register<JavaExec>("generateDocs") {
     group = "documentation"
     description = "Generate API coverage reports in HTML and Markdown formats"
-    
+
     dependsOn("classes")
-    
+
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("me.mdbell.awtea.util.ApiDiff")
-    
+
     doFirst {
+
+        // Clean previous reports
+        val reportDir = file("docs/coverage")
+        if (reportDir.exists()) {
+            reportDir.deleteRecursively()
+        }
+        reportDir.mkdirs()
+
         // Generate HTML report
         args("--format", "html")
+        exec();
+        args("--missing-classes", "--format", "html")
+        exec();
     }
-    
+
     doLast {
         // Generate Markdown report in a separate execution
         project.javaexec {
             classpath = sourceSets["main"].runtimeClasspath
             mainClass.set("me.mdbell.awtea.util.ApiDiff")
             args("--format", "markdown")
+            exec();
+            args("--missing-classes", "--format", "markdown")
+            exec();
         }
-        
+
         println("✓ Generated HTML report: docs/coverage/report.html")
         println("✓ Generated Markdown report: docs/coverage/report.md")
     }
@@ -139,9 +153,9 @@ tasks.register<JavaExec>("generateDocs") {
 tasks.register<JavaExec>("findMissingClasses") {
     group = "documentation"
     description = "Find missing public classes in java.awt.* packages"
-    
+
     dependsOn("classes")
-    
+
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("me.mdbell.awtea.util.ApiDiff")
     args("--missing-classes")

@@ -10,12 +10,12 @@
 
 ## ✗ Missing Methods
 
+- `public boolean intersects(double, double, double, double)`
+- `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)`
 - `public boolean equals(java.lang.Object)`
 - `public int hashCode()`
 - `public boolean contains(double, double)`
 - `public boolean contains(double, double, double, double)`
-- `public boolean intersects(double, double, double, double)`
-- `public java.awt.geom.PathIterator getPathIterator(java.awt.geom.AffineTransform)`
 
 ## ✗ Missing Constructors
 

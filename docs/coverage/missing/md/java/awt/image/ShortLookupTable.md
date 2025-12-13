@@ -10,14 +10,14 @@
 
 ## ✗ Missing Methods
 
-- `public final short[][] getTable()`
-- `public int[] lookupPixel(int[], int[])`
 - `public short[] lookupPixel(short[], short[])`
+- `public int[] lookupPixel(int[], int[])`
+- `public final short[][] getTable()`
 
 ## ✗ Missing Constructors
 
-- `public java.awt.image.ShortLookupTable(int, short[][])`
 - `public java.awt.image.ShortLookupTable(int, short[])`
+- `public java.awt.image.ShortLookupTable(int, short[][])`
 
 
 [← Back to Package](index.md)

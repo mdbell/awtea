@@ -15,7 +15,7 @@
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.event.MouseMotionAdapter()`
+- `public java.awt.event.MouseMotionAdapter()`
 
 
 [← Back to Package](index.md)

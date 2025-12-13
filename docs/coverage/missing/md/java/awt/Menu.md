@@ -10,23 +10,23 @@
 
 ## ✗ Missing Methods
 
-- `public java.awt.MenuItem add(java.awt.MenuItem)`
+- `public boolean isTearOff()`
+- `public void addSeparator()`
+- `public void insertSeparator(int)`
+- `public void addNotify()`
+- `public int getItemCount()`
+- `public int countItems()`
+- `public java.awt.MenuItem getItem(int)`
+- `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public void removeNotify()`
 - `public void add(java.lang.String)`
-- `public void remove(int)`
+- `public java.awt.MenuItem add(java.awt.MenuItem)`
 - `public void remove(java.awt.MenuComponent)`
+- `public void remove(int)`
 - `public void insert(java.awt.MenuItem, int)`
 - `public void insert(java.lang.String, int)`
 - `public java.lang.String paramString()`
 - `public void removeAll()`
-- `public int getItemCount()`
-- `public java.awt.MenuItem getItem(int)`
-- `public void addNotify()`
-- `public int countItems()`
-- `public javax.accessibility.AccessibleContext getAccessibleContext()`
-- `public void removeNotify()`
-- `public void addSeparator()`
-- `public boolean isTearOff()`
-- `public void insertSeparator(int)`
 
 ## ✗ Missing Constructors
 

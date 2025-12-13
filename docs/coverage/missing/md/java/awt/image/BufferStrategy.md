@@ -10,16 +10,16 @@
 
 ## ✗ Missing Methods
 
-- `public void dispose()`
-- `public abstract void show()`
 - `public abstract java.awt.BufferCapabilities getCapabilities()`
 - `public abstract java.awt.Graphics getDrawGraphics()`
 - `public abstract boolean contentsLost()`
 - `public abstract boolean contentsRestored()`
+- `public void dispose()`
+- `public abstract void show()`
 
 ## ✗ Missing Constructors
 
-- `protected java.awt.image.BufferStrategy()`
+- `public java.awt.image.BufferStrategy()`
 
 
 [← Back to Package](index.md)

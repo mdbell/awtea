@@ -10,18 +10,18 @@
 
 ## ✗ Missing Methods
 
-- `public boolean getState()`
-- `public java.lang.String paramString()`
 - `public void setState(boolean)`
 - `public void addNotify()`
-- `public java.util.EventListener[] getListeners(java.lang.Class)`
-- `protected void processItemEvent(java.awt.event.ItemEvent)`
-- `protected void processEvent(java.awt.AWTEvent)`
-- `public void addItemListener(java.awt.event.ItemListener)`
 - `public java.lang.Object[] getSelectedObjects()`
+- `public void addItemListener(java.awt.event.ItemListener)`
 - `public void removeItemListener(java.awt.event.ItemListener)`
 - `public java.awt.event.ItemListener[] getItemListeners()`
+- `public java.util.EventListener[] getListeners(java.lang.Class)`
+- `protected void processEvent(java.awt.AWTEvent)`
+- `protected void processItemEvent(java.awt.event.ItemEvent)`
 - `public javax.accessibility.AccessibleContext getAccessibleContext()`
+- `public boolean getState()`
+- `public java.lang.String paramString()`
 
 ## ✗ Missing Constructors
 

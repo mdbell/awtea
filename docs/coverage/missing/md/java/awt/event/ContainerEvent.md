@@ -10,9 +10,9 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String paramString()`
-- `public java.awt.Container getContainer()`
 - `public java.awt.Component getChild()`
+- `public java.awt.Container getContainer()`
+- `public java.lang.String paramString()`
 
 ## ✗ Missing Fields
 

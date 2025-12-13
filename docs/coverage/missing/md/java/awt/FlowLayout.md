@@ -10,7 +10,6 @@
 
 ## ✗ Missing Methods
 
-- `public java.lang.String toString()`
 - `public void addLayoutComponent(java.lang.String, java.awt.Component)`
 - `public void removeLayoutComponent(java.awt.Component)`
 - `public java.awt.Dimension preferredLayoutSize(java.awt.Container)`
@@ -20,10 +19,11 @@
 - `public void setHgap(int)`
 - `public int getVgap()`
 - `public void setVgap(int)`
-- `public void setAlignment(int)`
-- `public boolean getAlignOnBaseline()`
 - `public int getAlignment()`
+- `public void setAlignment(int)`
 - `public void setAlignOnBaseline(boolean)`
+- `public boolean getAlignOnBaseline()`
+- `public java.lang.String toString()`
 
 ## ✗ Missing Fields
 
@@ -35,8 +35,8 @@
 
 ## ✗ Missing Constructors
 
-- `public java.awt.FlowLayout(int, int, int)`
 - `public java.awt.FlowLayout(int)`
+- `public java.awt.FlowLayout(int, int, int)`
 - `public java.awt.FlowLayout()`
 
 

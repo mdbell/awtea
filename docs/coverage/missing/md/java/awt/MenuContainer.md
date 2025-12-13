@@ -10,9 +10,9 @@
 
 ## ✗ Missing Methods
 
-- `public abstract void remove(java.awt.MenuComponent)`
-- `public abstract boolean postEvent(java.awt.Event)`
 - `public abstract java.awt.Font getFont()`
+- `public abstract boolean postEvent(java.awt.Event)`
+- `public abstract void remove(java.awt.MenuComponent)`
 
 
 [← Back to Package](index.md)

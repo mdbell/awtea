@@ -12,8 +12,8 @@
 
 - `public static java.awt.ComponentOrientation getOrientation(java.util.ResourceBundle)`
 - `public static java.awt.ComponentOrientation getOrientation(java.util.Locale)`
-- `public boolean isLeftToRight()`
 - `public boolean isHorizontal()`
+- `public boolean isLeftToRight()`
 
 ## ✗ Missing Fields
 

@@ -10,10 +10,10 @@
 
 ## ✗ Missing Methods
 
+- `public java.awt.geom.Rectangle2D getAnchorRect()`
+- `public java.awt.image.BufferedImage getImage()`
 - `public java.awt.PaintContext createContext(java.awt.image.ColorModel, java.awt.Rectangle, java.awt.geom.Rectangle2D, java.awt.geom.AffineTransform, java.awt.RenderingHints)`
 - `public int getTransparency()`
-- `public java.awt.image.BufferedImage getImage()`
-- `public java.awt.geom.Rectangle2D getAnchorRect()`
 
 ## ✗ Missing Constructors
 

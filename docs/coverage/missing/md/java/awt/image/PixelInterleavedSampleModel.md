@@ -10,9 +10,9 @@
 
 ## ✗ Missing Methods
 
-- `public int hashCode()`
 - `public java.awt.image.SampleModel createCompatibleSampleModel(int, int)`
 - `public java.awt.image.SampleModel createSubsetSampleModel(int[])`
+- `public int hashCode()`
 
 ## ✗ Missing Constructors
 

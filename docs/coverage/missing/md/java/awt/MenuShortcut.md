@@ -10,13 +10,13 @@
 
 ## ✗ Missing Methods
 
+- `public boolean usesShiftModifier()`
 - `public boolean equals(java.awt.MenuShortcut)`
 - `public boolean equals(java.lang.Object)`
 - `public java.lang.String toString()`
 - `public int hashCode()`
 - `public int getKey()`
 - `protected java.lang.String paramString()`
-- `public boolean usesShiftModifier()`
 
 ## ✗ Missing Constructors
 

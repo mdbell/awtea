@@ -10,8 +10,8 @@
 
 ## ✗ Missing Methods
 
-- `public abstract void addItemListener(java.awt.event.ItemListener)`
 - `public abstract java.lang.Object[] getSelectedObjects()`
+- `public abstract void addItemListener(java.awt.event.ItemListener)`
 - `public abstract void removeItemListener(java.awt.event.ItemListener)`
 
 

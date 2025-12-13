@@ -10,14 +10,14 @@
 
 ## ✗ Missing Methods
 
-- `public final byte[][] getTable()`
-- `public int[] lookupPixel(int[], int[])`
 - `public byte[] lookupPixel(byte[], byte[])`
+- `public int[] lookupPixel(int[], int[])`
+- `public final byte[][] getTable()`
 
 ## ✗ Missing Constructors
 
-- `public java.awt.image.ByteLookupTable(int, byte[][])`
 - `public java.awt.image.ByteLookupTable(int, byte[])`
+- `public java.awt.image.ByteLookupTable(int, byte[][])`
 
 
 [← Back to Package](index.md)

@@ -10,12 +10,12 @@
 
 ## ✗ Missing Methods
 
-- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)`
 - `public void setPixels(int, int, int, int, java.awt.image.ColorModel, byte[], int, int)`
-- `public void setColorModel(java.awt.image.ColorModel)`
+- `public void setPixels(int, int, int, int, java.awt.image.ColorModel, int[], int, int)`
 - `public void setDimensions(int, int)`
 - `public void imageComplete(int)`
 - `public java.awt.image.BufferedImageOp getBufferedImageOp()`
+- `public void setColorModel(java.awt.image.ColorModel)`
 
 ## ✗ Missing Constructors
 
