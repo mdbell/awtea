@@ -133,6 +133,9 @@ public class SoftwareSurface implements Surface {
 	}
 
 	public int[] getPixelDataAsInt32Array() {
+		// Clear dirty flag when pixel data is accessed
+		// This allows consumers to track if surface has been modified since last read
+		dirty = false;
 		return intPixels;
 	}
 
