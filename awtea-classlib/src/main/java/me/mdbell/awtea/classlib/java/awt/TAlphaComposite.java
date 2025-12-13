@@ -1,5 +1,7 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import lombok.EqualsAndHashCode;
+
 /**
  * The TAlphaComposite class implements alpha blending rules for combining source and destination pixels.
  * This class corresponds to java.awt.AlphaComposite.
@@ -24,6 +26,7 @@ package me.mdbell.awtea.classlib.java.awt;
  *
  * @see TComposite
  */
+@EqualsAndHashCode
 public final class TAlphaComposite implements TComposite {
 
 	/**
@@ -183,19 +186,5 @@ public final class TAlphaComposite implements TComposite {
 	 */
 	public float getAlpha() {
 		return alpha;
-	}
-
-	@Override
-	public int hashCode() {
-		return Float.floatToIntBits(alpha) * 31 + rule;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof TAlphaComposite)) {
-			return false;
-		}
-		TAlphaComposite other = (TAlphaComposite) obj;
-		return rule == other.rule && alpha == other.alpha;
 	}
 }
