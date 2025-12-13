@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .class-box { fill: #e1f5ff; stroke: #01579b; stroke-width: 2; }
+      .abstract-box { fill: #fff9c4; stroke: #f57f17; stroke-width: 2; }
+      .interface-box { fill: #f3e5f5; stroke: #4a148c; stroke-width: 2; stroke-dasharray: 5,5; }
+      .heavyweight-box { fill: #ffebee; stroke: #b71c1c; stroke-width: 2; }
+      .text { font-family: Arial, sans-serif; font-size: 14px; fill: #000; }
+      .title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #000; }
+      .arrow { stroke: #000; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#000" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="500" y="30" class="title" text-anchor="middle">awtea Component Class Hierarchy</text>
+  
+  <!-- Legend -->
+  <g transform="translate(20, 50)">
+    <rect x="0" y="0" width="120" height="25" class="class-box"/>
+    <text x="60" y="17" class="text" text-anchor="middle">Lightweight</text>
+    
+    <rect x="130" y="0" width="120" height="25" class="heavyweight-box"/>
+    <text x="190" y="17" class="text" text-anchor="middle">Heavyweight</text>
+    
+    <rect x="260" y="0" width="120" height="25" class="abstract-box"/>
+    <text x="320" y="17" class="text" text-anchor="middle">Abstract</text>
+  </g>
+  
+  <!-- Component Tree -->
+  
+  <!-- TComponent (root) -->
+  <g id="TComponent">
+    <rect x="400" y="100" width="200" height="80" class="abstract-box"/>
+    <text x="500" y="125" class="title" text-anchor="middle">TComponent</text>
+    <text x="500" y="145" class="text" text-anchor="middle">Base component</text>
+    <text x="500" y="165" class="text" text-anchor="middle">Event dispatch, bounds,</text>
+    <text x="500" y="180" class="text" text-anchor="middle">painting, focus</text>
+  </g>
+  
+  <!-- TContainer -->
+  <g id="TContainer">
+    <rect x="400" y="220" width="200" height="70" class="abstract-box"/>
+    <text x="500" y="245" class="title" text-anchor="middle">TContainer</text>
+    <text x="500" y="265" class="text" text-anchor="middle">Lightweight container</text>
+    <text x="500" y="285" class="text" text-anchor="middle">Child management</text>
+  </g>
+  <line x1="500" y1="180" x2="500" y2="220" class="arrow"/>
+  
+  <!-- TSurface (heavyweight base) -->
+  <g id="TSurface">
+    <rect x="150" y="330" width="200" height="70" class="heavyweight-box"/>
+    <text x="250" y="355" class="title" text-anchor="middle">TSurface</text>
+    <text x="250" y="375" class="text" text-anchor="middle">Heavyweight base</text>
+    <text x="250" y="395" class="text" text-anchor="middle">Has TSurfacePeer</text>
+  </g>
+  <line x1="400" y1="260" x2="250" y2="330" class="arrow"/>
+  
+  <!-- TCanvas -->
+  <g id="TCanvas">
+    <rect x="650" y="330" width="180" height="50" class="class-box"/>
+    <text x="740" y="355" class="title" text-anchor="middle">TCanvas</text>
+    <text x="740" y="375" class="text" text-anchor="middle">Lightweight canvas</text>
+  </g>
+  <line x1="550" y1="180" x2="740" y2="330" class="arrow"/>
+  
+  <!-- TApplet -->
+  <g id="TApplet">
+    <rect x="420" y="330" width="160" height="50" class="class-box"/>
+    <text x="500" y="355" class="title" text-anchor="middle">TApplet</text>
+    <text x="500" y="375" class="text" text-anchor="middle">Applet container</text>
+  </g>
+  <line x1="500" y1="290" x2="500" y2="330" class="arrow"/>
+  
+  <!-- TFrame -->
+  <g id="TFrame">
+    <rect x="150" y="440" width="200" height="70" class="heavyweight-box"/>
+    <text x="250" y="465" class="title" text-anchor="middle">TFrame</text>
+    <text x="250" y="485" class="text" text-anchor="middle">Top-level window</text>
+    <text x="250" y="505" class="text" text-anchor="middle">+ TFrameFloatingPeer</text>
+  </g>
+  <line x1="250" y1="400" x2="250" y2="440" class="arrow"/>
+  
+  <!-- TJComponent -->
+  <g id="TJComponent">
+    <rect x="420" y="440" width="160" height="50" class="class-box"/>
+    <text x="500" y="465" class="title" text-anchor="middle">TJComponent</text>
+    <text x="500" y="485" class="text" text-anchor="middle">Swing base</text>
+  </g>
+  <line x1="500" y1="290" x2="500" y2="440" class="arrow"/>
+  
+  <!-- TJPanel -->
+  <g id="TJPanel">
+    <rect x="420" y="530" width="160" height="50" class="class-box"/>
+    <text x="500" y="555" class="title" text-anchor="middle">TJPanel</text>
+    <text x="500" y="575" class="text" text-anchor="middle">Swing panel</text>
+  </g>
+  <line x1="500" y1="490" x2="500" y2="530" class="arrow"/>
+  
+  <!-- Peer Architecture (right side) -->
+  <g transform="translate(650, 100)">
+    <text x="0" y="0" class="title">Peer Architecture</text>
+    
+    <!-- TFrameFloatingPeer -->
+    <rect x="0" y="20" width="200" height="60" class="heavyweight-box"/>
+    <text x="100" y="40" class="title" text-anchor="middle">TFrameFloatingPeer</text>
+    <text x="100" y="60" class="text" text-anchor="middle">Manages DOM bridge</text>
+    <text x="100" y="75" class="text" text-anchor="middle">for TFrame</text>
+    
+    <!-- FloatingWindow -->
+    <rect x="0" y="100" width="200" height="60" class="class-box"/>
+    <text x="100" y="120" class="title" text-anchor="middle">FloatingWindow</text>
+    <text x="100" y="140" class="text" text-anchor="middle">UI windowing base</text>
+    <text x="100" y="155" class="text" text-anchor="middle">&lt;div&gt; container</text>
+    
+    <line x1="100" y1="80" x2="100" y2="100" class="arrow"/>
+    
+    <!-- Canvas Element -->
+    <rect x="0" y="180" width="200" height="60" style="fill: #e8f5e9; stroke: #2e7d32; stroke-width: 2;"/>
+    <text x="100" y="200" class="title" text-anchor="middle">&lt;canvas&gt;</text>
+    <text x="100" y="220" class="text" text-anchor="middle">DOM element</text>
+    <text x="100" y="235" class="text" text-anchor="middle">Surface + TGraphics</text>
+    
+    <line x1="100" y1="160" x2="100" y2="180" class="arrow"/>
+  </g>
+  
+  <!-- MenuComponent hierarchy (bottom left) -->
+  <g transform="translate(20, 550)">
+    <text x="0" y="0" class="title">Menu System (Separate Hierarchy)</text>
+    
+    <rect x="0" y="20" width="180" height="50" style="fill: #fce4ec; stroke: #880e4f; stroke-width: 2;"/>
+    <text x="90" y="40" class="title" text-anchor="middle">MenuBar</text>
+    <text x="90" y="60" class="text" text-anchor="middle">&lt;div class="aw-menubar"&gt;</text>
+    
+    <rect x="200" y="20" width="180" height="50" style="fill: #fce4ec; stroke: #880e4f; stroke-width: 2;"/>
+    <text x="290" y="40" class="title" text-anchor="middle">Menu</text>
+    <text x="290" y="60" class="text" text-anchor="middle">&lt;div class="aw-menu-item"&gt;</text>
+    
+    <rect x="400" y="20" width="180" height="50" style="fill: #fce4ec; stroke: #880e4f; stroke-width: 2;"/>
+    <text x="490" y="40" class="title" text-anchor="middle">MenuItem</text>
+    <text x="490" y="60" class="text" text-anchor="middle">&lt;div class="aw-menu-entry"&gt;</text>
+  </g>
+  
+  <!-- Notes -->
+  <g transform="translate(20, 680)">
+    <text x="0" y="0" class="text" font-weight="bold">Key Points:</text>
+    <text x="0" y="20" class="text">• Heavyweight components (red) have DOM elements and peers</text>
+    <text x="0" y="40" class="text">• Lightweight components (blue) render into parent's surface</text>
+    <text x="0" y="60" class="text">• Menu components (pink) are separate from Component hierarchy</text>
+    <text x="0" y="80" class="text">• TSurface is the base for all heavyweight components</text>
+  </g>
+</svg>
