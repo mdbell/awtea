@@ -376,27 +376,22 @@ public class SoftwareRasterizer implements Rasterizer {
 		int b2 = pixels.get(idx + 2) & 0xFF;
 		int b3 = pixels.get(idx + 3) & 0xFF;
 
-		// Memory layout is little-endian, so we need to reconstruct the 32-bit value
-		switch (format) {
-			case Surface.FORMAT_INT_ARGB:
-				// 0xAARRGGBB: [BB, GG, RR, AA] in memory
-				return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-			case Surface.FORMAT_INT_RGB:
-				// 0x00RRGGBB: [BB, GG, RR, 00] in memory
-				return (b2 << 16) | (b1 << 8) | b0;
-			case Surface.FORMAT_INT_RGBA:
-				// 0xRRGGBBAA: [AA, BB, GG, RR] in memory
-				return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-			case Surface.FORMAT_INT_ABGR:
-				// 0xAABBGGRR: [RR, GG, BB, AA] in memory
-				return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-			case Surface.FORMAT_INT_BGR:
-				// 0x00BBGGRR: [RR, GG, BB, 00] in memory
-				return (b2 << 16) | (b1 << 8) | b0;
-			default:
-				// Default to ARGB
-				return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-		}
+		// All formats are stored in little-endian byte order in memory.
+		// We reconstruct the 32-bit integer by reversing the byte order.
+		// The format parameter determines how to INTERPRET the reconstructed value,
+		// not how it's stored in memory.
+		//
+		// For all formats, little-endian 0x12345678 is stored as: [78, 56, 34, 12]
+		// So we always reconstruct as: (b3 << 24) | (b2 << 16) | (b1 << 8) | b0
+		//
+		// The format then tells us what each byte position MEANS:
+		// - ARGB: bits 24-31=A, 16-23=R, 8-15=G, 0-7=B
+		// - RGBA: bits 24-31=R, 16-23=G, 8-15=B, 0-7=A  
+		// - ABGR: bits 24-31=A, 16-23=B, 8-15=G, 0-7=R
+		// - etc.
+		
+		// Reconstruct the 32-bit value from little-endian bytes
+		return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
 	}
 
 	/**
