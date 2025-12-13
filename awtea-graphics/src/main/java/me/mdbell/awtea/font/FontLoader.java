@@ -1,9 +1,8 @@
 package me.mdbell.awtea.font;
 
+import me.mdbell.awtea.util.FetchAPI;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
-
-import me.mdbell.awtea.util.FetchAPI;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int8Array;
 
@@ -15,27 +14,30 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Handles loading fonts from external URLs via fetch (for browser environments)
  * or from resources (for JVM/test environments).
- * 
+ * <p>
  * This loader caches loaded fonts to avoid repeated network requests and
  * leverages browser HTTP caching when available.
  */
 public final class FontLoader {
 
+	private static final Logger log = LoggerFactory.getLogger(FontLoader.class);
+
 	private static final String FONT_BASE_URL = getFontBaseUrlFromProperty();
-	
+
 	// Cache for loaded font data (byte arrays) - thread-safe for concurrent access
 	private static final Map<String, byte[]> fontCache = new ConcurrentHashMap<>();
-	
+
 	// Cache for parsed TrueTypeFont objects - thread-safe for concurrent access
 	private static final Map<String, TrueTypeFont> parsedFontCache = new ConcurrentHashMap<>();
 
-	private FontLoader() {}
+	private FontLoader() {
+	}
 
 	/**
 	 * Gets the font base URL from the system property.
 	 * The system property "me.mdbell.awtea.font.base_url" can be used to configure
 	 * the base URL for loading fonts. If not set, defaults to "fonts/".
-	 * 
+	 *
 	 * @return the configured font base URL
 	 */
 	private static String getFontBaseUrlFromProperty() {
@@ -49,7 +51,7 @@ public final class FontLoader {
 
 	/**
 	 * Gets the current font base URL.
-	 * 
+	 *
 	 * @return the font base URL
 	 */
 	public static String getFontBaseUrl() {
@@ -67,7 +69,7 @@ public final class FontLoader {
 	/**
 	 * Loads a TrueTypeFont for the given font name.
 	 * Caches parsed fonts to avoid repeated parsing.
-	 * 
+	 *
 	 * @param fontName the font name (without .ttf extension)
 	 * @return the parsed TrueTypeFont
 	 * @throws IOException if the font cannot be loaded
@@ -76,8 +78,11 @@ public final class FontLoader {
 		// Check parsed font cache first
 		TrueTypeFont cached = parsedFontCache.get(fontName);
 		if (cached != null) {
+			log.debug("Font '{}' loaded from parsed cache", fontName);
 			return cached;
 		}
+
+		log.debug("Loading font '{}'", fontName);
 
 		// Load and parse font
 		byte[] data = loadFontBytes(fontName);
@@ -93,7 +98,7 @@ public final class FontLoader {
 	 * Loads font bytes for the given font name.
 	 * In browser environments, fonts are fetched from the configured URL.
 	 * Falls back to resource loading if fetch fails.
-	 * 
+	 *
 	 * @param fontName the font name (without .ttf extension)
 	 * @return the font data as a byte array
 	 * @throws IOException if the font cannot be loaded
@@ -110,31 +115,31 @@ public final class FontLoader {
 
 		try {
 			FetchAPI.Response response = FetchAPI.fetch(url).await();
-			
+
 			if (!response.isOk()) {
 				// If fetch fails, try loading from resources as fallback
-				System.err.println("Fetch returned non-OK status for font " + fontName + " (HTTP " + response.getStatus() + "), trying resource fallback");
+				log.warn("Fetch failed for font '{}': HTTP {}, trying resource fallback ", fontName, response.getStatus());
 				return loadFontBytesWithFallback(fontName);
 			}
-			
+
 			// Get the arrayBuffer from response
 			ArrayBuffer buffer = response.arrayBuffer().await();
-			
+
 			// Convert ArrayBuffer to byte[]
 			byte[] bytes = arrayBufferToByteArray(buffer);
 			fontCache.put(fontName, bytes);
 			return bytes;
-			
+
 		} catch (Exception e) {
 			// If fetch fails (e.g., network error), try loading from resources
-			System.err.println("Fetch failed for font " + fontName + ", trying resource fallback: " + e.getMessage());
+			log.warn("Fetch exception for font '{}': {}, trying resource fallback", fontName, e.getMessage());
 			return loadFontBytesWithFallback(fontName);
 		}
 	}
 
 	/**
 	 * Fallback method to load font from resources when fetch fails.
-	 * 
+	 *
 	 * @param fontName the font name
 	 * @return the font data
 	 * @throws IOException if the font cannot be loaded from resources either
@@ -147,7 +152,7 @@ public final class FontLoader {
 
 	/**
 	 * Loads font bytes from a resource (for JVM/test environments or fallback).
-	 * 
+	 *
 	 * @param fontName the font name
 	 * @return the font data
 	 * @throws IOException if the font cannot be loaded
@@ -164,7 +169,7 @@ public final class FontLoader {
 
 	/**
 	 * Converts an ArrayBuffer to a byte array.
-	 * 
+	 *
 	 * @param buffer the ArrayBuffer
 	 * @return the byte array
 	 */

@@ -14,34 +14,14 @@
   color: var(--aw-error-fg);
 }
 
-.log-entry-error::before {
-  content: '[ERR]';
-  font-weight: bold;
-}
-
 .log-entry-warn {
   color: var(--aw-warning-fg);
-}
-
-.log-entry-warn::before {
-  content: '[WRN]';
-  font-weight: bold;
 }
 
 .log-entry-info {
   color: var(--aw-info-fg);
 }
 
-.log-entry-info::before {
-  content: '[INF]';
-  font-weight: bold;
-}
-
 .log-entry-debug {
   color: var(--aw-debug-fg);
-}
-
-.log-entry-debug::before {
-  content: '[DBG]';
-  font-weight: bold;
 }
