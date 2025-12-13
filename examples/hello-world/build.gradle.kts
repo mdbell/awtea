@@ -47,8 +47,8 @@ tasks.register<Copy>("copyWebapp") {
     from("src/main/webapp")
     into(layout.buildDirectory.dir("dist"))
 
-    from("../../fonts")
-    into(layout.buildDirectory.dir("dist/fonts"))
+    from("../../webapp-common")
+    into(layout.buildDirectory.dir("dist"))
 }
 
 // Make sure HTML is copied before TeaVM runs

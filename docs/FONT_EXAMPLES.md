@@ -45,6 +45,7 @@ public class CdnFontExample extends TApplet {
 ```
 
 Set the system property when starting your application:
+
 ```bash
 java -Dme.mdbell.awtea.font.base_url=https://cdn.example.com/fonts/ -jar myapp.jar
 ```
@@ -206,6 +207,7 @@ When deploying an application using the new font loading system:
 ### Fonts not loading?
 
 Check the browser console and network tab for errors:
+
 - 404: Font file not found at the URL
 - CORS error: Add `Access-Control-Allow-Origin` header
 - Network error: Check URL configuration
@@ -240,4 +242,4 @@ FontLoader.clearCache();
 ## See Also
 
 - [Font Loading Strategy Documentation](FONT_LOADING.md)
-- [Font Deployment Guide](../fonts/README.md)
+- [Font Deployment Guide](../webapp-common/fonts/README.md)
