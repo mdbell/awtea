@@ -1,10 +1,6 @@
 package me.mdbell.awtea.font;
 
-import lombok.Data;
-import lombok.ToString;
 import me.mdbell.awtea.util.GlyphRasterizer;
-
-import java.util.*;
 
 /**
  * A rasterization-based implementation of {@link FontRenderer}.
