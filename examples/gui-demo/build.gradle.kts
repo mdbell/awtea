@@ -20,6 +20,7 @@ java {
 dependencies {
     // awtea dependencies - now as project dependencies
     implementation(project(":awtea-classlib"))
+    implementation(project(":awtea-graphics"))
     // needed for logging
     implementation(project(":awtea-util"))
 
