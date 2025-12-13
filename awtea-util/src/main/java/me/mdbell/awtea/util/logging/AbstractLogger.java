@@ -1,19 +1,17 @@
 package me.mdbell.awtea.util.logging;
 
+import lombok.Getter;
+
 /**
  * Base implementation of Logger with formatting support
  */
 public abstract class AbstractLogger implements Logger {
 
+	@Getter
 	protected final String name;
 
 	protected AbstractLogger(String name) {
 		this.name = name;
-	}
-
-	@Override
-	public String getName() {
-		return name;
 	}
 
 	protected abstract LogLevel getLevel();
