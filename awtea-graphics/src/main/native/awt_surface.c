@@ -1,5 +1,6 @@
 #include "awt_surface.h"
 #include "awt_util.h"
+#include "awt_log.h"
 
 SurfaceData g_surfaces[NUM_SURFACES];
 SurfaceContext g_contexts[NUM_CONTEXTS];
@@ -20,19 +21,25 @@ int find_free_surface() {
             return i + START_SURFACE_ID;
         }
     }
+    log_warn("find_free_surface: no free surface available");
     return -1; // no free surface
 }
 
 int reset_surface(int surface_id, int layer, int width, int height, PixelFormat format) {
+    log_debug("reset_surface: id=%d, layer=%d, size=%dx%d, format=%d", 
+              surface_id, layer, width, height, format);
 
     if (surface_id < START_SURFACE_ID || surface_id >= END_SURFACE_ID)
     {
+        log_error("Invalid surface ID: %d (range: %d-%d)", 
+                  surface_id, START_SURFACE_ID, END_SURFACE_ID - 1);
         return -3;
     }
 
     SurfaceData* surface = get_surface_data(surface_id);
 
     if(!surface) {
+        log_error("Failed to get surface data for ID: %d", surface_id);
         return -2;
     }
 
@@ -56,12 +63,16 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
     size_t bytes = (size_t)width * (size_t)height * sizeof(uint32_t);
     void* p = malloc(bytes);
     if (!p) {
+        log_error("Failed to allocate %zu bytes for surface %d (%dx%d)", 
+                  bytes, surface_id, width, height);
         surface->ptr = 0;
         surface->width = 0;
         surface->height = 0;
         return -1;
     }
     surface->ptr = (uint32_t)(uintptr_t)p;
+
+    log_info("Created surface %d: %dx%d, %zu bytes", surface_id, width, height, bytes);
 
     return 0;
 }
