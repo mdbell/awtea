@@ -7,9 +7,8 @@ This directory contains the Visual Studio Code Dev Container configuration for A
 The devcontainer provides a consistent, reproducible development environment with all necessary tools pre-installed:
 
 - **Java 11** (via SDKMAN, allowing easy version switching)
-- **Emscripten SDK** (for compiling C code to WebAssembly)
+- **Emscripten SDK** (for compiling C code to WebAssembly - no Docker required!)
 - **Deno** (for TypeScript/WASM tests)
-- **Docker CLI** (for running Docker commands via host socket)
 - **Gradle** (via wrapper)
 - **Git** and other essential development tools
 
@@ -50,20 +49,18 @@ The devcontainer provides a consistent, reproducible development environment wit
 
 - **Java Development Kit (JDK)**: Java 11 managed via SDKMAN
 - **SDKMAN**: SDK manager for easy JDK version switching
-- **Emscripten SDK**: Version 3.1.51 for WebAssembly compilation
+- **Emscripten SDK**: Version 3.1.51 for WebAssembly compilation (directly callable with `emcc`)
 - **Deno**: Version 2.1.2 installed to /usr/local/bin for TypeScript/WASM tests
-- **Docker CLI**: For running Docker commands via mounted host socket
 - **Gradle**: Build automation via the Gradle wrapper (`./gradlew`)
-- **VS Code Extensions**: Pre-configured extensions for Java, Gradle, Deno, and Docker development
+- **VS Code Extensions**: Pre-configured extensions for Java, Gradle, and Deno development
 
 ### Configuration Highlights
 
 - **Custom Dockerfile**: Builds a complete development environment with all tools
 - **SDKMAN Integration**: Allows switching JDK versions using `sdk` commands
-- **Emscripten SDK**: Pre-installed and configured for WASM compilation
+- **Emscripten SDK**: Pre-installed and configured - call `emcc` directly, no Docker needed!
 - **Deno Integration**: Enabled only for `./awtea-graphics/src/test/deno` directory
 - **Port Forwarding**: Ports 8080 and 3000 forwarded for web application development
-- **Docker Socket Mounting**: Enables running Docker commands for containerized builds
 
 ## CI/CD Reusability
 

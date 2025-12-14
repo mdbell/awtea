@@ -3,7 +3,7 @@
 
 FROM debian:bullseye-slim
 
-# Install base dependencies and Docker CLI
+# Install base dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y \
     cmake \
     ca-certificates \
     sudo \
-    docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Emscripten SDK
@@ -55,11 +54,6 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 # Set up Emscripten and SDKMAN for vscode user's shell
 RUN echo "source /opt/emsdk/emsdk_env.sh" >> /home/vscode/.bashrc && \
     echo "source /home/vscode/.sdkman/bin/sdkman-init.sh" >> /home/vscode/.bashrc
-
-USER root
-
-# Add vscode user to docker group
-RUN usermod -aG docker vscode
 
 WORKDIR /workspace
 
