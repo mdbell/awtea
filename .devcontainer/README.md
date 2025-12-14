@@ -61,6 +61,21 @@ The devcontainer provides a consistent, reproducible development environment wit
 - **Emscripten SDK**: Pre-installed and configured - call `emcc` directly, no Docker needed!
 - **Deno Integration**: Enabled only for `./awtea-graphics/src/test/deno` directory
 - **Port Forwarding**: Ports 8080 and 3000 forwarded for web application development
+- **SSH Key Forwarding**: Your host SSH keys are mounted for git operations (pull/push)
+
+## Git Operations
+
+The devcontainer automatically mounts your SSH keys from your host machine, allowing you to:
+- Pull and push to remote repositories
+- Authenticate with GitHub/GitLab using your existing SSH keys
+- Use git commands without additional authentication setup
+
+Your SSH keys are mounted read-only for security. If you need to configure git, you can set your identity in the container:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
 
 ## CI/CD Reusability
 

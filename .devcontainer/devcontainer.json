@@ -28,5 +28,10 @@
 
   "postCreateCommand": "source /home/vscode/.sdkman/bin/sdkman-init.sh && source /opt/emsdk/emsdk_env.sh && java -version && ./gradlew -v && deno --version && emcc --version",
 
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+  
+  // Mount SSH agent socket for git operations
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly,type=bind"
+  ]
 }
