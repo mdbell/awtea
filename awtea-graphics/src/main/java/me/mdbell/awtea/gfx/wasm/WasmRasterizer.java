@@ -123,7 +123,8 @@ public class WasmRasterizer implements Rasterizer {
     @Override
     public void rasterizeCommands(List<SurfaceCommand> cmds) {
         if (disposed) {
-            throw new IllegalStateException("Cannot rasterize with disposed rasterizer");
+            // Silently return if disposed - commands may be queued from before disposal
+            return;
         }
         
         for (SurfaceCommand cmd : cmds) {
