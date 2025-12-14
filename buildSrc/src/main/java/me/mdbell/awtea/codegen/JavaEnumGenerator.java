@@ -134,7 +134,8 @@ public class JavaEnumGenerator {
             writer.write("\t\treturn value;\n");
             writer.write("\t}\n");
             
-            // Add custom methods for LogLevel enum
+            // TODO: Consider moving custom methods to configuration/template system
+            // Add custom methods for LogLevel enum (special case for backward compatibility)
             if ("LogLevel".equals(className)) {
                 writer.write("\n\tpublic int getPriority() {\n");
                 writer.write("\t\treturn value;\n");
