@@ -2,6 +2,10 @@ package me.mdbell.awtea.gfx.wasm;
 
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
+import me.mdbell.awtea.util.logging.LogLevel;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.jso.typedarrays.Int8Array;
 
 public class WasmSurfaceBackend implements SurfaceBackend {
 
@@ -12,9 +16,35 @@ public class WasmSurfaceBackend implements SurfaceBackend {
 
     final SurfaceLRUCache surfaceCache;
 
+    private static final Logger wasmLogger = LoggerFactory.getLogger("wasm.rasterizer");
+
     public WasmSurfaceBackend() {
-        this.exports = WasmAwtLoader.load(WASM_MODULE_PATH).await();
+        this.exports = WasmAwtLoader.load(WASM_MODULE_PATH, this::logFromWasm).await();
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
+    }
+
+    private void logFromWasm(int level, int messagePtr, int messageLen) {
+        Int8Array arr = new Int8Array(
+                exports.getMemory().getBuffer(),
+                messagePtr,
+                messageLen
+        );
+        String message = new String(arr.copyToJavaArray());
+        LogLevel logLevel = LogLevel.INFO;
+        switch (level) {
+            case 0:
+                logLevel = LogLevel.ERROR;
+                break;
+            case 1:
+                logLevel = LogLevel.WARN;
+                break;
+            case 3:
+                logLevel = LogLevel.DEBUG;
+                break;
+            default:
+                break;
+        }
+        wasmLogger.log(logLevel, message);
     }
 
     public WasmSurface createSurface(int width, int height, int pixelFormat) {
