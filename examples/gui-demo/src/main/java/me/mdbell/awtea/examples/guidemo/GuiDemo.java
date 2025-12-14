@@ -1,5 +1,8 @@
 package me.mdbell.awtea.examples.guidemo;
 
+import me.mdbell.awtea.util.logging.LogLevel;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import java.awt.*;
 
 /**
@@ -14,7 +17,7 @@ public class GuiDemo {
 
     public static void main(String[] args) {
 
-        System.setProperty("me.mdbell.awtea.log.level", "DEBUG");
+        LoggerFactory.setGlobalLevel(LogLevel.TRACE);
         System.setProperty("me.mdbell.awtea.wasm.module_path", "awt_raster.wasm");
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 

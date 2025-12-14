@@ -503,7 +503,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         if (disposed) {
             return; // Don't flush if already disposed
         }
-        
+
         // Swap lists
         List<SurfaceCommand> temp = readList;
         readList = writeList;
