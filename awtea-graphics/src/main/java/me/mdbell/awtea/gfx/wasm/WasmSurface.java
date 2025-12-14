@@ -27,6 +27,9 @@ public final class WasmSurface implements Surface {
 	private Uint8ClampedArray pixelsView = null;
 
 	WasmSurfaceBackend backend;
+	
+	// Track if this surface should be returned to the pool on destroy
+	private boolean poolable = true;
 
 	WasmSurface(WasmSurfaceBackend backend, int surfaceId,
 				int width, int height, int pixelFormat) {
@@ -113,11 +116,41 @@ public final class WasmSurface implements Surface {
 	@Override
 	public void destroy() {
 		if (surfaceId != -1) {
-			// surfaces with a width & height of 0 are considered free
+			if (poolable && backend != null) {
+				// Return to pool for reuse
+				backend.releaseSurface(this);
+			} else {
+				// Direct destroy
+				destroyInternal();
+			}
+		}
+	}
+	
+	/**
+	 * Destroy this surface without returning it to the pool.
+	 * Used internally by the pool when evicting surfaces.
+	 */
+	void destroyDirect() {
+		destroyInternal();
+	}
+	
+	/**
+	 * Internal method to actually destroy the surface.
+	 */
+	private void destroyInternal() {
+		if (surfaceId != -1) {
 			exports.resetSurface(this.surfaceId, 0, 0, 0, 0);
 			surfaceId = -1;
-
 		}
+	}
+	
+	/**
+	 * Set whether this surface should be pooled when destroyed.
+	 * 
+	 * @param poolable true to return to pool on destroy, false to destroy immediately
+	 */
+	public void setPoolable(boolean poolable) {
+		this.poolable = poolable;
 	}
 
 	public int getId() {

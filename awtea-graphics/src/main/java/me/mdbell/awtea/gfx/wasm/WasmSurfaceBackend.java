@@ -19,6 +19,8 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     final WasmAwtRasterizerExports exports;
 
     final SurfaceLRUCache surfaceCache;
+    
+    private final WasmSurfacePool surfacePool;
 
     public WasmSurfaceBackend() {
 
@@ -37,6 +39,7 @@ public class WasmSurfaceBackend implements SurfaceBackend {
         // Initialize the surface system (sets all contexts to free state)
         this.exports.initSurfaceSystem();
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
+        this.surfacePool = new WasmSurfacePool(this);
     }
 
     private void handleAbort() {
@@ -100,11 +103,28 @@ public class WasmSurfaceBackend implements SurfaceBackend {
             throw new IllegalArgumentException("Invalid pixel format: " + pixelFormat);
         }
 
-        int surfaceId = exports.findFreeSurfaceId();
-        if (surfaceId < 0) {
-            throw new IllegalStateException("createSurface failed: " + surfaceId);
-        }
-        return new WasmSurface(this, surfaceId, width, height, pixelFormat);
+        // Use pool to acquire or create surface
+        return surfacePool.acquire(width, height, pixelFormat);
+    }
+    
+    /**
+     * Release a surface back to the pool for potential reuse.
+     * Should be called instead of destroy() when the surface is no longer needed.
+     * 
+     * @param surface The surface to release
+     */
+    public void releaseSurface(WasmSurface surface) {
+        surfacePool.release(surface);
+    }
+    
+    /**
+     * Get the surface pool for this backend.
+     * Useful for accessing pool statistics and management operations.
+     * 
+     * @return The WasmSurfacePool instance
+     */
+    public WasmSurfacePool getSurfacePool() {
+        return surfacePool;
     }
 
     @Override
