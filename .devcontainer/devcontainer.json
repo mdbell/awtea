@@ -1,0 +1,53 @@
+{
+  "name": "AWTea Development",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bullseye",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    },
+    "ghcr.io/devcontainers-contrib/features/deno:1": {
+      "version": "latest"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-gradle",
+        "redhat.java",
+        "vscjava.vscode-java-debug",
+        "vscjava.vscode-java-test",
+        "vscjava.vscode-maven",
+        "denoland.vscode-deno",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-11",
+            "path": "/usr/local/sdkman/candidates/java/11.0.22-tem",
+            "default": true
+          }
+        ],
+        "java.jdt.ls.java.home": "/usr/local/sdkman/candidates/java/11.0.22-tem",
+        "deno.enable": false,
+        "deno.enablePaths": [
+          "./awtea-graphics/src/test/deno"
+        ]
+      }
+    }
+  },
+
+  "forwardPorts": [8080, 3000],
+
+  "postCreateCommand": "java -version && gradle -v && deno --version && docker --version",
+
+  "remoteUser": "vscode",
+  
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ]
+}
