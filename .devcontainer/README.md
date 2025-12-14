@@ -68,9 +68,9 @@ This devcontainer can be reused for CI/CD pipelines in several ways:
 
 ### GitHub Actions
 
-The same base image and features can be referenced in GitHub Actions workflows. 
+### GitHub Actions
 
-**Recommended Approach (using host Docker):**
+**Recommended Approach (using setup actions):**
 
 ```yaml
 name: Build and Test
@@ -96,8 +96,10 @@ jobs:
         with:
           deno-version: v2.x
       
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.51'
       
       - name: Build
         run: ./gradlew build
@@ -106,7 +108,7 @@ jobs:
         run: ./gradlew :awtea-graphics:denoTest
 ```
 
-**Alternative Approach (using container with privileged mode):**
+**Alternative Approach (using devcontainer image):**
 
 ```yaml
 name: Build and Test (Container)
@@ -116,29 +118,26 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Note: --privileged grants extensive permissions
     container:
-      image: mcr.microsoft.com/devcontainers/java:1-11-bullseye
-      options: --privileged
+      image: ghcr.io/yourusername/awtea-devcontainer:latest
     
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v2.x
-      
       - name: Build
-        run: ./gradlew build
+        run: |
+          source /home/vscode/.sdkman/bin/sdkman-init.sh
+          source /opt/emsdk/emsdk_env.sh
+          ./gradlew build
       
       - name: Test WASM
-        run: ./gradlew :awtea-graphics:denoTest
+        run: |
+          source /home/vscode/.sdkman/bin/sdkman-init.sh
+          source /opt/emsdk/emsdk_env.sh
+          ./gradlew :awtea-graphics:denoTest
 ```
 
 > **Note:** Keep the versions in sync with the devcontainer configuration and the existing CI workflows in `.github/workflows/`.
-
-> **Security Note:** The first approach (using host Docker with setup actions) is more secure than using `--privileged` containers. The devcontainer uses Docker socket mounting for development convenience, but CI/CD should prefer the setup-action approach when possible.
 
 ### Docker Compose
 
@@ -148,55 +147,63 @@ For more complex CI setups, you can use Docker Compose:
 version: '3.8'
 services:
   awtea-ci:
-    image: mcr.microsoft.com/devcontainers/java:1-11-bullseye
+    build: .devcontainer
     volumes:
       - .:/workspace
-      - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /workspace
     command: ./gradlew build
 ```
 
+Note: This builds the devcontainer image which includes all necessary tools (Java, Emscripten, Deno).
+
 ### Dockerfile for CI
 
-> **Security Note:** The example below shows a typical CI Dockerfile but includes piping a remote script to shell, which has security implications. Consider these safer alternatives:
-> - Use the official Deno Docker image: `denoland/deno:alpine`
-> - Use a pre-built image that includes both Java and Deno
-> - In GitHub Actions, use the `denoland/setup-deno@v1` action instead
-
-You can create a CI-specific Dockerfile based on the devcontainer configuration:
+You can reuse the devcontainer Dockerfile directly for CI, or create a CI-specific variant. The devcontainer includes all necessary tools:
 
 ```dockerfile
-FROM mcr.microsoft.com/devcontainers/java:1-11-bullseye
-
-# Install Docker
-RUN apt-get update && \
-    apt-get install -y docker.io && \
-    apt-get clean
-
-# Install Deno using official installation
-# For better security, verify the script or use package managers when available
-RUN curl -fsSL https://deno.land/install.sh | sh
-ENV PATH="${PATH}:/root/.deno/bin"
+# Use the devcontainer Dockerfile directly
+FROM ghcr.io/yourusername/awtea-devcontainer:latest
 
 WORKDIR /workspace
+
+# The image already includes:
+# - Java 11 via SDKMAN
+# - Emscripten SDK 3.1.51
+# - Deno 2.1.2
+# - All build dependencies
 ```
 
-**Safer alternative using multi-stage build with official images:**
+**Alternative: Simplified CI Dockerfile**
+
+If you prefer a minimal CI image:
 
 ```dockerfile
-# Use official Deno image for Deno installation
-FROM denoland/deno:alpine-1.40.0 AS deno
+FROM debian:bullseye-slim
 
-# Main image
-FROM mcr.microsoft.com/devcontainers/java:1-11-bullseye
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    git curl wget zip unzip \
+    python3 build-essential cmake \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Docker
-RUN apt-get update && \
-    apt-get install -y docker.io && \
-    apt-get clean
+# Install SDKMAN and Java
+RUN curl -s "https://get.sdkman.io" | bash && \
+    bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
+    sdk install java 11.0.22-tem"
 
-# Copy Deno from official image
-COPY --from=deno /usr/bin/deno /usr/local/bin/deno
+# Install Emscripten SDK
+RUN git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk && \
+    cd /opt/emsdk && \
+    ./emsdk install 3.1.51 && \
+    ./emsdk activate 3.1.51
+
+# Install Deno
+ENV DENO_INSTALL=/usr/local
+RUN curl -fsSL https://deno.land/install.sh | sh -s v2.1.2
+
+# Set up environment
+ENV PATH="/opt/emsdk:/opt/emsdk/upstream/emscripten:/root/.sdkman/candidates/java/current/bin:${PATH}"
 
 WORKDIR /workspace
 ```
