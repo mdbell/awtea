@@ -5,6 +5,9 @@ import me.mdbell.awtea.gfx.SurfaceBackend;
 import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+
+import java.awt.image.BufferedImage;
+
 import org.teavm.jso.browser.Performance;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.typedarrays.Int8Array;
@@ -147,7 +150,7 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     public Surface createFontRenderSurface(int width, int height) {
         // Use ARGB format for text rendering to support alpha transparency
         try {
-            return createSurface(width, height, Surface.FORMAT_INT_ARGB);
+            return createSurface(width, height, BufferedImage.TYPE_INT_ARGB);
         } catch (Exception e) {
             // If WASM surface creation fails, return null to allow fallback to software
             return null;

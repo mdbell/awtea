@@ -2,12 +2,17 @@ package me.mdbell.awtea.font;
 
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
+import me.mdbell.awtea.util.GlyphRasterizer;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
+import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.teavm.jso.typedarrays.Int32Array;
+import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 /**
  * A persistent texture atlas for caching rendered glyphs.
@@ -301,7 +306,7 @@ public class GlyphAtlas {
 		atlasSurface = backend.createCompatibleSurface(
 			ATLAS_WIDTH, 
 			ATLAS_HEIGHT, 
-			Surface.FORMAT_INT_ARGB
+			BufferedImage.TYPE_INT_ARGB
 		);
 		
 		if (atlasSurface == null) {
@@ -435,13 +440,19 @@ public class GlyphAtlas {
 	 */
 	private static class SurfaceRasterTarget implements me.mdbell.awtea.util.GlyphRasterizer.RasterTarget {
 		private final Surface surface;
-		private final org.teavm.jso.typedarrays.Uint8ClampedArray pixels;
+		private final int[] pixels;
 		private final int width;
 		private final int height;
 		
 		SurfaceRasterTarget(Surface surface) {
+			Uint8ClampedArray pixelArray = surface.getPixelData();
+			Int32Array intArray = new Int32Array(
+				pixelArray.getBuffer(),
+				pixelArray.getByteOffset(),
+				pixelArray.getLength() / 4
+			);
 			this.surface = surface;
-			this.pixels = surface.getPixelData();
+			this.pixels = intArray.toJavaArray();
 			this.width = surface.getWidth();
 			this.height = surface.getHeight();
 		}
@@ -461,18 +472,8 @@ public class GlyphAtlas {
 			if (x < 0 || x >= width || y < 0 || y >= height || pixels == null) {
 				return;
 			}
-			
-			// ARGB format stored as bytes in little-endian: B, G, R, A
-			int idx = (y * width + x) * 4;
-			int a = (argb >>> 24) & 0xFF;
-			int r = (argb >>> 16) & 0xFF;
-			int g = (argb >>> 8) & 0xFF;
-			int b = argb & 0xFF;
-			
-			pixels.set(idx, (byte) b);     // B at offset 0
-			pixels.set(idx + 1, (byte) g); // G at offset 1
-			pixels.set(idx + 2, (byte) r); // R at offset 2
-			pixels.set(idx + 3, (byte) a); // A at offset 3
+			int idx = (y * width + x);
+			pixels[idx] = argb;
 		}
 		
 		@Override
@@ -480,15 +481,7 @@ public class GlyphAtlas {
 			if (x < 0 || x >= width || y < 0 || y >= height || pixels == null) {
 				return 0;
 			}
-			
-			// ARGB format stored as bytes in little-endian: B, G, R, A
-			int idx = (y * width + x) * 4;
-			int b = pixels.get(idx) & 0xFF;     // B at offset 0
-			int g = pixels.get(idx + 1) & 0xFF; // G at offset 1
-			int r = pixels.get(idx + 2) & 0xFF; // R at offset 2
-			int a = pixels.get(idx + 3) & 0xFF; // A at offset 3
-			
-			return (a << 24) | (r << 16) | (g << 8) | b;
+			return pixels[y * width + x];
 		}
 	}
 }
