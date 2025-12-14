@@ -45,14 +45,17 @@ public final class WasmSurface implements Surface {
 	}
 
 	public SurfaceCommandBuffer createBuffer(int maxCommands) {
-		//TODO: pass this instead of surfaceId, so we can prevent the buffer
-		// from being used after the surface is destroyed
-		return new SurfaceCommandBuffer(this.surfaceId, exports, maxCommands);
+		return new SurfaceCommandBuffer(this.exports, maxCommands);
 	}
 
 	@Override
 	public Rasterizer createRasterizer() {
-		return new WasmRasterizer(this);
+		// Create a new context for this rasterizer
+		int contextId = exports.createContext(surfaceId);
+		if (contextId < 0) {
+			throw new IllegalStateException("Failed to create context for surface " + surfaceId);
+		}
+		return new WasmRasterizer(this, contextId);
 	}
 
 	@Override
@@ -119,6 +122,10 @@ public final class WasmSurface implements Surface {
 
 	public int getId() {
 		return surfaceId;
+	}
+
+	public WasmAwtRasterizerExports getExports() {
+		return exports;
 	}
 
 	public enum ExtendedOperation {

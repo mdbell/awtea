@@ -68,6 +68,7 @@ Deno.test("Fill rect with red", async () => {
   const width = 10;
   const height = 10;
   const surfaceId = rasterizer.allocateSurface(width, height);
+  const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
   const cmdBuffer = rasterizer.createCommandBuffer(2);
@@ -80,7 +81,7 @@ Deno.test("Fill rect with red", async () => {
   rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.fillRectCommand(0, 0, width, height));
 
   // Execute commands
-  rasterizer.renderCommands(surfaceId, cmdBuffer, 2);
+  rasterizer.renderCommands(contextId, cmdBuffer, 2);
 
   // Check that all pixels are red
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -88,6 +89,7 @@ Deno.test("Fill rect with red", async () => {
     assertPixelEquals(pixels[i], red, `Pixel ${i} should be red`);
   }
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 

@@ -8,4 +8,4 @@ __attribute__((export_name("request_command_buffer")))
 int request_command_buffer(int max_commands);
 
 __attribute__((export_name("render_awt")))
-int render_awt(int surface_id, uint32_t cmdPtr, int cmdCount);
+int render_awt(int context_id, uint32_t cmdPtr, int cmdCount);

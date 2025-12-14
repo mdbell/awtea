@@ -8,6 +8,7 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class WasmRasterizer implements Rasterizer {
@@ -15,21 +16,37 @@ public class WasmRasterizer implements Rasterizer {
     private static final Logger log = LoggerFactory.getLogger(WasmRasterizer.class);
 
     private final WasmSurface surface;
+    private final int contextId;
     private transient final SurfaceCommandBuffer commandBuffer;
+    private boolean disposed = false;
+    
+    // Track references to surfaces used in blit commands
+    private final List<Integer> blitReferences = new ArrayList<>();
 
-    public WasmRasterizer(WasmSurface surface) {
+    public WasmRasterizer(WasmSurface surface, int contextId) {
         this.surface = surface;
+        this.contextId = contextId;
         this.commandBuffer = surface.createBuffer();
+        this.commandBuffer.setContextId(contextId);
     }
 
     private WasmRasterizer(WasmRasterizer other) {
         this.surface = other.surface;
+        // Clone the context to get independent rendering state
+        this.contextId = this.surface.getExports().cloneContext(other.contextId);
+        if (this.contextId < 0) {
+            throw new IllegalStateException("Failed to clone context");
+        }
         // each rasterizer gets its own command buffer.
         this.commandBuffer = this.surface.createBuffer();
+        this.commandBuffer.setContextId(this.contextId);
     }
 
     @Override
     public Rasterizer create() {
+        if (disposed) {
+            throw new IllegalStateException("Cannot create from disposed rasterizer");
+        }
         return new WasmRasterizer(this);
     }
 
@@ -37,12 +54,52 @@ public class WasmRasterizer implements Rasterizer {
     public void reset() {
     }
 
+    public void dispose() {
+        if (!disposed && contextId >= 0) {
+            // Flush any pending commands before destroying context
+            flushAndReleaseReferences();
+            // Destroy the context (decrements surface ref count)
+            int result = surface.getExports().destroyContext(contextId);
+            if (result < 0) {
+                log.error("WasmRasterizer: Failed to destroy context {}", contextId);
+            }
+            disposed = true;
+        }
+    }
+
+    private void flushAndReleaseReferences() {
+        // Flush commands first
+        commandBuffer.flush();
+        
+        // Release all blit references
+        for (Integer surfaceId : blitReferences) {
+            // Decrement ref count by calling release_reference
+            int result = surface.getExports().releaseReference(surfaceId);
+            if (result < 0) {
+                log.error("WasmRasterizer: Failed to release reference for surface {}", surfaceId);
+            }
+        }
+        blitReferences.clear();
+    }
+
     private void blitSurface(Surface srcSurface, int destX, int destY) {
         // pixel data already uploaded to WASM memory by the Surface implementation
         if (srcSurface instanceof WasmSurface) {
             WasmSurface wasmSurface = (WasmSurface) srcSurface;
+            int srcSurfaceId = wasmSurface.getId();
+            
+            // Create a reference to keep the source surface alive during deferred rendering
+            int refResult = surface.getExports().createReference(srcSurfaceId);
+            if (refResult < 0) {
+                log.error("WasmRasterizer: Failed to create reference for surface {}, skipping blit", srcSurfaceId);
+                return;
+            }
+            
+            // Track this reference so we can release it after flush
+            blitReferences.add(srcSurfaceId);
+            
             commandBuffer.emitBlitImage(
-                    wasmSurface.getId(),
+                    srcSurfaceId,
                     destX, destY);
         } else {
             WasmSurfaceBackend backend = surface.backend;
@@ -65,6 +122,11 @@ public class WasmRasterizer implements Rasterizer {
 
     @Override
     public void rasterizeCommands(List<SurfaceCommand> cmds) {
+        if (disposed) {
+            // Silently return if disposed - commands may be queued from before disposal
+            return;
+        }
+        
         for (SurfaceCommand cmd : cmds) {
             switch (cmd.type) {
                 case DRAW_RECT:
@@ -116,6 +178,6 @@ public class WasmRasterizer implements Rasterizer {
                     break;
             }
         }
-        commandBuffer.flush();
+        flushAndReleaseReferences();
     }
 }

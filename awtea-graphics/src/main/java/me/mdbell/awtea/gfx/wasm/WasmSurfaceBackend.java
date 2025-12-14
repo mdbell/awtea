@@ -34,6 +34,8 @@ public class WasmSurfaceBackend implements SurfaceBackend {
                 WASM_MODULE_PATH,
                 env
         ).await();
+        // Initialize the surface system (sets all contexts to free state)
+        this.exports.initSurfaceSystem();
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
     }
 
@@ -67,7 +69,7 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     }
 
     private void reportMemoryUsage(int allocatedBytes, int allocatedCount, int peakBytes) {
-        log.info("WASM Memory Usage - Allocated: {} bytes in {} allocations, Peak: {} bytes",
+        log.debug("WASM Memory Usage - Allocated: {} bytes in {} allocations, Peak: {} bytes",
                 allocatedBytes, allocatedCount, peakBytes);
     }
 
