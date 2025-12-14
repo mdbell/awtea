@@ -14,9 +14,9 @@ public class GuiDemo {
 
     public static void main(String[] args) {
 
-//        LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
+        System.setProperty("me.mdbell.awtea.log.level", "DEBUG");
         System.setProperty("me.mdbell.awtea.wasm.module_path", "awt_raster.wasm");
-        System.setProperty("me.mdbell.awtea.gfx.backend", "software");
+        System.setProperty("me.mdbell.awtea.font.supersample", "4");
 
 
         // Create the main window
@@ -38,7 +38,7 @@ public class GuiDemo {
                 g.setFont(new Font("SansSerif", Font.BOLD, 24));
                 g.drawString("awtea GUI Demo", 250, 35);
 
-                g.setFont(new Font("SansSerif", Font.PLAIN, 12));
+                g.setFont(new Font("SansSerif", Font.PLAIN, 14));
                 g.drawString("Interactive AWT components running in your browser", 200, 55);
             }
         };
