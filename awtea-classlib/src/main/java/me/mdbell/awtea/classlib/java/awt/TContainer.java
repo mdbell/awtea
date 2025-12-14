@@ -57,10 +57,10 @@ public class TContainer extends TComponent {
             TGraphics childGraphics = g.create();
             // g.create() can return null if graphics context creation fails
             if (childGraphics != null) {
+                // Clip to the child's bounds in parent's coordinate system (before translation)
+                childGraphics.clipRect(x, y, width, height);
                 // Translate to the child's position
                 childGraphics.translate(x, y);
-                // Clip to the child's bounds (in the child's coordinate system, so at 0, 0)
-                childGraphics.clipRect(0, 0, width, height);
                 // Paint the child
                 component.paint(childGraphics);
                 childGraphics.dispose();
