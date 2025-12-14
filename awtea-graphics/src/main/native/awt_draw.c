@@ -4,6 +4,7 @@
 #include "awt_transform.h"
 #include "awt_pixel.h"
 #include "awt_util.h"
+#include "awt_log.h"
 
 static inline ImageView* lookup_by_id(int id) {
     if(id >= START_IMAGE_ID && id < END_IMAGE_ID) {
@@ -26,7 +27,12 @@ void draw_filled_rect(RenderSurface* surface,
         int x1 = clip_x(x + width, surface);
         int y1 = clip_y(y + height, surface);
 
+        log_debug("draw_filled_rect: requested [%d,%d,%d,%d], clipped to [%d,%d] - [%d,%d]",
+                  x, y, width, height, x0, y0, x1, y1);
+
         if (x0 >= x1 || y0 >= y1) {
+            log_debug("draw_filled_rect: clipped out entirely (x0=%d >= x1=%d or y0=%d >= y1=%d)",
+                      x0, x1, y0, y1);
             return;
         }
 
@@ -46,6 +52,7 @@ void draw_filled_rect(RenderSurface* surface,
                     set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, color);
                 }
             }
+            log_debug("draw_filled_rect: wrote %d pixels", (x1-x0)*(y1-y0));
             return;
         }
 
@@ -55,6 +62,7 @@ void draw_filled_rect(RenderSurface* surface,
                 blend_pixel(surface, i, j, PIXEL_FORMAT_ARGB, color);
             }
         }
+        log_debug("draw_filled_rect: blended %d pixels", (x1-x0)*(y1-y0));
         return;
     }
 

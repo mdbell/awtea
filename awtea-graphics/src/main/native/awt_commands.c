@@ -46,6 +46,7 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
                  set_color(ctx, cmd->set_color.which, cmd->set_color.argb);
                  // Also update our local render surface copy
                  surface.argb[cmd->set_color.which] = cmd->set_color.argb;
+                 log_debug("Set color %d to 0x%08X", cmd->set_color.which, cmd->set_color.argb);
                 break;
             case CMD_SET_TRANSFORM:
                 ctx->transform.m00 = u32_to_float(cmd->x);
@@ -64,6 +65,8 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
                 ctx->clip.height = cmd->height;
                 // Also update our local render surface copy
                 surface.clip = ctx->clip;
+                log_debug("Set clip rect to [%d, %d, %d, %d]", 
+                          cmd->x, cmd->y, cmd->width, cmd->height);
                 break;    
             // Drawing commands
             case CMD_BLIT_IMAGE:
@@ -74,6 +77,8 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
                           surface.argb[COLOR_FG]);
                 break;
             case CMD_FILL_RECT:
+                log_debug("Fill rect: [%d, %d, %d, %d] with color 0x%08X", 
+                          cmd->x, cmd->y, cmd->width, cmd->height, surface.argb[COLOR_FG]);
                 draw_filled_rect(&surface, cmd->x, cmd->y, cmd->width, cmd->height,
                                  surface.argb[COLOR_FG]);
                 break;
