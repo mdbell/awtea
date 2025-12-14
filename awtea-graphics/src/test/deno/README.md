@@ -109,10 +109,12 @@ The Java test infrastructure allows you to write JUnit-style tests in Java and e
 
 ### How It Works
 
-1. **Java test classes** are written in `src/test/java/me/mdbell/awtea/gfx/test/`
-2. **TeaVM compilation** converts Java bytecode to JavaScript (ES2015 modules)
-3. **Deno test runner** (`java_tests.ts`) imports and executes the compiled tests
-4. **Test results** are reported through Deno's test framework
+1. **Java test classes** are written in `src/test/java/me/mdbell/awtea/gfx/test/` with standard `@Test` annotations
+2. **Code generation** - The `generateDenoJUnitRunner` Gradle task scans for `@Test` methods and auto-generates `DenoJUnitRunner.java`
+3. **Compilation** - Generated runner and test classes are compiled together
+4. **TeaVM compilation** converts Java bytecode to JavaScript (ES2015 modules)
+5. **Deno test runner** (`java_tests.ts`) imports and executes the compiled tests
+6. **Test results** are reported through Deno's test framework
 
 ### Building Java Tests
 
@@ -124,37 +126,32 @@ Before running Java tests, compile them to JavaScript:
 ```
 
 This will:
+- Auto-generate `DenoJUnitRunner.java` from `@Test` annotations
 - Compile Java test classes
 - Use TeaVM to convert them to JavaScript
 - Output to `build/deno-tests/classes.js`
 
 ### Adding New Java Tests
 
-1. Create a new test method in `SurfaceTests.java` or create a new test class
-2. Add the test to `DenoJUnitRunner.java`'s `main` method
-3. Rebuild with `./gradlew :awtea-graphics:buildDenoJavaTests`
-4. Run with `./gradlew :awtea-graphics:denoTestJava`
-
-Example test method:
+1. Create a new test method in `SurfaceTests.java` or create a new test class with `@Test` annotations:
 
 ```java
 @Test
 public void testNewFeature() {
-    assertEquals("Expected value", expected, actual);
+    assertEquals("Expected message", expected, actual);
     assertTrue("Condition should be true", condition);
 }
 ```
 
-Then register it in `DenoJUnitRunner.main()`:
+2. Rebuild the tests:
 
-```java
-public static void main(String[] args) {
-    Deno.DenoAPI deno = Deno.getInstance();
-    SurfaceTests tests = new SurfaceTests();
-    
-    deno.test("Java: New feature test", () -> tests.testNewFeature());
-}
+```bash
+./gradlew :awtea-graphics:buildDenoJavaTests
 ```
+
+The `generateDenoJUnitRunner` task will automatically discover your new `@Test` method and register it with Deno. The test will appear as "Java: New Feature" in Deno's test output (method name is converted from camelCase to readable text).
+
+**Note**: `DenoJUnitRunner.java` is auto-generated in `build/generated/test/java/` and should not be manually edited.
 
 The test will appear as "Java: New feature test" in Deno's test output.
 
@@ -162,12 +159,15 @@ The test will appear as "Java: New feature test" in Deno's test output.
 
 The Java tests use TeaVM's JSO (JavaScript Objects) API to directly integrate with Deno's test framework:
 
-1. **Deno wrapper** (`Deno.java`) provides a Java interface to `Deno.test()`
-2. **Test registration** happens in `DenoJUnitRunner.main()` which calls `deno.test(name, fn)` for each test
-3. **Direct integration** means Java tests appear as individual Deno tests (not wrapped in a parent test)
-4. **1-1 mapping** with Deno's test infrastructure provides proper test isolation and reporting
+1. **Automatic test discovery** - Gradle task scans for `@Test` annotated methods at build time
+2. **Code generation** - `DenoJUnitRunner.java` is auto-generated with registration code for each test
+3. **Deno wrapper** (`Deno.java`) provides a Java interface to `Deno.test()`
+4. **Test registration** happens in generated `DenoJUnitRunner.main()` which calls `deno.test(name, fn)` for each test
+5. **Direct integration** means Java tests appear as individual Deno tests (not wrapped in a parent test)
+6. **1-1 mapping** with Deno's test infrastructure provides proper test isolation and reporting
 
 This approach has several advantages:
+- **No manual maintenance** - Just add `@Test` methods and they're automatically discovered
 - Tests appear individually in Deno's test output with descriptive names
 - Failed assertions properly propagate to Deno's test runner
 - No custom test result parsing required
