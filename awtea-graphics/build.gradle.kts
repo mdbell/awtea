@@ -83,3 +83,27 @@ tasks.named<ProcessResources>("processResources") {
         into("") // root of resources
     }
 }
+
+// Deno test task for WASM rasterizer isolated testing
+tasks.register<Exec>("denoTest") {
+    description = "Run Deno tests for WASM rasterizer in isolation"
+    group = "verification"
+    
+    dependsOn("buildAwtRasterWasm")
+    
+    workingDir = file("src/test/deno")
+    
+    commandLine("deno", "test", "--allow-read")
+    
+    // Make the task cacheable
+    inputs.files(fileTree("src/test/deno") {
+        include("*.ts")
+    })
+    inputs.file("build/wasm/awt_raster.wasm")
+}
+
+// Optional: Hook into the check task to run Deno tests
+// Uncomment the following line to run Deno tests as part of standard Gradle checks
+// tasks.named("check") {
+//     dependsOn("denoTest")
+// }
