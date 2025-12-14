@@ -76,9 +76,11 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Note: Using --privileged grants extensive permissions. 
+    # For production, consider using docker/setup-buildx-action instead
     container:
       image: mcr.microsoft.com/devcontainers/java:1-11-bullseye
-      options: --privileged  # For Docker-in-Docker
+      options: --privileged
     
     steps:
       - uses: actions/checkout@v4
@@ -102,6 +104,8 @@ jobs:
 
 > **Note:** Keep the versions in sync with the devcontainer configuration and the existing CI workflows in `.github/workflows/`.
 
+> **Security Note:** The `--privileged` flag grants extensive container permissions. For production CI systems, consider using specialized actions like `docker/setup-buildx-action` or run Docker commands on the host runner instead.
+
 ### Docker Compose
 
 For more complex CI setups, you can use Docker Compose:
@@ -120,7 +124,9 @@ services:
 
 ### Dockerfile for CI
 
-You can create a CI-specific Dockerfile based on the devcontainer configuration. Note that this is just an example - consider using package managers or official images in production CI systems:
+> **Security Note:** Piping remote scripts directly to shell is a security risk. The example below shows how Deno is typically installed, but for production CI systems, prefer using official GitHub Actions, package managers, or pre-built images.
+
+You can create a CI-specific Dockerfile based on the devcontainer configuration:
 
 ```dockerfile
 FROM mcr.microsoft.com/devcontainers/java:1-11-bullseye
@@ -131,13 +137,14 @@ RUN apt-get update && \
     apt-get clean
 
 # Install Deno using official installation
+# In production, consider alternatives like:
+# - Using an image with Deno pre-installed
+# - Using package managers when available
 RUN curl -fsSL https://deno.land/install.sh | sh
 ENV PATH="${PATH}:/root/.deno/bin"
 
 WORKDIR /workspace
 ```
-
-> **Security Note:** For production CI systems, prefer using official GitHub Actions or package managers rather than piping remote scripts to shell.
 
 ## Development Workflow
 
