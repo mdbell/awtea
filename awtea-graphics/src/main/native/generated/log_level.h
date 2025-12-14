@@ -2,7 +2,7 @@
  * AUTO-GENERATED FILE - DO NOT EDIT
  * Generated from: schemas/log-level.yaml
  * 
- * Logging levels ordered from most to least severe
+ * Logging level constants
  */
 #pragma once
 

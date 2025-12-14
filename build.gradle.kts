@@ -98,7 +98,8 @@ tasks.register<JavaExec>("generateEnums") {
         "--schemas", "${rootDir}/schemas",
         "--output-c", "${rootDir}/awtea-graphics/src/main/native/generated",
         "--output-java", "${rootDir}/awtea-graphics/src/main/java/me/mdbell/awtea/gfx/generated",
-        "--output-ts", "${rootDir}/awtea-graphics/src/test/deno/generated"
+        "--output-ts", "${rootDir}/awtea-graphics/src/test/deno/generated",
+        "--root-dir", "${rootDir}"
     )
 }
 

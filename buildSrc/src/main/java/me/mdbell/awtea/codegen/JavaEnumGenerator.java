@@ -133,6 +133,27 @@ public class JavaEnumGenerator {
             writer.write("\tpublic int getValue() {\n");
             writer.write("\t\treturn value;\n");
             writer.write("\t}\n");
+            
+            // Add custom methods for LogLevel enum
+            if ("LogLevel".equals(className)) {
+                writer.write("\n\tpublic int getPriority() {\n");
+                writer.write("\t\treturn value;\n");
+                writer.write("\t}\n\n");
+                writer.write("\tpublic boolean isEnabled(LogLevel threshold) {\n");
+                writer.write("\t\treturn this.value <= threshold.value;\n");
+                writer.write("\t}\n\n");
+                writer.write("\tpublic static LogLevel parse(String name) {\n");
+                writer.write("\t\tif (name == null) {\n");
+                writer.write("\t\t\treturn INFO;\n");
+                writer.write("\t\t}\n");
+                writer.write("\t\tfor (LogLevel level : values()) {\n");
+                writer.write("\t\t\tif (level.name().equalsIgnoreCase(name)) {\n");
+                writer.write("\t\t\t\treturn level;\n");
+                writer.write("\t\t\t}\n");
+                writer.write("\t\t}\n");
+                writer.write("\t\treturn INFO;\n");
+                writer.write("\t}\n");
+            }
         }
         
         writer.write("}\n");

@@ -1,6 +1,8 @@
 name: LogLevel
-description: Logging levels ordered from most to least severe
+description: Logging level constants
 c_prefix: LOG_LEVEL_
+java_prefix: LOG_LEVEL_
+java_name: LogLevelConstants
 java_package: me.mdbell.awtea.util.logging
 values:
   - name: ERROR

@@ -19,8 +19,8 @@ import java.util.stream.Stream;
 public class EnumGenerator {
     
     public static void main(String[] args) {
-        if (args.length < 4 || args.length % 2 != 0) {
-            System.err.println("Usage: EnumGenerator --schemas <dir> --output-c <dir> --output-java <dir> --output-ts <dir>");
+        if (args.length < 10 || args.length % 2 != 0) {
+            System.err.println("Usage: EnumGenerator --schemas <dir> --output-c <dir> --output-java <dir> --output-ts <dir> --root-dir <dir>");
             System.exit(1);
         }
         
@@ -28,8 +28,10 @@ public class EnumGenerator {
         Path outputCDir = null;
         Path outputJavaDir = null;
         Path outputTsDir = null;
+        Path rootDir = null;
         
         for (int i = 0; i < args.length; i += 2) {
+            if (i + 1 >= args.length) break;
             String flag = args[i];
             String value = args[i + 1];
             
@@ -46,19 +48,22 @@ public class EnumGenerator {
                 case "--output-ts":
                     outputTsDir = Paths.get(value);
                     break;
+                case "--root-dir":
+                    rootDir = Paths.get(value);
+                    break;
                 default:
                     System.err.println("Unknown flag: " + flag);
                     System.exit(1);
             }
         }
         
-        if (schemasDir == null || outputCDir == null || outputJavaDir == null || outputTsDir == null) {
+        if (schemasDir == null || outputCDir == null || outputJavaDir == null || outputTsDir == null || rootDir == null) {
             System.err.println("Missing required arguments");
             System.exit(1);
         }
         
         try {
-            new EnumGenerator().generate(schemasDir, outputCDir, outputJavaDir, outputTsDir);
+            new EnumGenerator().generate(schemasDir, outputCDir, outputJavaDir, outputTsDir, rootDir);
         } catch (Exception e) {
             System.err.println("Error generating enums: " + e.getMessage());
             e.printStackTrace();
@@ -66,7 +71,7 @@ public class EnumGenerator {
         }
     }
     
-    public void generate(Path schemasDir, Path outputCDir, Path outputJavaDir, Path outputTsDir) throws IOException {
+    public void generate(Path schemasDir, Path outputCDir, Path outputJavaDir, Path outputTsDir, Path rootDir) throws IOException {
         System.out.println("Generating enums from schemas in: " + schemasDir);
         
         List<EnumSchema> schemas = loadSchemas(schemasDir);
@@ -84,7 +89,19 @@ public class EnumGenerator {
             System.out.println("Processing schema: " + schema.getName());
             
             cGenerator.generate(schema, outputCDir);
-            javaGenerator.generate(schema, outputJavaDir);
+            
+            // For LogLevel, use custom package and output directory
+            if ("LogLevel".equals(schema.getName()) && schema.getJava_package() != null) {
+                // Use absolute path from root directory
+                Path customJavaDir = rootDir
+                    .resolve("awtea-util/src/main/java")
+                    .resolve(schema.getJava_package().replace('.', '/'));
+                JavaEnumGenerator customGenerator = new JavaEnumGenerator(schema.getJava_package());
+                customGenerator.generate(schema, customJavaDir);
+            } else {
+                javaGenerator.generate(schema, outputJavaDir);
+            }
+            
             tsGenerator.generate(schema, outputTsDir);
         }
         

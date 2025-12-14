@@ -27,4 +27,24 @@ public enum LogLevel {
 	public int getValue() {
 		return value;
 	}
+
+	public int getPriority() {
+		return value;
+	}
+
+	public boolean isEnabled(LogLevel threshold) {
+		return this.value <= threshold.value;
+	}
+
+	public static LogLevel parse(String name) {
+		if (name == null) {
+			return INFO;
+		}
+		for (LogLevel level : values()) {
+			if (level.name().equalsIgnoreCase(name)) {
+				return level;
+			}
+		}
+		return INFO;
+	}
 }

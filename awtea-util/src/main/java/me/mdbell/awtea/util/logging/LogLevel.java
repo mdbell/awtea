@@ -5,13 +5,16 @@ import lombok.Getter;
 /**
  * Log levels for the unified logging system.
  * Ordered from most severe to least severe.
+ * 
+ * Note: The numeric values are defined in the generated LogLevelConstants interface,
+ * which is synchronized with C and TypeScript via schemas/log-level.yaml
  */
-public enum LogLevel {
-    ERROR(0),
-    WARN(1),
-    INFO(2),
-    DEBUG(3),
-    TRACE(4);
+public enum LogLevel implements LogLevelConstants {
+    ERROR(LOG_LEVEL_ERROR),
+    WARN(LOG_LEVEL_WARN),
+    INFO(LOG_LEVEL_INFO),
+    DEBUG(LOG_LEVEL_DEBUG),
+    TRACE(LOG_LEVEL_TRACE);
 
     @Getter
     private final int priority;
