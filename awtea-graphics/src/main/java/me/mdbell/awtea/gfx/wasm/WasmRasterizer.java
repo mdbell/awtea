@@ -107,7 +107,7 @@ public class WasmRasterizer implements Rasterizer {
 
             SurfaceLRUCache.SurfaceCacheEntry cacheEntry = backend.surfaceCache.create(srcSurface);
             if (cacheEntry == null) {
-                log.error("WasmRasterizer: blitSurface failed to create surface cache entry");
+                log.error("WasmRasterizer: blitSurface failed to create or retrieve surface cache entry");
                 return;
             }
 
