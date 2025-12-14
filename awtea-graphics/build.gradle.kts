@@ -92,21 +92,6 @@ tasks.register<Exec>("denoTest") {
     
     workingDir = file("src/test/deno")
     
-    // Check if deno is available
-    doFirst {
-        try {
-            exec {
-                commandLine("deno", "--version")
-                standardOutput = java.io.ByteArrayOutputStream()
-            }
-        } catch (e: Exception) {
-            throw GradleException(
-                "Deno is not installed or not in PATH. " +
-                "Please install Deno from https://deno.land/ to run WASM rasterizer tests."
-            )
-        }
-    }
-    
     commandLine("deno", "test", "--allow-read")
     
     // Make the task cacheable

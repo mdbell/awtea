@@ -1,0 +1,55 @@
+name: WASM Rasterizer Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'awtea-graphics/src/main/native/**'
+      - 'awtea-graphics/src/test/deno/**'
+      - 'awtea-graphics/build.gradle.kts'
+      - '.github/workflows/wasm-rasterizer-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'awtea-graphics/src/main/native/**'
+      - 'awtea-graphics/src/test/deno/**'
+      - 'awtea-graphics/build.gradle.kts'
+      - '.github/workflows/wasm-rasterizer-tests.yml'
+
+jobs:
+  test-wasm-rasterizer:
+    name: Test WASM Rasterizer (Deno)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'gradle'
+      
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+      
+      - name: Set up Docker (for Emscripten)
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build WASM module
+        run: ./gradlew :awtea-graphics:buildAwtRasterWasm
+      
+      - name: Run Deno tests
+        run: ./gradlew :awtea-graphics:denoTest
+      
+      - name: Archive WASM artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: awt-raster-wasm
+          path: awtea-graphics/build/wasm/awt_raster.wasm
+          retention-days: 7
