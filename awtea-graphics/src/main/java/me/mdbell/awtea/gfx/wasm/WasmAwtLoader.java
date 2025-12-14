@@ -42,8 +42,13 @@ final class WasmAwtLoader {
 
 	@JSBody(params = {"url"}, script =
 		"return (function(url) {" +
+			"  var instance = null;" +
 			"  var logCallback = function(level, messagePtr, messageLen) {" +
 			"    try {" +
+			"      if (!instance) {" +
+			"        console.error('WASM instance not yet initialized');" +
+			"        return;" +
+			"      }" +
 			"      var bytes = new Uint8Array(instance.exports.memory.buffer, messagePtr, messageLen);" +
 			"      var message = new TextDecoder('utf-8').decode(bytes);" +
 			"      me_mdbell_awtea_gfx_wasm_WasmAwtLoader_logFromWasm(level, $rt_str(message));" +
@@ -59,7 +64,6 @@ final class WasmAwtLoader {
 			"      wasm_log_callback: logCallback" +
 			"    }" +
 			"  };" +
-			"  var instance = null;" +
 			"  return WebAssembly" +
 			"    .instantiateStreaming(fetch(url), imports)" +
 			"    .then(function (result) {" +

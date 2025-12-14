@@ -47,7 +47,7 @@ When disabled:
 - All log functions become no-op macros
 - Zero performance overhead
 - WASM module size is not increased
-- Java-side log polling returns immediately
+- JavaScript callback is never invoked
 
 ## Testing
 
@@ -135,11 +135,12 @@ public class WasmLoggingDemo {
    ./gradlew :awtea-graphics:clean :awtea-graphics:buildAwtRasterWasm
    ```
 
-### Buffer overflow
+5. **Check JavaScript console**: Errors in the callback will appear in browser console
 
-If you see truncated or missing messages:
-- Increase `LOG_BUFFER_SIZE` in `awt_log.h`
-- Reduce log verbosity
+### Messages truncated
+
+If you see truncated messages:
+- Increase `LOG_MESSAGE_MAX_SIZE` in `awt_log.h` (default: 512)
 - Rebuild WASM module
 
 ### Performance issues

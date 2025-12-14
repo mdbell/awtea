@@ -15,6 +15,7 @@ void wasm_log(LogLevel level, const char* format, va_list args) {
     
     if (len >= (int)sizeof(buffer)) {
         len = sizeof(buffer) - 1;
+        buffer[len] = '\0';  // Ensure null termination after truncation
     }
     
     // Call the imported JavaScript callback
