@@ -25,16 +25,16 @@ public final class SurfaceCommandBuffer {
 	@Getter
 	private int count;
 
-	private final int surfaceId;
+	private int contextId;
 
 	SurfaceCommandBuffer(WasmAwtRasterizerExports exports,
 						 int maxCommands) {
 		this(-1, exports, maxCommands);
 	}
 
-	SurfaceCommandBuffer(int surfaceId, WasmAwtRasterizerExports exports,
+	SurfaceCommandBuffer(int contextId, WasmAwtRasterizerExports exports,
 						 int maxCommands) {
-		this.surfaceId = surfaceId;
+		this.contextId = contextId;
 		this.exports = exports;
 		this.memoryBuffer = exports.getMemory().getBuffer();
 		this.u8 = new Uint8Array(memoryBuffer);
@@ -50,6 +50,10 @@ public final class SurfaceCommandBuffer {
 		this.count = 0;
 	}
 
+	public void setContextId(int contextId) {
+		this.contextId = contextId;
+	}
+
 	public void reset() {
 		count = 0;
 	}
@@ -59,13 +63,13 @@ public final class SurfaceCommandBuffer {
 	}
 
 	public void flush() {
-		if (surfaceId == -1) {
-			throw new IllegalStateException("Cannot flush command buffer without associated surface");
+		if (contextId == -1) {
+			throw new IllegalStateException("Cannot flush command buffer without associated context");
 		}
 		if (count == 0) {
 			return; // nothing to do
 		}
-		int rc = exports.renderAwt(surfaceId, basePtr, count);
+		int rc = exports.renderAwt(contextId, basePtr, count);
 		if (rc == 0) {
 			reset();
 		} else {
@@ -75,7 +79,7 @@ public final class SurfaceCommandBuffer {
 
 	private int ensureSlot() {
 		if (count >= maxCommands) {
-			if (surfaceId == -1) {
+			if (contextId == -1) {
 				throw new IllegalStateException("Command buffer overflow: " + count + " / " + maxCommands);
 			} else {
 				// it's not ideal to flush on a non-frame boundary, but

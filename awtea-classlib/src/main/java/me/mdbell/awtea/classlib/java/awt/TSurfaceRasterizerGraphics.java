@@ -214,6 +214,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Override
     public void dispose() {
         flush();
+        rasterizer.dispose();
     }
 
     @Override

@@ -15,26 +15,49 @@ public class WasmRasterizer implements Rasterizer {
     private static final Logger log = LoggerFactory.getLogger(WasmRasterizer.class);
 
     private final WasmSurface surface;
+    private final int contextId;
     private transient final SurfaceCommandBuffer commandBuffer;
+    private boolean disposed = false;
 
-    public WasmRasterizer(WasmSurface surface) {
+    public WasmRasterizer(WasmSurface surface, int contextId) {
         this.surface = surface;
+        this.contextId = contextId;
         this.commandBuffer = surface.createBuffer();
+        this.commandBuffer.setContextId(contextId);
     }
 
     private WasmRasterizer(WasmRasterizer other) {
         this.surface = other.surface;
+        // Clone the context to get independent rendering state
+        this.contextId = this.surface.getExports().cloneContext(other.contextId);
+        if (this.contextId < 0) {
+            throw new IllegalStateException("Failed to clone context");
+        }
         // each rasterizer gets its own command buffer.
         this.commandBuffer = this.surface.createBuffer();
+        this.commandBuffer.setContextId(this.contextId);
     }
 
     @Override
     public Rasterizer create() {
+        if (disposed) {
+            throw new IllegalStateException("Cannot create from disposed rasterizer");
+        }
         return new WasmRasterizer(this);
     }
 
     @Override
     public void reset() {
+    }
+
+    public void dispose() {
+        if (!disposed && contextId >= 0) {
+            // Flush any pending commands before destroying context
+            commandBuffer.flush();
+            // Destroy the context (decrements surface ref count)
+            surface.getExports().destroyContext(contextId);
+            disposed = true;
+        }
     }
 
     private void blitSurface(Surface srcSurface, int destX, int destY) {
@@ -65,6 +88,10 @@ public class WasmRasterizer implements Rasterizer {
 
     @Override
     public void rasterizeCommands(List<SurfaceCommand> cmds) {
+        if (disposed) {
+            throw new IllegalStateException("Cannot rasterize with disposed rasterizer");
+        }
+        
         for (SurfaceCommand cmd : cmds) {
             switch (cmd.type) {
                 case DRAW_RECT:

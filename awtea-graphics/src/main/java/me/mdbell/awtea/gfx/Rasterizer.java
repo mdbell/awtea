@@ -9,4 +9,9 @@ public interface Rasterizer {
 	void reset();
 
 	void rasterizeCommands(List<SurfaceCommand> cmds);
+
+	default void dispose() {
+		// Default implementation does nothing
+		// Implementations can override to clean up resources
+	}
 }

@@ -40,6 +40,25 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSMethod("get_surface_stride")
 	int getSurfaceStride(int surfaceId);
 
+	// Context management
+	@JSMethod("find_free_context")
+	int findFreeContextId();
+
+	@JSMethod("create_context")
+	int createContext(int surfaceId);
+
+	@JSMethod("clone_context")
+	int cloneContext(int contextId);
+
+	@JSMethod("destroy_context")
+	int destroyContext(int contextId);
+
+	@JSMethod("create_reference")
+	int createReference(int surfaceId);
+
+	@JSMethod("get_context_surface_id")
+	int getContextSurfaceId(int contextId);
+
 	// int register_image(int format, int width, int height, int stride)
 	@JSMethod("register_image")
 	int registerImage(int format, int width, int height, int stride);
@@ -50,7 +69,7 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSMethod("free_pixels")
 	void freePixels(int ptr);
 
-	// int render_awt(int surface_id, uint32_t cmdPtr, int cmdCount);
+	// int render_awt(int context_id, uint32_t cmdPtr, int cmdCount);
 	@JSMethod("render_awt")
-	int renderAwt(int surfaceId, int commandsPtr, int commandCount);
+	int renderAwt(int contextId, int commandsPtr, int commandCount);
 }
