@@ -6,7 +6,6 @@ import me.mdbell.awtea.util.GlyphRasterizer;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
-import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -246,27 +245,34 @@ public class GlyphAtlas {
 	 * @param height the height to copy
 	 */
 	private void copyToAtlas(Surface source, int destX, int destY, int width, int height) {
-		// Simple pixel-by-pixel copy
-		// In a production system, this could be optimized with bulk copy operations
-		org.teavm.jso.typedarrays.Uint8ClampedArray srcData = source.getPixelData();
-		org.teavm.jso.typedarrays.Uint8ClampedArray dstData = atlasSurface.getPixelData();
+		// Convert pixel data to int arrays for efficient copying
+		Uint8ClampedArray srcPixelArray = source.getPixelData();
+		Uint8ClampedArray dstPixelArray = atlasSurface.getPixelData();
+		
+		Int32Array srcData = new Int32Array(
+			srcPixelArray.getBuffer(),
+			srcPixelArray.getByteOffset(),
+			srcPixelArray.getLength() / 4
+		);
+		Int32Array dstData = new Int32Array(
+			dstPixelArray.getBuffer(),
+			dstPixelArray.getByteOffset(),
+			dstPixelArray.getLength() / 4
+		);
 		
 		int srcWidth = source.getWidth();
 		int dstWidth = atlasSurface.getWidth();
 		
 		for (int y = 0; y < height; y++) {
-			int srcRowOffset = y * srcWidth * 4;
-			int dstRowOffset = ((destY + y) * dstWidth + destX) * 4;
+			int srcRowOffset = y * srcWidth;
+			int dstRowOffset = (destY + y) * dstWidth + destX;
 			
 			for (int x = 0; x < width; x++) {
-				int srcIdx = srcRowOffset + x * 4;
-				int dstIdx = dstRowOffset + x * 4;
+				int srcIdx = srcRowOffset + x;
+				int dstIdx = dstRowOffset + x;
 				
-				// Copy BGRA components (little-endian ARGB)
-				dstData.set(dstIdx, srcData.get(srcIdx));         // B
-				dstData.set(dstIdx + 1, srcData.get(srcIdx + 1)); // G
-				dstData.set(dstIdx + 2, srcData.get(srcIdx + 2)); // R
-				dstData.set(dstIdx + 3, srcData.get(srcIdx + 3)); // A
+				// Copy ARGB integer directly
+				dstData.set(dstIdx, srcData.get(srcIdx));
 			}
 		}
 	}
@@ -306,7 +312,7 @@ public class GlyphAtlas {
 		atlasSurface = backend.createCompatibleSurface(
 			ATLAS_WIDTH, 
 			ATLAS_HEIGHT, 
-			BufferedImage.TYPE_INT_ARGB
+			Surface.FORMAT_INT_ARGB
 		);
 		
 		if (atlasSurface == null) {

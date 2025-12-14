@@ -3,6 +3,8 @@ package me.mdbell.awtea.font;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
 import me.mdbell.awtea.util.GlyphRasterizer;
+import org.teavm.jso.typedarrays.Int32Array;
+import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 /**
  * A font renderer implementation that uses a persistent glyph atlas for caching.
@@ -244,12 +246,24 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 		int height = entry.getHeight();
 		
 		// Perform the blit - work directly with pixel data
-		org.teavm.jso.typedarrays.Uint8ClampedArray srcData = entry.getAtlasSurface().getPixelData();
-		org.teavm.jso.typedarrays.Uint8ClampedArray dstData = target.getPixelData();
+		Uint8ClampedArray srcPixelArray = entry.getAtlasSurface().getPixelData();
+		Uint8ClampedArray dstPixelArray = target.getPixelData();
 		
-		if (srcData == null || dstData == null) {
+		if (srcPixelArray == null || dstPixelArray == null) {
 			return; // Cannot blit without pixel data
 		}
+		
+		// Convert to int arrays for efficient pixel access
+		Int32Array srcData = new Int32Array(
+			srcPixelArray.getBuffer(),
+			srcPixelArray.getByteOffset(),
+			srcPixelArray.getLength() / 4
+		);
+		Int32Array dstData = new Int32Array(
+			dstPixelArray.getBuffer(),
+			dstPixelArray.getByteOffset(),
+			dstPixelArray.getLength() / 4
+		);
 		
 		int srcWidth = entry.getAtlasSurface().getWidth();
 		int targetWidth = target.getWidth();
@@ -261,7 +275,7 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 				continue;
 			}
 			
-			int srcRowOffset = ((srcY + dy) * srcWidth + srcX) * 4;
+			int srcRowOffset = (srcY + dy) * srcWidth + srcX;
 			
 			for (int dx = 0; dx < width; dx++) {
 				int targetX = destX + dx;
@@ -269,14 +283,12 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 					continue;
 				}
 				
-				int srcIdx = srcRowOffset + dx * 4;
-				int dstIdx = (targetY * targetWidth + targetX) * 4;
+				int srcIdx = srcRowOffset + dx;
+				int dstIdx = targetY * targetWidth + targetX;
 				
-				// Read BGRA from atlas (little-endian ARGB)
-				int b = srcData.get(srcIdx) & 0xFF;
-				int g = srcData.get(srcIdx + 1) & 0xFF;
-				int r = srcData.get(srcIdx + 2) & 0xFF;
-				int a = srcData.get(srcIdx + 3) & 0xFF;
+				// Read ARGB from atlas
+				int srcARGB = srcData.get(srcIdx);
+				int a = (srcARGB >>> 24) & 0xFF;
 				
 				if (a == 0) {
 					continue; // Skip fully transparent pixels
@@ -285,26 +297,27 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 				// Alpha blend with destination
 				if (a == 255) {
 					// Fully opaque, direct copy
-					dstData.set(dstIdx, (byte) b);
-					dstData.set(dstIdx + 1, (byte) g);
-					dstData.set(dstIdx + 2, (byte) r);
-					dstData.set(dstIdx + 3, (byte) a);
+					dstData.set(dstIdx, srcARGB);
 				} else {
 					// Alpha blend
-					int dstB = dstData.get(dstIdx) & 0xFF;
-					int dstG = dstData.get(dstIdx + 1) & 0xFF;
-					int dstR = dstData.get(dstIdx + 2) & 0xFF;
-					int dstA = dstData.get(dstIdx + 3) & 0xFF;
+					int dstARGB = dstData.get(dstIdx);
+					
+					int srcR = (srcARGB >>> 16) & 0xFF;
+					int srcG = (srcARGB >>> 8) & 0xFF;
+					int srcB = srcARGB & 0xFF;
+					
+					int dstA = (dstARGB >>> 24) & 0xFF;
+					int dstR = (dstARGB >>> 16) & 0xFF;
+					int dstG = (dstARGB >>> 8) & 0xFF;
+					int dstB = dstARGB & 0xFF;
 					
 					int outA = a + ((dstA * (255 - a)) / 255);
-					int outR = (r * a + dstR * (255 - a)) / 255;
-					int outG = (g * a + dstG * (255 - a)) / 255;
-					int outB = (b * a + dstB * (255 - a)) / 255;
+					int outR = (srcR * a + dstR * (255 - a)) / 255;
+					int outG = (srcG * a + dstG * (255 - a)) / 255;
+					int outB = (srcB * a + dstB * (255 - a)) / 255;
 					
-					dstData.set(dstIdx, (byte) outB);
-					dstData.set(dstIdx + 1, (byte) outG);
-					dstData.set(dstIdx + 2, (byte) outR);
-					dstData.set(dstIdx + 3, (byte) outA);
+					int outARGB = (outA << 24) | (outR << 16) | (outG << 8) | outB;
+					dstData.set(dstIdx, outARGB);
 				}
 			}
 		}
