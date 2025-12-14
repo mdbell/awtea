@@ -118,12 +118,8 @@ typedef struct {
     ClipRect    clip;
 } SurfaceContext;
 
-// Legacy typedef for backwards compatibility during transition
-typedef SurfaceData Surface;
-
 // RenderSurface: temporary combined view of SurfaceData + SurfaceContext for rendering
-// This struct has the same layout as the legacy Surface struct, making it easy to
-// pass to existing rendering functions that need both pixel data and rendering state.
+// This struct combines pixel data and rendering state for use by rendering functions.
 typedef struct {
     // Pixel data fields (from SurfaceData)
     uint32_t    ptr;
