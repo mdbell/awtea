@@ -14,6 +14,7 @@ public final class SurfaceCommandBuffer {
 	private static final Logger log = LoggerFactory.getLogger(SurfaceCommandBuffer.class);
 
 	private final WasmAwtRasterizerExports exports;
+	private final WasmSurfaceBackend backend;
 	private final ArrayBuffer memoryBuffer;
 	private final Uint8Array u8;
 	private final Int32Array i32;
@@ -27,14 +28,15 @@ public final class SurfaceCommandBuffer {
 
 	private final int surfaceId;
 
-	SurfaceCommandBuffer(WasmAwtRasterizerExports exports,
+	SurfaceCommandBuffer(WasmSurfaceBackend backend, WasmAwtRasterizerExports exports,
 						 int maxCommands) {
-		this(-1, exports, maxCommands);
+		this(-1, backend, exports, maxCommands);
 	}
 
-	SurfaceCommandBuffer(int surfaceId, WasmAwtRasterizerExports exports,
+	SurfaceCommandBuffer(int surfaceId, WasmSurfaceBackend backend, WasmAwtRasterizerExports exports,
 						 int maxCommands) {
 		this.surfaceId = surfaceId;
+		this.backend = backend;
 		this.exports = exports;
 		this.memoryBuffer = exports.getMemory().getBuffer();
 		this.u8 = new Uint8Array(memoryBuffer);
@@ -70,6 +72,11 @@ public final class SurfaceCommandBuffer {
 			reset();
 		} else {
 			log.error("SurfaceCommandBuffer.flush: renderAwt failed: {}", rc);
+		}
+		
+		// Poll WASM logs after rendering
+		if (backend != null && backend.logHandler != null) {
+			backend.logHandler.pollLogs();
 		}
 	}
 

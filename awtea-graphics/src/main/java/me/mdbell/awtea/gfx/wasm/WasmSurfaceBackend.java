@@ -11,10 +11,13 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     final WasmAwtRasterizerExports exports;
 
     final SurfaceLRUCache surfaceCache;
+    
+    final WasmLogHandler logHandler;
 
     public WasmSurfaceBackend() {
         this.exports = WasmAwtLoader.load(WASM_MODULE_PATH).await();
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
+        this.logHandler = new WasmLogHandler(exports);
     }
 
     public WasmSurface createSurface(int width, int height, int pixelFormat) {

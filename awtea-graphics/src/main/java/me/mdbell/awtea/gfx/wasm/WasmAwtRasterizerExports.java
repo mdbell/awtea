@@ -53,4 +53,14 @@ interface WasmAwtRasterizerExports extends JSObject {
 	// int render_awt(int surface_id, uint32_t cmdPtr, int cmdCount);
 	@JSMethod("render_awt")
 	int renderAwt(int surfaceId, int commandsPtr, int commandCount);
+
+	// Log buffer access
+	@JSMethod("get_log_buffer_ptr")
+	int getLogBufferPtr();
+
+	@JSMethod("get_log_buffer_size")
+	int getLogBufferSize();
+
+	@JSMethod("flush_log_buffer")
+	void flushLogBuffer();
 }

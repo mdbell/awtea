@@ -47,7 +47,7 @@ public final class WasmSurface implements Surface {
 	public SurfaceCommandBuffer createBuffer(int maxCommands) {
 		//TODO: pass this instead of surfaceId, so we can prevent the buffer
 		// from being used after the surface is destroyed
-		return new SurfaceCommandBuffer(this.surfaceId, exports, maxCommands);
+		return new SurfaceCommandBuffer(this.surfaceId, backend, exports, maxCommands);
 	}
 
 	@Override
