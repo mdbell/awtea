@@ -298,7 +298,9 @@ For PNG output, consider using a PNG encoding library compatible with Deno.
 
 ### Visualizing Surfaces
 
-Use the `printSurface` helper from `demo.ts` to visualize small surfaces in the console:
+### Visualizing Surfaces
+
+The demo includes a `printSurface` helper that uses ANSI escape sequences to display surfaces with actual colors in the terminal:
 
 ```typescript
 function printSurface(rasterizer: WasmRasterizer, surfaceId: number) {
@@ -309,12 +311,22 @@ function printSurface(rasterizer: WasmRasterizer, surfaceId: number) {
     let row = "";
     for (let x = 0; x < dims.width; x++) {
       const pixel = pixels[y * dims.width + x];
-      row += (pixel !== 0) ? "█" : "·";
+      
+      if (pixel > threshold) {
+        // Extract color and display with ANSI background color
+        const { r, g, b } = WasmRasterizer.extractARGB(pixel);
+        const ansiColor = rgbToAnsi256(r, g, b);
+        row += `\x1b[48;5;${ansiColor}m  \x1b[0m`;
+      } else {
+        row += "··";  // Empty pixel
+      }
     }
     console.log(row);
   }
 }
 ```
+
+This displays red, green, blue, and other colors as colored blocks in terminals that support ANSI 256-color mode.
 
 ### Checking Pixel Values
 

@@ -10,7 +10,26 @@ import { WasmRasterizer, PixelFormat } from "./wasm_rasterizer.ts";
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
 
 /**
- * Helper to print a small surface as ASCII art
+ * Convert RGB to closest ANSI 256-color code
+ */
+function rgbToAnsi256(r: number, g: number, b: number): number {
+  // For grayscale colors
+  if (r === g && g === b) {
+    if (r < 8) return 16;
+    if (r > 248) return 231;
+    return Math.round(((r - 8) / 247) * 24) + 232;
+  }
+  
+  // For color values, map to 6x6x6 color cube (colors 16-231)
+  const rIndex = Math.round(r / 255 * 5);
+  const gIndex = Math.round(g / 255 * 5);
+  const bIndex = Math.round(b / 255 * 5);
+  
+  return 16 + (36 * rIndex) + (6 * gIndex) + bIndex;
+}
+
+/**
+ * Helper to print a small surface as colored ASCII art using ANSI escape sequences
  */
 function printSurface(rasterizer: WasmRasterizer, surfaceId: number, threshold = 0x80000000) {
   const dims = rasterizer.getSurfaceDimensions(surfaceId);
@@ -21,8 +40,18 @@ function printSurface(rasterizer: WasmRasterizer, surfaceId: number, threshold =
     let row = "";
     for (let x = 0; x < dims.width; x++) {
       const pixel = pixels[y * dims.width + x];
-      // Print '#' for non-zero pixels, '.' for zero
-      row += (pixel > threshold) ? "█" : "·";
+      
+      if (pixel > threshold) {
+        // Extract color components
+        const { r, g, b } = WasmRasterizer.extractARGB(pixel);
+        
+        // Use ANSI 256-color background
+        const ansiColor = rgbToAnsi256(r, g, b);
+        row += `\x1b[48;5;${ansiColor}m  \x1b[0m`;
+      } else {
+        // Empty/transparent pixel - use dots
+        row += "··";
+      }
     }
     console.log(row);
   }

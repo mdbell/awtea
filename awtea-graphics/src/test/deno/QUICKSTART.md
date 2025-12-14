@@ -118,7 +118,7 @@ deno test --allow-read --filter "Fill rect"
 ```
 
 ### Visualize Output
-Use the demo's `printSurface` helper for ASCII visualization:
+The demo includes ANSI color visualization for terminals that support 256-color mode:
 
 ```typescript
 function printSurface(rasterizer: WasmRasterizer, surfaceId: number) {
@@ -128,12 +128,22 @@ function printSurface(rasterizer: WasmRasterizer, surfaceId: number) {
   for (let y = 0; y < dims.height; y++) {
     let row = "";
     for (let x = 0; x < dims.width; x++) {
-      row += (pixels[y * dims.width + x] !== 0) ? "█" : "·";
+      const pixel = pixels[y * dims.width + x];
+      if (pixel !== 0) {
+        // Display with actual color using ANSI escape sequences
+        const { r, g, b } = WasmRasterizer.extractARGB(pixel);
+        const ansiColor = rgbToAnsi256(r, g, b);
+        row += `\x1b[48;5;${ansiColor}m  \x1b[0m`;
+      } else {
+        row += "··";
+      }
     }
     console.log(row);
   }
 }
 ```
+
+Run `demo.ts` to see colored rectangles, patterns, and more rendered in your terminal!
 
 ## Available Commands
 
