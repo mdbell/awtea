@@ -41,6 +41,12 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
     SurfaceCommand* cmds = (SurfaceCommand*)(uintptr_t)cmdPtr;
     for (int i = 0; i < cmdCount; i++) {
         SurfaceCommand* cmd = &cmds[i];
+        
+        // Debug log every command
+        log_debug("Command %d/%d: operation=%d, x=%d, y=%d, w=%d, h=%d, arg1=%d, arg2=%d",
+                  i+1, cmdCount, cmd->operation, cmd->x, cmd->y, cmd->width, cmd->height,
+                  cmd->args[0], cmd->args[1]);
+        
         switch (cmd->operation) {
             case CMD_SET_COLOR:
                  set_color(ctx, cmd->set_color.which, cmd->set_color.argb);
