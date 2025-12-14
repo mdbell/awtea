@@ -3,6 +3,7 @@
 #include "awt_draw.h"
 #include "awt_util.h"
 #include "awt_image.h"
+#include "awt_log.h"
 
 int get_command_size() {
     return sizeof(SurfaceCommand);
@@ -19,14 +20,17 @@ int request_command_buffer(int max_commands) {
 }
 
 int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
+    log_debug("render_awt: context_id=%d, cmdCount=%d", context_id, cmdCount);
 
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx || ctx->surface_id == -1) {
+        log_error("render_awt: invalid context %d", context_id);
         return -1; // invalid context
     }
 
     SurfaceData* data = get_surface_data(ctx->surface_id);
     if (!data || !data->ptr) {
+        log_error("render_awt: invalid surface %d for context %d", ctx->surface_id, context_id);
         return -1; // invalid surface
     }
 

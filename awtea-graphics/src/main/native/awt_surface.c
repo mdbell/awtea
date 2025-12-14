@@ -133,22 +133,28 @@ int find_free_context() {
             return i + START_CONTEXT_ID;
         }
     }
+    log_warn("find_free_context: no free context available");
     return -1; // no free context
 }
 
 int create_context(int surface_id) {
+    log_debug("create_context: surface_id=%d", surface_id);
+    
     SurfaceData* surface = get_surface_data(surface_id);
     if (!surface || !surface->ptr) {
+        log_error("create_context: invalid surface %d", surface_id);
         return -1; // invalid surface
     }
 
     int context_id = find_free_context();
     if (context_id == -1) {
+        log_error("create_context: no free context for surface %d", surface_id);
         return -1; // no free context
     }
 
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx) {
+        log_error("create_context: failed to get context data for id %d", context_id);
         return -1; // should not happen
     }
 
@@ -174,22 +180,30 @@ int create_context(int surface_id) {
     // Increment surface reference count
     surface->ref_count++;
 
+    log_info("Created context %d for surface %d (ref_count=%d)", 
+             context_id, surface_id, surface->ref_count);
+
     return context_id;
 }
 
 int clone_context(int context_id) {
+    log_debug("clone_context: context_id=%d", context_id);
+    
     SurfaceContext* src_ctx = get_context_data(context_id);
     if (!src_ctx || src_ctx->surface_id == -1) {
+        log_error("clone_context: invalid context %d", context_id);
         return -1; // invalid context
     }
 
     int new_context_id = find_free_context();
     if (new_context_id == -1) {
+        log_error("clone_context: no free context to clone from %d", context_id);
         return -1; // no free context
     }
 
     SurfaceContext* new_ctx = get_context_data(new_context_id);
     if (!new_ctx) {
+        log_error("clone_context: failed to get new context data for id %d", new_context_id);
         return -1; // should not happen
     }
 
@@ -204,14 +218,19 @@ int clone_context(int context_id) {
     SurfaceData* surface = get_surface_data(src_ctx->surface_id);
     if (surface) {
         surface->ref_count++;
+        log_info("Cloned context %d to %d for surface %d (ref_count=%d)", 
+                 context_id, new_context_id, src_ctx->surface_id, surface->ref_count);
     }
 
     return new_context_id;
 }
 
 int destroy_context(int context_id) {
+    log_debug("destroy_context: context_id=%d", context_id);
+    
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx || ctx->surface_id == -1) {
+        log_warn("destroy_context: invalid or already destroyed context %d", context_id);
         return -1; // invalid or already destroyed context
     }
 
@@ -224,6 +243,8 @@ int destroy_context(int context_id) {
     // Decrement surface reference count
     if (surface && surface->ref_count > 0) {
         surface->ref_count--;
+        log_info("Destroyed context %d for surface %d (ref_count=%d)", 
+                 context_id, surface_id, surface->ref_count);
         
         // If no more references, we could optionally free the surface
         // But for now, we leave it allocated until explicitly reset
@@ -233,23 +254,35 @@ int destroy_context(int context_id) {
 }
 
 int create_reference(int surface_id) {
+    log_debug("create_reference: surface_id=%d", surface_id);
+    
     SurfaceData* surface = get_surface_data(surface_id);
     if (!surface || !surface->ptr) {
+        log_error("create_reference: invalid surface %d", surface_id);
         return -1; // invalid surface
     }
 
     surface->ref_count++;
+    log_debug("Created reference for surface %d (ref_count=%d)", 
+              surface_id, surface->ref_count);
     return surface_id;
 }
 
 int release_reference(int surface_id) {
+    log_debug("release_reference: surface_id=%d", surface_id);
+    
     SurfaceData* surface = get_surface_data(surface_id);
     if (!surface) {
+        log_error("release_reference: invalid surface %d", surface_id);
         return -1; // invalid surface
     }
 
     if (surface->ref_count > 0) {
         surface->ref_count--;
+        log_debug("Released reference for surface %d (ref_count=%d)", 
+                  surface_id, surface->ref_count);
+    } else {
+        log_warn("release_reference: surface %d already has ref_count=0", surface_id);
     }
     
     return 0;
@@ -258,6 +291,7 @@ int release_reference(int surface_id) {
 int get_context_surface_id(int context_id) {
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx || ctx->surface_id == -1) {
+        log_debug("get_context_surface_id: invalid context %d", context_id);
         return -1;
     }
     return ctx->surface_id;
