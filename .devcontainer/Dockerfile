@@ -1,5 +1,5 @@
 # AWTea Development Container
-# Includes Java 11, Emscripten SDK, and Deno for complete development environment
+# Includes Java 21, Emscripten SDK, and Deno for complete development environment
 
 FROM debian:bullseye-slim
 
@@ -43,17 +43,16 @@ RUN useradd -m -s /bin/bash -u 1000 vscode && \
 USER vscode
 RUN curl -s "https://get.sdkman.io" | bash && \
     bash -c "source /home/vscode/.sdkman/bin/sdkman-init.sh && \
-    sdk install java 11.0.22-tem && \
-    sdk default java 11.0.22-tem"
-
-# Set up environment for vscode user
-ENV SDKMAN_DIR="/home/vscode/.sdkman"
-ENV JAVA_HOME="/home/vscode/.sdkman/candidates/java/current"
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
+    sdk install java 21.0.5-tem && \
+    sdk default java 21.0.5-tem"
 
 # Set up Emscripten and SDKMAN for vscode user's shell
 RUN echo "source /opt/emsdk/emsdk_env.sh" >> /home/vscode/.bashrc && \
     echo "source /home/vscode/.sdkman/bin/sdkman-init.sh" >> /home/vscode/.bashrc
+
+# Unset environment variables since they're set in .bashrc
+ENV SDKMAN_DIR=
+ENV JAVA_HOME=
 
 WORKDIR /workspace
 

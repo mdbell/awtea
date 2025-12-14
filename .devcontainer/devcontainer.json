@@ -26,7 +26,7 @@
 
   "forwardPorts": [8080, 3000],
 
-  "postCreateCommand": "source /home/vscode/.sdkman/bin/sdkman-init.sh && source /opt/emsdk/emsdk_env.sh && java -version && ./gradlew -v && deno --version && emcc --version",
+  "postCreateCommand": "bash -c 'source /home/vscode/.sdkman/bin/sdkman-init.sh && source /opt/emsdk/emsdk_env.sh && java -version && ./gradlew -v && deno --version && emcc --version'",
 
   "remoteUser": "vscode",
   
