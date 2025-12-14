@@ -27,9 +27,3 @@ values:
   - name: COUNT
     c_only: true
     description: Number of standard commands
-  - name: FREE_IMAGE
-    value: 128
-    c_name: EXT_FREE_IMAGE
-    ts_name: EXT_FREE_IMAGE
-    java_skip: true
-    description: Extended operation - free image resources
