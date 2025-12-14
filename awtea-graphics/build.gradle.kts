@@ -129,8 +129,17 @@ tasks.register("generateDenoJUnitRunner") {
     outputs.file(outputFile)
     
     doLast {
-        // Find all test classes with @Test methods
-        val testMethods = mutableListOf<Pair<String, String>>()
+        // Data class to hold test class metadata
+        data class TestClassInfo(
+            val fullClassName: String,
+            val testMethods: MutableList<String> = mutableListOf(),
+            val beforeAllMethods: MutableList<String> = mutableListOf(),
+            val afterAllMethods: MutableList<String> = mutableListOf(),
+            val beforeEachMethods: MutableList<String> = mutableListOf(),
+            val afterEachMethods: MutableList<String> = mutableListOf()
+        )
+        
+        val testClasses = mutableMapOf<String, TestClassInfo>()
         
         sourceSets["test"].allJava.forEach { srcFile ->
             if (srcFile.name.endsWith(".java") && srcFile.name.contains("Test")) {
@@ -141,7 +150,7 @@ tasks.register("generateDenoJUnitRunner") {
                     return@forEach
                 }
                 
-                // Simple parsing to find class name and @Test methods
+                // Simple parsing to find class name
                 val classNameMatch = Regex("""public\s+class\s+(\w+)""").find(content)
                 if (classNameMatch != null) {
                     val className = classNameMatch.groupValues[1]
@@ -152,15 +161,39 @@ tasks.register("generateDenoJUnitRunner") {
                         className
                     }
                     
-                    // Find all @Test annotated methods
-                    val methodPattern = Regex("""@Test\s+public\s+void\s+(\w+)\s*\(\s*\)""")
-                    methodPattern.findAll(content).forEach { match ->
-                        val methodName = match.groupValues[1]
-                        testMethods.add(Pair(fullClassName, methodName))
+                    val classInfo = testClasses.getOrPut(fullClassName) { TestClassInfo(fullClassName) }
+                    
+                    // Find all annotated methods
+                    val testPattern = Regex("""@Test\s+public\s+void\s+(\w+)\s*\(\s*\)""")
+                    testPattern.findAll(content).forEach { match ->
+                        classInfo.testMethods.add(match.groupValues[1])
+                    }
+                    
+                    val beforeAllPattern = Regex("""@BeforeAll\s+public\s+void\s+(\w+)\s*\(\s*\)""")
+                    beforeAllPattern.findAll(content).forEach { match ->
+                        classInfo.beforeAllMethods.add(match.groupValues[1])
+                    }
+                    
+                    val afterAllPattern = Regex("""@AfterAll\s+public\s+void\s+(\w+)\s*\(\s*\)""")
+                    afterAllPattern.findAll(content).forEach { match ->
+                        classInfo.afterAllMethods.add(match.groupValues[1])
+                    }
+                    
+                    val beforeEachPattern = Regex("""@BeforeEach\s+public\s+void\s+(\w+)\s*\(\s*\)""")
+                    beforeEachPattern.findAll(content).forEach { match ->
+                        classInfo.beforeEachMethods.add(match.groupValues[1])
+                    }
+                    
+                    val afterEachPattern = Regex("""@AfterEach\s+public\s+void\s+(\w+)\s*\(\s*\)""")
+                    afterEachPattern.findAll(content).forEach { match ->
+                        classInfo.afterEachMethods.add(match.groupValues[1])
                     }
                 }
             }
         }
+        
+        // Count total tests
+        val totalTests = testClasses.values.sumOf { it.testMethods.size }
         
         // Generate the DenoJUnitRunner.java file
         outputFile.parentFile.mkdirs()
@@ -180,21 +213,48 @@ public class DenoJUnitRunner {
     public static void main(String[] args) {
         Deno.DenoAPI deno = Deno.getInstance();
         
-${testMethods.groupBy { it.first }.map { (className, methods) ->
-            val simpleClassName = className.substringAfterLast(".")
+${testClasses.values.joinToString("\n        \n") { classInfo ->
+            val simpleClassName = classInfo.fullClassName.substringAfterLast(".")
             val varName = simpleClassName.replaceFirstChar { it.lowercase() }
-            """        // Register tests from ${className}
-        ${className} ${varName} = new ${className}();
-${methods.joinToString("\n") { (_, methodName) ->
+            
+            val beforeAllCalls = if (classInfo.beforeAllMethods.isNotEmpty()) {
+                classInfo.beforeAllMethods.joinToString("\n") { method ->
+                    """        ${varName}.${method}();"""
+                }
+            } else ""
+            
+            val afterAllCalls = if (classInfo.afterAllMethods.isNotEmpty()) {
+                classInfo.afterAllMethods.joinToString("\n") { method ->
+                    """        ${varName}.${method}();"""
+                }
+            } else ""
+            
+            """        // Register tests from ${classInfo.fullClassName}
+        ${classInfo.fullClassName} ${varName} = new ${classInfo.fullClassName}();
+${if (beforeAllCalls.isNotEmpty()) "$beforeAllCalls\n        " else ""}
+${classInfo.testMethods.joinToString("\n") { methodName ->
                 val testName = camelCaseToWords(methodName)
-                """        deno.test("Java: ${testName}", () -> ${varName}.${methodName}());"""
-            }}"""
-        }.joinToString("\n        \n")}
+                val beforeEachCalls = classInfo.beforeEachMethods.joinToString("; ") { "${varName}.${it}()" }
+                val afterEachCalls = classInfo.afterEachMethods.joinToString("; ") { "${varName}.${it}()" }
+                
+                val testBody = if (beforeEachCalls.isEmpty() && afterEachCalls.isEmpty()) {
+                    "${varName}.${methodName}()"
+                } else {
+                    buildString {
+                        if (beforeEachCalls.isNotEmpty()) append("${beforeEachCalls}; ")
+                        append("${varName}.${methodName}()")
+                        if (afterEachCalls.isNotEmpty()) append("; ${afterEachCalls}")
+                    }
+                }
+                
+                """        deno.test("Java: ${testName}", () -> { ${testBody}; });"""
+            }}${if (afterAllCalls.isNotEmpty()) "\n        \n$afterAllCalls" else ""}"""
+        }}
     }
 }
 """.trimIndent())
         
-        println("Generated DenoJUnitRunner with ${testMethods.size} tests")
+        println("Generated DenoJUnitRunner with ${totalTests} tests")
     }
 }
 

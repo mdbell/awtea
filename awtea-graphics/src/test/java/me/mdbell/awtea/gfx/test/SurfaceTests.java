@@ -1,7 +1,7 @@
 package me.mdbell.awtea.gfx.test;
 
 import me.mdbell.awtea.gfx.Surface;
-import me.mdbell.awtea.test.Test;
+import me.mdbell.awtea.test.*;
 
 import static me.mdbell.awtea.test.Assert.*;
 
@@ -10,6 +10,29 @@ import static me.mdbell.awtea.test.Assert.*;
  * via TeaVM and executed in Deno.
  */
 public class SurfaceTests {
+    
+    private int testCounter = 0;
+
+    @BeforeAll
+    public void setupAll() {
+        System.out.println("BeforeAll: Setting up test suite");
+    }
+    
+    @AfterAll
+    public void teardownAll() {
+        System.out.println("AfterAll: Tearing down test suite. Ran " + testCounter + " tests.");
+    }
+    
+    @BeforeEach
+    public void setup() {
+        testCounter++;
+        System.out.println("BeforeEach: Starting test #" + testCounter);
+    }
+    
+    @AfterEach
+    public void teardown() {
+        System.out.println("AfterEach: Completed test #" + testCounter);
+    }
 
     /**
      * Test that pixel format constants are defined with expected values.
