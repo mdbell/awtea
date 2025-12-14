@@ -10,5 +10,3 @@ import { main } from "../../../build/deno-tests/classes.js";
 
 // Call main() to register all Java tests with Deno
 main();
-
-

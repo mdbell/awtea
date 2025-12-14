@@ -66,6 +66,11 @@ public class SurfaceTests {
     /**
      * Test enum-like constant values match expected sequential order.
      * This test validates that the enum generation is correct and consistent.
+     * 
+     * Note: The format array is hardcoded here intentionally to ensure test
+     * stability. If new formats are added to Surface, this test should be
+     * updated to include them, which serves as a reminder to verify enum
+     * synchronization across C, Java, and TypeScript.
      */
     @Test
     public void testEnumSequentialValues() {
