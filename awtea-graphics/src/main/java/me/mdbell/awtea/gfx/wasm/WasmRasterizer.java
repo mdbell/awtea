@@ -4,14 +4,12 @@ import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import me.mdbell.awtea.gfx.SurfaceContainer;
-import me.mdbell.awtea.instrument.Monitored;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.awt.*;
 import java.util.List;
 
-@Monitored.AllMethods
 public class WasmRasterizer implements Rasterizer {
 
     private static final Logger log = LoggerFactory.getLogger(WasmRasterizer.class);
@@ -49,7 +47,7 @@ public class WasmRasterizer implements Rasterizer {
         } else {
             WasmSurfaceBackend backend = surface.backend;
 
-            SurfaceLRUCache.SurfaceCacheEntry cacheEntry = backend.surfaceCache.get(srcSurface);
+            SurfaceLRUCache.SurfaceCacheEntry cacheEntry = backend.surfaceCache.create(srcSurface);
             if (cacheEntry == null) {
                 log.error("WasmRasterizer: blitSurface failed to lookup surface cache");
                 return;
@@ -60,6 +58,8 @@ public class WasmRasterizer implements Rasterizer {
             commandBuffer.emitBlitImage(
                     cacheEntry.imageId,
                     destX, destY);
+            commandBuffer.emitFreeImage(cacheEntry.imageId);
+            commandBuffer.flush(); // we have to flush here to ensure the image is ready before drawing
         }
     }
 
