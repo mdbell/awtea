@@ -246,21 +246,21 @@ public class GlyphAtlas {
 		org.teavm.jso.typedarrays.Uint8ClampedArray srcData = source.getPixelData();
 		org.teavm.jso.typedarrays.Uint8ClampedArray dstData = atlasSurface.getPixelData();
 		
-		int srcStride = source.getWidth() * 4; // 4 bytes per pixel (RGBA)
-		int dstStride = atlasSurface.getWidth() * 4;
+		int srcWidth = source.getWidth();
+		int dstWidth = atlasSurface.getWidth();
 		
 		for (int y = 0; y < height; y++) {
-			int srcOffset = y * srcStride;
-			int dstOffset = ((destY + y) * atlasSurface.getWidth() + destX) * 4;
+			int srcRowOffset = y * srcWidth * 4;
+			int dstRowOffset = ((destY + y) * dstWidth + destX) * 4;
 			
 			for (int x = 0; x < width; x++) {
-				int srcIdx = srcOffset + x * 4;
-				int dstIdx = dstOffset + x * 4;
+				int srcIdx = srcRowOffset + x * 4;
+				int dstIdx = dstRowOffset + x * 4;
 				
-				// Copy RGBA components
-				dstData.set(dstIdx, srcData.get(srcIdx));         // R
+				// Copy BGRA components (little-endian ARGB)
+				dstData.set(dstIdx, srcData.get(srcIdx));         // B
 				dstData.set(dstIdx + 1, srcData.get(srcIdx + 1)); // G
-				dstData.set(dstIdx + 2, srcData.get(srcIdx + 2)); // B
+				dstData.set(dstIdx + 2, srcData.get(srcIdx + 2)); // R
 				dstData.set(dstIdx + 3, srcData.get(srcIdx + 3)); // A
 			}
 		}
@@ -462,16 +462,17 @@ public class GlyphAtlas {
 				return;
 			}
 			
+			// ARGB format stored as bytes in little-endian: B, G, R, A
 			int idx = (y * width + x) * 4;
 			int a = (argb >>> 24) & 0xFF;
 			int r = (argb >>> 16) & 0xFF;
 			int g = (argb >>> 8) & 0xFF;
 			int b = argb & 0xFF;
 			
-			pixels.set(idx, (byte) r);
-			pixels.set(idx + 1, (byte) g);
-			pixels.set(idx + 2, (byte) b);
-			pixels.set(idx + 3, (byte) a);
+			pixels.set(idx, (byte) b);     // B at offset 0
+			pixels.set(idx + 1, (byte) g); // G at offset 1
+			pixels.set(idx + 2, (byte) r); // R at offset 2
+			pixels.set(idx + 3, (byte) a); // A at offset 3
 		}
 		
 		@Override
@@ -480,11 +481,12 @@ public class GlyphAtlas {
 				return 0;
 			}
 			
+			// ARGB format stored as bytes in little-endian: B, G, R, A
 			int idx = (y * width + x) * 4;
-			int r = pixels.get(idx) & 0xFF;
-			int g = pixels.get(idx + 1) & 0xFF;
-			int b = pixels.get(idx + 2) & 0xFF;
-			int a = pixels.get(idx + 3) & 0xFF;
+			int b = pixels.get(idx) & 0xFF;     // B at offset 0
+			int g = pixels.get(idx + 1) & 0xFF; // G at offset 1
+			int r = pixels.get(idx + 2) & 0xFF; // R at offset 2
+			int a = pixels.get(idx + 3) & 0xFF; // A at offset 3
 			
 			return (a << 24) | (r << 16) | (g << 8) | b;
 		}

@@ -262,7 +262,6 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 			}
 			
 			int srcRowOffset = ((srcY + dy) * srcWidth + srcX) * 4;
-			int dstRowOffset = (targetY * targetWidth + destX) * 4;
 			
 			for (int dx = 0; dx < width; dx++) {
 				int targetX = destX + dx;
@@ -271,12 +270,12 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 				}
 				
 				int srcIdx = srcRowOffset + dx * 4;
-				int dstIdx = dstRowOffset + dx * 4;
+				int dstIdx = (targetY * targetWidth + targetX) * 4;
 				
-				// Read RGBA from atlas
-				int r = srcData.get(srcIdx) & 0xFF;
+				// Read BGRA from atlas (little-endian ARGB)
+				int b = srcData.get(srcIdx) & 0xFF;
 				int g = srcData.get(srcIdx + 1) & 0xFF;
-				int b = srcData.get(srcIdx + 2) & 0xFF;
+				int r = srcData.get(srcIdx + 2) & 0xFF;
 				int a = srcData.get(srcIdx + 3) & 0xFF;
 				
 				if (a == 0) {
@@ -286,15 +285,15 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 				// Alpha blend with destination
 				if (a == 255) {
 					// Fully opaque, direct copy
-					dstData.set(dstIdx, (byte) r);
+					dstData.set(dstIdx, (byte) b);
 					dstData.set(dstIdx + 1, (byte) g);
-					dstData.set(dstIdx + 2, (byte) b);
+					dstData.set(dstIdx + 2, (byte) r);
 					dstData.set(dstIdx + 3, (byte) a);
 				} else {
 					// Alpha blend
-					int dstR = dstData.get(dstIdx) & 0xFF;
+					int dstB = dstData.get(dstIdx) & 0xFF;
 					int dstG = dstData.get(dstIdx + 1) & 0xFF;
-					int dstB = dstData.get(dstIdx + 2) & 0xFF;
+					int dstR = dstData.get(dstIdx + 2) & 0xFF;
 					int dstA = dstData.get(dstIdx + 3) & 0xFF;
 					
 					int outA = a + ((dstA * (255 - a)) / 255);
@@ -302,9 +301,9 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 					int outG = (g * a + dstG * (255 - a)) / 255;
 					int outB = (b * a + dstB * (255 - a)) / 255;
 					
-					dstData.set(dstIdx, (byte) outR);
+					dstData.set(dstIdx, (byte) outB);
 					dstData.set(dstIdx + 1, (byte) outG);
-					dstData.set(dstIdx + 2, (byte) outB);
+					dstData.set(dstIdx + 2, (byte) outR);
 					dstData.set(dstIdx + 3, (byte) outA);
 				}
 			}
