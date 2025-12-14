@@ -68,8 +68,6 @@ This devcontainer can be reused for CI/CD pipelines in several ways:
 
 ### GitHub Actions
 
-### GitHub Actions
-
 **Recommended Approach (using setup actions):**
 
 ```yaml
