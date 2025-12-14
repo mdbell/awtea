@@ -59,7 +59,10 @@ public class WasmRasterizer implements Rasterizer {
             // Flush any pending commands before destroying context
             flushAndReleaseReferences();
             // Destroy the context (decrements surface ref count)
-            surface.getExports().destroyContext(contextId);
+            int result = surface.getExports().destroyContext(contextId);
+            if (result < 0) {
+                log.error("WasmRasterizer: Failed to destroy context {}", contextId);
+            }
             disposed = true;
         }
     }
@@ -88,11 +91,12 @@ public class WasmRasterizer implements Rasterizer {
             // Create a reference to keep the source surface alive during deferred rendering
             int refResult = surface.getExports().createReference(srcSurfaceId);
             if (refResult < 0) {
-                log.error("WasmRasterizer: Failed to create reference for surface {}", srcSurfaceId);
-            } else {
-                // Track this reference so we can release it after flush
-                blitReferences.add(srcSurfaceId);
+                log.error("WasmRasterizer: Failed to create reference for surface {}, skipping blit", srcSurfaceId);
+                return;
             }
+            
+            // Track this reference so we can release it after flush
+            blitReferences.add(srcSurfaceId);
             
             commandBuffer.emitBlitImage(
                     srcSurfaceId,

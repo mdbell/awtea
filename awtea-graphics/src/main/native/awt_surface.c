@@ -100,11 +100,19 @@ int get_surface_stride(int surface_id) {
 
 int clip_x(int x, const RenderSurface* surf) {
     x = clamp_int(x, 0, surf->width);
+    // Also apply the clip rectangle if set
+    if (surf->clip.width > 0) {
+        x = clamp_int(x, surf->clip.x, surf->clip.x + surf->clip.width);
+    }
     return x;
 }
 
 int clip_y(int y, const RenderSurface* surf) {
     y = clamp_int(y, 0, surf->height);
+    // Also apply the clip rectangle if set
+    if (surf->clip.height > 0) {
+        y = clamp_int(y, surf->clip.y, surf->clip.y + surf->clip.height);
+    }
     return y;
 }
 
