@@ -1,0 +1,20 @@
+name: LogLevel
+description: Logging levels ordered from most to least severe
+c_prefix: LOG_LEVEL_
+values:
+  - name: ERROR
+    value: 0
+    description: Error messages
+  - name: WARN
+    value: 1
+    description: Warning messages
+  - name: INFO
+    value: 2
+    description: Informational messages
+  - name: DEBUG
+    value: 3
+    description: Debug messages
+  - name: TRACE
+    value: 4
+    java_only: true
+    description: Trace messages (Java only)

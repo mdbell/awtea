@@ -1,0 +1,19 @@
+name: PixelFormat
+description: Pixel format types for surfaces and images
+c_prefix: PIXEL_FORMAT_
+java_prefix: FORMAT_INT_
+values:
+  - name: ARGB
+    value: 0
+    description: Alpha-Red-Green-Blue format
+  - name: RGB
+    description: Red-Green-Blue format (no alpha)
+  - name: RGBA
+    description: Red-Green-Blue-Alpha format
+  - name: ABGR
+    description: Alpha-Blue-Green-Red format
+  - name: BGR
+    description: Blue-Green-Red format (no alpha)
+  - name: COUNT
+    c_only: true
+    description: Number of pixel formats
