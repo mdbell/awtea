@@ -7,7 +7,7 @@
  * - Complex drawing patterns
  */
 
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { WasmRasterizer, PixelFormat } from "./wasm_rasterizer.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
@@ -274,15 +274,14 @@ Deno.test("Error handling - invalid surface ID", async () => {
   const rasterizer = new WasmRasterizer();
   await rasterizer.load(WASM_PATH);
 
-  let errorThrown = false;
-  try {
-    // Try to access an invalid surface ID
-    rasterizer.getSurfacePixels(99999);
-  } catch (e) {
-    errorThrown = true;
-  }
-
-  assertEquals(errorThrown, true, "Should throw error for invalid surface ID");
+  assertThrows(
+    () => {
+      // Try to access an invalid surface ID
+      rasterizer.getSurfacePixels(99999);
+    },
+    Error,
+    "Invalid surface ID"
+  );
 });
 
 Deno.test("Pixel format ARGB consistency", async () => {
