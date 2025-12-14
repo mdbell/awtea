@@ -56,6 +56,9 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSMethod("create_reference")
 	int createReference(int surfaceId);
 
+	@JSMethod("release_reference")
+	int releaseReference(int surfaceId);
+
 	@JSMethod("get_context_surface_id")
 	int getContextSurfaceId(int contextId);
 

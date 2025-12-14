@@ -223,6 +223,19 @@ int create_reference(int surface_id) {
     return surface_id;
 }
 
+int release_reference(int surface_id) {
+    SurfaceData* surface = get_surface_data(surface_id);
+    if (!surface) {
+        return -1; // invalid surface
+    }
+
+    if (surface->ref_count > 0) {
+        surface->ref_count--;
+    }
+    
+    return 0;
+}
+
 int get_context_surface_id(int context_id) {
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx || ctx->surface_id == -1) {

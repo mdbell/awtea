@@ -8,6 +8,7 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class WasmRasterizer implements Rasterizer {
@@ -18,6 +19,9 @@ public class WasmRasterizer implements Rasterizer {
     private final int contextId;
     private transient final SurfaceCommandBuffer commandBuffer;
     private boolean disposed = false;
+    
+    // Track references to surfaces used in blit commands
+    private final List<Integer> blitReferences = new ArrayList<>();
 
     public WasmRasterizer(WasmSurface surface, int contextId) {
         this.surface = surface;
@@ -53,19 +57,45 @@ public class WasmRasterizer implements Rasterizer {
     public void dispose() {
         if (!disposed && contextId >= 0) {
             // Flush any pending commands before destroying context
-            commandBuffer.flush();
+            flushAndReleaseReferences();
             // Destroy the context (decrements surface ref count)
             surface.getExports().destroyContext(contextId);
             disposed = true;
         }
     }
 
+    private void flushAndReleaseReferences() {
+        // Flush commands first
+        commandBuffer.flush();
+        
+        // Release all blit references
+        for (Integer surfaceId : blitReferences) {
+            // Decrement ref count by calling release_reference
+            int result = surface.getExports().releaseReference(surfaceId);
+            if (result < 0) {
+                log.error("WasmRasterizer: Failed to release reference for surface {}", surfaceId);
+            }
+        }
+        blitReferences.clear();
+    }
+
     private void blitSurface(Surface srcSurface, int destX, int destY) {
         // pixel data already uploaded to WASM memory by the Surface implementation
         if (srcSurface instanceof WasmSurface) {
             WasmSurface wasmSurface = (WasmSurface) srcSurface;
+            int srcSurfaceId = wasmSurface.getId();
+            
+            // Create a reference to keep the source surface alive during deferred rendering
+            int refResult = surface.getExports().createReference(srcSurfaceId);
+            if (refResult < 0) {
+                log.error("WasmRasterizer: Failed to create reference for surface {}", srcSurfaceId);
+            } else {
+                // Track this reference so we can release it after flush
+                blitReferences.add(srcSurfaceId);
+            }
+            
             commandBuffer.emitBlitImage(
-                    wasmSurface.getId(),
+                    srcSurfaceId,
                     destX, destY);
         } else {
             WasmSurfaceBackend backend = surface.backend;
@@ -143,6 +173,6 @@ public class WasmRasterizer implements Rasterizer {
                     break;
             }
         }
-        commandBuffer.flush();
+        flushAndReleaseReferences();
     }
 }

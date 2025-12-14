@@ -41,6 +41,9 @@ int destroy_context(int context_id);
 __attribute__((export_name("create_reference")))
 int create_reference(int surface_id);
 
+__attribute__((export_name("release_reference")))
+int release_reference(int surface_id);
+
 __attribute__((export_name("get_context_surface_id")))
 int get_context_surface_id(int context_id);
 
