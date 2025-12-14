@@ -53,6 +53,7 @@ RUN echo "source /opt/emsdk/emsdk_env.sh" >> /home/vscode/.bashrc && \
 # Unset environment variables since they're set in .bashrc
 ENV SDKMAN_DIR=
 ENV JAVA_HOME=
+ENV EMSDK_QUIET=1
 
 WORKDIR /workspace
 
