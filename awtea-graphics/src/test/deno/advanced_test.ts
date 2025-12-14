@@ -211,17 +211,6 @@ Deno.test("Large surface allocation", async () => {
   assertEquals(dims.width, 256);
   assertEquals(dims.height, 256);
 
-  // Fill with a gradient-like pattern
-  const cmdBuffer = rasterizer.createCommandBuffer(256);
-
-  for (let i = 0; i < 256; i++) {
-    const gray = WasmRasterizer.makeARGB(255, i, i, i);
-    rasterizer.writeCommand(cmdBuffer, i, WasmRasterizer.setColorCommand(gray));
-    // Draw a 1-pixel wide vertical line
-    // Note: We can't easily draw vertical lines without proper line support,
-    // so we'll use fillRect with width=1
-  }
-
   // Just fill the whole surface with mid-gray to test large allocation works
   const midGray = WasmRasterizer.makeARGB(255, 128, 128, 128);
   const testBuffer = rasterizer.createCommandBuffer(2);
