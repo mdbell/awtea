@@ -67,6 +67,7 @@ tasks.register("buildAwtRasterWasm") {
                 "-O2",
                 "-s", "STANDALONE_WASM",
                 "-s", "WASM_BIGINT=1",
+                "-s", "ERROR_ON_UNDEFINED_SYMBOLS=0",
                 "--no-entry",
                 "-o", "build/wasm/awt_raster.wasm"
             )
