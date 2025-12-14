@@ -1,6 +1,6 @@
 {
   "name": "AWTea Development",
-  "image": "mcr.microsoft.com/devcontainers/java:1-21-bullseye",
+  "image": "mcr.microsoft.com/devcontainers/java:1-11-bullseye",
   
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
@@ -25,14 +25,6 @@
         "ms-azuretools.vscode-docker"
       ],
       "settings": {
-        "java.configuration.runtimes": [
-          {
-            "name": "JavaSE-11",
-            "path": "/usr/local/sdkman/candidates/java/11.0.22-tem",
-            "default": true
-          }
-        ],
-        "java.jdt.ls.java.home": "/usr/local/sdkman/candidates/java/11.0.22-tem",
         "deno.enable": false,
         "deno.enablePaths": [
           "./awtea-graphics/src/test/deno"

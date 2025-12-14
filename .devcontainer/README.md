@@ -6,7 +6,7 @@ This directory contains the Visual Studio Code Dev Container configuration for A
 
 The devcontainer provides a consistent, reproducible development environment with all necessary tools pre-installed:
 
-- **Java 21** (with Java 11 configured as default for the project)
+- **Java 11** (Microsoft OpenJDK, required for the project)
 - **Gradle** (via wrapper)
 - **Docker-in-Docker** (for Emscripten/WASM compilation)
 - **Deno** (for TypeScript/WASM tests)
@@ -57,7 +57,7 @@ docker run -it -v $(pwd):/workspace -v /var/run/docker.sock:/var/run/docker.sock
 
 ### Installed Tools
 
-- **Java Development Kit (JDK)**: Java 21 with Java 11 configured as the project default
+- **Java Development Kit (JDK)**: Java 11 (Microsoft OpenJDK, as required by the project)
 - **Gradle**: Build automation via the Gradle wrapper (`./gradlew`)
 - **Docker**: Docker-in-Docker support for running Emscripten containers
 - **Deno**: TypeScript/JavaScript runtime for WASM tests
@@ -65,7 +65,7 @@ docker run -it -v $(pwd):/workspace -v /var/run/docker.sock:/var/run/docker.sock
 
 ### Configuration Highlights
 
-- **Java Runtime**: Project configured to use Java 11 (compatible with the build requirements)
+- **Java Runtime**: Uses Java 11 directly (Microsoft OpenJDK 11.0.28-LTS)
 - **Deno Integration**: Enabled only for `./awtea-graphics/src/test/deno` directory
 - **Port Forwarding**: Ports 8080 and 3000 forwarded for web application development
 - **Docker Socket Mounting**: Enables Docker-in-Docker for WASM compilation
@@ -87,7 +87,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/devcontainers/java:1-21-bullseye
+      image: mcr.microsoft.com/devcontainers/java:1-11-bullseye
       options: --privileged  # For Docker-in-Docker
     
     steps:
@@ -118,7 +118,7 @@ For more complex CI setups, you can use Docker Compose:
 version: '3.8'
 services:
   awtea-ci:
-    image: mcr.microsoft.com/devcontainers/java:1-21-bullseye
+    image: mcr.microsoft.com/devcontainers/java:1-11-bullseye
     volumes:
       - .:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
@@ -131,7 +131,7 @@ services:
 You can create a CI-specific Dockerfile based on the devcontainer configuration:
 
 ```dockerfile
-FROM mcr.microsoft.com/devcontainers/java:1-21-bullseye
+FROM mcr.microsoft.com/devcontainers/java:1-11-bullseye
 
 # Install Docker
 RUN apt-get update && \
@@ -243,25 +243,15 @@ To add additional tools or features, edit `.devcontainer/devcontainer.json`:
 
 ### Changing Java Version
 
-To use a different Java version as the default:
+To use a different Java version, change the base image:
 
 ```json
 {
-  "customizations": {
-    "vscode": {
-      "settings": {
-        "java.configuration.runtimes": [
-          {
-            "name": "JavaSE-17",
-            "path": "/usr/local/sdkman/candidates/java/17.0.10-tem",
-            "default": true
-          }
-        ]
-      }
-    }
-  }
+  "image": "mcr.microsoft.com/devcontainers/java:1-17-bullseye"
 }
 ```
+
+Available Java versions include `1-11-bullseye`, `1-17-bullseye`, and `1-21-bullseye`.
 
 ## References
 
