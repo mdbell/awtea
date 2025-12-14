@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 
+// Logging - called by C code to send log messages to host
+extern void wasm_log_callback(int level, const char* message_ptr, int message_len);
+
 // Performance timing - returns high-resolution timestamp in milliseconds
 extern double wasm_get_time_ms(void);
 

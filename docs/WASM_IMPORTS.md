@@ -4,13 +4,41 @@ This document describes the WASM import functions available for debugging, profi
 
 ## Overview
 
-The AWT rasterizer WASM module provides three categories of debugging/profiling imports in addition to the existing logging functionality:
+The AWT rasterizer WASM module uses host-provided imports for various runtime features. All WASM imports are declared in `awt_imports.h`:
 
-1. **Performance Timing** - High-resolution timestamps for profiling
-2. **Memory Tracking** - Manual memory usage reporting
-3. **Assertion Handling** - Better C-side debugging with assertion macros
+1. **Logging** - Send log messages to the host environment
+2. **Performance Timing** - High-resolution timestamps for profiling
+3. **Memory Tracking** - Manual memory usage reporting
+4. **Assertion Handling** - Better C-side debugging with assertion macros
 
-All three features are independent and can be used together or separately as needed.
+All features are independent and can be used together or separately as needed.
+
+## Logging
+
+### Function: `wasm_log_callback()`
+
+Sends log messages to the host environment for display or recording.
+
+**C Declaration:**
+```c
+extern void wasm_log_callback(int level, const char* message_ptr, int message_len);
+```
+
+**Parameters:**
+- `level` - Log level (0=ERROR, 1=WARN, 2=INFO, 3=DEBUG)
+- `message_ptr` - Pointer to message string in WASM memory
+- `message_len` - Length of message in bytes
+
+**Usage:**
+The logging import is typically used through the higher-level helper functions in `awt_log.h`:
+```c
+#include "awt_log.h"
+
+log_info("Processing %d items", count);
+log_error("Failed to allocate buffer");
+```
+
+See [WASM_LOGGING.md](WASM_LOGGING.md) for more details on the logging system.
 
 ## Performance Timing
 
@@ -178,11 +206,15 @@ private void handleAssertionFailure(int exprPtr, int exprLen, int filePtr, int f
 
 ### TypeScript/Deno
 
-In the test harness (`wasm_rasterizer.ts`), the imports are provided as:
+In the test harness (`wasm_rasterizer.ts`), all imports are provided as:
 
 ```typescript
 const imports = {
   env: {
+    wasm_log_callback: (level: number, messagePtr: number, messageLen: number) => {
+      const message = decodeString(memory, messagePtr, messageLen);
+      console.log(`[WASM ${levelName}] ${message}`);
+    },
     wasm_get_time_ms: (): number => {
       return performance.now();
     },
@@ -200,10 +232,10 @@ const imports = {
 
 ## Integration Pattern
 
-These imports follow the same pattern as the existing `wasm_log_callback`:
+All WASM imports are declared in `awt_imports.h` and follow a consistent pattern:
 
-1. **C Side:** Declare extern functions in header
-2. **C Side:** Call imported functions when needed
+1. **C Side:** Declare extern functions in `awt_imports.h`
+2. **C Side:** Call imported functions when needed (directly or through helper functions)
 3. **Host Side:** Provide implementations via WASM imports object
 4. **Host Side:** Handle callbacks with appropriate logging/actions
 
