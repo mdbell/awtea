@@ -140,34 +140,49 @@ Example test method:
 ```java
 @Test
 public void testNewFeature() {
-    assertEquals("Expected value", actual, expected);
+    assertEquals("Expected value", expected, actual);
     assertTrue("Condition should be true", condition);
 }
 ```
 
-Then add to `DenoJUnitRunner.main()`:
+Then register it in `DenoJUnitRunner.main()`:
 
 ```java
-passed += runTest("New feature test", () -> tests.testNewFeature());
+public static void main(String[] args) {
+    Deno.DenoAPI deno = Deno.getInstance();
+    SurfaceTests tests = new SurfaceTests();
+    
+    deno.test("Java: New feature test", () -> tests.testNewFeature());
+}
 ```
+
+The test will appear as "Java: New feature test" in Deno's test output.
 
 ### Java Test Architecture
 
-The Java tests use a custom runner instead of full JUnit integration because:
-- TeaVM has limited JUnit support
-- Manual test invocation is simpler and more explicit  
-- Test results are easily formatted for Deno consumption
-- No reflection or complex JUnit metadata parsing required
+The Java tests use TeaVM's JSO (JavaScript Objects) API to directly integrate with Deno's test framework:
+
+1. **Deno wrapper** (`Deno.java`) provides a Java interface to `Deno.test()`
+2. **Test registration** happens in `DenoJUnitRunner.main()` which calls `deno.test(name, fn)` for each test
+3. **Direct integration** means Java tests appear as individual Deno tests (not wrapped in a parent test)
+4. **1-1 mapping** with Deno's test infrastructure provides proper test isolation and reporting
+
+This approach has several advantages:
+- Tests appear individually in Deno's test output with descriptive names
+- Failed assertions properly propagate to Deno's test runner
+- No custom test result parsing required
+- Standard JUnit assertions work correctly
+- Each test is independently tracked by Deno
 
 ### Current Java Tests
 
-The following tests are currently implemented:
+The following tests are currently implemented (all prefixed with "Java:" in Deno output):
 
-1. **testPixelFormatConstants** - Validates pixel format constant values
-2. **testPixelFormatRange** - Checks MIN/MAX format bounds
-3. **testPixelFormatValidation** - Tests `isValidPixelFormat()` method
-4. **testEnumSequentialValues** - Verifies enum values are sequential
-5. **testFormatRangeContinuous** - Ensures no gaps in format range
+1. **Pixel format constants** - Validates pixel format constant values
+2. **Pixel format range** - Checks MIN/MAX format bounds
+3. **Pixel format validation** - Tests `isValidPixelFormat()` method
+4. **Enum sequential values** - Verifies enum values are sequential
+5. **Format range continuous** - Ensures no gaps in format range
 
 These tests validate the Surface interface and pixel format constants, providing a foundation for testing enum synchronization across C, Java, and TypeScript.
 
