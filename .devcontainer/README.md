@@ -1,0 +1,359 @@
+# AWTea Development Container
+
+This directory contains the Visual Studio Code Dev Container configuration for AWTea development.
+
+## Overview
+
+The devcontainer provides a consistent, reproducible development environment with all necessary tools pre-installed:
+
+- **Java 21 & 11** (via SDKMAN - Java 21 for VS Code, Java 11 for project builds)
+- **Emscripten SDK** (for compiling C code to WebAssembly - no Docker required!)
+- **Deno** (for TypeScript/WASM tests)
+- **Gradle** (via wrapper)
+- **Git** and other essential development tools
+
+## Usage
+
+### Prerequisites
+
+- [Docker](https://www.docker.com/products/docker-desktop) installed and running
+- [Visual Studio Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+### Opening the Project in a Dev Container
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/mdbell/awtea.git
+   cd awtea
+   ```
+
+2. Open in VS Code:
+   ```bash
+   code .
+   ```
+
+3. When prompted, click **"Reopen in Container"** (or run the command `Dev Containers: Reopen in Container` from the Command Palette)
+
+4. Wait for the container to build and start (first time may take a few minutes)
+
+5. Once ready, you can use the integrated terminal to run commands:
+   ```bash
+   ./gradlew build
+   ./gradlew :awtea-graphics:buildAwtRasterWasm
+   ./gradlew :awtea-graphics:denoTest
+   ```
+
+## Features
+
+### Installed Tools
+
+- **Java Development Kit (JDK)**: Java 21 (default) and Java 11 both installed via SDKMAN
+  - Java 21 is the default (required by VS Code Java extension)
+  - Java 11 is available for Gradle's toolchain (project compilation target)
+- **SDKMAN**: SDK manager for easy JDK version switching
+- **Emscripten SDK**: Version 3.1.51 for WebAssembly compilation (directly callable with `emcc`)
+- **Deno**: Version 2.1.2 installed to /usr/local/bin for TypeScript/WASM tests
+- **Gradle**: Build automation via the Gradle wrapper (`./gradlew`)
+- **VS Code Extensions**: Pre-configured extensions for Java, Gradle, and Deno development
+
+### Configuration Highlights
+
+- **Custom Dockerfile**: Builds a complete development environment with all tools
+- **SDKMAN Integration**: Allows switching JDK versions using `sdk` commands
+- **Emscripten SDK**: Pre-installed and configured - call `emcc` directly, no Docker needed!
+- **Deno Integration**: Enabled only for `./awtea-graphics/src/test/deno` directory
+- **Port Forwarding**: Ports 8080 and 3000 forwarded for web application development
+- **SSH Key Forwarding**: Your host SSH keys are mounted for git operations (pull/push)
+
+## Git Operations
+
+The devcontainer automatically mounts your SSH keys from your host machine, allowing you to:
+- Pull and push to remote repositories
+- Authenticate with GitHub/GitLab using your existing SSH keys
+- Use git commands without additional authentication setup
+
+Your SSH keys are mounted read-only for security. If you need to configure git, you can set your identity in the container:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
+## CI/CD Reusability
+
+This devcontainer can be reused for CI/CD pipelines in several ways:
+
+### GitHub Actions
+
+**Recommended Approach (using setup actions):**
+
+```yaml
+name: Build and Test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'gradle'
+      
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+      
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.51'
+      
+      - name: Build
+        run: ./gradlew build
+      
+      - name: Test WASM
+        run: ./gradlew :awtea-graphics:denoTest
+```
+
+**Alternative Approach (using devcontainer image):**
+
+```yaml
+name: Build and Test (Container)
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/yourusername/awtea-devcontainer:latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build
+        run: |
+          source /home/vscode/.sdkman/bin/sdkman-init.sh
+          source /opt/emsdk/emsdk_env.sh
+          ./gradlew build
+      
+      - name: Test WASM
+        run: |
+          source /home/vscode/.sdkman/bin/sdkman-init.sh
+          source /opt/emsdk/emsdk_env.sh
+          ./gradlew :awtea-graphics:denoTest
+```
+
+> **Note:** Keep the versions in sync with the devcontainer configuration and the existing CI workflows in `.github/workflows/`.
+
+### Docker Compose
+
+For more complex CI setups, you can use Docker Compose:
+
+```yaml
+version: '3.8'
+services:
+  awtea-ci:
+    build: .devcontainer
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: ./gradlew build
+```
+
+Note: This builds the devcontainer image which includes all necessary tools (Java, Emscripten, Deno).
+
+### Dockerfile for CI
+
+You can reuse the devcontainer Dockerfile directly for CI, or create a CI-specific variant. The devcontainer includes all necessary tools:
+
+```dockerfile
+# Use the devcontainer Dockerfile directly
+FROM ghcr.io/yourusername/awtea-devcontainer:latest
+
+WORKDIR /workspace
+
+# The image already includes:
+# - Java 11 via SDKMAN
+# - Emscripten SDK 3.1.51
+# - Deno 2.1.2
+# - All build dependencies
+```
+
+**Alternative: Simplified CI Dockerfile**
+
+If you prefer a minimal CI image:
+
+```dockerfile
+FROM debian:bullseye-slim
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    git curl wget zip unzip \
+    python3 build-essential cmake \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install SDKMAN and Java
+RUN curl -s "https://get.sdkman.io" | bash && \
+    bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
+    sdk install java 11.0.22-tem"
+
+# Install Emscripten SDK
+RUN git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk && \
+    cd /opt/emsdk && \
+    ./emsdk install 3.1.51 && \
+    ./emsdk activate 3.1.51
+
+# Install Deno
+ENV DENO_INSTALL=/usr/local
+RUN curl -fsSL https://deno.land/install.sh | sh -s v2.1.2
+
+# Set up environment
+ENV PATH="/opt/emsdk:/opt/emsdk/upstream/emscripten:/root/.sdkman/candidates/java/current/bin:${PATH}"
+
+WORKDIR /workspace
+```
+
+## Development Workflow
+
+### Managing Java Versions with SDKMAN
+
+The devcontainer includes SDKMAN for easy Java version management:
+
+```bash
+# List available Java versions
+sdk list java
+
+# Install a different Java version (e.g., Java 17)
+sdk install java 17.0.10-tem
+
+# Switch to a different installed version
+sdk use java 17.0.10-tem
+
+# Set a version as default
+sdk default java 17.0.10-tem
+
+# Show current Java version
+sdk current java
+```
+
+### Building the Project
+
+```bash
+# Build all modules
+./gradlew build
+
+# Build specific module
+./gradlew :awtea-graphics:build
+
+# Clean build
+./gradlew clean build
+```
+
+### WASM Development
+
+```bash
+# Build WASM module
+./gradlew :awtea-graphics:buildAwtRasterWasm
+
+# Run Deno tests
+./gradlew :awtea-graphics:denoTest
+
+# Run Deno tests directly
+cd awtea-graphics/src/test/deno
+deno test --allow-read
+```
+
+### Running Examples
+
+```bash
+# Build hello-world example
+./gradlew :examples:hello-world:build
+
+# The built files will be in examples/hello-world/build/dist/
+# Serve them with any web server, e.g.:
+cd examples/hello-world/build/dist
+python3 -m http.server 8080
+# Then open http://localhost:8080 in your browser
+```
+
+### Code Generation
+
+```bash
+# Generate enum definitions from YAML schemas
+./gradlew generateEnums
+
+# Generate API coverage documentation
+./gradlew generateDocs
+```
+
+## Troubleshooting
+
+### Docker Socket Permission Issues
+
+If you encounter permission errors with Docker:
+
+```bash
+# Inside the container
+sudo chmod 666 /var/run/docker.sock
+```
+
+### Gradle Daemon Issues
+
+If Gradle becomes unresponsive:
+
+```bash
+./gradlew --stop
+```
+
+### Deno Cache Issues
+
+If Deno modules fail to load:
+
+```bash
+cd awtea-graphics/src/test/deno
+deno cache --reload *.ts
+```
+
+## Customization
+
+### Adding More Tools
+
+To add additional tools or features, edit `.devcontainer/devcontainer.json`:
+
+```json
+{
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  }
+}
+```
+
+### Changing Java Version
+
+To use a different Java version, change the base image:
+
+```json
+{
+  "image": "mcr.microsoft.com/devcontainers/java:1-17-bullseye"
+}
+```
+
+Available Java versions include `1-11-bullseye`, `1-17-bullseye`, and `1-21-bullseye`.
+
+## References
+
+- [VS Code Dev Containers Documentation](https://code.visualstudio.com/docs/devcontainers/containers)
+- [Dev Container Features](https://containers.dev/features)
+- [AWTea Project Documentation](../README.md)
