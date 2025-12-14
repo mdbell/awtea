@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include "awt_imports.h"
 
 // Log levels (must match Java LogLevel enum priority)
 typedef enum {
@@ -20,10 +21,6 @@ typedef enum {
 #endif
 
 #if ENABLE_WASM_LOGGING
-
-// Import from JavaScript host environment
-// This function is provided by the host and called when we want to log
-extern void wasm_log_callback(int level, const char* message_ptr, int message_len);
 
 // Log functions with printf-style formatting
 void log_error(const char* format, ...);
