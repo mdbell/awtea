@@ -57,8 +57,11 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Getter(onMethod_ = @Override)
     protected TComposite composite;
 
+    private final boolean isChildGraphics; // true if created via create()
+
     public TSurfaceRasterizerGraphics(Rasterizer rasterizer) {
         this.rasterizer = rasterizer;
+        this.isChildGraphics = false;
         reset();
     }
 
@@ -71,6 +74,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         this.color = other.color;
         this.background = other.background;
         this.composite = other.composite;
+        this.isChildGraphics = true; // mark as child graphics
+        // Push state to save parent's state in the backend
+        pushOp(new SurfaceCommand(SurfaceCommand.Operation.PUSH_STATE));
     }
 
     @Override
@@ -213,6 +219,10 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void dispose() {
+        // If this is a child graphics, restore parent's state
+        if (isChildGraphics) {
+            pushOp(new SurfaceCommand(SurfaceCommand.Operation.POP_STATE));
+        }
         flush();
     }
 

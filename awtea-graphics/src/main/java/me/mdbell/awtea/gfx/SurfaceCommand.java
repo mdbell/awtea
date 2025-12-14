@@ -61,5 +61,9 @@ public class SurfaceCommand {
         FILL_RECT,
         CLEAR_RECT,
         DRAW_LINE,
+
+        // State stack operations
+        PUSH_STATE, // save current state (color, transform, clip) onto a stack
+        POP_STATE,  // restore state from stack
     }
 }

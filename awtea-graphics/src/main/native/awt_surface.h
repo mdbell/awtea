@@ -27,3 +27,6 @@ uint32_t get_surface_pixels_ptr(int surface_id);
 
 int clip_x(int x, const Surface* surf);
 int clip_y(int y, const Surface* surf);
+
+int push_state(Surface* surface);
+int pop_state(Surface* surface);

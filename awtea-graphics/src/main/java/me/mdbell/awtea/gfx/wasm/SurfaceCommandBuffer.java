@@ -269,6 +269,36 @@ public final class SurfaceCommandBuffer {
 		i32.set(wordBase + 6, 0);
 	}
 
+	public void emitPushState() {
+		int idx = ensureSlot();
+		int baseByte = cmdBaseByte(idx);
+		int wordBase = cmdWordBase(baseByte);
+
+		setOperation(baseByte, SurfaceCommand.Operation.PUSH_STATE);
+		i32.set(wordBase + 1, 0);
+		i32.set(wordBase + 2, 0);
+		i32.set(wordBase + 3, 0);
+		i32.set(wordBase + 4, 0);
+
+		i32.set(wordBase + 5, 0);
+		i32.set(wordBase + 6, 0);
+	}
+
+	public void emitPopState() {
+		int idx = ensureSlot();
+		int baseByte = cmdBaseByte(idx);
+		int wordBase = cmdWordBase(baseByte);
+
+		setOperation(baseByte, SurfaceCommand.Operation.POP_STATE);
+		i32.set(wordBase + 1, 0);
+		i32.set(wordBase + 2, 0);
+		i32.set(wordBase + 3, 0);
+		i32.set(wordBase + 4, 0);
+
+		i32.set(wordBase + 5, 0);
+		i32.set(wordBase + 6, 0);
+	}
+
 	private void setOperation(int byteIndex, SurfaceCommand.Operation op) {
 		u8.set(byteIndex, (short) op.ordinal());
 	}

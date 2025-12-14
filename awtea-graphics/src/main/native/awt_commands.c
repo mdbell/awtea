@@ -68,6 +68,14 @@ int render_awt(int surface_id, uint32_t cmdPtr, int cmdCount) {
                           surface->argb[COLOR_FG]);
                 break;
 
+            case CMD_PUSH_STATE:
+                push_state(surface);
+                break;
+            
+            case CMD_POP_STATE:
+                pop_state(surface);
+                break;
+
             case EXT_FREE_IMAGE:
                 free_image((int)cmd->x);
                 break;

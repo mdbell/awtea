@@ -39,6 +39,10 @@ typedef enum {
     CMD_CLEAR_RECT,
     CMD_DRAW_LINE,
 
+    // State stack operations
+    CMD_PUSH_STATE,
+    CMD_POP_STATE,
+
     CMD_COUNT, // last value is reserved for counting
 
     EXT_FREE_IMAGE = 128, // non-standard render commands start here
@@ -98,6 +102,22 @@ typedef struct {
     int height;
 } ClipRect;
 
+// Define maximum depth for state stack
+#define MAX_STATE_STACK_DEPTH 32
+
+// State stack entry - stores a snapshot of rendering state
+typedef struct {
+    uint32_t    argb[COLOR_MAX + 1];
+    Transform2D transform;
+    ClipRect    clip;
+} SurfaceState;
+
+// State stack for a surface
+typedef struct {
+    SurfaceState stack[MAX_STATE_STACK_DEPTH];
+    int depth; // current stack depth (number of saved states)
+} StateStack;
+
 
 // ===================================================================================
 // | Note: Conceptually Surface and ImageView are very similar                       |
@@ -121,6 +141,7 @@ typedef struct {
     uint32_t    argb[COLOR_MAX + 1];
     Transform2D transform;
     ClipRect    clip;
+    StateStack  stateStack; // stack for push/pop state operations
 } Surface;
 
 typedef struct {

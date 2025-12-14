@@ -123,3 +123,47 @@ int clip_y(int y, const Surface* surf) {
     }
     return y;
 }
+
+// Push current surface state onto the state stack
+int push_state(Surface* surface) {
+    if (!surface) {
+        return -1;
+    }
+    
+    if (surface->stateStack.depth >= MAX_STATE_STACK_DEPTH) {
+        return -2; // stack overflow
+    }
+    
+    SurfaceState* state = &surface->stateStack.stack[surface->stateStack.depth];
+    
+    // Save current state
+    state->argb[COLOR_FG] = surface->argb[COLOR_FG];
+    state->argb[COLOR_BG] = surface->argb[COLOR_BG];
+    state->transform = surface->transform;
+    state->clip = surface->clip;
+    
+    surface->stateStack.depth++;
+    return 0;
+}
+
+// Pop surface state from the state stack
+int pop_state(Surface* surface) {
+    if (!surface) {
+        return -1;
+    }
+    
+    if (surface->stateStack.depth <= 0) {
+        return -2; // stack underflow
+    }
+    
+    surface->stateStack.depth--;
+    SurfaceState* state = &surface->stateStack.stack[surface->stateStack.depth];
+    
+    // Restore state
+    surface->argb[COLOR_FG] = state->argb[COLOR_FG];
+    surface->argb[COLOR_BG] = state->argb[COLOR_BG];
+    surface->transform = state->transform;
+    surface->clip = state->clip;
+    
+    return 0;
+}

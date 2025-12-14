@@ -109,6 +109,12 @@ public class WasmRasterizer implements Rasterizer {
                 case DRAW_LINE:
                     commandBuffer.emitDrawLine(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
                     break;
+                case PUSH_STATE:
+                    commandBuffer.emitPushState();
+                    break;
+                case POP_STATE:
+                    commandBuffer.emitPopState();
+                    break;
                 case NO_OP:
                     break;
                 default:
