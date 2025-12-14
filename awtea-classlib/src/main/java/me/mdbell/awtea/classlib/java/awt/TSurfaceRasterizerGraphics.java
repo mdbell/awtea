@@ -370,7 +370,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             return;
         }
 
-        // Create a TBufferedImage wrapper for the surface to act as a RasterTarget
+        // Create a TBufferedImage wrapper for the surface
         // The TBufferedImage will own the surface and destroy it when garbage collected
         TBufferedImage textImage = new TBufferedImage(textSurface);
 
@@ -386,21 +386,21 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
                 (color.getGreen() << 8) | color.getBlue();
 
         // Render the string to the surface
-        // Position text with half padding as offset, and baseline at ascent + half padding
+        // With atlas-based rendering, glyphs will be copied from the atlas rather than
+        // rasterized from scratch, greatly reducing memory allocation pressure
         int halfPadding = TEXT_SURFACE_PADDING / 2;
         int renderX = halfPadding;
         int renderY = surfaceHeight - halfPadding;
         peer.renderString(str, textImage, sizePx, renderX, renderY, argb);
 
         // Blit the rendered text surface to the screen
-        // The surface baseline is at renderY, and we want it at the destination y coordinate
-        // So destination y = y (desired baseline) - renderY (baseline within surface)
         int destX = x - halfPadding;
         int destY = y - renderY;
         pushOp(new SurfaceCommand(Operation.BLIT_IMAGE, textImage,
                 destX, destY, surfaceWidth, surfaceHeight));
 
         // Note: textImage and its surface will be garbage collected after the blit operation completes
+        // The memory pressure is now much lower because individual glyphs are cached in the atlas
     }
 
     @Override

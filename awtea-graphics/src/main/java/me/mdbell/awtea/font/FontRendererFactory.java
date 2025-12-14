@@ -98,13 +98,26 @@ public class FontRendererFactory {
 	 * Create the default renderer based on system properties.
 	 */
 	private static FontRenderer createDefaultRenderer() {
-		String rendererType = System.getProperty(RENDERER_PROPERTY, "raster").toLowerCase();
+		String rendererType = System.getProperty(RENDERER_PROPERTY, "atlas").toLowerCase();
 		
 		switch (rendererType) {
-			case "raster":
-			default:
+			case "atlas":
+				// Use atlas-based renderer for better memory efficiency
 				int supersample = getSupersampleFromProperty();
+				me.mdbell.awtea.gfx.DefaultSurfaceBackend backend = 
+					me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
+				return new me.mdbell.awtea.font.AtlasBasedFontRenderer(backend, supersample);
+			
+			case "raster":
+				// Use original raster renderer (for testing/comparison)
+				supersample = getSupersampleFromProperty();
 				return new RasterFontRenderer(supersample);
+			
+			default:
+				// Default to atlas-based for best performance
+				supersample = getSupersampleFromProperty();
+				backend = me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
+				return new me.mdbell.awtea.font.AtlasBasedFontRenderer(backend, supersample);
 			
 			// Future renderer types can be added here:
 			// case "sdf":

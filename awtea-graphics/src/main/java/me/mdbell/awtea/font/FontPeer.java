@@ -59,15 +59,34 @@ public class FontPeer {
      * Render a string using this font peer.
      *
      * @param text   the text to render
-     * @param target the target surface
+     * @param target the target surface (e.g., TBufferedImage)
      * @param sizePx the font size in pixels
      * @param x      the x-coordinate
      * @param y      the y-coordinate
      * @param argb   the color in ARGB format
      */
-    public void renderString(String text, FontRenderer.RasterTarget target,
+    public void renderString(String text, Object target,
                              float sizePx, int x, int y, int argb) {
-        renderer.renderString(font, text, target, sizePx, x, y, argb);
+        // Check if we have an atlas-based renderer
+        if (renderer instanceof me.mdbell.awtea.font.AtlasBasedFontRenderer) {
+            me.mdbell.awtea.font.AtlasBasedFontRenderer atlasRenderer = 
+                (me.mdbell.awtea.font.AtlasBasedFontRenderer) renderer;
+            
+            // Get the surface from the target
+            if (target instanceof me.mdbell.awtea.gfx.SurfaceContainer) {
+                me.mdbell.awtea.gfx.Surface surface = 
+                    ((me.mdbell.awtea.gfx.SurfaceContainer) target).getSurface();
+                if (surface != null) {
+                    atlasRenderer.renderString(font, text, surface, sizePx, x, y, argb);
+                    return;
+                }
+            }
+        }
+        
+        // Fallback to RasterTarget-based rendering for backward compatibility
+        if (target instanceof FontRenderer.RasterTarget) {
+            renderer.renderString(font, text, (FontRenderer.RasterTarget) target, sizePx, x, y, argb);
+        }
     }
 
     /**
