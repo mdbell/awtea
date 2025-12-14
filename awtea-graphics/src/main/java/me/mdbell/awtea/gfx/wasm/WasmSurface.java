@@ -127,8 +127,4 @@ public final class WasmSurface implements Surface {
 	public WasmAwtRasterizerExports getExports() {
 		return exports;
 	}
-
-	public enum ExtendedOperation {
-		FREE_IMAGE;
-	}
 }

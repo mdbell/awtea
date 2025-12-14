@@ -3,7 +3,6 @@
 #include "awt_surface.h"
 #include "awt_draw.h"
 #include "awt_util.h"
-#include "awt_image.h"
 #include "awt_log.h"
 
 int get_command_size() {
@@ -76,7 +75,7 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
                 break;    
             // Drawing commands
             case CMD_BLIT_IMAGE:
-                blit_image(&surface, cmd->blit.image_id, cmd->x, cmd->y);
+                blit_image(&surface, cmd->blit.surface_id, cmd->x, cmd->y);
                 break;
             case CMD_DRAW_RECT:
                 draw_rect(&surface, cmd->x, cmd->y, cmd->width, cmd->height,
@@ -95,10 +94,6 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
                 draw_line(&surface, cmd->x, cmd->y,
                           cmd->width, cmd->height,
                           surface.argb[COLOR_FG]);
-                break;
-
-            case EXT_FREE_IMAGE:
-                free_image((int)cmd->x);
                 break;
 
             // No-op or unknown command

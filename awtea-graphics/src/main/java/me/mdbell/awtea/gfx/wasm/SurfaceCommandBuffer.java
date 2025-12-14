@@ -197,9 +197,9 @@ public final class SurfaceCommandBuffer {
         i32.set(wordBase + 6, 0);
     }
 
-    public void emitBlitImage(int imageId, int x, int y) {
-        log.trace("SurfaceCommandBuffer.emitBlitImage: imageId={}, x={}, y={}",
-                imageId, x, y);
+    public void emitBlitImage(int surfaceId, int x, int y) {
+        log.trace("SurfaceCommandBuffer.emitBlitImage: surfaceId={}, x={}, y={}",
+                surfaceId, x, y);
         int idx = ensureSlot();
         int baseByte = cmdBaseByte(idx);
         int wordBase = cmdWordBase(baseByte);
@@ -210,24 +210,7 @@ public final class SurfaceCommandBuffer {
         i32.set(wordBase + 2, y);
         i32.set(wordBase + 3, 0);
         i32.set(wordBase + 4, 0);
-        i32.set(wordBase + 5, imageId);
-        i32.set(wordBase + 6, 0);
-    }
-
-    public void emitFreeImage(int imageId) {
-        log.trace("SurfaceCommandBuffer.emitFreeImage: imageId={}",
-                imageId);
-        int idx = ensureSlot();
-        int baseByte = cmdBaseByte(idx);
-        int wordBase = cmdWordBase(baseByte);
-
-        setExtendedOperation(baseByte, WasmSurface.ExtendedOperation.FREE_IMAGE);
-
-        i32.set(wordBase + 1, imageId);
-        i32.set(wordBase + 2, 0);
-        i32.set(wordBase + 3, 0);
-        i32.set(wordBase + 4, 0);
-        i32.set(wordBase + 5, 0);
+        i32.set(wordBase + 5, surfaceId);
         i32.set(wordBase + 6, 0);
     }
 
@@ -282,12 +265,6 @@ public final class SurfaceCommandBuffer {
 
     private void setOperation(int byteIndex, Operation op) {
         u8.set(byteIndex, (short) op.ordinal());
-    }
-
-    private void setExtendedOperation(int byteIndex, WasmSurface.ExtendedOperation op) {
-        int operationOffset = 128; // TODO: define constant
-        int opCode = operationOffset + op.ordinal();
-        u8.set(byteIndex, (short) (opCode & 0xFF));
     }
 
     public void emitDrawSurface(WasmSurface surface, int imgX, int imgY) {

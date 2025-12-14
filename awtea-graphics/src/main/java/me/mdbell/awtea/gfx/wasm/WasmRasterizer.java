@@ -102,21 +102,25 @@ public class WasmRasterizer implements Rasterizer {
                     srcSurfaceId,
                     destX, destY);
         } else {
+            // For non-WasmSurface, we need to upload to a temporary WASM surface
             WasmSurfaceBackend backend = surface.backend;
 
             SurfaceLRUCache.SurfaceCacheEntry cacheEntry = backend.surfaceCache.create(srcSurface);
             if (cacheEntry == null) {
-                log.error("WasmRasterizer: blitSurface failed to lookup surface cache");
+                log.error("WasmRasterizer: blitSurface failed to create surface cache entry");
                 return;
             }
 
+            // Sync the pixel data into the temporary surface
             cacheEntry.sync();
-
+            
+            // The cache entry now holds a surface ID that we can blit from
             commandBuffer.emitBlitImage(
-                    cacheEntry.imageId,
+                    cacheEntry.surfaceId,
                     destX, destY);
-            commandBuffer.emitFreeImage(cacheEntry.imageId);
-            commandBuffer.flush(); // we have to flush here to ensure the image is ready before drawing
+            
+            // The cache will manage the lifecycle of this temporary surface
+            // No need to free immediately - the LRU cache handles cleanup
         }
     }
 
