@@ -152,19 +152,30 @@ class SurfaceLRUCache {
     @Monitored.AllMethods
     class SurfaceCacheEntry {
         final WeakReference<Surface> surfaceRef;
-        int imageId;
+        int surfaceId;
         int ptr;
         Uint8ClampedArray pixelsView;
 
         public SurfaceCacheEntry(Surface surface) {
             this.surfaceRef = new WeakReference<>(surface);
-            int stride = surface.getWidth() * 4;
-            this.imageId = exports.registerImage(surface.getFormat(), surface.getWidth(),
-                    surface.getHeight(), stride);
-            if (this.imageId == -1) {
-                throw new IllegalStateException("SurfaceCacheEntry: failed to register image");
+            
+            // Find a free surface ID
+            this.surfaceId = exports.findFreeSurfaceId();
+            if (this.surfaceId == -1) {
+                throw new IllegalStateException("SurfaceCacheEntry: failed to allocate surface ID");
             }
-            this.ptr = exports.getImagePixelsPtr(this.imageId);
+            
+            // Reset the surface with the dimensions and format
+            int rc = exports.resetSurface(this.surfaceId, 0, surface.getWidth(),
+                    surface.getHeight(), surface.getFormat());
+            if (rc != 0) {
+                throw new IllegalStateException("SurfaceCacheEntry: failed to reset surface, rc=" + rc);
+            }
+            
+            this.ptr = exports.getSurfacePixelsPtr(this.surfaceId);
+            if (this.ptr == 0) {
+                throw new IllegalStateException("SurfaceCacheEntry: surface pixels pointer is null");
+            }
         }
 
         public void sync() {
@@ -193,10 +204,11 @@ class SurfaceLRUCache {
         }
 
         public void release() {
-            if (ptr != 0) {
-                exports.freePixels(ptr);
+            if (surfaceId != -1) {
+                // Free the surface by resetting it to zero dimensions
+                exports.resetSurface(surfaceId, 0, 0, 0, 0);
+                surfaceId = -1;
                 ptr = 0;
-                imageId = -1;
             }
         }
 

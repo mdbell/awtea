@@ -8,14 +8,10 @@
 #include "generated/surface_operation.h"
 #include "generated/pixel_format.h"
 
-#define MAX_IMAGES 1024
 #define NUM_SURFACES 1024
 #define NUM_CONTEXTS 2048
 
-#define START_IMAGE_ID 0
-#define END_IMAGE_ID MAX_IMAGES
-
-#define START_SURFACE_ID MAX_IMAGES
+#define START_SURFACE_ID 0
 #define END_SURFACE_ID (START_SURFACE_ID + NUM_SURFACES)
 
 #define START_CONTEXT_ID (START_SURFACE_ID + NUM_SURFACES)
@@ -42,7 +38,7 @@ typedef struct {
     uint32_t height; // Height parameter
     union {
         struct { uint32_t argb, which; } set_color;
-        struct { uint32_t image_id; } blit;
+        struct { uint32_t surface_id; } blit;
         //TODO: figure out how we're going to do transforms
         // struct { uint32_t m00, m01, m10, m11; } transform; 
         uint32_t args[2]; // Fallback for generic access
@@ -79,27 +75,8 @@ typedef struct {
 } ClipRect;
 
 
-// ===================================================================================
-// | Note: Conceptually SurfaceData and ImageView are very similar                   |
-// |       They differ in that SurfaceData has reference counting                    |
-// |       whereas ImageView is intended to represent external image data            |
-// |       However, they share the same initial memory layout for pixel data         |
-// |       Thus, we can cast between SurfaceData* and ImageView* in some places      |
-// ===================================================================================
-
-typedef struct {
-    uint32_t    ptr;     // pointer to pixels
-    PixelFormat format;  // same enum as Surface/ImageData
-    uint32_t    width;
-    uint32_t    height;
-    uint32_t    stride;  // in bytes
-} ImageView;
-
 // SurfaceData: pixel buffer and metadata, shared by multiple contexts
 typedef struct {
-    // exact same structure as ImageView
-    // it _must_ be at the start of this struct, and match ImageView layout
-    // (we cast between SurfaceData* and ImageView* in some places)
     uint32_t    ptr;     // pointer to pixels
     PixelFormat format;  // same enum as Surface/ImageData
     uint32_t    width;

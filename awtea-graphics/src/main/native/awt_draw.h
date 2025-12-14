@@ -38,8 +38,4 @@ void draw_line(RenderSurface* surf,
                         int x2, int y2,
                         uint32_t color);
 
-void blit_image(RenderSurface* dst, int image_id, int x, int y);
-
-void blit_from_view(RenderSurface* dst,
-                        const ImageView* src,
-                        int x, int y);
+void blit_image(RenderSurface* dst, int src_surface_id, int x, int y);

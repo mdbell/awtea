@@ -1,20 +1,9 @@
 #include "awt_draw.h"
-#include "awt_image.h"
 #include "awt_surface.h"
 #include "awt_transform.h"
 #include "awt_pixel.h"
 #include "awt_util.h"
 #include "awt_log.h"
-
-static inline ImageView* lookup_by_id(int id) {
-    if(id >= START_IMAGE_ID && id < END_IMAGE_ID) {
-        return get_image_data(id);
-    }
-    if(id >= START_SURFACE_ID && id < END_SURFACE_ID) {
-        return (ImageView*)get_surface_data(id);
-    }
-    return NULL;
-}
 
 void draw_filled_rect(RenderSurface* surface,
                                     int x, int y,
@@ -198,17 +187,9 @@ void draw_line(RenderSurface* surf,
     }
 }
 
-void blit_image(RenderSurface* dst, int image_id, int x, int y) {
-    ImageView* img = lookup_by_id(image_id);
-    if (!img || !img->ptr || img->width == 0 || img->height == 0) {
-        return;
-    }
-    blit_from_view(dst, img, x, y);
-}
-
-void blit_from_view(RenderSurface* dst,
-                    const ImageView* src,
-                    int x, int y) {
+void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
+    // Get source surface data
+    SurfaceData* src = get_surface_data(src_surface_id);
     if (!src || !src->ptr || src->width == 0 || src->height == 0) {
         return;
     }

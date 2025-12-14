@@ -6,7 +6,7 @@ import org.teavm.jso.JSProperty;
 
 /**
  * Low-level view of the AWT rasterizer WASM exports.
- * This should mirror the C exports in awt_image.c and awt_surface.c
+ * This should mirror the C exports in awt_surface.c
  */
 interface WasmAwtRasterizerExports extends JSObject {
 
@@ -65,13 +65,6 @@ interface WasmAwtRasterizerExports extends JSObject {
 
 	@JSMethod("get_context_surface_id")
 	int getContextSurfaceId(int contextId);
-
-	// int register_image(int format, int width, int height, int stride)
-	@JSMethod("register_image")
-	int registerImage(int format, int width, int height, int stride);
-
-	@JSMethod("get_image_pixels_ptr")
-	int getImagePixelsPtr(int imageId);
 
 	@JSMethod("free_pixels")
 	void freePixels(int ptr);

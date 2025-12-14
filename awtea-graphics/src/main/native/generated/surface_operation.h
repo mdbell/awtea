@@ -32,6 +32,4 @@ typedef enum {
     CMD_DRAW_LINE,
     // Number of standard commands
     CMD_COUNT,
-    // Extended operation - free image resources
-    EXT_FREE_IMAGE = 128,
 } SurfaceOperation;
