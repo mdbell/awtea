@@ -6,7 +6,7 @@ This directory contains the Visual Studio Code Dev Container configuration for A
 
 The devcontainer provides a consistent, reproducible development environment with all necessary tools pre-installed:
 
-- **Java 21** (via SDKMAN, with Java 11 available for project compatibility)
+- **Java 21 & 11** (via SDKMAN - Java 21 for VS Code, Java 11 for project builds)
 - **Emscripten SDK** (for compiling C code to WebAssembly - no Docker required!)
 - **Deno** (for TypeScript/WASM tests)
 - **Gradle** (via wrapper)
@@ -47,7 +47,9 @@ The devcontainer provides a consistent, reproducible development environment wit
 
 ### Installed Tools
 
-- **Java Development Kit (JDK)**: Java 21 managed via SDKMAN (project uses Java 11 for compilation)
+- **Java Development Kit (JDK)**: Java 21 (default) and Java 11 both installed via SDKMAN
+  - Java 21 is the default (required by VS Code Java extension)
+  - Java 11 is available for Gradle's toolchain (project compilation target)
 - **SDKMAN**: SDK manager for easy JDK version switching
 - **Emscripten SDK**: Version 3.1.51 for WebAssembly compilation (directly callable with `emcc`)
 - **Deno**: Version 2.1.2 installed to /usr/local/bin for TypeScript/WASM tests

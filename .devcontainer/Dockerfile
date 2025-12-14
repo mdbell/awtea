@@ -44,6 +44,7 @@ USER vscode
 RUN curl -s "https://get.sdkman.io" | bash && \
     bash -c "source /home/vscode/.sdkman/bin/sdkman-init.sh && \
     sdk install java 21.0.5-tem && \
+    sdk install java 11.0.22-tem && \
     sdk default java 21.0.5-tem"
 
 # Set up Emscripten and SDKMAN for vscode user's shell
