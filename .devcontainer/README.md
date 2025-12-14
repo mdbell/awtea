@@ -66,7 +66,9 @@ This devcontainer can be reused for CI/CD pipelines in several ways:
 
 ### GitHub Actions
 
-The same base image and features can be referenced in GitHub Actions workflows. This example shows how to set up a CI workflow with the same tools as the devcontainer:
+The same base image and features can be referenced in GitHub Actions workflows. 
+
+**Recommended Approach (using host Docker):**
 
 ```yaml
 name: Build and Test
@@ -76,8 +78,43 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Note: Using --privileged grants extensive permissions. 
-    # For production, consider using docker/setup-buildx-action instead
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'gradle'
+      
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build
+        run: ./gradlew build
+      
+      - name: Test WASM
+        run: ./gradlew :awtea-graphics:denoTest
+```
+
+**Alternative Approach (using container with privileged mode):**
+
+```yaml
+name: Build and Test (Container)
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Note: --privileged grants extensive permissions
     container:
       image: mcr.microsoft.com/devcontainers/java:1-11-bullseye
       options: --privileged
@@ -90,11 +127,6 @@ jobs:
         with:
           deno-version: v2.x
       
-      - name: Setup Docker
-        run: |
-          # Docker service should be available via Docker-in-Docker
-          docker --version
-      
       - name: Build
         run: ./gradlew build
       
@@ -104,7 +136,7 @@ jobs:
 
 > **Note:** Keep the versions in sync with the devcontainer configuration and the existing CI workflows in `.github/workflows/`.
 
-> **Security Note:** The `--privileged` flag grants extensive container permissions. For production CI systems, consider using specialized actions like `docker/setup-buildx-action` or run Docker commands on the host runner instead.
+> **Security Note:** The first approach (using host Docker with setup actions) is more secure than using `--privileged` containers. The devcontainer uses Docker socket mounting for development convenience, but CI/CD should prefer the setup-action approach when possible.
 
 ### Docker Compose
 
@@ -124,7 +156,10 @@ services:
 
 ### Dockerfile for CI
 
-> **Security Note:** Piping remote scripts directly to shell is a security risk. The example below shows how Deno is typically installed, but for production CI systems, prefer using official GitHub Actions, package managers, or pre-built images.
+> **Security Note:** The example below shows a typical CI Dockerfile but includes piping a remote script to shell, which has security implications. Consider these safer alternatives:
+> - Use the official Deno Docker image: `denoland/deno:alpine`
+> - Use a pre-built image that includes both Java and Deno
+> - In GitHub Actions, use the `denoland/setup-deno@v1` action instead
 
 You can create a CI-specific Dockerfile based on the devcontainer configuration:
 
@@ -137,11 +172,29 @@ RUN apt-get update && \
     apt-get clean
 
 # Install Deno using official installation
-# In production, consider alternatives like:
-# - Using an image with Deno pre-installed
-# - Using package managers when available
+# For better security, verify the script or use package managers when available
 RUN curl -fsSL https://deno.land/install.sh | sh
 ENV PATH="${PATH}:/root/.deno/bin"
+
+WORKDIR /workspace
+```
+
+**Safer alternative using multi-stage build with official images:**
+
+```dockerfile
+# Use official Deno image for Deno installation
+FROM denoland/deno:alpine-1.40.0 AS deno
+
+# Main image
+FROM mcr.microsoft.com/devcontainers/java:1-11-bullseye
+
+# Install Docker
+RUN apt-get update && \
+    apt-get install -y docker.io && \
+    apt-get clean
+
+# Copy Deno from official image
+COPY --from=deno /usr/bin/deno /usr/local/bin/deno
 
 WORKDIR /workspace
 ```
