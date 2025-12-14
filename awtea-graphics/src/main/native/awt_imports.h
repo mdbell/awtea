@@ -1,5 +1,5 @@
 #pragma once
-
+#include <stdlib.h>
 #include <stdint.h>
 
 // Logging - called by C code to send log messages to host
@@ -9,7 +9,7 @@ extern void wasm_log_callback(int level, const char* message_ptr, int message_le
 extern double wasm_get_time_ms(void);
 
 // Memory usage reporting - called by C code to report memory stats to host
-extern void wasm_report_memory_usage(int allocated_bytes, int peak_bytes);
+extern void wasm_report_memory_usage(size_t allocated_bytes, size_t alloc_count, size_t peak_bytes);
 
 // Assertion failure handler - called when assertions fail
 extern void wasm_assertion_failed(const char* expr, const char* file, int line);
