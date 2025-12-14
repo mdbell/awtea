@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     wget \
+    zip \
     unzip \
     python3 \
     python3-pip \
@@ -17,24 +18,8 @@ RUN apt-get update && apt-get install -y \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# Install zip/unzip for SDKMAN
-RUN apt-get update && apt-get install -y \
-    zip \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install SDKMAN as root
+# Install SDKMAN as root (for bootstrapping)
 RUN curl -s "https://get.sdkman.io" | bash
-
-# Install Java 11 via SDKMAN
-RUN bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
-    sdk install java 11.0.22-tem && \
-    sdk default java 11.0.22-tem"
-
-# Set Java environment variables
-ENV SDKMAN_DIR="/root/.sdkman"
-ENV JAVA_HOME="/root/.sdkman/candidates/java/current"
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Install Emscripten SDK
 ENV EMSDK_VERSION=3.1.51
@@ -50,9 +35,8 @@ ENV PATH="${EMSDK}:${EMSDK}/upstream/emscripten:${PATH}"
 
 # Install Deno to /usr/local/bin
 ENV DENO_VERSION=v2.1.2
-RUN curl -fsSL https://deno.land/install.sh | sh -s ${DENO_VERSION} && \
-    mv /root/.deno/bin/deno /usr/local/bin/deno && \
-    rm -rf /root/.deno
+ENV DENO_INSTALL=/usr/local
+RUN curl -fsSL https://deno.land/install.sh | sh -s ${DENO_VERSION}
 
 # Create vscode user for devcontainer
 RUN useradd -m -s /bin/bash -u 1000 vscode && \
