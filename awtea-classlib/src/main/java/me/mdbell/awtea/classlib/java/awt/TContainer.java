@@ -43,10 +43,10 @@ public class TContainer extends TComponent {
     @Override
     public void paint(TGraphics g) {
         for (TComponent component : children) {
-            int x = component.x;
-            int y = component.y;
-            int width = component.width;
-            int height = component.height;
+            int x = component.getX();
+            int y = component.getY();
+            int width = component.getWidth();
+            int height = component.getHeight();
             
             // Skip components with zero or negative dimensions
             if (width <= 0 || height <= 0) {
@@ -55,6 +55,7 @@ public class TContainer extends TComponent {
             
             // Create a new graphics context for the child component
             TGraphics childGraphics = g.create();
+            // g.create() can return null if graphics context creation fails
             if (childGraphics != null) {
                 // Translate to the child's position
                 childGraphics.translate(x, y);
