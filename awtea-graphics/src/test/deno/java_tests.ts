@@ -5,7 +5,7 @@
  * and executes them with Deno's test framework.
  */
 
-import { assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
 Deno.test("Java Surface Tests (via TeaVM)", async () => {
   // Import and run the tests
