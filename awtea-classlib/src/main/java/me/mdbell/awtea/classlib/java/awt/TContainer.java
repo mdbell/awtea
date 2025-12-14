@@ -48,6 +48,11 @@ public class TContainer extends TComponent {
             int width = component.width;
             int height = component.height;
             
+            // Skip components with zero or negative dimensions
+            if (width <= 0 || height <= 0) {
+                continue;
+            }
+            
             // Create a new graphics context for the child component
             TGraphics childGraphics = g.create();
             if (childGraphics != null) {
