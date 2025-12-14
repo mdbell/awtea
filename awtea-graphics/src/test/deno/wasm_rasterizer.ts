@@ -69,6 +69,24 @@ export class WasmRasterizer {
           const levelNames = ['ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'];
           const levelName = levelNames[level] || 'UNKNOWN';
           console.log(`[WASM ${levelName}] ${message}`);
+        },
+        wasm_get_time_ms: (): number => {
+          return performance.now();
+        },
+        wasm_report_memory_usage: (allocatedBytes: number, peakBytes: number) => {
+          console.log(`[WASM MEMORY] allocated=${allocatedBytes} bytes, peak=${peakBytes} bytes`);
+        },
+        wasm_assertion_failed: (exprPtr: number, exprLen: number, filePtr: number, fileLen: number, line: number) => {
+          if (!this.wasmInstance) return;
+          const memory = (this.wasmInstance.exports.memory as WebAssembly.Memory);
+          if (!memory) return;
+          
+          const exprBytes = new Uint8Array(memory.buffer, exprPtr, exprLen);
+          const expr = new TextDecoder().decode(exprBytes);
+          const fileBytes = new Uint8Array(memory.buffer, filePtr, fileLen);
+          const file = new TextDecoder().decode(fileBytes);
+          
+          console.error(`[WASM ASSERTION] ${expr} failed at ${file}:${line}`);
         }
       }
     };
