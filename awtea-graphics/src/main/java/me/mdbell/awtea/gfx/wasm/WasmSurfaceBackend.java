@@ -5,6 +5,8 @@ import me.mdbell.awtea.gfx.SurfaceBackend;
 import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.jso.JSBody;
+import org.teavm.jso.JSObject;
 import org.teavm.jso.typedarrays.Int8Array;
 
 public class WasmSurfaceBackend implements SurfaceBackend {
@@ -17,9 +19,17 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     final SurfaceLRUCache surfaceCache;
 
     private static final Logger wasmLogger = LoggerFactory.getLogger("wasm.rasterizer");
+    private static final Logger perfLogger = LoggerFactory.getLogger("wasm.performance");
+    private static final Logger memoryLogger = LoggerFactory.getLogger("wasm.memory");
 
     public WasmSurfaceBackend() {
-        this.exports = WasmAwtLoader.load(WASM_MODULE_PATH, this::logFromWasm).await();
+        this.exports = WasmAwtLoader.load(
+                WASM_MODULE_PATH,
+                this::logFromWasm,
+                this::getTimeMs,
+                this::reportMemoryUsage,
+                this::handleAssertionFailure
+        ).await();
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
     }
 
@@ -45,6 +55,38 @@ public class WasmSurfaceBackend implements SurfaceBackend {
                 break;
         }
         wasmLogger.log(logLevel, message);
+    }
+
+    private double getTimeMs() {
+        return JSPerformance.now();
+    }
+
+    private void reportMemoryUsage(int allocatedBytes, int peakBytes) {
+        memoryLogger.debug("WASM memory: allocated={} bytes, peak={} bytes",
+                allocatedBytes, peakBytes);
+    }
+
+    private void handleAssertionFailure(int exprPtr, int exprLen, int filePtr, int fileLen, int line) {
+        Int8Array exprArr = new Int8Array(
+                exports.getMemory().getBuffer(),
+                exprPtr,
+                exprLen
+        );
+        Int8Array fileArr = new Int8Array(
+                exports.getMemory().getBuffer(),
+                filePtr,
+                fileLen
+        );
+        String expr = new String(exprArr.copyToJavaArray());
+        String file = new String(fileArr.copyToJavaArray());
+
+        wasmLogger.error("WASM assertion failed: {} at {}:{}", expr, file, line);
+    }
+
+    @JSObject
+    private interface JSPerformance extends JSObject {
+        @JSBody(script = "return performance.now();")
+        static native double now();
     }
 
     public WasmSurface createSurface(int width, int height, int pixelFormat) {
