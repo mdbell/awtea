@@ -4,7 +4,7 @@
  * 
  * Logging levels ordered from most to least severe
  */
-package me.mdbell.awtea.gfx.generated;
+package me.mdbell.awtea.util.logging;
 
 public enum LogLevel {
 	/** Error messages */
@@ -15,7 +15,7 @@ public enum LogLevel {
 	INFO(2),
 	/** Debug messages */
 	DEBUG(3),
-	/** Trace messages (Java only) */
+	/** Trace messages */
 	TRACE(4);
 
 	private final int value;

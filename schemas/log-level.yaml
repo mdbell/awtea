@@ -1,6 +1,7 @@
 name: LogLevel
 description: Logging levels ordered from most to least severe
 c_prefix: LOG_LEVEL_
+java_package: me.mdbell.awtea.util.logging
 values:
   - name: ERROR
     value: 0
@@ -16,5 +17,4 @@ values:
     description: Debug messages
   - name: TRACE
     value: 4
-    java_only: true
-    description: Trace messages (Java only)
+    description: Trace messages

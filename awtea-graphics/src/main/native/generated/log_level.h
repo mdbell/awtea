@@ -21,4 +21,6 @@ typedef enum {
     // Debug messages
     LOG_LEVEL_DEBUG = 3,
 
+    // Trace messages
+    LOG_LEVEL_TRACE = 4,
 } LogLevel;

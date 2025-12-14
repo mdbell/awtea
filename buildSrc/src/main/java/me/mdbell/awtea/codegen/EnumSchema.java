@@ -11,6 +11,7 @@ public class EnumSchema {
     private String c_prefix;
     private String java_prefix;
     private String java_name;
+    private String java_package;
     private List<EnumValue> values;
 
     public String getName() {
@@ -51,6 +52,14 @@ public class EnumSchema {
 
     public void setJava_name(String java_name) {
         this.java_name = java_name;
+    }
+
+    public String getJava_package() {
+        return java_package;
+    }
+
+    public void setJava_package(String java_package) {
+        this.java_package = java_package;
     }
 
     public List<EnumValue> getValues() {

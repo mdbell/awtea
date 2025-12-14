@@ -45,7 +45,10 @@ public class JavaEnumGenerator {
         writer.write(" * \n");
         writer.write(" * " + schema.getDescription() + "\n");
         writer.write(" */\n");
-        writer.write("package " + packageName + ";\n\n");
+        
+        // Use custom package if specified, otherwise use default
+        String pkg = schema.getJava_package() != null ? schema.getJava_package() : packageName;
+        writer.write("package " + pkg + ";\n\n");
     }
     
     private void writeInterface(Writer writer, EnumSchema schema, String className) throws IOException {

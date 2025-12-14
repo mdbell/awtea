@@ -14,4 +14,6 @@ export enum LogLevel {
   LOG_LEVEL_INFO = 2,
   /** Debug messages */
   LOG_LEVEL_DEBUG = 3,
+  /** Trace messages */
+  LOG_LEVEL_TRACE = 4,
 }
