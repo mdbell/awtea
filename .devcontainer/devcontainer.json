@@ -4,11 +4,11 @@
   
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
+      "version": "20",
       "moby": true
     },
     "ghcr.io/devcontainers-contrib/features/deno:1": {
-      "version": "latest"
+      "version": "v2.x"
     }
   },
 

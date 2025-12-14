@@ -43,16 +43,6 @@ The devcontainer provides a consistent, reproducible development environment wit
    ./gradlew :awtea-graphics:denoTest
    ```
 
-### Manual Container Build
-
-You can also build and run the container manually:
-
-```bash
-# From the repository root
-docker build -f .devcontainer/Dockerfile -t awtea-dev .
-docker run -it -v $(pwd):/workspace -v /var/run/docker.sock:/var/run/docker.sock awtea-dev
-```
-
 ## Features
 
 ### Installed Tools
