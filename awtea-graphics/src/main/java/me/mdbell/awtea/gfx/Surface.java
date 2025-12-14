@@ -1,5 +1,6 @@
 package me.mdbell.awtea.gfx;
 
+import me.mdbell.awtea.gfx.generated.PixelFormat;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
@@ -7,14 +8,10 @@ import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.awt.image.BufferedImage;
 
-public interface Surface {
+public interface Surface extends PixelFormat {
 
-	// See PixelFormat enum in awt_raster_internal.h for the source of truth
-	int FORMAT_INT_ARGB = 0;
-	int FORMAT_INT_RGB = 1;
-	int FORMAT_INT_RGBA = 2; // Not directly supported via BufferedImage types, but commonly used for WebGL
-	int FORMAT_INT_ABGR = 3;
-	int FORMAT_INT_BGR = 4;
+	// Note: PixelFormat constants are now defined in me.mdbell.awtea.gfx.generated.PixelFormat
+	// Edit schemas/pixel-format.yaml to modify the enum values
 
 	int MIN_FORMAT = FORMAT_INT_ARGB;
 	int MAX_FORMAT = FORMAT_INT_BGR;

@@ -1,3 +1,4 @@
+#include "awt_memory.h"
 #include "awt_image.h"
 
 ImageView g_images[MAX_IMAGES];
@@ -60,7 +61,7 @@ int free_image(int id) {
 uint32_t alloc_pixels(int width, int height) {
     // we allocate an extra stride bytes to avoid doing 0 allocs when width or height is 0
     size_t bytes = (size_t)width * (size_t)height * sizeof(uint32_t);
-    void* p = malloc(bytes);
+    void* p = tracked_malloc(bytes);
     if (!p){
         return 0;
     }

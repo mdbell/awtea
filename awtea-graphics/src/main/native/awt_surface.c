@@ -1,3 +1,4 @@
+#include "awt_memory.h"
 #include "awt_surface.h"
 #include "awt_util.h"
 #include "awt_log.h"
@@ -54,7 +55,7 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
     surface->format = format;
 
     size_t bytes = (size_t)width * (size_t)height * sizeof(uint32_t);
-    void* p = malloc(bytes);
+    void* p = tracked_malloc(bytes);
     if (!p) {
         log_error("Failed to allocate %zu bytes for surface %d (%dx%d)", 
                   bytes, surface_id, width, height);

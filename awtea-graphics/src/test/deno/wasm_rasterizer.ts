@@ -12,33 +12,17 @@
  * - Error handling and validation
  */
 
-// Pixel format constants (must match awt_raster_internal.h)
-export enum PixelFormat {
-  ARGB = 0,
-  RGB = 1,
-  RGBA = 2,
-  ABGR = 3,
-  BGR = 4,
-}
-
-// Surface operation constants (must match awt_raster_internal.h)
-export enum SurfaceOperation {
-  CMD_NO_OP = 0,
-  CMD_SET_COLOR = 1,
-  CMD_SET_TRANSFORM = 2,
-  CMD_SET_CLIP_RECT = 3,
-  CMD_SET_COMPOSITE = 4,
-  CMD_BLIT_IMAGE = 5,
-  CMD_DRAW_RECT = 6,
-  CMD_FILL_RECT = 7,
-  CMD_CLEAR_RECT = 8,
-  CMD_DRAW_LINE = 9,
-  EXT_FREE_IMAGE = 128,
-}
+// Import auto-generated enums
+// Note: Edit schemas/*.yaml files to modify these enums
+import { PixelFormat } from "./generated/pixel-format.ts";
+import { SurfaceOperation } from "./generated/surface-operation.ts";
 
 // Color slot constants
 export const COLOR_FG = 0;
 export const COLOR_BG = 1;
+
+// Re-export for convenience
+export { PixelFormat, SurfaceOperation };
 
 /**
  * Surface command structure (must match SurfaceCommand in awt_raster_internal.h)
@@ -81,10 +65,28 @@ export class WasmRasterizer {
           const messageBytes = new Uint8Array(memory.buffer, messagePtr, messageLen);
           const message = new TextDecoder().decode(messageBytes);
           
-          // Log based on level (0=ERROR, 1=WARN, 2=INFO, 3=DEBUG)
-          const levelNames = ['ERROR', 'WARN', 'INFO', 'DEBUG'];
+          // Log based on level (0=ERROR, 1=WARN, 2=INFO, 3=DEBUG, 4=TRACE)
+          const levelNames = ['ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'];
           const levelName = levelNames[level] || 'UNKNOWN';
           console.log(`[WASM ${levelName}] ${message}`);
+        },
+        wasm_get_time_ms: (): number => {
+          return performance.now();
+        },
+        wasm_report_memory_usage: (allocatedBytes: number, peakBytes: number) => {
+          console.log(`[WASM MEMORY] allocated=${allocatedBytes} bytes, peak=${peakBytes} bytes`);
+        },
+        wasm_assertion_failed: (exprPtr: number, exprLen: number, filePtr: number, fileLen: number, line: number) => {
+          if (!this.wasmInstance) return;
+          const memory = (this.wasmInstance.exports.memory as WebAssembly.Memory);
+          if (!memory) return;
+          
+          const exprBytes = new Uint8Array(memory.buffer, exprPtr, exprLen);
+          const expr = new TextDecoder().decode(exprBytes);
+          const fileBytes = new Uint8Array(memory.buffer, filePtr, fileLen);
+          const file = new TextDecoder().decode(fileBytes);
+          
+          console.error(`[WASM ASSERTION] ${expr} failed at ${file}:${line}`);
         }
       }
     };

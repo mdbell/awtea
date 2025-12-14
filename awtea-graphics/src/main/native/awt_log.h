@@ -2,14 +2,13 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include "awt_imports.h"
 
-// Log levels (must match Java LogLevel enum priority)
-typedef enum {
-    LOG_LEVEL_ERROR = 0,
-    LOG_LEVEL_WARN = 1,
-    LOG_LEVEL_INFO = 2,
-    LOG_LEVEL_DEBUG = 3
-} LogLevel;
+// Include auto-generated enum
+#include "generated/log_level.h"
+
+// Note: LogLevel enum is now defined in generated/log_level.h
+// Edit schemas/log-level.yaml to modify the enum values
 
 // Maximum size of a single log message
 #define LOG_MESSAGE_MAX_SIZE 512
@@ -21,15 +20,12 @@ typedef enum {
 
 #if ENABLE_WASM_LOGGING
 
-// Import from JavaScript host environment
-// This function is provided by the host and called when we want to log
-extern void wasm_log_callback(int level, const char* message_ptr, int message_len);
-
 // Log functions with printf-style formatting
 void log_error(const char* format, ...);
 void log_warn(const char* format, ...);
 void log_info(const char* format, ...);
 void log_debug(const char* format, ...);
+void log_trace(const char* format, ...);
 
 // Internal log function
 void wasm_log(LogLevel level, const char* format, va_list args);
@@ -41,5 +37,6 @@ void wasm_log(LogLevel level, const char* format, va_list args);
 #define log_warn(format, ...) ((void)0)
 #define log_info(format, ...) ((void)0)
 #define log_debug(format, ...) ((void)0)
+#define log_trace(format, ...) ((void)0)
 
 #endif
