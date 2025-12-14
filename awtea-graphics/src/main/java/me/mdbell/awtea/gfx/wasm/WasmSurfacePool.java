@@ -116,7 +116,7 @@ public class WasmSurfacePool {
         releaseCount.incrementAndGet();
         
         if (!enabled) {
-            surface.destroy();
+            surface.destroyDirect();
             destroyCount.incrementAndGet();
             return;
         }
@@ -127,7 +127,7 @@ public class WasmSurfacePool {
         
         // Don't pool surfaces with zero dimensions
         if (width <= 0 || height <= 0) {
-            surface.destroy();
+            surface.destroyDirect();
             destroyCount.incrementAndGet();
             return;
         }
@@ -138,7 +138,7 @@ public class WasmSurfacePool {
         synchronized (queue) {
             // Check if we're at the per-key limit
             if (queue.size() >= maxPerKey) {
-                surface.destroy();
+                surface.destroyDirect();
                 destroyCount.incrementAndGet();
                 log.debug("Pool full for key {}x{} format={}, destroying surface", 
                         width, height, format);
@@ -152,7 +152,7 @@ public class WasmSurfacePool {
                 evictLRUSurface();
                 // Try again
                 if (getTotalPoolSize() >= maxTotal) {
-                    surface.destroy();
+                    surface.destroyDirect();
                     destroyCount.incrementAndGet();
                     log.debug("Total pool size {} >= max {} after eviction, destroying surface", 
                             getTotalPoolSize(), maxTotal);
@@ -180,7 +180,7 @@ public class WasmSurfacePool {
                 while (!queue.isEmpty()) {
                     PooledSurface pooled = queue.pollFirst();
                     if (pooled != null) {
-                        pooled.surface.destroy();
+                        pooled.surface.destroyDirect();
                         cleared++;
                     }
                 }
@@ -217,7 +217,7 @@ public class WasmSurfacePool {
         if (oldest != null && oldestQueue != null) {
             synchronized (oldestQueue) {
                 oldestQueue.remove(oldest);
-                oldest.surface.destroy();
+                oldest.surface.destroyDirect();
                 destroyCount.incrementAndGet();
                 log.debug("Evicted LRU surface from pool");
             }
@@ -242,7 +242,7 @@ public class WasmSurfacePool {
                 if (queue.size() > 1) {
                     PooledSurface pooled = queue.pollLast(); // Remove least recently used
                     if (pooled != null) {
-                        pooled.surface.destroy();
+                        pooled.surface.destroyDirect();
                         removed++;
                     }
                 }
@@ -278,7 +278,7 @@ public class WasmSurfacePool {
                     PooledSurface pooled = queue.peekLast();
                     if (pooled != null && (now - pooled.lastAccessTime) > maxAgeMs) {
                         queue.pollLast();
-                        pooled.surface.destroy();
+                        pooled.surface.destroyDirect();
                         evicted++;
                     } else {
                         break; // Rest are newer

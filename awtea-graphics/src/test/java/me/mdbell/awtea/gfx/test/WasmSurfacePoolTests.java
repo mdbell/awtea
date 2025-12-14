@@ -62,6 +62,7 @@ public class WasmSurfacePoolTests {
         assertEquals(0, stats.poolHits, "Should have 0 pool hits");
         assertEquals(1, stats.poolMisses, "Should have 1 pool miss");
         
+        surface.setPoolable(false);
         surface.destroy();
     }
 
@@ -85,6 +86,7 @@ public class WasmSurfacePoolTests {
         assertEquals(1, stats.poolHits, "Should have 1 pool hit");
         assertEquals(1, stats.poolMisses, "Should have 1 pool miss");
         
+        surface2.setPoolable(false);
         surface2.destroy();
     }
 
@@ -218,7 +220,9 @@ public class WasmSurfacePoolTests {
         assertTrue(hitRate > 0.0 && hitRate < 1.0, 
                 "Hit rate should be between 0 and 1: " + hitRate);
         
+        s2.setPoolable(false);
         s2.destroy();
+        s3.setPoolable(false);
         s3.destroy();
     }
 
@@ -299,8 +303,11 @@ public class WasmSurfacePoolTests {
         assertEquals(s2.getId(), s2b.getId(), "Should reuse surface 2");
         assertEquals(s3.getId(), s3b.getId(), "Should reuse surface 3");
         
+        s1b.setPoolable(false);
         s1b.destroy();
+        s2b.setPoolable(false);
         s2b.destroy();
+        s3b.setPoolable(false);
         s3b.destroy();
     }
 }
