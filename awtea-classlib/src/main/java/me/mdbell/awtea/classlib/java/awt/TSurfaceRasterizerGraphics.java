@@ -64,7 +64,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     protected TSurfaceRasterizerGraphics(TSurfaceRasterizerGraphics other) {
         super();
-        this.rasterizer = other.rasterizer;
+        this.rasterizer = other.rasterizer.create(); // Clone the rasterizer for independent state
         this.font = other.font;
         this.transform.setTransform(other.transform);
         this.clip = other.clip;

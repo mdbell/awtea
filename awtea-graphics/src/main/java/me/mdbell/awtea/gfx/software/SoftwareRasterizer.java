@@ -75,7 +75,8 @@ public class SoftwareRasterizer implements Rasterizer {
         this.encodedForeground = other.encodedForeground;
         this.encodedBackground = other.encodedBackground;
         this.cachedFormat = other.cachedFormat;
-        this.clip = other.clip != null ? new Rectangle(other.clip) : null;
+        // Clone the clip rectangle manually (Rectangle copy constructor not available in TeaVM)
+        this.clip = other.clip != null ? new Rectangle(other.clip.x, other.clip.y, other.clip.width, other.clip.height) : null;
         this.composite = other.composite;
         this.needsBlending = other.needsBlending;
     }
