@@ -47,15 +47,15 @@ The devcontainer provides a consistent, reproducible development environment wit
 
 ### Installed Tools
 
-- **Java Development Kit (JDK)**: Java 11 (Microsoft OpenJDK, as required by the project)
+- **Java Development Kit (JDK)**: Java 11 (Microsoft OpenJDK)
 - **Gradle**: Build automation via the Gradle wrapper (`./gradlew`)
-- **Docker**: Docker-in-Docker support for running Emscripten containers
-- **Deno**: TypeScript/JavaScript runtime for WASM tests
+- **Docker**: Docker-in-Docker support for running Emscripten containers (version 20)
+- **Deno**: TypeScript/JavaScript runtime for WASM tests (v2.x)
 - **VS Code Extensions**: Pre-configured extensions for Java, Gradle, Deno, and Docker development
 
 ### Configuration Highlights
 
-- **Java Runtime**: Uses Java 11 directly (Microsoft OpenJDK 11.0.28-LTS)
+- **Java Runtime**: Uses Java 11 directly (Microsoft OpenJDK from the base image)
 - **Deno Integration**: Enabled only for `./awtea-graphics/src/test/deno` directory
 - **Port Forwarding**: Ports 8080 and 3000 forwarded for web application development
 - **Docker Socket Mounting**: Enables Docker-in-Docker for WASM compilation
@@ -66,7 +66,7 @@ This devcontainer can be reused for CI/CD pipelines in several ways:
 
 ### GitHub Actions
 
-The same base image and features can be referenced in GitHub Actions workflows:
+The same base image and features can be referenced in GitHub Actions workflows. This example shows how to set up a CI workflow with the same tools as the devcontainer:
 
 ```yaml
 name: Build and Test
@@ -83,15 +83,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Deno
-        run: |
-          curl -fsSL https://deno.land/install.sh | sh
-          echo "$HOME/.deno/bin" >> $GITHUB_PATH
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
       
       - name: Setup Docker
         run: |
-          # Docker-in-Docker setup if needed
-          dockerd &
+          # Docker service should be available via Docker-in-Docker
+          docker --version
       
       - name: Build
         run: ./gradlew build
@@ -99,6 +99,8 @@ jobs:
       - name: Test WASM
         run: ./gradlew :awtea-graphics:denoTest
 ```
+
+> **Note:** Keep the versions in sync with the devcontainer configuration and the existing CI workflows in `.github/workflows/`.
 
 ### Docker Compose
 
@@ -118,7 +120,7 @@ services:
 
 ### Dockerfile for CI
 
-You can create a CI-specific Dockerfile based on the devcontainer configuration:
+You can create a CI-specific Dockerfile based on the devcontainer configuration. Note that this is just an example - consider using package managers or official images in production CI systems:
 
 ```dockerfile
 FROM mcr.microsoft.com/devcontainers/java:1-11-bullseye
@@ -128,12 +130,14 @@ RUN apt-get update && \
     apt-get install -y docker.io && \
     apt-get clean
 
-# Install Deno
+# Install Deno using official installation
 RUN curl -fsSL https://deno.land/install.sh | sh
 ENV PATH="${PATH}:/root/.deno/bin"
 
 WORKDIR /workspace
 ```
+
+> **Security Note:** For production CI systems, prefer using official GitHub Actions or package managers rather than piping remote scripts to shell.
 
 ## Development Workflow
 
