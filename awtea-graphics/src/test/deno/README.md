@@ -11,6 +11,7 @@ The test harness provides:
 - **Isolated testing** without GUI, TSurface, TGraphics, or Java runtime
 - **Utilities** for surface allocation, command creation, pixel inspection, and error handling
 - **Example scenarios** demonstrating various drawing operations
+- **WASM logging support** - see debug, info, warn, and error messages from the native code
 
 ## Prerequisites
 
@@ -18,6 +19,17 @@ The test harness provides:
 - WASM module built (see Building section)
 
 **Note on imports**: While JSR (`jsr:@std/assert`) is the preferred modern way to import Deno standard libraries, this test harness uses `https://deno.land/std/` imports for maximum compatibility. In environments with full JSR access, you can update the imports in `deno.json` and test files to use `jsr:@std/assert@1` instead.
+
+## WASM Logging
+
+The WASM rasterizer includes built-in logging support. When running tests or demos, you'll see log messages from the native WASM code:
+
+- `[WASM DEBUG]` - Detailed debug information (surface creation, parameters, etc.)
+- `[WASM INFO]` - Informational messages (successful operations)
+- `[WASM WARN]` - Warnings (resource exhaustion, potential issues)
+- `[WASM ERROR]` - Error messages (allocation failures, invalid parameters)
+
+The test harness automatically provides the `wasm_log_callback` function that the WASM module requires for logging.
 
 ## Building the WASM Module
 

@@ -67,7 +67,29 @@ export class WasmRasterizer {
   async load(wasmPath: string): Promise<void> {
     const wasmBytes = await Deno.readFile(wasmPath);
     const wasmModule = await WebAssembly.compile(wasmBytes);
-    this.wasmInstance = await WebAssembly.instantiate(wasmModule, {});
+    
+    // Provide the logging callback that the WASM module expects
+    const imports = {
+      env: {
+        wasm_log_callback: (level: number, messagePtr: number, messageLen: number) => {
+          // Get the exports to access memory
+          if (!this.wasmInstance) return;
+          const memory = (this.wasmInstance.exports.memory as WebAssembly.Memory);
+          if (!memory) return;
+          
+          // Read the message from WASM memory
+          const messageBytes = new Uint8Array(memory.buffer, messagePtr, messageLen);
+          const message = new TextDecoder().decode(messageBytes);
+          
+          // Log based on level (0=ERROR, 1=WARN, 2=INFO, 3=DEBUG)
+          const levelNames = ['ERROR', 'WARN', 'INFO', 'DEBUG'];
+          const levelName = levelNames[level] || 'UNKNOWN';
+          console.log(`[WASM ${levelName}] ${message}`);
+        }
+      }
+    };
+    
+    this.wasmInstance = await WebAssembly.instantiate(wasmModule, imports);
   }
 
   /**
