@@ -1,4 +1,5 @@
 #include "awt_commands.h"
+#include "awt_memory.h"
 #include "awt_surface.h"
 #include "awt_draw.h"
 #include "awt_util.h"
@@ -10,7 +11,7 @@ int get_command_size() {
 
 int request_command_buffer(int max_commands) {
     size_t bytes = (size_t)max_commands * sizeof(SurfaceCommand);
-    void* p = malloc(bytes);
+    void* p = tracked_malloc(bytes);
     if (!p){
         return 0;
     }
