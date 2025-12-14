@@ -1,0 +1,35 @@
+name: SurfaceOperation
+description: Operations that can be performed on a surface
+c_prefix: CMD_
+java_name: Operation
+values:
+  - name: NO_OP
+    value: 0
+    description: No operation
+  - name: SET_COLOR
+    description: Set foreground or background color
+  - name: SET_TRANSFORM
+    description: Set affine transformation matrix
+  - name: SET_CLIP_RECT
+    description: Set clipping rectangle
+  - name: SET_COMPOSITE
+    description: Set compositing mode (unimplemented in WASM)
+  - name: BLIT_IMAGE
+    description: Copy image to surface
+  - name: DRAW_RECT
+    description: Draw rectangle outline
+  - name: FILL_RECT
+    description: Fill rectangle
+  - name: CLEAR_RECT
+    description: Clear rectangle
+  - name: DRAW_LINE
+    description: Draw line
+  - name: COUNT
+    c_only: true
+    description: Number of standard commands
+  - name: FREE_IMAGE
+    value: 128
+    c_name: EXT_FREE_IMAGE
+    ts_name: EXT_FREE_IMAGE
+    java_skip: true
+    description: Extended operation - free image resources

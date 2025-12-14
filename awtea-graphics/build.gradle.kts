@@ -34,7 +34,14 @@ var wasmOutputDir = file(layout.buildDirectory.dir("wasm"))
 
 var nativeSrcDir = file("${projectDir}/src/main/native/")
 
+// Generate enums before building
+tasks.named("compileJava") {
+    dependsOn(rootProject.tasks.named("generateEnums"))
+}
+
 tasks.register("buildAwtRasterWasm") {
+
+    dependsOn(rootProject.tasks.named("generateEnums"))
 
     // 1. Collect all .c files
     val cSources = fileTree(nativeSrcDir) {

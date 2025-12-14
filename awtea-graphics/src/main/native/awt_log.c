@@ -51,4 +51,11 @@ void log_debug(const char* format, ...) {
     va_end(args);
 }
 
+void log_trace(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    wasm_log(LOG_LEVEL_TRACE, format, args);
+    va_end(args);
+}
+
 #endif
