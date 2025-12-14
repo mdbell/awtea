@@ -26,6 +26,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     private static final int TEXT_SURFACE_PADDING = 4;
 
     protected transient boolean scheduled = false;
+    protected transient boolean disposed = false;
 
     private final List<SurfaceCommand> surfaceCommandsA = new ArrayList<>();
     private final List<SurfaceCommand> surfaceCommandsB = new ArrayList<>();
@@ -71,6 +72,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         this.color = other.color;
         this.background = other.background;
         this.composite = other.composite;
+        // Don't copy disposed or scheduled state - new instance starts fresh
+        this.disposed = false;
+        this.scheduled = false;
     }
 
     @Override
@@ -213,6 +217,10 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void dispose() {
+        if (disposed) {
+            return;
+        }
+        disposed = true;
         flush();
         rasterizer.dispose();
     }
@@ -491,6 +499,10 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     }
 
     public void flush() {
+        if (disposed) {
+            return; // Don't flush if already disposed
+        }
+        
         // Swap lists
         List<SurfaceCommand> temp = readList;
         readList = writeList;

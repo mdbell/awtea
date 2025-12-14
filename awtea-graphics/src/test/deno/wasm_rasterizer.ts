@@ -90,6 +90,10 @@ export class WasmRasterizer {
     };
     
     this.wasmInstance = await WebAssembly.instantiate(wasmModule, imports);
+    
+    // Initialize the surface system (sets contexts to free state)
+    const wasm = this.getExports();
+    wasm.init_surface_system();
   }
 
   /**
@@ -207,14 +211,85 @@ export class WasmRasterizer {
   }
 
   /**
-   * Execute commands on a surface
+   * Execute commands on a surface (using context)
+   * Note: This now requires a context ID instead of surface ID
    */
-  renderCommands(surfaceId: number, bufferPtr: number, commandCount: number): void {
+  renderCommands(contextId: number, bufferPtr: number, commandCount: number): void {
     const wasm = this.getExports();
-    const result = wasm.render_awt(surfaceId, bufferPtr, commandCount);
+    const result = wasm.render_awt(contextId, bufferPtr, commandCount);
     if (result !== 0) {
       throw new Error(`render_awt failed with error code ${result}`);
     }
+  }
+
+  /**
+   * Create a rendering context for a surface
+   */
+  createContext(surfaceId: number): number {
+    const wasm = this.getExports();
+    const contextId = wasm.create_context(surfaceId);
+    if (contextId < 0) {
+      throw new Error(`Failed to create context for surface ${surfaceId}`);
+    }
+    return contextId;
+  }
+
+  /**
+   * Clone a rendering context (creates independent state copy)
+   */
+  cloneContext(contextId: number): number {
+    const wasm = this.getExports();
+    const newContextId = wasm.clone_context(contextId);
+    if (newContextId < 0) {
+      throw new Error(`Failed to clone context ${contextId}`);
+    }
+    return newContextId;
+  }
+
+  /**
+   * Destroy a rendering context (decrements surface ref count)
+   */
+  destroyContext(contextId: number): void {
+    const wasm = this.getExports();
+    const result = wasm.destroy_context(contextId);
+    if (result !== 0) {
+      throw new Error(`Failed to destroy context ${contextId}: error code ${result}`);
+    }
+  }
+
+  /**
+   * Create a reference to a surface (increments ref count)
+   */
+  createReference(surfaceId: number): number {
+    const wasm = this.getExports();
+    const result = wasm.create_reference(surfaceId);
+    if (result < 0) {
+      throw new Error(`Failed to create reference for surface ${surfaceId}`);
+    }
+    return result;
+  }
+
+  /**
+   * Release a reference to a surface (decrements ref count)
+   */
+  releaseReference(surfaceId: number): void {
+    const wasm = this.getExports();
+    const result = wasm.release_reference(surfaceId);
+    if (result !== 0) {
+      throw new Error(`Failed to release reference for surface ${surfaceId}`);
+    }
+  }
+
+  /**
+   * Get the surface ID associated with a context
+   */
+  getContextSurfaceId(contextId: number): number {
+    const wasm = this.getExports();
+    const surfaceId = wasm.get_context_surface_id(contextId);
+    if (surfaceId < 0) {
+      throw new Error(`Invalid context ID ${contextId}`);
+    }
+    return surfaceId;
   }
 
   /**
