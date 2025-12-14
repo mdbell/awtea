@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    `kotlin-dsl`
 }
 
 repositories {
@@ -13,4 +14,8 @@ dependencies {
 java {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
+}
+
+kotlin {
+    jvmToolchain(11)
 }

@@ -44,7 +44,29 @@ values:
 
 Generates `DenoJUnitRunner.java` from test classes with `@Test` annotations for Deno test execution.
 
-**Usage:**
+**Usage as Gradle Plugin:**
+
+The generator is available as a Gradle plugin that can be applied to any module:
+
+```kotlin
+plugins {
+    id("java")
+    id("deno-test-runner")
+}
+
+dependencies {
+    testImplementation(project(":awtea-test-util"))
+}
+```
+
+The plugin automatically:
+- Creates a `generateDenoJUnitRunner` task
+- Scans test sources for `@Test`, `@BeforeAll`, `@AfterAll`, `@BeforeEach`, `@AfterEach` annotations
+- Generates `DenoJUnitRunner.java` in `build/generated/test/java`
+- Detects the correct package name from existing test files
+- Hooks into `compileTestJava` to run generation first
+
+**Usage as Standalone Tool:**
 ```bash
 java me.mdbell.awtea.codegen.DenoTestRunnerGenerator \
   --test-src <test-source-dir> \
@@ -111,22 +133,67 @@ public class DenoJUnitRunner {
 }
 ```
 
+## Gradle Plugins
+
+### DenoTestRunnerPlugin
+
+A reusable Gradle plugin that adds Deno test runner generation to any module.
+
+**Location:** `buildSrc/src/main/kotlin/DenoTestRunnerPlugin.kt`
+
+**Application:**
+```kotlin
+plugins {
+    id("java")
+    id("deno-test-runner")
+}
+```
+
+**What it does:**
+1. Registers `generateDenoJUnitRunner` task
+2. Automatically detects package name from test files
+3. Adds generated sources to test source set
+4. Makes `compileTestJava` depend on generation
+
+**Benefits:**
+- No need to manually configure generation task in each module
+- Consistent behavior across all modules
+- Package name auto-detection reduces configuration
+- Can be applied to any module that has Deno tests
+
 ## Integration with Gradle
 
-Generators are invoked from Gradle build files using `JavaExec` tasks:
+### Using EnumGenerator
+
+Invoked from Gradle build files using `JavaExec` tasks:
 
 ```kotlin
-tasks.register<JavaExec>("generateDenoJUnitRunner") {
+tasks.register<JavaExec>("generateEnums") {
     classpath = buildscript.configurations["classpath"]
-    mainClass.set("me.mdbell.awtea.codegen.DenoTestRunnerGenerator")
+    mainClass.set("me.mdbell.awtea.codegen.EnumGenerator")
     
     args(
-        "--test-src", testSrcDir.absolutePath,
-        "--output", outputFile.absolutePath,
-        "--package", "me.mdbell.awtea.gfx.test"
+        "--schemas", schemasDir.absolutePath,
+        "--output-c", outputCDir.absolutePath,
+        "--output-java", outputJavaDir.absolutePath,
+        "--output-ts", outputTsDir.absolutePath,
+        "--root-dir", rootDir.absolutePath
     )
 }
 ```
+
+### Using DenoTestRunnerPlugin
+
+Simply apply the plugin to your module:
+
+```kotlin
+plugins {
+    id("java")
+    id("deno-test-runner")
+}
+```
+
+No additional configuration needed! The plugin handles everything automatically.
 
 ## Adding New Generators
 
@@ -137,7 +204,19 @@ To add a new code generator:
 3. Use consistent argument patterns (`--flag value`)
 4. Print progress messages to stdout
 5. Exit with non-zero status on errors
-6. Document the generator in this README
+6. Consider creating a Gradle plugin wrapper for easier reuse
+7. Document the generator in this README
+
+## Adding New Plugins
+
+To add a new Gradle plugin:
+
+1. Create a Kotlin file in `buildSrc/src/main/kotlin/`
+2. Implement `Plugin<Project>` interface
+3. Create a properties file in `buildSrc/src/main/resources/META-INF/gradle-plugins/`
+   - Filename: `your-plugin-id.properties`
+   - Content: `implementation-class=YourPluginClassName`
+4. Document the plugin in this README
 
 ## Dependencies
 
@@ -145,5 +224,6 @@ Generators can use:
 - Java 11+ standard library
 - Dependencies declared in `buildSrc/build.gradle.kts`
 - Currently includes: SnakeYAML for YAML parsing
+- Kotlin DSL for Gradle plugins
 
 Avoid adding heavy dependencies to keep build times fast.

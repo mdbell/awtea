@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("deno-test-runner")
 }
 
 import java.net.URL
@@ -124,42 +125,7 @@ tasks.register<Exec>("denoTest") {
 //     dependsOn("denoTest")
 // }
 
-// Generate DenoJUnitRunner.java based on @Test annotations
-tasks.register("generateDenoJUnitRunner") {
-    description = "Generate DenoJUnitRunner.java from @Test annotations"
-    group = "verification"
-    
-    val testSrcDir = file("src/test/java")
-    val generatedSourceDir = file("${layout.buildDirectory.get()}/generated/test/java")
-    val outputFile = file("${generatedSourceDir}/me/mdbell/awtea/gfx/test/DenoJUnitRunner.java")
-    
-    inputs.dir(testSrcDir)
-    outputs.file(outputFile)
-    
-    doLast {
-        // Use the generator from buildSrc
-        val generator = me.mdbell.awtea.codegen.DenoTestRunnerGenerator()
-        generator.generate(
-            testSrcDir.toPath(),
-            outputFile.toPath(),
-            "me.mdbell.awtea.gfx.test"
-        )
-    }
-}
-
-// Add generated sources to test source set
-sourceSets {
-    test {
-        java {
-            srcDir("${layout.buildDirectory.get()}/generated/test/java")
-        }
-    }
-}
-
-// Ensure generation happens before compilation
-tasks.named("compileTestJava") {
-    dependsOn("generateDenoJUnitRunner")
-}
+// Test runner generation is handled by the deno-test-runner plugin
 
 // Compile Java tests to JavaScript using TeaVM for Deno execution
 tasks.register("buildDenoJavaTests") {
