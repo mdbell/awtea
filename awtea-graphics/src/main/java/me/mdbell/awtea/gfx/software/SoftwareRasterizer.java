@@ -11,6 +11,7 @@ import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.util.List;
 
 /**
@@ -183,93 +184,102 @@ public class SoftwareRasterizer implements Rasterizer {
         surface.markDirty();
     }
 
-    private void fillRect(int x, int y, int width, int height) {
-        // Apply transform
-        // Note: Currently only translation is supported for simplicity.
-        // Full affine transform support (scale, rotation, shear) would require
-        // transforming the rectangle corners and scan-converting the resulting quad,
-        // which is complex for a software fallback renderer.
-        int tx = (int) (x + transform.getTranslateX());
-        int ty = (int) (y + transform.getTranslateY());
+    private static int clamp(int val, int min, int max) {
+        if (val < min) {
+            return min;
+        }
+        return Math.min(val, max);
+    }
 
-        // Apply clip
-        Rectangle bounds = clip != null ? clip : new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
-        int x0 = Math.max(tx, bounds.x);
-        int y0 = Math.max(ty, bounds.y);
-        int x1 = Math.min(tx + width, bounds.x + bounds.width);
-        int y1 = Math.min(ty + height, bounds.y + bounds.height);
+    private int clipX(int x) {
+        x = clamp(x, 0, surface.getWidth() - 1);
+        if (clip != null) {
+            x = clamp(x, clip.x, clip.x + clip.width - 1);
+        }
+        return x;
+    }
+
+    private int clipY(int y) {
+        y = clamp(y, 0, surface.getHeight() - 1);
+        if (clip != null) {
+            y = clamp(y, clip.y, clip.y + clip.height - 1);
+        }
+        return y;
+    }
+
+    private void drawRect(int x, int y, int width, int height) {
+        // Top edge
+        drawLine(x, y, x + width, y);
+        // Bottom edge
+        drawLine(x, y + height, x + width, y + height);
+        // Left edge
+        drawLine(x, y, x, y + height);
+        // Right edge
+        drawLine(x + width, y, x + width, y + height);
+    }
+
+    private void fillRect(int x, int y, int width, int height) {
+
+        // fast path, rectangle is completely outside clip
+        if (clip != null) {
+            if (x + width <= clip.x || x >= clip.x + clip.width ||
+                    y + height <= clip.y || y >= clip.y + clip.height) {
+                return;
+            }
+        }
+
+        int x0 = clipX(x);
+        int y0 = clipY(y);
+        int x1 = clipX(x + width - 1);
+        int y1 = clipY(y + height - 1);
 
         if (x0 >= x1 || y0 >= y1) {
             return;
         }
 
-        int[] pixels = surface.getPixelDataAsInt32Array();
+        Uint8ClampedArray pixels = surface.getPixelData();
         if (pixels == null) {
             return;
         }
+        int[] pixelDataAsInt32 = surface.getPixelDataAsInt32Array();
 
-        int surfaceWidth = surface.getWidth();
-        int surfaceHeight = surface.getHeight();
-        int destFormat = surface.getFormat();
+        int format = surface.getFormat();
 
-        // Check if blending is needed: either composite requires it OR color has alpha < 255
-        boolean blend = needsBlending();
-
-        // Also check if the color itself has alpha (need to check the foreground color's alpha)
-        if (!blend && foreground.getAlpha() < 255) {
-            blend = true;
+        if (transform.isIdentity()) {
+            x0 += (int) transform.getTranslateX();
+            y0 += (int) transform.getTranslateY();
+            x1 += (int) transform.getTranslateX();
+            y1 += (int) transform.getTranslateY();
+        } else {
+            Point2D p1 = new Point2D.Float(x0, y0);
+            Point2D p2 = new Point2D.Float(x1, y1);
+            transform.transform(p1, p1);
+            transform.transform(p2, p2);
+            x0 = Math.round((float) p1.getX());
+            y0 = Math.round((float) p1.getY());
+            x1 = Math.round((float) p2.getX());
+            y1 = Math.round((float) p2.getY());
         }
 
-        if (!blend) {
-            // Fast path: no blending needed - just write the encoded foreground color directly
-            for (int row = y0; row < y1; row++) {
-                if (row < 0 || row >= surfaceHeight) {
-                    continue;
-                }
-                int rowOffset = row * surfaceWidth;
-                for (int col = x0; col < x1; col++) {
-                    if (col < 0 || col >= surfaceWidth) {
-                        continue;
-                    }
-                    pixels[rowOffset + col] = encodedForeground;
+        boolean blend = needsBlending();
+
+        int surfaceWidth = surface.getWidth();
+
+        if (blend) {
+            int srcColorARGB = convertColorToARGB(encodedForeground, format);
+            for (int row = y0; row <= y1; row++) {
+                for (int col = x0; col <= x1; col++) {
+                    int dstColor = pixelDataAsInt32[row * surfaceWidth + col];
+                    pixelDataAsInt32[row * surfaceWidth + col] = blendPixel(srcColorARGB, convertColorToARGB(dstColor, format), composite);
                 }
             }
         } else {
-            // Slow path: blending required
-
-            // Pre-convert source color to ARGB once (not per pixel!)
-            int srcColorARGB = convertColorToARGB(encodedForeground, destFormat);
-
-            for (int row = y0; row < y1; row++) {
-                if (row < 0 || row >= surfaceHeight) {
-                    continue;
-                }
-                int rowOffset = row * surfaceWidth;
-                for (int col = x0; col < x1; col++) {
-                    if (col < 0 || col >= surfaceWidth) {
-                        continue;
-                    }
-                    int idx = rowOffset + col;
-
-                    // Convert destination to ARGB, blend, then convert back
-                    int dstColorARGB = convertColorToARGB(pixels[idx], destFormat);
-                    int blendedARGB = blendPixel(srcColorARGB, dstColorARGB, composite);
-                    pixels[idx] = convertColor(blendedARGB, Surface.FORMAT_INT_ARGB, destFormat);
+            for (int row = y0; row <= y1; row++) {
+                for (int col = x0; col <= x1; col++) {
+                    int idx = (row * surfaceWidth + col) * 4;
+                    pixelDataAsInt32[row * surfaceWidth + col] = encodedForeground;
                 }
             }
-        }
-    }
-
-    private void drawRect(int x, int y, int width, int height) {
-        if (width <= 0 || height <= 0) {
-            return;
-        }
-        // Draw 4 lines to form the rectangle
-        fillRect(x, y, width, 1); // top
-        fillRect(x, y + height - 1, width, 1); // bottom
-        if (height > 2) {
-            fillRect(x, y + 1, 1, height - 2); // left
-            fillRect(x + width - 1, y + 1, 1, height - 2); // right
         }
     }
 
@@ -284,62 +294,83 @@ public class SoftwareRasterizer implements Rasterizer {
     }
 
     private void drawLine(int x1, int y1, int x2, int y2) {
-        // Apply transform
-        int tx1 = (int) (x1 + transform.getTranslateX());
-        int ty1 = (int) (y1 + transform.getTranslateY());
-        int tx2 = (int) (x2 + transform.getTranslateX());
-        int ty2 = (int) (y2 + transform.getTranslateY());
 
-        // Bresenham's line algorithm
-        int dx = Math.abs(tx2 - tx1);
-        int dy = Math.abs(ty2 - ty1);
-        int sx = tx1 < tx2 ? 1 : -1;
-        int sy = ty1 < ty2 ? 1 : -1;
-        int err = dx - dy;
+        // fast path, both points are outside clip
+        if (clip != null) {
+            if ((x1 < clip.x && x2 < clip.x) ||
+                    (x1 >= clip.x + clip.width && x2 >= clip.x + clip.width) ||
+                    (y1 < clip.y && y2 < clip.y) ||
+                    (y1 >= clip.y + clip.height && y2 >= clip.y + clip.height)) {
+                return;
+            }
+        }
 
-        int[] pixels = surface.getPixelDataAsInt32Array();
-        if (pixels == null) {
+        x1 = clipX(x1);
+        y1 = clipY(y1);
+        x2 = clipX(x2);
+        y2 = clipY(y2);
+
+        if (x1 == x2 && y1 == y2) {
+            // Single point
+            int[] pixelDataAsInt32 = surface.getPixelDataAsInt32Array();
+            int idx = y1 * surface.getWidth() + x1;
+            if (needsBlending()) {
+                int dstColor = pixelDataAsInt32[idx];
+                pixelDataAsInt32[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()), convertColorToARGB(dstColor, surface.getFormat()), composite);
+            } else {
+                pixelDataAsInt32[idx] = encodedForeground;
+            }
             return;
         }
 
-        int surfaceWidth = surface.getWidth();
-        int surfaceHeight = surface.getHeight();
-        int destFormat = surface.getFormat();
+        Point2D p1 = new Point2D.Float(x1, y1);
+        Point2D p2 = new Point2D.Float(x2, y2);
+        if (!transform.isIdentity()) {
+            transform.transform(p1, p1);
+            transform.transform(p2, p2);
+        }
 
-        Rectangle bounds = clip != null ? clip : new Rectangle(0, 0, surfaceWidth, surfaceHeight);
+        int[] pixelDataAsInt32 = surface.getPixelDataAsInt32Array();
 
-        // Convert foreground color to ARGB for blending
-        int srcColorARGB = convertColorToARGB(encodedForeground, destFormat);
-        boolean blend = needsBlending();
+        x1 = Math.round((float) p1.getX());
+        y1 = Math.round((float) p1.getY());
+        x2 = Math.round((float) p2.getX());
+        y2 = Math.round((float) p2.getY());
+
+        // Bresenham's line algorithm
+        int dx = Math.abs(x2 - x1);
+        int dy = Math.abs(y2 - y1);
+        int sx = x1 < x2 ? 1 : -1;
+        int sy = y1 < y2 ? 1 : -1;
+
+        int err = dx - dy;
+
+        boolean needsBlend = needsBlending();
 
         while (true) {
-            if (tx1 >= bounds.x && tx1 < bounds.x + bounds.width &&
-                    ty1 >= bounds.y && ty1 < bounds.y + bounds.height) {
-                int idx = (ty1 * surfaceWidth + tx1);
 
-                if (blend) {
-                    // Convert destination to ARGB, blend, then convert back
-                    int dstColorARGB = convertColorToARGB(pixels[idx], destFormat);
-                    int blendedARGB = blendPixel(srcColorARGB, dstColorARGB, composite);
-                    pixels[idx] = convertColor(blendedARGB, Surface.FORMAT_INT_ARGB, destFormat);
-                } else {
-                    // Fast path: no blending needed
-                    pixels[idx] = encodedForeground;
+            if (needsBlend) {
+                int idx = y1 * surface.getWidth() + x1;
+                int dstColor = pixelDataAsInt32[idx];
+                pixelDataAsInt32[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()), convertColorToARGB(dstColor, surface.getFormat()), composite);
+            } else {
+                if (x1 >= 0 && x1 < surface.getWidth() && y1 >= 0 && y1 < surface.getHeight()) {
+                    int idx = y1 * surface.getWidth() + x1;
+                    pixelDataAsInt32[idx] = encodedForeground;
                 }
             }
 
-            if (tx1 == tx2 && ty1 == ty2) {
+            if (x1 == x2 && y1 == y2) {
                 break;
             }
-
-            int e2 = 2 * err;
-            if (e2 > -dy) {
+            int err2 = 2 * err;
+            if (err2 > -dy) {
                 err -= dy;
-                tx1 += sx;
+                x1 += sx;
             }
-            if (e2 < dx) {
+            if (err2 < dx) {
                 err += dx;
-                ty1 += sy;
+                y1 += sy;
             }
         }
     }
@@ -348,147 +379,130 @@ public class SoftwareRasterizer implements Rasterizer {
         if (srcSurface == null) {
             return;
         }
+        // fast path, rectangle is completely outside clip
+        if (clip != null) {
+            if (destX + destWidth <= clip.x || destX >= clip.x + clip.width ||
+                    destY + destHeight <= clip.y || destY >= clip.y + clip.height) {
+                return;
+            }
+        }
+        blitImage(srcSurface, 0, 0,
+                srcSurface.getWidth(), srcSurface.getHeight(),
+                destX, destY, destWidth, destHeight);
+//        if (srcSurface == null) {
+//            return;
+//        }
+//
+//        // fast path, rectangle is completely outside clip
+//        if (clip != null) {
+//            if (destX + destWidth <= clip.x || destX >= clip.x + clip.width ||
+//                    destY + destHeight <= clip.y || destY >= clip.y + clip.height) {
+//                return;
+//            }
+//        }
+//
+//        Point2D pt = new Point2D.Float(destX, destY);
+//        if (!transform.isIdentity()) {
+//            transform.transform(pt, pt);
+//            destX = Math.round((float) pt.getX());
+//            destY = Math.round((float) pt.getY());
+//        } else {
+//            destX += (int) transform.getTranslateX();
+//            destY += (int) transform.getTranslateY();
+//        }
+//
+//        // For simplicity, only support 1:1 pixel mapping (no scaling)
+//        Uint8ClampedArray srcPixArray = srcSurface.getPixelData();
+//        int[] destPixels = surface.getPixelDataAsInt32Array();
+//
+//        if (srcPixArray == null || destPixels == null) {
+//            return;
+//        }
+//        int[] srcPixels = new Int32Array(srcPixArray.getBuffer(), srcPixArray.getByteOffset(),
+//                srcPixArray.getLength() / 4).toJavaArray();
+//
+//        int srcFormat = srcSurface.getFormat();
+//        int destFormat = surface.getFormat();
+//        int surfaceWidth = surface.getWidth();
+//
+//        for (int row = 0; row < destHeight; row++) {
+//            for (int col = 0; col < destWidth; col++) {
+//                int srcIdx = row * destWidth + col;
+//                int destIdx = (destY + row) * surfaceWidth + (destX + col);
+//
+//                int srcColor = srcPixels[srcIdx];
+//                int convertedColor = convertColor(srcColor, srcFormat, destFormat);
+//
+//                if (needsBlending()) {
+//                    int dstColor = destPixels[destIdx];
+//                    int blendedColor = blendPixel(convertColorToARGB(convertedColor, destFormat),
+//                            convertColorToARGB(dstColor, destFormat), composite);
+//                    destPixels[destIdx] = blendedColor;
+//                } else {
+//                    destPixels[destIdx] = convertedColor;
+//                }
+//            }
+//        }
+    }
 
-        // Apply transform
-        int tx = (int) (destX + transform.getTranslateX());
-        int ty = (int) (destY + transform.getTranslateY());
+    private void blitImage(Surface surface, int srcX, int srcY,
+                           int srcWidth, int srcHeight,
+                           int destX, int destY, int destWidth, int destHeight) {
+        int clippedDestX0 = clipX(destX);
+        int clippedDestY0 = clipY(destY);
+        int clippedDestX1 = clipX(destX + destWidth - 1);
+        int clippedDestY1 = clipY(destY + destHeight - 1);
 
-        Uint8ClampedArray srcPixelsBytes = srcSurface.getPixelData();
-        int[] destPixels = surface.getPixelDataAsInt32Array();
+        // Adjust source coordinates based on clipping
+        srcX += (clippedDestX0 - destX) * srcWidth / destWidth;
+        srcY += (clippedDestY0 - destY) * srcHeight / destHeight;
 
-        if (srcPixelsBytes == null || destPixels == null) {
+        destX = clippedDestX0;
+        destY = clippedDestY0;
+        destWidth = clippedDestX1 - clippedDestX0 + 1;
+        destHeight = clippedDestY1 - clippedDestY0 + 1;
+        if (destWidth <= 0 || destHeight <= 0) {
             return;
         }
 
-        // Create Int32Array view of source pixels for faster access
-        Int32Array srcPixels = new Int32Array(srcPixelsBytes.getBuffer(),
-                srcPixelsBytes.getByteOffset(), srcPixelsBytes.getByteLength() / 4);
-
-        int srcWidth = srcSurface.getWidth();
-        int srcHeight = srcSurface.getHeight();
-        int destSurfaceWidth = surface.getWidth();
-        int destSurfaceHeight = surface.getHeight();
-        int srcFormat = srcSurface.getFormat();
-        int destFormat = surface.getFormat();
-
-        // If dest dimensions are 0, use source dimensions (no scaling)
-        if (destWidth == 0) {
-            destWidth = srcWidth;
-        }
-        if (destHeight == 0) {
-            destHeight = srcHeight;
+        // Apply translation from transform
+        Point2D pt = new Point2D.Float(destX, destY);
+        if (!transform.isIdentity()) {
+            transform.transform(pt, pt);
+            destX = Math.round((float) pt.getX());
+            destY = Math.round((float) pt.getY());
+        } else {
+            destX += (int) transform.getTranslateX();
+            destY += (int) transform.getTranslateY();
         }
 
-        // Apply clip
-        Rectangle bounds = clip != null ? clip : new Rectangle(0, 0, destSurfaceWidth, destSurfaceHeight);
-        int x0 = Math.max(tx, bounds.x);
-        int y0 = Math.max(ty, bounds.y);
-        int x1 = Math.min(tx + destWidth, bounds.x + bounds.width);
-        int y1 = Math.min(ty + destHeight, bounds.y + bounds.height);
-
-        if (x0 >= x1 || y0 >= y1) {
+        Uint8ClampedArray srcPixArray = surface.getPixelData();
+        int[] destPixels = this.surface.getPixelDataAsInt32Array();
+        if (srcPixArray == null || destPixels == null) {
             return;
         }
+        int[] srcPixels = new Int32Array(srcPixArray.getBuffer(), srcPixArray.getByteOffset(),
+                srcPixArray.getLength() / 4).toJavaArray();
 
-        // Calculate scaling factors as floats for better precision
-        float scaleX = (float) srcWidth / destWidth;
-        float scaleY = (float) srcHeight / destHeight;
+        int srcFormat = surface.getFormat();
+        int destFormat = this.surface.getFormat();
+        int surfaceWidth = this.surface.getWidth();
+        for (int row = 0; row < destHeight; row++) {
+            for (int col = 0; col < destWidth; col++) {
+                int srcIdx = (srcY + row * srcHeight / destHeight) * surface.getWidth() +
+                        (srcX + col * srcWidth / destWidth);
+                int destIdx = (destY + row) * surfaceWidth + (destX + col);
 
-        boolean blend = needsBlending();
-        boolean sameFormat = (srcFormat == destFormat);
+                int srcColor = srcPixels[srcIdx];
+                int convertedColor = convertColor(srcColor, srcFormat, destFormat);
 
-        // Ultra-fast path: same format, no blending, no scaling
-        if (!blend && sameFormat && srcWidth == destWidth && srcHeight == destHeight) {
-            // Direct copy - no conversions needed at all!
-            for (int destRow = y0; destRow < y1; destRow++) {
-                if (destRow < 0 || destRow >= destSurfaceHeight) {
-                    continue;
-                }
-                int srcRow = destRow - ty;
-                if (srcRow < 0 || srcRow >= srcHeight) {
-                    continue;
-                }
-                int srcRowOffset = srcRow * srcWidth;
-                int destRowOffset = destRow * destSurfaceWidth;
-
-                for (int destCol = x0; destCol < x1; destCol++) {
-                    if (destCol < 0 || destCol >= destSurfaceWidth) {
-                        continue;
-                    }
-                    int srcCol = destCol - tx;
-                    if (srcCol < 0 || srcCol >= srcWidth) {
-                        continue;
-                    }
-                    destPixels[destRowOffset + destCol] = srcPixels.get(srcRowOffset + srcCol);
-                }
-            }
-            return;
-        }
-
-        // Fast path: same format, no blending (but with scaling)
-        if (!blend && sameFormat) {
-            for (int destRow = y0; destRow < y1; destRow++) {
-                if (destRow < 0 || destRow >= destSurfaceHeight) {
-                    continue;
-                }
-                int srcRow = (int) ((destRow - ty) * scaleY + 0.5f);
-                if (srcRow < 0 || srcRow >= srcHeight) {
-                    continue;
-                }
-                int srcRowOffset = srcRow * srcWidth;
-                int destRowOffset = destRow * destSurfaceWidth;
-
-                for (int destCol = x0; destCol < x1; destCol++) {
-                    if (destCol < 0 || destCol >= destSurfaceWidth) {
-                        continue;
-                    }
-                    int srcCol = (int) ((destCol - tx) * scaleX + 0.5f);
-                    if (srcCol < 0 || srcCol >= srcWidth) {
-                        continue;
-                    }
-                    // Direct copy - no conversion needed
-                    destPixels[destRowOffset + destCol] = srcPixels.get(srcRowOffset + srcCol);
-                }
-            }
-            return;
-        }
-
-        // Slower paths: need format conversion and/or blending
-        for (int destRow = y0; destRow < y1; destRow++) {
-            if (destRow < 0 || destRow >= destSurfaceHeight) {
-                continue;
-            }
-
-            // Use proper rounding for better nearest-neighbor sampling
-            int srcRow = (int) ((destRow - ty) * scaleY + 0.5f);
-            if (srcRow < 0 || srcRow >= srcHeight) {
-                continue;
-            }
-
-            for (int destCol = x0; destCol < x1; destCol++) {
-                if (destCol < 0 || destCol >= destSurfaceWidth) {
-                    continue;
-                }
-
-                int srcCol = (int) ((destCol - tx) * scaleX + 0.5f);
-                if (srcCol < 0 || srcCol >= srcWidth) {
-                    continue;
-                }
-
-                // Read directly from Int32Array instead of reconstructing from bytes
-                int srcIdx = srcRow * srcWidth + srcCol;
-                int srcColor = srcPixels.get(srcIdx);
-                int destIdx = destRow * destSurfaceWidth + destCol;
-
-                if (blend) {
-                    // Convert source and destination to ARGB, blend, then convert back
-                    int srcColorARGB = convertColorToARGB(srcColor, srcFormat);
-                    int dstColorARGB = convertColorToARGB(destPixels[destIdx], destFormat);
-                    int blendedARGB = blendPixel(srcColorARGB, dstColorARGB, composite);
-                    destPixels[destIdx] = convertColor(blendedARGB, Surface.FORMAT_INT_ARGB, destFormat);
+                if (needsBlending()) {
+                    int dstColor = destPixels[destIdx];
+                    int blendedColor = blendPixel(convertColorToARGB(convertedColor, destFormat),
+                            convertColorToARGB(dstColor, destFormat), composite);
+                    destPixels[destIdx] = blendedColor;
                 } else {
-                    // Format conversion needed but no blending
-                    destPixels[destIdx] = convertColor(srcColor, srcFormat, destFormat);
+                    destPixels[destIdx] = convertedColor;
                 }
             }
         }
@@ -705,7 +719,7 @@ public class SoftwareRasterizer implements Rasterizer {
             case AlphaComposite.SRC_OVER:
                 // Source over destination (default blending  - inline calculation for clarity)
                 outAlpha = srcAlpha + dstAlpha * (1.0f - srcAlpha);
-                
+
                 // Calculate output colors directly using SRC_OVER formula
                 int tempA = (int) (outAlpha * 255.0f + 0.5f);
                 int tempR, tempG, tempB;
@@ -716,7 +730,7 @@ public class SoftwareRasterizer implements Rasterizer {
                 } else {
                     tempR = tempG = tempB = 0;
                 }
-                
+
                 // Clamp and return directly
                 tempA = Math.min(255, Math.max(0, tempA));
                 tempR = Math.min(255, Math.max(0, tempR));

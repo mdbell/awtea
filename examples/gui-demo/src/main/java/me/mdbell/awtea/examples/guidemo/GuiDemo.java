@@ -16,6 +16,7 @@ public class GuiDemo {
 
 //        LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
         System.setProperty("me.mdbell.awtea.wasm.module_path", "awt_raster.wasm");
+        System.setProperty("me.mdbell.awtea.gfx.backend", "software");
 
 
         // Create the main window
