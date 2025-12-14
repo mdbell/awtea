@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <string.h>
 
+// Include auto-generated enums
+#include "generated/surface_operation.h"
+#include "generated/pixel_format.h"
+
 #define MAX_IMAGES 1024
 #define NUM_SURFACES 1024
 #define NUM_CONTEXTS 2048
@@ -26,28 +30,8 @@
 #define DEFAULT_FG_COLOR 0xFF000000 // opaque black
 #define DEFAULT_BG_COLOR 0xFFFFFFFF // opaque white
 
-// This should mirror the Operation enum in TSurfaceCommand.java
-typedef enum {
-    CMD_NO_OP = 0,
-
-    // State setting commands
-    CMD_SET_COLOR,
-    CMD_SET_TRANSFORM,
-    CMD_SET_CLIP_RECT,
-    CMD_SET_COMPOSITE, // unimplemented in wasm backend, only in software right now
-
-    // Drawing commands
-    CMD_BLIT_IMAGE,
-    CMD_DRAW_RECT,
-    CMD_FILL_RECT,
-    CMD_CLEAR_RECT,
-    CMD_DRAW_LINE,
-
-    CMD_COUNT, // last value is reserved for counting
-
-    EXT_FREE_IMAGE = 128, // non-standard render commands start here
-
-} SurfaceOperation;
+// Note: SurfaceOperation enum is now defined in generated/surface_operation.h
+// Edit schemas/surface-operation.yaml to modify the enum values
 
 typedef struct {
     uint8_t operation; // SurfaceOperation
@@ -72,16 +56,8 @@ typedef struct {
 
 
 
-// This file is the source of truth for the representation of the pixel formats,
-// it should be updated _first_ before anywhere else (e.g Java side)
-typedef enum {
-    PIXEL_FORMAT_ARGB = 0,
-    PIXEL_FORMAT_RGB,
-    PIXEL_FORMAT_RGBA,
-    PIXEL_FORMAT_ABGR,
-    PIXEL_FORMAT_BGR,
-    PIXEL_FORMAT_COUNT // last value is reserved for counting
-} PixelFormat;
+// Note: PixelFormat enum is now defined in generated/pixel_format.h
+// Edit schemas/pixel-format.yaml to modify the enum values
 
 typedef struct {
     uint32_t mask_r;

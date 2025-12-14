@@ -1,5 +1,7 @@
 package me.mdbell.awtea.gfx;
 
+import me.mdbell.awtea.gfx.generated.Operation;
+
 public class SurfaceCommand {
 
     public Operation type;
@@ -46,20 +48,6 @@ public class SurfaceCommand {
         this(operation, null, arg1, arg2, arg3, arg4);
     }
 
-    public enum Operation {
-        NO_OP,
-
-        // State changes
-        SET_COLOR, // arg1: mode (0=normal, 1=bg), obj: Color
-        SET_TRANSFORM,
-        SET_CLIP_RECT, // replace current clip with rect
-        SET_COMPOSITE, // obj: TComposite (TAlphaComposite)
-
-        // Drawing operations
-        BLIT_IMAGE,
-        DRAW_RECT,
-        FILL_RECT,
-        CLEAR_RECT,
-        DRAW_LINE,
-    }
+    // Note: Operation enum is now defined in me.mdbell.awtea.gfx.generated.Operation
+    // Edit schemas/surface-operation.yaml to modify the enum values
 }

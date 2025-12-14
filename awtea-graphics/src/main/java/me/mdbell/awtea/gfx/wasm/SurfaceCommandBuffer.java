@@ -5,6 +5,7 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import lombok.Getter;
 import me.mdbell.awtea.gfx.SurfaceCommand;
+import me.mdbell.awtea.gfx.generated.Operation;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8Array;
@@ -108,7 +109,7 @@ public final class SurfaceCommandBuffer {
 		int wordBase = cmdWordBase(baseByte);
 
 		// operation byte
-		setOperation(baseByte, SurfaceCommand.Operation.SET_COLOR);
+		setOperation(baseByte, Operation.SET_COLOR);
 
 		// x,y,width,height unused here; leave zero
 		i32.set(wordBase + 1, 0); // x
@@ -126,7 +127,7 @@ public final class SurfaceCommandBuffer {
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
 
-		setOperation(baseByte, SurfaceCommand.Operation.FILL_RECT);
+		setOperation(baseByte, Operation.FILL_RECT);
 
 		i32.set(wordBase + 1, x);
 		i32.set(wordBase + 2, y);
@@ -143,7 +144,7 @@ public final class SurfaceCommandBuffer {
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
 
-		setOperation(baseByte, SurfaceCommand.Operation.DRAW_RECT);
+		setOperation(baseByte, Operation.DRAW_RECT);
 
 		i32.set(wordBase + 1, x);
 		i32.set(wordBase + 2, y);
@@ -159,7 +160,7 @@ public final class SurfaceCommandBuffer {
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
 
-		setOperation(baseByte, SurfaceCommand.Operation.CLEAR_RECT);
+		setOperation(baseByte, Operation.CLEAR_RECT);
 
 		i32.set(wordBase + 1, x);
 		i32.set(wordBase + 2, y);
@@ -175,7 +176,7 @@ public final class SurfaceCommandBuffer {
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
 
-		setOperation(baseByte, SurfaceCommand.Operation.SET_CLIP_RECT);
+		setOperation(baseByte, Operation.SET_CLIP_RECT);
 
 		i32.set(wordBase + 1, x);
 		i32.set(wordBase + 2, y);
@@ -191,7 +192,7 @@ public final class SurfaceCommandBuffer {
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
 
-		setOperation(baseByte, SurfaceCommand.Operation.BLIT_IMAGE);
+		setOperation(baseByte, Operation.BLIT_IMAGE);
 
 		i32.set(wordBase + 1, x);
 		i32.set(wordBase + 2, y);
@@ -224,7 +225,7 @@ public final class SurfaceCommandBuffer {
 		int wordBase = cmdWordBase(baseByte);
 
 		// operation
-		setOperation(baseByte, SurfaceCommand.Operation.SET_TRANSFORM);
+		setOperation(baseByte, Operation.SET_TRANSFORM);
 
 		// reinterpret float->uint32
 		int i00 = Float.floatToIntBits(m00);
@@ -247,7 +248,7 @@ public final class SurfaceCommandBuffer {
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
 
-		setOperation(baseByte, SurfaceCommand.Operation.DRAW_LINE);
+		setOperation(baseByte, Operation.DRAW_LINE);
 
 		i32.set(wordBase + 1, x0);
 		i32.set(wordBase + 2, y0);
@@ -263,7 +264,7 @@ public final class SurfaceCommandBuffer {
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
 
-		setOperation(baseByte, SurfaceCommand.Operation.NO_OP);
+		setOperation(baseByte, Operation.NO_OP);
 		i32.set(wordBase + 1, 0);
 		i32.set(wordBase + 2, 0);
 		i32.set(wordBase + 3, 0);
@@ -273,7 +274,7 @@ public final class SurfaceCommandBuffer {
 		i32.set(wordBase + 6, 0);
 	}
 
-	private void setOperation(int byteIndex, SurfaceCommand.Operation op) {
+	private void setOperation(int byteIndex, Operation op) {
 		u8.set(byteIndex, (short) op.ordinal());
 	}
 

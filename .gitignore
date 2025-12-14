@@ -45,3 +45,8 @@ bin/
 ### Deno ###
 .deno/
 deno.lock
+
+### Code Generation ###
+# Note: Generated enum files are committed to the repository for convenience
+# They are small, deterministic, and help with IDE navigation and code completion
+# If you prefer to regenerate them: ./gradlew generateEnums

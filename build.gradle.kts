@@ -80,3 +80,36 @@ tasks.register<JavaExec>("findMissingClasses") {
     mainClass.set("me.mdbell.awtea.util.ApiDiff")
     args("--missing-classes")
 }
+
+tasks.register<JavaExec>("generateEnums") {
+    description = "Generate enum definitions from YAML schemas"
+    group = "code generation"
+    
+    // Get buildSrc compiled classes
+    val buildSrcOutputDir = file("buildSrc/build/classes/java/main")
+    
+    // Combine buildSrc classes with SnakeYAML dependency
+    classpath = files(buildSrcOutputDir) + configurations.detachedConfiguration(
+        dependencies.create("org.yaml:snakeyaml:2.2")
+    )
+    mainClass.set("me.mdbell.awtea.codegen.EnumGenerator")
+    
+    args = listOf(
+        "--schemas", "${rootDir}/schemas",
+        "--output-c", "${rootDir}/awtea-graphics/src/main/native/generated",
+        "--output-java", "${rootDir}/awtea-graphics/src/main/java/me/mdbell/awtea/gfx/generated",
+        "--output-ts", "${rootDir}/awtea-graphics/src/test/deno/generated",
+        "--root-dir", "${rootDir}"
+    )
+}
+
+tasks.register<Delete>("cleanGeneratedEnums") {
+    description = "Clean generated enum files"
+    group = "code generation"
+    
+    delete(
+        "${rootDir}/awtea-graphics/src/main/native/generated",
+        "${rootDir}/awtea-graphics/src/main/java/me/mdbell/awtea/gfx/generated",
+        "${rootDir}/awtea-graphics/src/test/deno/generated"
+    )
+}
