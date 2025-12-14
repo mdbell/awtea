@@ -157,21 +157,25 @@ The test will appear as "Java: New feature test" in Deno's test output.
 
 ### Java Test Architecture
 
-The Java tests use TeaVM's JSO (JavaScript Objects) API to directly integrate with Deno's test framework:
+The Java tests use a custom testing framework with TeaVM's JSO (JavaScript Objects) API to directly integrate with Deno's test framework:
 
-1. **Automatic test discovery** - Gradle task scans for `@Test` annotated methods at build time
-2. **Code generation** - `DenoJUnitRunner.java` is auto-generated with registration code for each test
-3. **Deno wrapper** (`Deno.java`) provides a Java interface to `Deno.test()`
+1. **Test utilities module** (`awtea-test-util`) - Shared testing infrastructure including:
+   - Custom `@Test` annotation (replaces JUnit)
+   - `Assert` class with assertion methods
+   - `Deno` wrapper for JSO integration with Deno.test()
+2. **Automatic test discovery** - Gradle task scans for `@Test` annotated methods at build time
+3. **Code generation** - `DenoJUnitRunner.java` is auto-generated with registration code for each test
 4. **Test registration** happens in generated `DenoJUnitRunner.main()` which calls `deno.test(name, fn)` for each test
 5. **Direct integration** means Java tests appear as individual Deno tests (not wrapped in a parent test)
 6. **1-1 mapping** with Deno's test infrastructure provides proper test isolation and reporting
 
 This approach has several advantages:
+- **No external dependencies** - No JUnit required, uses custom lightweight annotations
+- **Reusable** - Test utilities are in a separate module and can be used by any awtea module
 - **No manual maintenance** - Just add `@Test` methods and they're automatically discovered
 - Tests appear individually in Deno's test output with descriptive names
 - Failed assertions properly propagate to Deno's test runner
 - No custom test result parsing required
-- Standard JUnit assertions work correctly
 - Each test is independently tracked by Deno
 
 ### Current Java Tests

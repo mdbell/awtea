@@ -9,6 +9,7 @@ include("awtea-input")
 include("awtea-net")
 include("awtea-ui")
 include("awtea-util")
+include("awtea-test-util")
 
 // Examples
 include("examples:hello-world")

@@ -32,12 +32,11 @@ dependencies {
     implementation(project(":awtea-instrument"))
     implementation(project(":awtea-util"))
     
-    testImplementation("org.teavm:teavm-junit:0.13.0")
+    testImplementation(project(":awtea-test-util"))
     testImplementation("org.teavm:teavm-tooling:0.13.0")
     testImplementation("org.teavm:teavm-platform:0.13.0")
     testImplementation("org.teavm:teavm-jso-impl:0.13.0")
     testImplementation("org.teavm:teavm-metaprogramming-impl:0.13.0")
-    testImplementation("junit:junit:4.13.2")
 }
 
 var wasmOutputDir = file(layout.buildDirectory.dir("wasm"))
@@ -167,6 +166,8 @@ tasks.register("generateDenoJUnitRunner") {
         outputFile.parentFile.mkdirs()
         outputFile.writeText("""
 package me.mdbell.awtea.gfx.test;
+
+import me.mdbell.awtea.test.Deno;
 
 /**
  * Auto-generated class that registers Java tests with Deno's test framework.

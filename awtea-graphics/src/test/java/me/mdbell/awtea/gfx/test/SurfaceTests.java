@@ -1,12 +1,12 @@
 package me.mdbell.awtea.gfx.test;
 
 import me.mdbell.awtea.gfx.Surface;
-import org.junit.Test;
+import me.mdbell.awtea.test.Test;
 
-import static org.junit.Assert.*;
+import static me.mdbell.awtea.test.Assert.*;
 
 /**
- * JUnit tests for Surface functionality that can be compiled to JavaScript
+ * Tests for Surface functionality that can be compiled to JavaScript
  * via TeaVM and executed in Deno.
  */
 public class SurfaceTests {
@@ -17,11 +17,11 @@ public class SurfaceTests {
      */
     @Test
     public void testPixelFormatConstants() {
-        assertEquals("FORMAT_INT_ARGB should be 0", 0, Surface.FORMAT_INT_ARGB);
-        assertEquals("FORMAT_INT_RGB should be 1", 1, Surface.FORMAT_INT_RGB);
-        assertEquals("FORMAT_INT_RGBA should be 2", 2, Surface.FORMAT_INT_RGBA);
-        assertEquals("FORMAT_INT_ABGR should be 3", 3, Surface.FORMAT_INT_ABGR);
-        assertEquals("FORMAT_INT_BGR should be 4", 4, Surface.FORMAT_INT_BGR);
+        assertEquals(0, Surface.FORMAT_INT_ARGB, "FORMAT_INT_ARGB should be 0");
+        assertEquals(1, Surface.FORMAT_INT_RGB, "FORMAT_INT_RGB should be 1");
+        assertEquals(2, Surface.FORMAT_INT_RGBA, "FORMAT_INT_RGBA should be 2");
+        assertEquals(3, Surface.FORMAT_INT_ABGR, "FORMAT_INT_ABGR should be 3");
+        assertEquals(4, Surface.FORMAT_INT_BGR, "FORMAT_INT_BGR should be 4");
     }
 
     /**
@@ -30,10 +30,8 @@ public class SurfaceTests {
      */
     @Test
     public void testPixelFormatRange() {
-        assertEquals("MIN_FORMAT should be FORMAT_INT_ARGB", 
-            Surface.FORMAT_INT_ARGB, Surface.MIN_FORMAT);
-        assertEquals("MAX_FORMAT should be FORMAT_INT_BGR", 
-            Surface.FORMAT_INT_BGR, Surface.MAX_FORMAT);
+        assertEquals(Surface.FORMAT_INT_ARGB, Surface.MIN_FORMAT, "MIN_FORMAT should be FORMAT_INT_ARGB");
+        assertEquals(Surface.FORMAT_INT_BGR, Surface.MAX_FORMAT, "MAX_FORMAT should be FORMAT_INT_BGR");
     }
 
     /**
@@ -43,24 +41,16 @@ public class SurfaceTests {
     @Test
     public void testPixelFormatValidation() {
         // Valid formats
-        assertTrue("FORMAT_INT_ARGB should be valid", 
-            Surface.isValidPixelFormat(Surface.FORMAT_INT_ARGB));
-        assertTrue("FORMAT_INT_RGB should be valid", 
-            Surface.isValidPixelFormat(Surface.FORMAT_INT_RGB));
-        assertTrue("FORMAT_INT_RGBA should be valid", 
-            Surface.isValidPixelFormat(Surface.FORMAT_INT_RGBA));
-        assertTrue("FORMAT_INT_ABGR should be valid", 
-            Surface.isValidPixelFormat(Surface.FORMAT_INT_ABGR));
-        assertTrue("FORMAT_INT_BGR should be valid", 
-            Surface.isValidPixelFormat(Surface.FORMAT_INT_BGR));
+        assertTrue(Surface.isValidPixelFormat(Surface.FORMAT_INT_ARGB), "FORMAT_INT_ARGB should be valid");
+        assertTrue(Surface.isValidPixelFormat(Surface.FORMAT_INT_RGB), "FORMAT_INT_RGB should be valid");
+        assertTrue(Surface.isValidPixelFormat(Surface.FORMAT_INT_RGBA), "FORMAT_INT_RGBA should be valid");
+        assertTrue(Surface.isValidPixelFormat(Surface.FORMAT_INT_ABGR), "FORMAT_INT_ABGR should be valid");
+        assertTrue(Surface.isValidPixelFormat(Surface.FORMAT_INT_BGR), "FORMAT_INT_BGR should be valid");
         
         // Invalid formats
-        assertFalse("Negative format should be invalid", 
-            Surface.isValidPixelFormat(-1));
-        assertFalse("Format 5 should be invalid", 
-            Surface.isValidPixelFormat(5));
-        assertFalse("Large format value should be invalid", 
-            Surface.isValidPixelFormat(100));
+        assertFalse(Surface.isValidPixelFormat(-1), "Negative format should be invalid");
+        assertFalse(Surface.isValidPixelFormat(5), "Format 5 should be invalid");
+        assertFalse(Surface.isValidPixelFormat(100), "Large format value should be invalid");
     }
 
     /**
@@ -85,8 +75,7 @@ public class SurfaceTests {
         };
         
         for (int i = 0; i < allFormats.length; i++) {
-            assertEquals("Format at index " + i + " should have sequential value", 
-                expectedValue + i, allFormats[i]);
+            assertEquals(expectedValue + i, allFormats[i], "Format at index " + i + " should have sequential value");
         }
     }
 
@@ -97,8 +86,7 @@ public class SurfaceTests {
     @Test
     public void testFormatRangeContinuous() {
         for (int format = Surface.MIN_FORMAT; format <= Surface.MAX_FORMAT; format++) {
-            assertTrue("Format " + format + " should be valid within range", 
-                Surface.isValidPixelFormat(format));
+            assertTrue(Surface.isValidPixelFormat(format), "Format " + format + " should be valid within range");
         }
     }
 }
