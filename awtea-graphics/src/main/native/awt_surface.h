@@ -1,10 +1,11 @@
 #pragma once
 #include "awt_raster_internal.h"
 
-extern Surface g_surfaces[NUM_SURFACES];
+extern SurfaceData g_surfaces[NUM_SURFACES];
+extern SurfaceContext g_contexts[NUM_CONTEXTS];
 
-
-Surface* get_surface_data(int id);
+SurfaceData* get_surface_data(int id);
+SurfaceContext* get_context_data(int id);
 
 __attribute__((export_name("find_free_surface")))
 int  find_free_surface(void);
@@ -24,6 +25,24 @@ int  get_surface_stride(int surface_id);
 __attribute__((export_name("get_surface_pixels_ptr")))
 uint32_t get_surface_pixels_ptr(int surface_id);
 
+// Context management functions
+__attribute__((export_name("find_free_context")))
+int find_free_context(void);
 
-int clip_x(int x, const Surface* surf);
-int clip_y(int y, const Surface* surf);
+__attribute__((export_name("create_context")))
+int create_context(int surface_id);
+
+__attribute__((export_name("clone_context")))
+int clone_context(int context_id);
+
+__attribute__((export_name("destroy_context")))
+int destroy_context(int context_id);
+
+__attribute__((export_name("create_reference")))
+int create_reference(int surface_id);
+
+__attribute__((export_name("get_context_surface_id")))
+int get_context_surface_id(int context_id);
+
+int clip_x(int x, const RenderSurface* surf);
+int clip_y(int y, const RenderSurface* surf);

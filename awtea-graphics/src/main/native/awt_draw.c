@@ -15,7 +15,7 @@ static inline ImageView* lookup_by_id(int id) {
     return NULL;
 }
 
-void draw_filled_rect(Surface* surface,
+void draw_filled_rect(RenderSurface* surface,
                                     int x, int y,
                                     int width, int height,
                                     uint32_t color) {
@@ -111,13 +111,13 @@ void draw_filled_rect(Surface* surface,
     }
 }
 
-void clear_rect(Surface* surface,
+void clear_rect(RenderSurface* surface,
     int x, int y,
     int width, int height) {
     draw_filled_rect(surface, x, y, width, height, surface->argb[COLOR_BG]);
 }
 
-void draw_rect(Surface* surface,
+void draw_rect(RenderSurface* surface,
     int x, int y,
     int width, int height,
     uint32_t color) {
@@ -131,12 +131,12 @@ void draw_rect(Surface* surface,
     draw_filled_rect(surface, x + width, y,          1,         height + 1, color);
 }
 
-void set_color(Surface* surface, int which, uint32_t argb) {
+void set_color(SurfaceContext* ctx, int which, uint32_t argb) {
     which = clamp_int(which, COLOR_MIN, COLOR_MAX);
-    surface->argb[which] = argb;
+    ctx->argb[which] = argb;
 }
 
-void draw_line(Surface* surf,
+void draw_line(RenderSurface* surf,
                              int x1, int y1,
                              int x2, int y2,
                              uint32_t color) {
@@ -190,7 +190,7 @@ void draw_line(Surface* surf,
     }
 }
 
-void blit_image(Surface* dst, int image_id, int x, int y) {
+void blit_image(RenderSurface* dst, int image_id, int x, int y) {
     ImageView* img = lookup_by_id(image_id);
     if (!img || !img->ptr || img->width == 0 || img->height == 0) {
         return;
@@ -198,7 +198,7 @@ void blit_image(Surface* dst, int image_id, int x, int y) {
     blit_from_view(dst, img, x, y);
 }
 
-void blit_from_view(Surface* dst,
+void blit_from_view(RenderSurface* dst,
                     const ImageView* src,
                     int x, int y) {
     if (!src || !src->ptr || src->width == 0 || src->height == 0) {

@@ -6,12 +6,16 @@
 
 #define MAX_IMAGES 1024
 #define NUM_SURFACES 1024
+#define NUM_CONTEXTS 2048
 
 #define START_IMAGE_ID 0
 #define END_IMAGE_ID MAX_IMAGES
 
 #define START_SURFACE_ID MAX_IMAGES
 #define END_SURFACE_ID (START_SURFACE_ID + NUM_SURFACES)
+
+#define START_CONTEXT_ID (START_SURFACE_ID + NUM_SURFACES)
+#define END_CONTEXT_ID (START_CONTEXT_ID + NUM_CONTEXTS)
 
 #define COLOR_FG 0
 #define COLOR_BG 1
@@ -100,28 +104,12 @@ typedef struct {
 
 
 // ===================================================================================
-// | Note: Conceptually Surface and ImageView are very similar                       |
-// |       They differ in that Surface has rendering state (clip, transform, colors) |
+// | Note: Conceptually SurfaceData and ImageView are very similar                   |
+// |       They differ in that SurfaceData has reference counting                    |
 // |       whereas ImageView is intended to represent external image data            |
 // |       However, they share the same initial memory layout for pixel data         |
-// |       Thus, we can cast between Surface* and ImageView* in some places          |
+// |       Thus, we can cast between SurfaceData* and ImageView* in some places      |
 // ===================================================================================
-
-typedef struct {
-    // exact same structure as ImageView
-    // it _must_ be at the start of this struct, and match ImageView layout
-    // (we cast between Surface* and ImageView* in some places)
-    uint32_t    ptr;     // pointer to pixels
-    PixelFormat format;  // same enum as Surface/ImageData
-    uint32_t    width;
-    uint32_t    height;
-    uint32_t    stride;  // in bytes
-    // render state
-    uint32_t    layer; // not used yet, reserved for future use
-    uint32_t    argb[COLOR_MAX + 1];
-    Transform2D transform;
-    ClipRect    clip;
-} Surface;
 
 typedef struct {
     uint32_t    ptr;     // pointer to pixels
@@ -130,3 +118,46 @@ typedef struct {
     uint32_t    height;
     uint32_t    stride;  // in bytes
 } ImageView;
+
+// SurfaceData: pixel buffer and metadata, shared by multiple contexts
+typedef struct {
+    // exact same structure as ImageView
+    // it _must_ be at the start of this struct, and match ImageView layout
+    // (we cast between SurfaceData* and ImageView* in some places)
+    uint32_t    ptr;     // pointer to pixels
+    PixelFormat format;  // same enum as Surface/ImageData
+    uint32_t    width;
+    uint32_t    height;
+    uint32_t    stride;  // in bytes
+    // metadata
+    uint32_t    layer;     // not used yet, reserved for future use
+    uint32_t    ref_count; // number of contexts referencing this surface
+} SurfaceData;
+
+// SurfaceContext: per-reference rendering state
+typedef struct {
+    int         surface_id; // which surface this context references (-1 = unused)
+    uint32_t    argb[COLOR_MAX + 1];
+    Transform2D transform;
+    ClipRect    clip;
+} SurfaceContext;
+
+// Legacy typedef for backwards compatibility during transition
+typedef SurfaceData Surface;
+
+// RenderSurface: temporary combined view of SurfaceData + SurfaceContext for rendering
+// This struct has the same layout as the legacy Surface struct, making it easy to
+// pass to existing rendering functions that need both pixel data and rendering state.
+typedef struct {
+    // Pixel data fields (from SurfaceData)
+    uint32_t    ptr;
+    PixelFormat format;
+    uint32_t    width;
+    uint32_t    height;
+    uint32_t    stride;
+    uint32_t    layer;
+    // Rendering state fields (from SurfaceContext)
+    uint32_t    argb[COLOR_MAX + 1];
+    Transform2D transform;
+    ClipRect    clip;
+} RenderSurface;
