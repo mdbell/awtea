@@ -119,21 +119,35 @@ int get_surface_stride(int surface_id) {
 }
 
 int clip_x(int x, const RenderSurface* surf) {
-    x = clamp_int(x, 0, surf->width);
-    // Also apply the clip rectangle if set
+    int min_x = 0;
+    int max_x = surf->width;
+    
+    // If clip rectangle is set, intersect with clip bounds
     if (surf->clip.width > 0) {
-        x = clamp_int(x, surf->clip.x, surf->clip.x + surf->clip.width);
+        min_x = surf->clip.x > 0 ? surf->clip.x : 0;
+        max_x = surf->clip.x + surf->clip.width;
+        if (max_x > surf->width) {
+            max_x = surf->width;
+        }
     }
-    return x;
+    
+    return clamp_int(x, min_x, max_x);
 }
 
 int clip_y(int y, const RenderSurface* surf) {
-    y = clamp_int(y, 0, surf->height);
-    // Also apply the clip rectangle if set
+    int min_y = 0;
+    int max_y = surf->height;
+    
+    // If clip rectangle is set, intersect with clip bounds
     if (surf->clip.height > 0) {
-        y = clamp_int(y, surf->clip.y, surf->clip.y + surf->clip.height);
+        min_y = surf->clip.y > 0 ? surf->clip.y : 0;
+        max_y = surf->clip.y + surf->clip.height;
+        if (max_y > surf->height) {
+            max_y = surf->height;
+        }
     }
-    return y;
+    
+    return clamp_int(y, min_y, max_y);
 }
 
 int find_free_context() {
