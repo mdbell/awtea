@@ -211,10 +211,9 @@ This design keeps the C code simple while providing full control on the host sid
 
 ## Logging Categories
 
-The Java implementation uses separate loggers for each feature:
+The Java implementation uses separate loggers for different aspects:
 
 - `wasm.rasterizer` - General WASM and assertion logs
-- `wasm.performance` - Performance timing logs (currently unused on Java side, available for extension)
 - `wasm.memory` - Memory tracking logs
 
 Configure logging levels in your application to control verbosity.

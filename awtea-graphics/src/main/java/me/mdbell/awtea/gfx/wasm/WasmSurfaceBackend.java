@@ -19,7 +19,6 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     final SurfaceLRUCache surfaceCache;
 
     private static final Logger wasmLogger = LoggerFactory.getLogger("wasm.rasterizer");
-    private static final Logger perfLogger = LoggerFactory.getLogger("wasm.performance");
     private static final Logger memoryLogger = LoggerFactory.getLogger("wasm.memory");
 
     public WasmSurfaceBackend() {
