@@ -1,14 +1,15 @@
-# WASM Rasterizer Test Harness
+# WASM Rasterizer and Java Test Harness
 
-This directory contains a standalone test harness for the awtea WASM rasterizer, allowing you to test and debug the rasterization engine in isolation without requiring the full Java/AWT stack.
+This directory contains test harnesses for the awtea graphics module, allowing you to test both the WASM rasterizer and Java code in isolation using Deno.
 
 ## Overview
 
 The test harness provides:
 
 - **TypeScript interface** to the WASM rasterizer module
+- **Java test runner** using TeaVM to compile Java tests to JavaScript
 - **Deno-based testing** using Deno's built-in test framework
-- **Isolated testing** without GUI, TSurface, TGraphics, or Java runtime
+- **Isolated testing** without GUI, TSurface, TGraphics, or full Java runtime
 - **Utilities** for surface allocation, command creation, pixel inspection, and error handling
 - **Example scenarios** demonstrating various drawing operations
 - **WASM logging support** - see debug, info, warn, and error messages from the native code
@@ -16,7 +17,8 @@ The test harness provides:
 ## Prerequisites
 
 - [Deno 2.0+](https://deno.land/) installed
-- WASM module built (see Building section)
+- WASM module built (for WASM tests)
+- Java tests compiled to JavaScript (for Java tests)
 
 **Note on imports**: While JSR (`jsr:@std/assert`) is the preferred modern way to import Deno standard libraries, this test harness uses `https://deno.land/std/` imports for maximum compatibility. In environments with full JSR access, you can update the imports in `deno.json` and test files to use `jsr:@std/assert@1` instead.
 
@@ -70,11 +72,27 @@ cd awtea-graphics/src/test/deno
 deno test --allow-read
 ```
 
-### Run Specific Test File
+### Run WASM Tests Only
 
 ```bash
 deno test --allow-read basic_test.ts
 deno test --allow-read advanced_test.ts
+```
+
+### Run Java Tests Only
+
+```bash
+deno test --allow-read java_tests.ts
+```
+
+### Run via Gradle
+
+You can also run tests using Gradle tasks:
+
+```bash
+# From the awtea root directory
+./gradlew :awtea-graphics:denoTest       # Run WASM tests
+./gradlew :awtea-graphics:denoTestJava   # Run Java tests
 ```
 
 ### Run with Verbose Output
@@ -82,6 +100,95 @@ deno test --allow-read advanced_test.ts
 ```bash
 deno test --allow-read --trace-ops
 ```
+
+## Java Tests via TeaVM
+
+### Overview
+
+The Java test infrastructure allows you to write JUnit-style tests in Java and execute them in Deno via TeaVM compilation. This provides a way to test Java graphics code without requiring a full JVM.
+
+### How It Works
+
+1. **Java test classes** are written in `src/test/java/me/mdbell/awtea/gfx/test/` with standard `@Test` annotations
+2. **Code generation** - The `generateDenoJUnitRunner` Gradle task scans for `@Test` methods and auto-generates `DenoJUnitRunner.java`
+3. **Compilation** - Generated runner and test classes are compiled together
+4. **TeaVM compilation** converts Java bytecode to JavaScript (ES2015 modules)
+5. **Deno test runner** (`java_tests.ts`) imports and executes the compiled tests
+6. **Test results** are reported through Deno's test framework
+
+### Building Java Tests
+
+Before running Java tests, compile them to JavaScript:
+
+```bash
+# From the awtea root directory
+./gradlew :awtea-graphics:buildDenoJavaTests
+```
+
+This will:
+- Auto-generate `DenoJUnitRunner.java` from `@Test` annotations
+- Compile Java test classes
+- Use TeaVM to convert them to JavaScript
+- Output to `build/deno-tests/classes.js`
+
+### Adding New Java Tests
+
+1. Create a new test method in `SurfaceTests.java` or create a new test class with `@Test` annotations:
+
+```java
+@Test
+public void testNewFeature() {
+    assertEquals("Expected message", expected, actual);
+    assertTrue("Condition should be true", condition);
+}
+```
+
+2. Rebuild the tests:
+
+```bash
+./gradlew :awtea-graphics:buildDenoJavaTests
+```
+
+The `generateDenoJUnitRunner` task will automatically discover your new `@Test` method and register it with Deno. The test will appear as "Java: New Feature" in Deno's test output (method name is converted from camelCase to readable text).
+
+**Note**: `DenoJUnitRunner.java` is auto-generated in `build/generated/test/java/` and should not be manually edited.
+
+The test will appear as "Java: New feature test" in Deno's test output.
+
+### Java Test Architecture
+
+The Java tests use a custom testing framework with TeaVM's JSO (JavaScript Objects) API to directly integrate with Deno's test framework:
+
+1. **Test utilities module** (`awtea-test-util`) - Shared testing infrastructure including:
+   - Custom `@Test` annotation (replaces JUnit)
+   - `Assert` class with assertion methods
+   - `Deno` wrapper for JSO integration with Deno.test()
+2. **Automatic test discovery** - Gradle task scans for `@Test` annotated methods at build time
+3. **Code generation** - `DenoJUnitRunner.java` is auto-generated with registration code for each test
+4. **Test registration** happens in generated `DenoJUnitRunner.main()` which calls `deno.test(name, fn)` for each test
+5. **Direct integration** means Java tests appear as individual Deno tests (not wrapped in a parent test)
+6. **1-1 mapping** with Deno's test infrastructure provides proper test isolation and reporting
+
+This approach has several advantages:
+- **No external dependencies** - No JUnit required, uses custom lightweight annotations
+- **Reusable** - Test utilities are in a separate module and can be used by any awtea module
+- **No manual maintenance** - Just add `@Test` methods and they're automatically discovered
+- Tests appear individually in Deno's test output with descriptive names
+- Failed assertions properly propagate to Deno's test runner
+- No custom test result parsing required
+- Each test is independently tracked by Deno
+
+### Current Java Tests
+
+The following tests are currently implemented (all prefixed with "Java:" in Deno output):
+
+1. **Pixel format constants** - Validates pixel format constant values
+2. **Pixel format range** - Checks MIN/MAX format bounds
+3. **Pixel format validation** - Tests `isValidPixelFormat()` method
+4. **Enum sequential values** - Verifies enum values are sequential
+5. **Format range continuous** - Ensures no gaps in format range
+
+These tests validate the Surface interface and pixel format constants, providing a foundation for testing enum synchronization across C, Java, and TypeScript.
 
 ## Running the Demo
 
