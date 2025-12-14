@@ -5,6 +5,15 @@
 SurfaceData g_surfaces[NUM_SURFACES];
 SurfaceContext g_contexts[NUM_CONTEXTS];
 
+void init_surface_system(void) {
+    // Initialize all contexts to mark them as free
+    for (int i = 0; i < NUM_CONTEXTS; i++) {
+        g_contexts[i].surface_id = -1;
+    }
+    log_info("Initialized surface system: %d surfaces, %d contexts", 
+             NUM_SURFACES, NUM_CONTEXTS);
+}
+
 SurfaceData* get_surface_data(int id) {
     if (id < START_SURFACE_ID || id >= END_SURFACE_ID) return NULL;
     return &g_surfaces[id - START_SURFACE_ID];

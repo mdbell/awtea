@@ -20,6 +20,8 @@ public class WasmSurfaceBackend implements SurfaceBackend {
 
     public WasmSurfaceBackend() {
         this.exports = WasmAwtLoader.load(WASM_MODULE_PATH, this::logFromWasm).await();
+        // Initialize the surface system (sets all contexts to free state)
+        this.exports.initSurfaceSystem();
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
     }
 
