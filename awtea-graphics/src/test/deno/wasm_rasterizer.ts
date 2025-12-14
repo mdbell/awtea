@@ -41,25 +41,6 @@ export const COLOR_FG = 0;
 export const COLOR_BG = 1;
 
 /**
- * WASM module exports interface
- */
-interface WasmExports {
-  memory: WebAssembly.Memory;
-  find_free_surface: () => number;
-  reset_surface: (surfaceId: number, layer: number, width: number, height: number, format: number) => number;
-  get_surface_width: (surfaceId: number) => number;
-  get_surface_height: (surfaceId: number) => number;
-  get_surface_stride: (surfaceId: number) => number;
-  get_surface_pixels_ptr: (surfaceId: number) => number;
-  get_command_size: () => number;
-  request_command_buffer: (maxCommands: number) => number;
-  render_awt: (surfaceId: number, cmdPtr: number, cmdCount: number) => number;
-  register_image: (format: number, width: number, height: number, stride: number) => number;
-  get_image_pixels_ptr: (imageId: number) => number;
-  free_pixels: (ptr: number) => void;
-}
-
-/**
  * Surface command structure (must match SurfaceCommand in awt_raster_internal.h)
  * Total size: 28 bytes
  */
@@ -78,7 +59,6 @@ export interface SurfaceCommand {
  * Main test harness class
  */
 export class WasmRasterizer {
-  private wasm: WasmExports | null = null;
   private wasmInstance: WebAssembly.Instance | null = null;
 
   /**
@@ -88,17 +68,16 @@ export class WasmRasterizer {
     const wasmBytes = await Deno.readFile(wasmPath);
     const wasmModule = await WebAssembly.compile(wasmBytes);
     this.wasmInstance = await WebAssembly.instantiate(wasmModule, {});
-    this.wasm = this.wasmInstance.exports as unknown as WasmExports;
   }
 
   /**
    * Get WASM exports (throws if not loaded)
    */
-  private getExports(): WasmExports {
-    if (!this.wasm) {
+  private getExports() {
+    if (!this.wasmInstance) {
       throw new Error("WASM module not loaded. Call load() first.");
     }
-    return this.wasm;
+    return this.wasmInstance.exports as any;
   }
 
   /**
