@@ -121,8 +121,7 @@ public final class WasmSurface implements Surface {
 				backend.releaseSurface(this);
 			} else {
 				// Direct destroy
-				exports.resetSurface(this.surfaceId, 0, 0, 0, 0);
-				surfaceId = -1;
+				destroyInternal();
 			}
 		}
 	}
@@ -132,6 +131,13 @@ public final class WasmSurface implements Surface {
 	 * Used internally by the pool when evicting surfaces.
 	 */
 	void destroyDirect() {
+		destroyInternal();
+	}
+	
+	/**
+	 * Internal method to actually destroy the surface.
+	 */
+	private void destroyInternal() {
 		if (surfaceId != -1) {
 			exports.resetSurface(this.surfaceId, 0, 0, 0, 0);
 			surfaceId = -1;

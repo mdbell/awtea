@@ -125,7 +125,8 @@ public class WasmSurfacePool {
         int height = surface.getHeight();
         int format = surface.getFormat();
         
-        // Don't pool surfaces with zero dimensions
+        // Don't pool surfaces with zero dimensions (they are marked as freed in WASM)
+        // See WasmSurface.destroyInternal() - surfaces with width & height of 0 are considered free
         if (width <= 0 || height <= 0) {
             surface.destroyDirect();
             destroyCount.incrementAndGet();
