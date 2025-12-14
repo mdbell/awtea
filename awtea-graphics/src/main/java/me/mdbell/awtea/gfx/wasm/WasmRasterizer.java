@@ -56,10 +56,10 @@ public class WasmRasterizer implements Rasterizer {
             cacheEntry.sync();
 
             commandBuffer.emitBlitImage(
-                    cacheEntry.imageId,
+                    cacheEntry.tempSurfaceId,
                     destX, destY);
-            commandBuffer.emitFreeImage(cacheEntry.imageId);
-            commandBuffer.flush(); // we have to flush here to ensure the image is ready before drawing
+            commandBuffer.emitFreeSurface(cacheEntry.tempSurfaceId);
+            commandBuffer.flush(); // we have to flush here to ensure the surface is ready before drawing
         }
     }
 

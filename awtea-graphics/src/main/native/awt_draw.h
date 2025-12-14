@@ -22,8 +22,4 @@ void draw_line(Surface* surf,
                         int x2, int y2,
                         uint32_t color);
 
-void blit_image(Surface* dst, int image_id, int x, int y);
-
-void blit_from_view(Surface* dst,
-                        const ImageView* src,
-                        int x, int y);
+void blit_surface(Surface* dst, int src_surface_id, int x, int y);

@@ -24,6 +24,9 @@ int  get_surface_stride(int surface_id);
 __attribute__((export_name("get_surface_pixels_ptr")))
 uint32_t get_surface_pixels_ptr(int surface_id);
 
+__attribute__((export_name("free_surface")))
+int free_surface(int surface_id);
+
 
 int clip_x(int x, const Surface* surf);
 int clip_y(int y, const Surface* surf);

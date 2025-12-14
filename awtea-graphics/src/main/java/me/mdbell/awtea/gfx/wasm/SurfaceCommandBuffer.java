@@ -182,7 +182,7 @@ public final class SurfaceCommandBuffer {
 		i32.set(wordBase + 6, 0);
 	}
 
-	public void emitBlitImage(int imageId, int x, int y) {
+	public void emitBlitImage(int surfaceId, int x, int y) {
 		int idx = ensureSlot();
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
@@ -193,18 +193,18 @@ public final class SurfaceCommandBuffer {
 		i32.set(wordBase + 2, y);
 		i32.set(wordBase + 3, 0);
 		i32.set(wordBase + 4, 0);
-		i32.set(wordBase + 5, imageId);
+		i32.set(wordBase + 5, surfaceId);
 		i32.set(wordBase + 6, 0);
 	}
 
-	public void emitFreeImage(int imageId) {
+	public void emitFreeSurface(int surfaceId) {
 		int idx = ensureSlot();
 		int baseByte = cmdBaseByte(idx);
 		int wordBase = cmdWordBase(baseByte);
 
-		setExtendedOperation(baseByte, WasmSurface.ExtendedOperation.FREE_IMAGE);
+		setExtendedOperation(baseByte, WasmSurface.ExtendedOperation.FREE_SURFACE);
 
-		i32.set(wordBase + 1, imageId);
+		i32.set(wordBase + 1, surfaceId);
 		i32.set(wordBase + 2, 0);
 		i32.set(wordBase + 3, 0);
 		i32.set(wordBase + 4, 0);

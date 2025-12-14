@@ -122,6 +122,6 @@ public final class WasmSurface implements Surface {
 	}
 
 	public enum ExtendedOperation {
-		FREE_IMAGE;
+		FREE_SURFACE;
 	}
 }

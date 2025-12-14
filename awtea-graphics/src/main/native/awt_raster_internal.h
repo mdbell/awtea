@@ -4,14 +4,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#define MAX_IMAGES 1024
-#define NUM_SURFACES 1024
+// All image/surface operations now use a unified surface pool
+#define NUM_SURFACES 2048
 
-#define START_IMAGE_ID 0
-#define END_IMAGE_ID MAX_IMAGES
-
-#define START_SURFACE_ID MAX_IMAGES
-#define END_SURFACE_ID (START_SURFACE_ID + NUM_SURFACES)
+#define START_SURFACE_ID 0
+#define END_SURFACE_ID NUM_SURFACES
 
 #define COLOR_FG 0
 #define COLOR_BG 1
@@ -41,7 +38,7 @@ typedef enum {
 
     CMD_COUNT, // last value is reserved for counting
 
-    EXT_FREE_IMAGE = 128, // non-standard render commands start here
+    EXT_FREE_SURFACE = 128, // non-standard render commands start here
 
 } SurfaceOperation;
 
@@ -54,7 +51,7 @@ typedef struct {
     uint32_t height; // Height parameter
     union {
         struct { uint32_t argb, which; } set_color;
-        struct { uint32_t image_id; } blit;
+        struct { uint32_t surface_id; } blit;
         //TODO: figure out how we're going to do transforms
         // struct { uint32_t m00, m01, m10, m11; } transform; 
         uint32_t args[2]; // Fallback for generic access
@@ -100,19 +97,14 @@ typedef struct {
 
 
 // ===================================================================================
-// | Note: Conceptually Surface and ImageView are very similar                       |
-// |       They differ in that Surface has rendering state (clip, transform, colors) |
-// |       whereas ImageView is intended to represent external image data            |
-// |       However, they share the same initial memory layout for pixel data         |
-// |       Thus, we can cast between Surface* and ImageView* in some places          |
+// | Surface represents both permanent rendering targets and temporary image data    |
+// | All pixel operations work exclusively with Surface instances (by ID)            |
+// | External images are uploaded into temporary Surface instances before use        |
 // ===================================================================================
 
 typedef struct {
-    // exact same structure as ImageView
-    // it _must_ be at the start of this struct, and match ImageView layout
-    // (we cast between Surface* and ImageView* in some places)
     uint32_t    ptr;     // pointer to pixels
-    PixelFormat format;  // same enum as Surface/ImageData
+    PixelFormat format;  // pixel format
     uint32_t    width;
     uint32_t    height;
     uint32_t    stride;  // in bytes
@@ -122,11 +114,3 @@ typedef struct {
     Transform2D transform;
     ClipRect    clip;
 } Surface;
-
-typedef struct {
-    uint32_t    ptr;     // pointer to pixels
-    PixelFormat format;  // same enum as Surface/ImageData
-    uint32_t    width;
-    uint32_t    height;
-    uint32_t    stride;  // in bytes
-} ImageView;

@@ -152,19 +152,28 @@ class SurfaceLRUCache {
     @Monitored.AllMethods
     class SurfaceCacheEntry {
         final WeakReference<Surface> surfaceRef;
-        int imageId;
+        int tempSurfaceId;  // Temporary surface ID for caching external surfaces
         int ptr;
         Uint8ClampedArray pixelsView;
 
         public SurfaceCacheEntry(Surface surface) {
             this.surfaceRef = new WeakReference<>(surface);
             int stride = surface.getWidth() * 4;
-            this.imageId = exports.registerImage(surface.getFormat(), surface.getWidth(),
-                    surface.getHeight(), stride);
-            if (this.imageId == -1) {
-                throw new IllegalStateException("SurfaceCacheEntry: failed to register image");
+            
+            // Find a free surface slot and allocate it
+            this.tempSurfaceId = exports.findFreeSurfaceId();
+            if (this.tempSurfaceId == -1) {
+                throw new IllegalStateException("SurfaceCacheEntry: no free surface slots available");
             }
-            this.ptr = exports.getImagePixelsPtr(this.imageId);
+            
+            // Reset the surface with the appropriate dimensions
+            int rc = exports.resetSurface(this.tempSurfaceId, 0, surface.getWidth(),
+                    surface.getHeight(), surface.getFormat());
+            if (rc != 0) {
+                throw new IllegalStateException("SurfaceCacheEntry: failed to reset surface: " + rc);
+            }
+            
+            this.ptr = exports.getSurfacePixelsPtr(this.tempSurfaceId);
         }
 
         public void sync() {
@@ -193,10 +202,10 @@ class SurfaceLRUCache {
         }
 
         public void release() {
-            if (ptr != 0) {
-                exports.freePixels(ptr);
+            if (tempSurfaceId != -1) {
+                exports.freeSurface(tempSurfaceId);
                 ptr = 0;
-                imageId = -1;
+                tempSurfaceId = -1;
             }
         }
 

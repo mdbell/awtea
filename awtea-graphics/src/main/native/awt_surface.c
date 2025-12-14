@@ -123,3 +123,18 @@ int clip_y(int y, const Surface* surf) {
     }
     return y;
 }
+
+int free_surface(int surface_id) {
+    if (surface_id < START_SURFACE_ID || surface_id >= END_SURFACE_ID) {
+        return -1; // invalid id
+    }
+    Surface* surf = get_surface_data(surface_id);
+    if (!surf) {
+        return -1;
+    }
+    if (surf->ptr) {
+        free((void*)(uintptr_t)surf->ptr);
+        surf->ptr = 0;
+    }
+    return 0;
+}
