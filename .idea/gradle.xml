@@ -27,6 +27,7 @@
             <option value="$PROJECT_DIR$/awtea-instrument" />
             <option value="$PROJECT_DIR$/awtea-net" />
             <option value="$PROJECT_DIR$/awtea-sound" />
+            <option value="$PROJECT_DIR$/awtea-test-util" />
             <option value="$PROJECT_DIR$/awtea-ui" />
             <option value="$PROJECT_DIR$/awtea-util" />
             <option value="$PROJECT_DIR$/buildSrc" />

@@ -74,10 +74,6 @@ tasks.register("buildAwtRasterWasm") {
 
         exec {
             commandLine(
-                "docker", "run", "--rm",
-                "-v", "${projectDir}:/src",
-                "-w", "/src",
-                "emscripten/emsdk",
                 "emcc",
                 "-Isrc/main/native",
                 * sourceList.toTypedArray(),   // ← all .c sources here
