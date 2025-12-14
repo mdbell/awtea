@@ -6,10 +6,11 @@ This directory contains the Visual Studio Code Dev Container configuration for A
 
 The devcontainer provides a consistent, reproducible development environment with all necessary tools pre-installed:
 
-- **Java 11** (Microsoft OpenJDK, required for the project)
-- **Gradle** (via wrapper)
-- **Docker-in-Docker** (for Emscripten/WASM compilation)
+- **Java 11** (via SDKMAN, allowing easy version switching)
+- **Emscripten SDK** (for compiling C code to WebAssembly)
 - **Deno** (for TypeScript/WASM tests)
+- **Docker CLI** (for running Docker commands via host socket)
+- **Gradle** (via wrapper)
 - **Git** and other essential development tools
 
 ## Usage
@@ -47,18 +48,22 @@ The devcontainer provides a consistent, reproducible development environment wit
 
 ### Installed Tools
 
-- **Java Development Kit (JDK)**: Java 11 (Microsoft OpenJDK)
+- **Java Development Kit (JDK)**: Java 11 managed via SDKMAN
+- **SDKMAN**: SDK manager for easy JDK version switching
+- **Emscripten SDK**: Version 3.1.51 for WebAssembly compilation
+- **Deno**: Version 2.1.2 installed to /usr/local/bin for TypeScript/WASM tests
+- **Docker CLI**: For running Docker commands via mounted host socket
 - **Gradle**: Build automation via the Gradle wrapper (`./gradlew`)
-- **Docker**: Docker-in-Docker support for running Emscripten containers (version 20)
-- **Deno**: TypeScript/JavaScript runtime for WASM tests (v2.x)
 - **VS Code Extensions**: Pre-configured extensions for Java, Gradle, Deno, and Docker development
 
 ### Configuration Highlights
 
-- **Java Runtime**: Uses Java 11 directly (Microsoft OpenJDK from the base image)
+- **Custom Dockerfile**: Builds a complete development environment with all tools
+- **SDKMAN Integration**: Allows switching JDK versions using `sdk` commands
+- **Emscripten SDK**: Pre-installed and configured for WASM compilation
 - **Deno Integration**: Enabled only for `./awtea-graphics/src/test/deno` directory
 - **Port Forwarding**: Ports 8080 and 3000 forwarded for web application development
-- **Docker Socket Mounting**: Enables Docker-in-Docker for WASM compilation
+- **Docker Socket Mounting**: Enables running Docker commands for containerized builds
 
 ## CI/CD Reusability
 
@@ -200,6 +205,27 @@ WORKDIR /workspace
 ```
 
 ## Development Workflow
+
+### Managing Java Versions with SDKMAN
+
+The devcontainer includes SDKMAN for easy Java version management:
+
+```bash
+# List available Java versions
+sdk list java
+
+# Install a different Java version (e.g., Java 17)
+sdk install java 17.0.10-tem
+
+# Switch to a different installed version
+sdk use java 17.0.10-tem
+
+# Set a version as default
+sdk default java 17.0.10-tem
+
+# Show current Java version
+sdk current java
+```
 
 ### Building the Project
 

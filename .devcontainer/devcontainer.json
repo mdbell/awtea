@@ -1,17 +1,10 @@
 {
   "name": "AWTea Development",
-  "image": "mcr.microsoft.com/devcontainers/java:1-11-bullseye",
-  
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "20",
-      "moby": true
-    },
-    "ghcr.io/devcontainers-contrib/features/deno:1": {
-      "version": "v2.x"
-    }
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
   },
-
+  
   "customizations": {
     "vscode": {
       "extensions": [
@@ -34,11 +27,11 @@
 
   "forwardPorts": [8080, 3000],
 
-  "postCreateCommand": "java -version && ./gradlew -v && deno --version && docker --version",
+  "postCreateCommand": "source /home/vscode/.sdkman/bin/sdkman-init.sh && source /opt/emsdk/emsdk_env.sh && java -version && ./gradlew -v && deno --version && emcc --version",
 
   "remoteUser": "vscode",
   
-  // Mount Docker socket to enable Docker-in-Docker for WASM compilation
+  // Mount Docker socket to enable running Docker commands for WASM compilation
   // Note: This grants container access to the host's Docker daemon
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
