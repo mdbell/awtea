@@ -31,7 +31,7 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
     SurfaceData* data = get_surface_data(ctx->surface_id);
     if (!data || !data->ptr) {
         log_error("render_awt: invalid surface %d for context %d", ctx->surface_id, context_id);
-        return -1; // invalid surface
+        return -2; // invalid surface
     }
 
     // Build a RenderSurface from data + context for rendering
