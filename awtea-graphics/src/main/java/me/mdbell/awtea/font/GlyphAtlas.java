@@ -144,12 +144,13 @@ public class GlyphAtlas {
 		float yMaxPx = -yMinUnits * scalePx;
 		float yMinPx = -yMaxUnits * scalePx;
 		
-		// Calculate pixel-aligned bounding box
+		// Calculate pixel-aligned bounding box with a 1-pixel buffer
 		// We use floor/ceil to ensure we capture all pixels the glyph touches
-		int xMinPixel = (int) Math.floor(xMinPx);
-		int xMaxPixel = (int) Math.ceil(xMaxPx);
-		int yMinPixel = (int) Math.floor(yMinPx);
-		int yMaxPixel = (int) Math.ceil(yMaxPx);
+		// The extra pixel accounts for antialiasing and rasterization edge effects
+		int xMinPixel = (int) Math.floor(xMinPx) - 1;
+		int xMaxPixel = (int) Math.ceil(xMaxPx) + 1;
+		int yMinPixel = (int) Math.floor(yMinPx) - 1;
+		int yMaxPixel = (int) Math.ceil(yMaxPx) + 1;
 		
 		int glyphWidth = xMaxPixel - xMinPixel;
 		int glyphHeight = yMaxPixel - yMinPixel;
