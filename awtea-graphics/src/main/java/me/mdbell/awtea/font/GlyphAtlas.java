@@ -144,8 +144,15 @@ public class GlyphAtlas {
 		float yMaxPx = -yMinUnits * scalePx;
 		float yMinPx = -yMaxUnits * scalePx;
 		
-		int glyphWidth = (int) Math.ceil(xMaxPx - xMinPx) + 1;
-		int glyphHeight = (int) Math.ceil(yMaxPx - yMinPx) + 1;
+		// Calculate pixel-aligned bounding box
+		// We use floor/ceil to ensure we capture all pixels the glyph touches
+		int xMinPixel = (int) Math.floor(xMinPx);
+		int xMaxPixel = (int) Math.ceil(xMaxPx);
+		int yMinPixel = (int) Math.floor(yMinPx);
+		int yMaxPixel = (int) Math.ceil(yMaxPx);
+		
+		int glyphWidth = xMaxPixel - xMinPixel;
+		int glyphHeight = yMaxPixel - yMinPixel;
 		
 		if (glyphWidth <= 0 || glyphHeight <= 0) {
 			return null;
@@ -185,24 +192,24 @@ public class GlyphAtlas {
 			// Position at origin relative to glyph bounds
 			// renderX: offset to account for glyph's left bearing
 			// renderY: baseline position within the temp surface
-			// The baseline should be at -yMinPx from the top (since yMinPx is negative for glyphs above baseline)
-			int renderX = -(int) Math.floor(xMinPx);
-			int renderY = -(int) Math.floor(yMinPx);
+			// Use the pixel-aligned bounds to ensure consistency
+			int renderX = -xMinPixel;
+			int renderY = -yMinPixel;
 			
 			renderGlyphToSurface(font, glyphId, tempSurface, sizePx, renderX, renderY, argb, supersample);
 			
 			// Copy the rendered glyph from temp surface to atlas
 			copyToAtlas(tempSurface, currentX, currentY, glyphWidth, glyphHeight);
 			
-			// Create the glyph entry
+			// Create the glyph entry with pixel-aligned offsets
 			GlyphEntry entry = new GlyphEntry(
 				atlasSurface,
 				currentX,
 				currentY,
 				glyphWidth,
 				glyphHeight,
-				(int) Math.floor(xMinPx),
-				(int) Math.floor(yMinPx)
+				xMinPixel,
+				yMinPixel
 			);
 			
 			// Update packing position
