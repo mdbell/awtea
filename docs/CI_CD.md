@@ -106,9 +106,11 @@ Ensures that the setup steps documented for Copilot agents work correctly, inclu
 
 ### Cost Monitoring
 
-**Free Tier Limits (Public Repositories):**
-- 2,000 minutes/month for Linux runners
-- Unlimited minutes for public repositories (as of GitHub's current policy)
+**Free Tier Limits:**
+- **Public repositories:** GitHub Actions is free with usage limits
+  - Linux runners have generous limits suitable for open source projects
+  - Check current limits at [GitHub Actions billing documentation](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions)
+- **Private repositories:** 2,000 minutes/month on free tier (Linux runners)
 
 **Current Usage Estimate:**
 - Main CI (per run): ~3-5 minutes
@@ -243,6 +245,7 @@ If costs become a concern:
    - Keep GitHub Actions up to date (e.g., `actions/checkout@v4`)
    - Update Emscripten SDK version as needed
    - Update Java/Deno versions for security patches
+   - **Security Note:** For maximum security, consider pinning third-party actions to commit SHAs instead of tags (e.g., `uses: mymindstorm/setup-emsdk@13d8fd355c5d882f4a1c563ae62e3573322aeca4` instead of `@v14`). This prevents potential tag hijacking but requires more maintenance to track updates.
 
 2. **Monitor Performance:**
    - Check average workflow duration monthly
