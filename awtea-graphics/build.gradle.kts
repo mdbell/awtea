@@ -155,8 +155,39 @@ tasks.register("buildDenoJavaTests") {
         val classLoader = URLClassLoader(urls.toTypedArray(), Thread.currentThread().contextClassLoader)
         tool.classLoader = classLoader
         
+        println("Generating JavaScript with TeaVM...")
+        println("Main class: ${tool.mainClass}")
+        println("Output: ${outputDir}/classes.js")
+        
         tool.generate()
-        println("Generated JavaScript test bundle: ${outputDir}/classes.js")
+        
+        // Check for problems
+        if (tool.problemProvider.severeProblems.isNotEmpty()) {
+            println("ERROR: TeaVM encountered ${tool.problemProvider.severeProblems.size} severe problems:")
+            tool.problemProvider.severeProblems.take(20).forEach {
+                println("  Severity: ${it.severity}")
+                println("  Location: ${it.location}")
+                println("  Text: ${it.text}")
+                if (it.params != null && it.params.isNotEmpty()) {
+                    println("  Params: ${it.params.joinToString(", ")}")
+                }
+                println()
+            }
+            if (tool.problemProvider.severeProblems.size > 20) {
+                println("  ... and ${tool.problemProvider.severeProblems.size - 20} more problems")
+            }
+            throw GradleException("TeaVM compilation failed with severe problems")
+        }
+        
+        if (tool.problemProvider.problems.isNotEmpty()) {
+            println("WARNING: TeaVM encountered problems:")
+            tool.problemProvider.problems.forEach {
+                println("  - ${it.location}: ${it.text}")
+            }
+        }
+        
+        val outputFile = File(outputDir, "classes.js")
+        println("Generated JavaScript test bundle: ${outputDir}/classes.js (${outputFile.length()} bytes)")
     }
 }
 
