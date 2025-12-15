@@ -176,45 +176,48 @@ async function demo3_Checkerboard() {
 }
 
 /**
- * Demo 4: Image blitting
+ * Demo 4: Surface-to-surface blitting
  */
-async function demo4_ImageBlitting() {
-  console.log("\n=== Demo 4: Image Blitting ===");
+async function demo4_SurfaceBlitting() {
+  console.log("\n=== Demo 4: Surface-to-Surface Blitting ===");
   
   const rasterizer = new WasmRasterizer();
   await rasterizer.load(WASM_PATH);
 
-  // Create a small stamp image (4x4 cross pattern)
-  const imageId = rasterizer.registerImage(4, 4);
-  const imagePixels = rasterizer.getImagePixels(imageId, 4, 4);
+  // Create a small stamp surface (4x4 cross pattern)
+  const stampSurfaceId = rasterizer.allocateSurface(4, 4);
+  const stampContextId = rasterizer.createContext(stampSurfaceId);
   
   const magenta = WasmRasterizer.makeARGB(255, 255, 0, 255);
-  const crossPattern = [
-    0, 1, 1, 0,
-    1, 1, 1, 1,
-    1, 1, 1, 1,
-    0, 1, 1, 0,
-  ];
   
-  for (let i = 0; i < crossPattern.length; i++) {
-    imagePixels[i] = crossPattern[i] ? magenta : 0;
-  }
-
-  // Create surface and blit the image multiple times
-  const surfaceId = rasterizer.allocateSurface(16, 16);
-  const contextId = rasterizer.createContext(surfaceId);
-
-  rasterizer.renderCommandsToContext(contextId, [
-    WasmRasterizer.blitImageCommand(imageId, 0, 0),
-    WasmRasterizer.blitImageCommand(imageId, 6, 0),
-    WasmRasterizer.blitImageCommand(imageId, 0, 6),
-    WasmRasterizer.blitImageCommand(imageId, 6, 6),
+  // Draw a cross pattern on the stamp surface
+  rasterizer.renderCommandsToContext(stampContextId, [
+    // Draw magenta cross
+    WasmRasterizer.setColorCommand(magenta),
+    WasmRasterizer.fillRectCommand(1, 0, 2, 1), // top
+    WasmRasterizer.fillRectCommand(0, 1, 4, 2), // middle
+    WasmRasterizer.fillRectCommand(1, 3, 2, 1), // bottom
   ]);
 
-  printSurface(rasterizer, surfaceId);
+  // Create destination surface
+  const destSurfaceId = rasterizer.allocateSurface(16, 16);
+  const destContextId = rasterizer.createContext(destSurfaceId);
 
-  rasterizer.destroyContext(contextId);
-  rasterizer.freeSurface(surfaceId);
+  // Use CMD_BLIT_IMAGE to blit the stamp surface to multiple positions
+  // This is the proper way to copy one surface onto another
+  rasterizer.renderCommandsToContext(destContextId, [
+    WasmRasterizer.blitImageCommand(stampSurfaceId, 0, 0),
+    WasmRasterizer.blitImageCommand(stampSurfaceId, 6, 0),
+    WasmRasterizer.blitImageCommand(stampSurfaceId, 0, 6),
+    WasmRasterizer.blitImageCommand(stampSurfaceId, 6, 6),
+  ]);
+
+  printSurface(rasterizer, destSurfaceId);
+
+  rasterizer.destroyContext(stampContextId);
+  rasterizer.destroyContext(destContextId);
+  rasterizer.freeSurface(stampSurfaceId);
+  rasterizer.freeSurface(destSurfaceId);
 }
 
 /**
@@ -309,8 +312,7 @@ async function main() {
     await demo1_FilledRectangles();
     await demo2_Clipping();
     await demo3_Checkerboard();
-    // Note: Image blitting demo requires register_image WASM export (not yet implemented)
-    // await demo4_ImageBlitting();
+    await demo4_SurfaceBlitting();
     await demo5_Transforms();
     await demo6_ComplexScene();
 
