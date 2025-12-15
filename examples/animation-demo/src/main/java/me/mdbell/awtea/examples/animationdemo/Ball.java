@@ -99,12 +99,23 @@ public class Ball {
      * @param g Graphics context to draw on
      */
     public void draw(Graphics g) {
+        // Approximate a circle using a polygon
+        int sides = 20; // Number of sides for the circle approximation
+        int[] xPoints = new int[sides];
+        int[] yPoints = new int[sides];
+        
+        for (int i = 0; i < sides; i++) {
+            double angle = 2 * Math.PI * i / sides;
+            xPoints[i] = (int)(x + radius * Math.cos(angle));
+            yPoints[i] = (int)(y + radius * Math.sin(angle));
+        }
+        
         g.setColor(color);
-        g.fillOval((int)(x - radius), (int)(y - radius), radius * 2, radius * 2);
+        g.fillPolygon(xPoints, yPoints, sides);
         
         // Draw outline
         g.setColor(Color.BLACK);
-        g.drawOval((int)(x - radius), (int)(y - radius), radius * 2, radius * 2);
+        g.drawPolygon(xPoints, yPoints, sides);
     }
     
     /**

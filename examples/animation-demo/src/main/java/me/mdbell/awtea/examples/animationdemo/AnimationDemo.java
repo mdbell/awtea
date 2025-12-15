@@ -80,7 +80,10 @@ public class AnimationDemo {
             initializeBalls();
             
             // Set up mouse listeners
-            addMouseListener(new MouseAdapter() {
+            addMouseListener(new MouseListener() {
+                @Override
+                public void mouseClicked(MouseEvent e) {}
+                
                 @Override
                 public void mousePressed(MouseEvent e) {
                     if (e.getButton() == MouseEvent.BUTTON1) {
@@ -91,9 +94,21 @@ public class AnimationDemo {
                         addRandomBall(e.getX(), e.getY(), true);
                     }
                 }
+                
+                @Override
+                public void mouseReleased(MouseEvent e) {}
+                
+                @Override
+                public void mouseEntered(MouseEvent e) {}
+                
+                @Override
+                public void mouseExited(MouseEvent e) {}
             });
             
-            addMouseMotionListener(new MouseMotionAdapter() {
+            addMouseMotionListener(new MouseMotionListener() {
+                @Override
+                public void mouseDragged(MouseEvent e) {}
+                
                 @Override
                 public void mouseMoved(MouseEvent e) {
                     mouseX = e.getX();
@@ -103,11 +118,17 @@ public class AnimationDemo {
             
             // Set up keyboard listener
             setFocusable(true);
-            addKeyListener(new KeyAdapter() {
+            addKeyListener(new KeyListener() {
+                @Override
+                public void keyTyped(KeyEvent e) {}
+                
                 @Override
                 public void keyPressed(KeyEvent e) {
                     handleKeyPress(e.getKeyCode());
                 }
+                
+                @Override
+                public void keyReleased(KeyEvent e) {}
             });
             
             // Request focus for keyboard input
