@@ -1,7 +1,25 @@
 #include "awt_stack.h"
 #include "awt_log.h"
+#include "awt_imports.h"
+#include <stdio.h>
 
 #if ENABLE_WASM_STACK_TRACKING
+
+// Thread-local storage for context strings (for temporary context formatting)
+// Using a small buffer pool to avoid allocations
+#define CONTEXT_BUFFER_POOL_SIZE 8
+#define CONTEXT_BUFFER_SIZE 128
+static char g_context_buffers[CONTEXT_BUFFER_POOL_SIZE][CONTEXT_BUFFER_SIZE];
+static int g_context_buffer_index = 0;
+
+// Get a temporary buffer for context string formatting
+// Note: Buffer is reused in circular fashion, so copy if you need to keep it
+static char* get_context_buffer(void) {
+    char* buf = g_context_buffers[g_context_buffer_index];
+    g_context_buffer_index = (g_context_buffer_index + 1) % CONTEXT_BUFFER_POOL_SIZE;
+    buf[0] = '\0';  // Clear buffer
+    return buf;
+}
 
 // Global stack tracking state
 static StackFrame g_stack[MAX_STACK_DEPTH];
@@ -13,8 +31,17 @@ void init_stack_tracking(void) {
     for (int i = 0; i < MAX_STACK_DEPTH; i++) {
         g_stack[i].function_name = NULL;
         g_stack[i].line_number = 0;
+        g_stack[i].timestamp_ms = 0.0;
+        g_stack[i].context = NULL;
+        g_stack[i].reserved = 0;
     }
     g_stack_pointer = 0;
+    
+    // Clear context buffers
+    for (int i = 0; i < CONTEXT_BUFFER_POOL_SIZE; i++) {
+        g_context_buffers[i][0] = '\0';
+    }
+    g_context_buffer_index = 0;
     
     // Store pointer to stack buffer for external access
     g_stack_buffer_ptr = (uint32_t)(uintptr_t)&g_stack[0];
@@ -24,6 +51,10 @@ void init_stack_tracking(void) {
 }
 
 void stack_push(const char* function_name, int line) {
+    stack_push_with_context(function_name, line, NULL);
+}
+
+void stack_push_with_context(const char* function_name, int line, const char* context) {
     if (g_stack_pointer < 0) {
         g_stack_pointer = 0;  // safety check
     }
@@ -32,6 +63,9 @@ void stack_push(const char* function_name, int line) {
     int index = g_stack_pointer % MAX_STACK_DEPTH;
     g_stack[index].function_name = function_name;
     g_stack[index].line_number = line;
+    g_stack[index].timestamp_ms = wasm_get_time_ms();
+    g_stack[index].context = context;
+    g_stack[index].reserved = 0;
     
     g_stack_pointer++;
     
@@ -58,6 +92,20 @@ int get_stack_depth(void) {
 
 int get_max_stack_depth(void) {
     return MAX_STACK_DEPTH;
+}
+
+// Helper function to format context string for memory allocations
+const char* stack_format_alloc_context(size_t bytes) {
+    char* buf = get_context_buffer();
+    snprintf(buf, CONTEXT_BUFFER_SIZE, "alloc %zu bytes", bytes);
+    return buf;
+}
+
+// Helper function to format context string for surface operations
+const char* stack_format_surface_context(int id, int width, int height) {
+    char* buf = get_context_buffer();
+    snprintf(buf, CONTEXT_BUFFER_SIZE, "surface %d (%dx%d)", id, width, height);
+    return buf;
 }
 
 #endif  // ENABLE_WASM_STACK_TRACKING

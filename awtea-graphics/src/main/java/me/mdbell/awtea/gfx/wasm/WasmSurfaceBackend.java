@@ -192,23 +192,46 @@ public class WasmSurfaceBackend implements SurfaceBackend {
             sb.append("Call stack (depth=").append(depth).append("):\n");
             
             // Read stack frames from WASM memory
-            // Each frame is 8 bytes: 4-byte function name pointer + 4-byte line number
+            // Each frame is 24 bytes: 4-byte function name ptr + 4-byte line number + 
+            // 8-byte timestamp + 4-byte context ptr + 4-byte reserved
             for (int i = 0; i < Math.min(depth, maxDepth); i++) {
-                int frameOffset = stackPtr + (i * 8);
+                int frameOffset = stackPtr + (i * 24);
                 
                 org.teavm.jso.typedarrays.Int32Array frameData = new org.teavm.jso.typedarrays.Int32Array(
                     exports.getMemory().getBuffer(),
                     frameOffset,
-                    2
+                    6  // 24 bytes / 4 = 6 int32 values
                 );
                 
                 int funcNamePtr = frameData.get(0);
                 int lineNumber = frameData.get(1);
                 
+                // Read timestamp (double stored as two int32 values)
+                org.teavm.jso.typedarrays.Float64Array timestampData = new org.teavm.jso.typedarrays.Float64Array(
+                    exports.getMemory().getBuffer(),
+                    frameOffset + 8,
+                    1
+                );
+                double timestamp = timestampData.get(0);
+                
+                int contextPtr = frameData.get(4);
+                
                 // Read function name string
                 String functionName = readNullTerminatedString(funcNamePtr);
                 
-                sb.append(String.format("  #%d: %s (line %d)\n", i, functionName, lineNumber));
+                // Format the frame output
+                sb.append(String.format("  #%d: %s (line %d) [%.3fms]", 
+                    i, functionName, lineNumber, timestamp));
+                
+                // Add context if available
+                if (contextPtr != 0) {
+                    String context = readNullTerminatedString(contextPtr);
+                    if (!context.isEmpty() && !context.equals("<unknown>")) {
+                        sb.append(String.format(" - %s", context));
+                    }
+                }
+                
+                sb.append("\n");
             }
             
             return sb.toString();

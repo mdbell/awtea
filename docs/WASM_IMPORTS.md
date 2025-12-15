@@ -422,12 +422,16 @@ Example log output:
 [ERROR] WASM assertion failed: buffer != NULL at awt_draw.c:45
 [ERROR] WASM call stack:
 Call stack (depth=5):
-  #0: draw_filled_rect (line 23)
-  #1: render_awt (line 67)
-  #2: blit_image (line 156)
-  #3: create_context (line 178)
-  #4: init_surface_system (line 12)
+  #0: draw_filled_rect (line 23) [1234.567ms]
+  #1: render_awt (line 67) [1234.123ms] 
+  #2: blit_image (line 156) [1233.890ms]
+  #3: create_context (line 178) [1233.456ms]
+  #4: reset_surface (line 48) [1233.012ms] - surface 0 (100x100)
 ```
+
+With context information included, you can see not only the call chain but also:
+- Timestamps showing when each function was entered
+- Additional context like surface dimensions or memory allocation sizes
 
 ### Compile-Time Configuration
 
@@ -449,9 +453,9 @@ When disabled:
 ### Performance Impact
 
 When enabled:
-- **Memory**: 2KB for 256 frames (8 bytes per frame)
-- **Runtime**: ~2 instructions per function call/return (minimal overhead)
-- **Overhead**: < 1% for typical workloads
+- **Memory**: ~6KB for 256 frames (24 bytes per frame)
+- **Runtime**: ~3-4 instructions per function call/return including timestamp capture
+- **Overhead**: ~1-2% for typical workloads
 
 For performance-critical production builds, disable stack tracking after debugging is complete.
 
@@ -461,7 +465,9 @@ For performance-critical production builds, disable stack tracking after debuggi
 - **Thread-safe**: Single-threaded WASM environment
 - **Static strings**: Function names are pointers to static `__FUNCTION__` strings
 - **Line numbers**: Captured at `STACK_ENTER()` via `__LINE__` macro
-- **No dynamic allocation**: Fixed-size buffer allocated at init time
+- **Timestamps**: Captured via `wasm_get_time_ms()` import (millisecond precision)
+- **Context strings**: Stored in small buffer pool (8 buffers × 128 bytes)
+- **No dynamic allocation**: Fixed-size buffers allocated at init time
 - **Overflow protection**: Stack pointer capped to prevent integer overflow
 
 ### Best Practices

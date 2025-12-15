@@ -612,18 +612,32 @@ export class WasmRasterizer {
 
       let result = `Call stack (depth=${depth}):\n`;
 
-      // Each frame is 8 bytes: 4-byte function name pointer + 4-byte line number
+      // Each frame is 24 bytes: 4-byte function name ptr + 4-byte line number + 
+      // 8-byte timestamp + 4-byte context ptr + 4-byte reserved
       for (let i = 0; i < Math.min(depth, maxDepth); i++) {
-        const frameOffset = stackPtr + (i * 8);
+        const frameOffset = stackPtr + (i * 24);
 
         const view = new DataView(memory.buffer);
         const funcNamePtr = view.getUint32(frameOffset, true);
         const lineNumber = view.getInt32(frameOffset + 4, true);
+        const timestamp = view.getFloat64(frameOffset + 8, true);
+        const contextPtr = view.getUint32(frameOffset + 16, true);
 
         // Read null-terminated function name
         const functionName = this.readNullTerminatedString(funcNamePtr);
 
-        result += `  #${i}: ${functionName} (line ${lineNumber})\n`;
+        // Format the frame output
+        result += `  #${i}: ${functionName} (line ${lineNumber}) [${timestamp.toFixed(3)}ms]`;
+
+        // Add context if available
+        if (contextPtr !== 0) {
+          const context = this.readNullTerminatedString(contextPtr);
+          if (context && context !== "<unknown>") {
+            result += ` - ${context}`;
+          }
+        }
+
+        result += "\n";
       }
 
       return result;

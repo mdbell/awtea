@@ -3,13 +3,18 @@
 ## Overview
 Added a complete call stack tracking system for the WASM rasterizer to enable debugging when crashes or assertion failures occur. The stack is readable externally from JavaScript/Java even after the module crashes, enabling post-mortem analysis.
 
+**Enhanced Features:**
+- **Timestamps**: Each frame captures the timestamp when the function was entered (in milliseconds)
+- **Context strings**: Optional context information (e.g., memory allocations, surface dimensions)
+
 ## Key Features Implemented
 
 ### 1. Core C Implementation
 - **`awt_stack.h`**: API header with stack frame structure and macros
-- **`awt_stack.c`**: Circular buffer implementation (256 frames, 2KB total)
-- **Stack Frame**: 8 bytes per frame (function name pointer + line number)
-- **Macros**: `STACK_ENTER()`, `STACK_EXIT()` for easy integration
+- **`awt_stack.c`**: Circular buffer implementation (256 frames, ~6KB total)
+- **Stack Frame**: 24 bytes per frame (function name pointer + line number + timestamp + context pointer + reserved)
+- **Macros**: `STACK_ENTER()`, `STACK_ENTER_CTX(ctx)`, `STACK_EXIT()` for easy integration
+- **Helper functions**: `stack_format_alloc_context()`, `stack_format_surface_context()` for context formatting
 
 ### 2. Integration Points
 Added stack tracking to critical functions:
@@ -60,14 +65,16 @@ Created demonstration script (`stack_demo.ts`):
 ## Performance Impact
 
 ### Memory Overhead
-- **2048 bytes** (2KB) for 256-frame circular buffer
-- Static allocation during initialization
+- **~6144 bytes** (~6KB) for 256-frame circular buffer (24 bytes per frame)
+- **1024 bytes** (1KB) for context string buffer pool (8 × 128 bytes)
+- **Total: ~7KB** static allocation during initialization
 - No dynamic memory allocation
 
 ### Runtime Overhead
-- ~2 instructions per function call (push)
+- ~3-4 instructions per function call (push with timestamp + context)
 - ~1 instruction per function return (pop)
-- Estimated **< 1%** impact for typical workloads
+- Timestamp capture via `wasm_get_time_ms()` import
+- Estimated **1-2%** impact for typical workloads
 - Can be completely disabled for production builds
 
 ## Output Example
@@ -78,20 +85,39 @@ When an assertion fails or the module aborts:
 [ERROR] WASM assertion failed: buffer != NULL at awt_draw.c:45
 [ERROR] WASM call stack:
 Call stack (depth=5):
-  #0: draw_filled_rect (line 23)
-  #1: render_awt (line 67)
-  #2: blit_image (line 156)
-  #3: create_context (line 178)
-  #4: init_surface_system (line 12)
+  #0: draw_filled_rect (line 23) [1234.567ms]
+  #1: render_awt (line 67) [1234.123ms]
+  #2: blit_image (line 156) [1233.890ms]
+  #3: create_context (line 178) [1233.456ms]
+  #4: reset_surface (line 48) [1233.012ms] - surface 0 (100x100)
 ```
+
+**New information provided:**
+- **Timestamps**: Shows when each function was entered, useful for identifying performance bottlenecks
+- **Context**: Shows relevant information like surface dimensions, helping identify which specific surface caused the issue
 
 ## Technical Details
 
 ### Circular Buffer Design
 - Fixed-size array of 256 StackFrame structures
+- Each frame: 24 bytes (function pointer + line + timestamp + context + reserved)
 - Overwrites oldest entries when full
 - Stack pointer wraps at MAX_STACK_DEPTH
 - Overflow protection prevents integer overflow
+
+### Timestamp Capture
+- Uses `wasm_get_time_ms()` import (already available in the system)
+- Millisecond precision via JavaScript's `performance.now()`
+- Captured at function entry via `STACK_ENTER()`
+- Stored as double (8 bytes) for high precision
+
+### Context String Storage
+- 8-buffer pool, each 128 bytes
+- Circular reuse prevents memory exhaustion
+- Helper functions format common contexts:
+  - `stack_format_alloc_context(bytes)` - for memory allocations
+  - `stack_format_surface_context(id, w, h)` - for surface operations
+- Context strings are optional (can be NULL)
 
 ### Function Name Storage
 - Uses `__FUNCTION__` macro (compile-time constant)
@@ -164,6 +190,26 @@ void my_function(int arg) {
     }
     
     do_work();
+    
+    STACK_EXIT();
+}
+```
+
+### Adding with Context
+```c
+void allocate_buffer(size_t bytes) {
+    STACK_ENTER_CTX(stack_format_alloc_context(bytes));
+    
+    void* ptr = malloc(bytes);
+    // ... use ptr ...
+    
+    STACK_EXIT();
+}
+
+void process_surface(int id, int width, int height) {
+    STACK_ENTER_CTX(stack_format_surface_context(id, width, height));
+    
+    // Process surface
     
     STACK_EXIT();
 }

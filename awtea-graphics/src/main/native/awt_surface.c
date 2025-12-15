@@ -45,7 +45,7 @@ int find_free_surface() {
 }
 
 int reset_surface(int surface_id, int layer, int width, int height, PixelFormat format) {
-    STACK_ENTER();
+    STACK_ENTER_CTX(stack_format_surface_context(surface_id, width, height));
     
     log_debug("reset_surface: id=%d, layer=%d, size=%dx%d, format=%d", 
               surface_id, layer, width, height, format);
