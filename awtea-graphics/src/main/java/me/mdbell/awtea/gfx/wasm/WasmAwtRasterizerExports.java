@@ -78,4 +78,14 @@ interface WasmAwtRasterizerExports extends JSObject {
 	// int render_awt(int context_id, uint32_t cmdPtr, int cmdCount);
 	@JSMethod("render_awt")
 	int renderAwt(int contextId, int commandsPtr, int commandCount);
+
+	// Stack tracking exports
+	@JSMethod("get_stack_buffer_ptr")
+	int getStackBufferPtr();
+
+	@JSMethod("get_stack_depth")
+	int getStackDepth();
+
+	@JSMethod("get_max_stack_depth")
+	int getMaxStackDepth();
 }

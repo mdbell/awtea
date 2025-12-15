@@ -82,6 +82,7 @@ tasks.register("buildAwtRasterWasm") {
                 "-s", "WASM_BIGINT=1",
                 "-s", "ERROR_ON_UNDEFINED_SYMBOLS=0",
                 "-s", "INITIAL_MEMORY=134217728", // 128MB
+                "-DENABLE_WASM_STACK_TRACKING=1",  // Enable stack tracking by default
                 "--no-entry",
                 "-o", "build/wasm/awt_raster.wasm"
             )

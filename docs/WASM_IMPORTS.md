@@ -328,3 +328,176 @@ void complex_operation(int* data, int count) {
 - [LOGGING.md](LOGGING.md) - Application-wide logging configuration
 - `awt_imports.h` - C header with declarations
 - `example_usage.c` - Complete usage examples
+
+## Stack Tracking
+
+The WASM rasterizer includes a call stack tracking system for debugging crashes and assertion failures.
+
+### Overview
+
+When enabled, the rasterizer maintains a circular buffer of function calls in WASM linear memory. This stack is readable from JavaScript/Java even after the module crashes, enabling post-mortem analysis.
+
+### Exported Functions
+
+The following functions are exported from the WASM module:
+
+**`get_stack_buffer_ptr()`**
+```c
+uint32_t get_stack_buffer_ptr(void);
+```
+Returns a pointer to the stack buffer in WASM linear memory. Returns 0 if stack tracking is disabled.
+
+**`get_stack_depth()`**
+```c
+int get_stack_depth(void);
+```
+Returns the current stack depth (number of frames). Capped at MAX_STACK_DEPTH (256).
+
+**`get_max_stack_depth()`**
+```c
+int get_max_stack_depth(void);
+```
+Returns the maximum stack depth (circular buffer size), currently 256 frames.
+
+### Stack Frame Structure
+
+Each stack frame is 8 bytes:
+```c
+typedef struct {
+    const char* function_name;  // 4 bytes: pointer to static string
+    int line_number;            // 4 bytes: line number
+} StackFrame;
+```
+
+Frames are stored contiguously in a circular buffer. When the buffer is full, new frames overwrite the oldest entries.
+
+### C-Side Usage
+
+Include the header:
+```c
+#include "awt_stack.h"
+```
+
+Track function entry/exit:
+```c
+void my_function(int arg) {
+    STACK_ENTER();
+    
+    // Function body
+    do_work(arg);
+    
+    STACK_EXIT();
+}
+```
+
+For functions with multiple return paths:
+```c
+int validate_input(int* buffer, int size) {
+    STACK_ENTER();
+    
+    if (buffer == NULL) {
+        STACK_EXIT();
+        return -1;
+    }
+    
+    if (size <= 0) {
+        STACK_EXIT();
+        return -2;
+    }
+    
+    // Success
+    STACK_EXIT();
+    return 0;
+}
+```
+
+### Java-Side Reading
+
+The `WasmSurfaceBackend` class automatically reads and logs the stack trace when:
+- An assertion fails (via `wasm_assertion_failed` callback)
+- The module aborts (via `abort` callback)
+
+Example log output:
+```
+[ERROR] WASM assertion failed: buffer != NULL at awt_draw.c:45
+[ERROR] WASM call stack:
+Call stack (depth=5):
+  #0: draw_filled_rect (line 23)
+  #1: render_awt (line 67)
+  #2: blit_image (line 156)
+  #3: create_context (line 178)
+  #4: init_surface_system (line 12)
+```
+
+### Compile-Time Configuration
+
+Stack tracking can be disabled at compile time for production builds:
+
+```bash
+# Disable stack tracking (zero overhead)
+emcc -DENABLE_WASM_STACK_TRACKING=0 ...
+```
+
+By default, `ENABLE_WASM_STACK_TRACKING` is set to `1` (enabled).
+
+When disabled:
+- `STACK_ENTER()` and `STACK_EXIT()` expand to `((void)0)` (no-op)
+- Export functions return 0
+- No memory overhead
+- No runtime overhead
+
+### Performance Impact
+
+When enabled:
+- **Memory**: 2KB for 256 frames (8 bytes per frame)
+- **Runtime**: ~2 instructions per function call/return (minimal overhead)
+- **Overhead**: < 1% for typical workloads
+
+For performance-critical production builds, disable stack tracking after debugging is complete.
+
+### Implementation Details
+
+- **Circular buffer**: When full, overwrites oldest entries
+- **Thread-safe**: Single-threaded WASM environment
+- **Static strings**: Function names are pointers to static `__FUNCTION__` strings
+- **Line numbers**: Captured at `STACK_ENTER()` via `__LINE__` macro
+- **No dynamic allocation**: Fixed-size buffer allocated at init time
+- **Overflow protection**: Stack pointer capped to prevent integer overflow
+
+### Best Practices
+
+1. **Add tracking to key functions**:
+   - Public API entry points
+   - Complex algorithms
+   - Functions that allocate memory
+   - Functions that validate input
+
+2. **Don't track trivial functions**:
+   - Getters/setters
+   - Simple arithmetic helpers
+   - Functions called in tight loops (use sparingly)
+
+3. **Balance between detail and overhead**:
+   - Track more in debug builds
+   - Track less in release builds
+   - Consider disabling entirely for production
+
+4. **Always match STACK_ENTER/STACK_EXIT**:
+   - Add STACK_EXIT before every return
+   - Use RAII-style `STACK_TRACE()` macro for automatic cleanup (C11+)
+
+### Troubleshooting
+
+**Stack trace shows empty or garbled function names:**
+- Ensure you're using `STACK_ENTER()` at function entry
+- Check that `__FUNCTION__` is supported by your compiler (it is in Emscripten)
+
+**Stack depth is always 256:**
+- The buffer wrapped around; oldest frames were overwritten
+- Consider increasing MAX_STACK_DEPTH or reducing tracked functions
+
+**No stack trace appears:**
+- Verify ENABLE_WASM_STACK_TRACKING=1 in build configuration
+- Check that `init_stack_tracking()` is called during initialization
+- Ensure assertion/abort callbacks are properly configured
+

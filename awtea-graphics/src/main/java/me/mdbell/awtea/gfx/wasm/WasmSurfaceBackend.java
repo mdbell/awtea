@@ -46,7 +46,11 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     }
 
     private void handleAbort() {
+        String stackTrace = readWasmStackTrace();
         log.error("WASM module aborted execution");
+        if (!stackTrace.isEmpty()) {
+            log.error("WASM call stack:\n{}", stackTrace);
+        }
         throw new IllegalStateException("WASM module aborted execution");
     }
 
@@ -94,6 +98,11 @@ public class WasmSurfaceBackend implements SurfaceBackend {
         String file = new String(fileArr.copyToJavaArray());
 
         log.error("WASM assertion failed: {} at {}:{}", expr, file, line);
+        
+        String stackTrace = readWasmStackTrace();
+        if (!stackTrace.isEmpty()) {
+            log.error("WASM call stack:\n{}", stackTrace);
+        }
     }
 
     public WasmSurface createSurface(int width, int height, int pixelFormat) {
@@ -167,5 +176,66 @@ public class WasmSurfaceBackend implements SurfaceBackend {
             }
         }
         return 100;
+    }
+
+    private String readWasmStackTrace() {
+        try {
+            int stackPtr = exports.getStackBufferPtr();
+            int depth = exports.getStackDepth();
+            int maxDepth = exports.getMaxStackDepth();
+            
+            if (stackPtr == 0 || depth == 0) {
+                return "";
+            }
+            
+            StringBuilder sb = new StringBuilder();
+            sb.append("Call stack (depth=").append(depth).append("):\n");
+            
+            // Read stack frames from WASM memory
+            // Each frame is 8 bytes: 4-byte function name pointer + 4-byte line number
+            for (int i = 0; i < Math.min(depth, maxDepth); i++) {
+                int frameOffset = stackPtr + (i * 8);
+                
+                org.teavm.jso.typedarrays.Int32Array frameData = new org.teavm.jso.typedarrays.Int32Array(
+                    exports.getMemory().getBuffer(),
+                    frameOffset,
+                    2
+                );
+                
+                int funcNamePtr = frameData.get(0);
+                int lineNumber = frameData.get(1);
+                
+                // Read function name string
+                String functionName = readNullTerminatedString(funcNamePtr);
+                
+                sb.append(String.format("  #%d: %s (line %d)\n", i, functionName, lineNumber));
+            }
+            
+            return sb.toString();
+        } catch (Exception e) {
+            log.warn("Failed to read WASM stack trace: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    private String readNullTerminatedString(int ptr) {
+        if (ptr == 0) return "<unknown>";
+        
+        try {
+            // Read bytes until null terminator (max 256 chars for safety)
+            Int8Array memory = new Int8Array(exports.getMemory().getBuffer(), ptr, 256);
+            int len = 0;
+            while (len < 256 && memory.get(len) != 0) {
+                len++;
+            }
+            
+            byte[] bytes = new byte[len];
+            for (int i = 0; i < len; i++) {
+                bytes[i] = memory.get(i);
+            }
+            return new String(bytes);
+        } catch (Exception e) {
+            return "<error reading string>";
+        }
     }
 }
