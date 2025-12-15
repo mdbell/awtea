@@ -125,7 +125,7 @@ int clip_x(int x, const RenderSurface* surf) {
     
     // If clip rectangle is set, intersect with clip bounds
     if (surf->clip.width > 0) {
-        min_x = surf->clip.x > 0 ? surf->clip.x : 0;
+        min_x = surf->clip.x < 0 ? 0 : surf->clip.x;
         max_x = surf->clip.x + surf->clip.width;
         if (max_x > surf->width) {
             max_x = surf->width;
@@ -141,7 +141,7 @@ int clip_y(int y, const RenderSurface* surf) {
     
     // If clip rectangle is set, intersect with clip bounds
     if (surf->clip.height > 0) {
-        min_y = surf->clip.y > 0 ? surf->clip.y : 0;
+        min_y = surf->clip.y < 0 ? 0 : surf->clip.y;
         max_y = surf->clip.y + surf->clip.height;
         if (max_y > surf->height) {
             max_y = surf->height;
