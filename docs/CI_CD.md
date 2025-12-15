@@ -300,9 +300,20 @@ The CI status badge in the README shows the current build status:
 - 🟡 **In Progress:** Workflow is running
 - ⚪ **No Status:** Workflow hasn't run yet
 
+## Self-Hosted Runners
+
+For advanced use cases (private repositories with high usage, custom hardware requirements, or persistent caching), consider setting up self-hosted runners.
+
+See the [Self-Hosted Runner Setup Guide](SELF_HOSTED_RUNNER.md) for detailed instructions on:
+- Docker-based runner deployment
+- Security best practices
+- Resource optimization
+- Monitoring and maintenance
+
 ## References
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Building Java with Gradle](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle)
 - [Caching Dependencies](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows)
 - [GitHub Actions Billing](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions)
+- [Self-Hosted Runners](SELF_HOSTED_RUNNER.md) - Setup guide for self-hosted runners
