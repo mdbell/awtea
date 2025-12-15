@@ -225,6 +225,36 @@ export class WasmRasterizer {
   }
 
   /**
+   * Execute commands using the context's internal command buffer.
+   * This is more efficient than allocating a temporary buffer.
+   * 
+   * @param contextId The context to render to
+   * @param commands Array of commands to execute
+   */
+  renderCommandsToContext(contextId: number, commands: SurfaceCommand[]): void {
+    const wasm = this.getExports();
+    
+    // Get the context's command buffer
+    const bufferPtr = this.getContextCommandBufferPtr(contextId);
+    const maxCommands = this.getMaxContextCommands();
+    
+    if (commands.length > maxCommands) {
+      throw new Error(`Too many commands: ${commands.length} > ${maxCommands}`);
+    }
+    
+    // Write commands to the context buffer
+    for (let i = 0; i < commands.length; i++) {
+      this.writeCommand(bufferPtr, i, commands[i]);
+    }
+    
+    // Render using the context buffer (pass 0 as bufferPtr to use context buffer)
+    const result = wasm.render_awt(contextId, 0, commands.length);
+    if (result !== 0) {
+      throw new Error(`render_awt failed with error code ${result}`);
+    }
+  }
+
+  /**
    * Create a rendering context for a surface
    */
   createContext(surfaceId: number): number {
@@ -292,6 +322,26 @@ export class WasmRasterizer {
       throw new Error(`Invalid context ID ${contextId}`);
     }
     return surfaceId;
+  }
+
+  /**
+   * Get the maximum number of commands that can be stored in a context's command buffer
+   */
+  getMaxContextCommands(): number {
+    const wasm = this.getExports();
+    return wasm.get_max_context_commands();
+  }
+
+  /**
+   * Get the pointer to a context's fixed command buffer
+   */
+  getContextCommandBufferPtr(contextId: number): number {
+    const wasm = this.getExports();
+    const ptr = wasm.get_context_command_buffer_ptr(contextId);
+    if (ptr === 0) {
+      throw new Error(`Failed to get command buffer for context ${contextId}`);
+    }
+    return ptr;
   }
 
   /**

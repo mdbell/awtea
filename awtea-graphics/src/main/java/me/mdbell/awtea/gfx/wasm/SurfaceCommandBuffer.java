@@ -42,12 +42,24 @@ public final class SurfaceCommandBuffer {
         this.i32 = new Int32Array(memoryBuffer);
 
         this.commandSize = exports.getSurfaceCommandSize();
-        this.maxCommands = maxCommands;
-
-        this.basePtr = exports.requestCommandBuffer(maxCommands);
-        if (basePtr == 0) {
-            throw new IllegalStateException("Failed to allocate command buffer");
+        
+        // If contextId is provided, get buffer from context instead of allocating
+        if (contextId != -1) {
+            this.basePtr = exports.getContextCommandBufferPtr(contextId);
+            this.maxCommands = exports.getMaxContextCommands();
+            
+            if (basePtr == 0) {
+                throw new IllegalStateException("Failed to get context command buffer");
+            }
+        } else {
+            // Legacy path: allocate a temporary buffer
+            this.maxCommands = maxCommands;
+            this.basePtr = exports.requestCommandBuffer(maxCommands);
+            if (basePtr == 0) {
+                throw new IllegalStateException("Failed to allocate command buffer");
+            }
         }
+        
         this.count = 0;
     }
 
@@ -57,8 +69,14 @@ public final class SurfaceCommandBuffer {
     }
 
     public void free() {
-        log.trace("SurfaceCommandBuffer.free: Freeing command buffer at ptr {}", basePtr);
-        exports.freePixels(basePtr);
+        // Only free if this is a legacy allocated buffer (contextId == -1)
+        if (contextId == -1) {
+            log.trace("SurfaceCommandBuffer.free: Freeing command buffer at ptr {}", basePtr);
+            exports.freePixels(basePtr);
+        } else {
+            log.trace("SurfaceCommandBuffer.free: Skipping free for context-owned buffer (context={})", contextId);
+            // Context-owned buffer is freed when the context is destroyed
+        }
     }
 
     public void flush() {
