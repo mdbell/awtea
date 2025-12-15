@@ -43,7 +43,7 @@ typedef struct {
     union {
         struct { uint32_t argb, which; } set_color;
         struct { uint32_t surface_id; } blit;
-        struct { uint32_t mode; float alpha; } set_composite;
+        struct { uint32_t mode, alpha; } set_composite; // alpha stored as uint32_t, converted via u32_to_float
         //TODO: figure out how we're going to do transforms
         // struct { uint32_t m00, m01, m10, m11; } transform; 
         uint32_t args[2]; // Fallback for generic access

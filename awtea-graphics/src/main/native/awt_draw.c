@@ -48,16 +48,27 @@ void draw_filled_rect(RenderSurface* surface,
         // destination has alpha -> use composite blending
         // Check if we can skip blending for certain modes
         int needsBlending = (surface->composite_mode != COMPOSITE_SRC) && 
-                           (surface->composite_mode != COMPOSITE_DST);
+                           (surface->composite_mode != COMPOSITE_DST) &&
+                           (surface->composite_mode != COMPOSITE_CLEAR);
         
         if (!needsBlending) {
-            // Fast path for SRC/DST modes
+            // Fast path for SRC/DST/CLEAR modes
             if (surface->composite_mode == COMPOSITE_SRC) {
                 SetPixelFunc set_pixel_func =
                     get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
                 for (int j = y0; j < y1; j++) {
                     for (int i = x0; i < x1; i++) {
                         set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, color);
+                    }
+                }
+            } else if (surface->composite_mode == COMPOSITE_CLEAR) {
+                // For CLEAR mode, write transparent pixels
+                uint32_t clearColor = 0x00000000;
+                SetPixelFunc set_pixel_func =
+                    get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
+                for (int j = y0; j < y1; j++) {
+                    for (int i = x0; i < x1; i++) {
+                        set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, clearColor);
                     }
                 }
             }
