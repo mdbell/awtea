@@ -183,8 +183,11 @@ public class GlyphAtlas {
 			
 			// Render the glyph directly to the temporary surface
 			// Position at origin relative to glyph bounds
+			// renderX: offset to account for glyph's left bearing
+			// renderY: baseline position within the temp surface
+			// The baseline should be at -yMinPx from the top (since yMinPx is negative for glyphs above baseline)
 			int renderX = -(int) Math.floor(xMinPx);
-			int renderY = glyphHeight + (int) Math.floor(yMinPx);
+			int renderY = -(int) Math.floor(yMinPx);
 			
 			renderGlyphToSurface(font, glyphId, tempSurface, sizePx, renderX, renderY, argb, supersample);
 			
@@ -309,10 +312,11 @@ public class GlyphAtlas {
 		}
 		
 		// Create atlas with ARGB format for font rendering
+		// Note: createCompatibleSurface expects BufferedImage type constants
 		atlasSurface = backend.createCompatibleSurface(
 			ATLAS_WIDTH, 
 			ATLAS_HEIGHT, 
-			Surface.FORMAT_INT_ARGB
+			java.awt.image.BufferedImage.TYPE_INT_ARGB
 		);
 		
 		if (atlasSurface == null) {
