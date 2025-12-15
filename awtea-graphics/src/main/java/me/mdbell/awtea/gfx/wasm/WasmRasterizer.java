@@ -170,7 +170,14 @@ public class WasmRasterizer implements Rasterizer {
                     commandBuffer.emitSetColor(argb, cmd.arg1);
                     break;
                 case SET_CLIP_RECT:
-                    commandBuffer.emitSetClipRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    Shape shape = (Shape) cmd.obj;
+                    if (shape == null) {
+                        // Clear clip - set to full surface bounds
+                        commandBuffer.emitSetClipRect(0, 0, 0, 0);
+                    } else {
+                        Rectangle bounds = shape.getBounds();
+                        commandBuffer.emitSetClipRect(bounds.x, bounds.y, bounds.width, bounds.height);
+                    }
                     break;
                 case CLEAR_RECT:
                     commandBuffer.emitClearRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
