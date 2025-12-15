@@ -1,0 +1,13 @@
+# Core detours for awtea-instrument module
+# This file is loaded by DetourHacks.fromResource("META-INF/awtea.detours")
+# Format: one fully-qualified class name per line, '#' for comments
+
+# System-level detours
+me.mdbell.awtea.instrument.detour.SystemDetour
+me.mdbell.awtea.instrument.detour.ThreadDetour
+
+# I/O detours
+me.mdbell.awtea.instrument.detour.RandomAccessFileDetour
+
+# Reflection detours
+me.mdbell.awtea.instrument.detour.FieldDetour
