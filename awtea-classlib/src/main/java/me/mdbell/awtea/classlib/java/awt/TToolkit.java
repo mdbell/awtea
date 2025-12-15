@@ -1,5 +1,6 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import me.mdbell.awtea.classlib.java.awt.event.TInputEvent;
 import me.mdbell.awtea.classlib.java.awt.image.TColorModel;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.classlib.java.awt.image.TImageProducer;
@@ -67,13 +68,11 @@ public abstract class TToolkit {
 	}
 
 	public int getMenuShortcutKeyMask() {
-		//return TInputEvent.CTRL_DOWN_MASK;
-		return 0;
+		return TInputEvent.CTRL_MASK;
 	}
 
 	public int getMenuShortcutKeyMaskEx() {
-		//return TInputEvent.CTRL_DOWN_MASK;
-		return 0;
+		return TInputEvent.CTRL_DOWN_MASK;
 	}
 
 	// createCustomCursor
