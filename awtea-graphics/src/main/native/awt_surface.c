@@ -200,6 +200,10 @@ int create_context(int surface_id) {
     ctx->clip.y = 0;
     ctx->clip.width = surface->width;
     ctx->clip.height = surface->height;
+    
+    // Initialize composite mode to SRC_OVER with full alpha (default)
+    ctx->composite_mode = COMPOSITE_SRC_OVER;
+    ctx->composite_alpha = 1.0f;
 
     // Allocate fixed command buffer
     ctx->max_commands = MAX_CONTEXT_COMMANDS;
@@ -248,6 +252,8 @@ int clone_context(int context_id) {
     new_ctx->argb[COLOR_BG] = src_ctx->argb[COLOR_BG];
     new_ctx->transform = src_ctx->transform;
     new_ctx->clip = src_ctx->clip;
+    new_ctx->composite_mode = src_ctx->composite_mode;
+    new_ctx->composite_alpha = src_ctx->composite_alpha;
 
     // Allocate new command buffer for the cloned context
     new_ctx->max_commands = MAX_CONTEXT_COMMANDS;

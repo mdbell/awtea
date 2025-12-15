@@ -281,6 +281,26 @@ public final class SurfaceCommandBuffer {
         i32.set(wordBase + 6, 0);
     }
 
+    public void emitSetComposite(int compositeMode, float alpha) {
+        log.trace("SurfaceCommandBuffer.emitSetComposite: mode={}, alpha={}",
+                compositeMode, alpha);
+        int idx = ensureSlot();
+        int baseByte = cmdBaseByte(idx);
+        int wordBase = cmdWordBase(baseByte);
+
+        setOperation(baseByte, Operation.SET_COMPOSITE);
+
+        // x, y, width, height unused for SET_COMPOSITE
+        i32.set(wordBase + 1, 0);
+        i32.set(wordBase + 2, 0);
+        i32.set(wordBase + 3, 0);
+        i32.set(wordBase + 4, 0);
+
+        // union.set_composite.mode and alpha
+        i32.set(wordBase + 5, compositeMode);
+        i32.set(wordBase + 6, Float.floatToIntBits(alpha));
+    }
+
     private void setOperation(int byteIndex, Operation op) {
         u8.set(byteIndex, (short) op.ordinal());
     }

@@ -138,6 +138,17 @@ void blend_pixel(RenderSurface* surface,
                         int x, int y,
                         PixelFormat srcFormat,
                         uint32_t srcPixel) {
+    // Default to SRC_OVER with full alpha for backward compatibility
+    blend_pixel_composite(surface, x, y, srcFormat, srcPixel, 
+                         COMPOSITE_SRC_OVER, 1.0f);
+}
+
+void blend_pixel_composite(RenderSurface* surface,
+                           int x, int y,
+                           PixelFormat srcFormat,
+                           uint32_t srcPixel,
+                           CompositeMode mode,
+                           float alpha) {
     uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
     uint32_t stride = surface->stride / 4;
 
@@ -148,8 +159,17 @@ void blend_pixel(RenderSurface* surface,
     uint8_t srcR, srcG, srcB, srcA;
     unpack_pixel(srcInfo, srcPixel, &srcR, &srcG, &srcB, &srcA);
 
-    // Fast path: fully transparent
-    if (srcA == 0) {
+    // Apply composite alpha to source alpha
+    float srcAlphaF = ((float)srcA / 255.0f) * alpha;
+    srcA = (uint8_t)(srcAlphaF * 255.0f);
+
+    // Fast path: fully transparent source (no effect except for CLEAR mode)
+    if (srcA == 0 && mode != COMPOSITE_CLEAR) {
+        if (mode == COMPOSITE_DST) {
+            // DST mode: leave destination unchanged regardless of source
+            return;
+        }
+        // For other modes, transparent source has no effect
         return;
     }
 
@@ -158,21 +178,178 @@ void blend_pixel(RenderSurface* surface,
     uint8_t dstR, dstG, dstB, dstA;
     unpack_pixel(dstInfo, dstPixel, &dstR, &dstG, &dstB, &dstA);
 
-    // 3) Blend (integer math, 0..255)
-    // out = src + dst * (1 - a)
-    uint32_t a  = srcA;
-    uint32_t ia = 255 - a;
-
-    uint8_t outR = (uint8_t)((srcR * a + dstR * ia + 127) / 255);
-    uint8_t outG = (uint8_t)((srcG * a + dstG * ia + 127) / 255);
-    uint8_t outB = (uint8_t)((srcB * a + dstB * ia + 127) / 255);
-
-    uint8_t outA;
+    // 3) Apply Porter-Duff compositing formula
+    uint8_t outR, outG, outB, outA;
+    
+    // Convert to normalized floats for blending
+    float sR = (float)srcR / 255.0f;
+    float sG = (float)srcG / 255.0f;
+    float sB = (float)srcB / 255.0f;
+    float sA = (float)srcA / 255.0f;
+    
+    float dR = (float)dstR / 255.0f;
+    float dG = (float)dstG / 255.0f;
+    float dB = (float)dstB / 255.0f;
+    float dA = (float)dstA / 255.0f;
+    
+    float outRf, outGf, outBf, outAf;
+    
+    switch (mode) {
+        case COMPOSITE_CLEAR:
+            // Clear: result is transparent
+            outRf = 0.0f;
+            outGf = 0.0f;
+            outBf = 0.0f;
+            outAf = 0.0f;
+            break;
+            
+        case COMPOSITE_SRC:
+            // Src: copy source, ignore destination
+            outRf = sR;
+            outGf = sG;
+            outBf = sB;
+            outAf = sA;
+            break;
+            
+        case COMPOSITE_DST:
+            // Dst: keep destination, ignore source
+            outRf = dR;
+            outGf = dG;
+            outBf = dB;
+            outAf = dA;
+            break;
+            
+        case COMPOSITE_SRC_OVER:
+            // SrcOver: Ar = As + Ad*(1-As)
+            outAf = sA + dA * (1.0f - sA);
+            if (outAf > 0.0f) {
+                outRf = (sR * sA + dR * dA * (1.0f - sA)) / outAf;
+                outGf = (sG * sA + dG * dA * (1.0f - sA)) / outAf;
+                outBf = (sB * sA + dB * dA * (1.0f - sA)) / outAf;
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+            
+        case COMPOSITE_DST_OVER:
+            // DstOver: Ar = Ad + As*(1-Ad)
+            outAf = dA + sA * (1.0f - dA);
+            if (outAf > 0.0f) {
+                outRf = (dR * dA + sR * sA * (1.0f - dA)) / outAf;
+                outGf = (dG * dA + sG * sA * (1.0f - dA)) / outAf;
+                outBf = (dB * dA + sB * sA * (1.0f - dA)) / outAf;
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+            
+        case COMPOSITE_SRC_IN:
+            // SrcIn: Ar = As * Ad
+            outAf = sA * dA;
+            if (outAf > 0.0f) {
+                outRf = sR;
+                outGf = sG;
+                outBf = sB;
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+            
+        case COMPOSITE_DST_IN:
+            // DstIn: Ar = Ad * As
+            outAf = dA * sA;
+            if (outAf > 0.0f) {
+                outRf = dR;
+                outGf = dG;
+                outBf = dB;
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+            
+        case COMPOSITE_SRC_OUT:
+            // SrcOut: Ar = As * (1-Ad)
+            outAf = sA * (1.0f - dA);
+            if (outAf > 0.0f) {
+                outRf = sR;
+                outGf = sG;
+                outBf = sB;
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+            
+        case COMPOSITE_DST_OUT:
+            // DstOut: Ar = Ad * (1-As)
+            outAf = dA * (1.0f - sA);
+            if (outAf > 0.0f) {
+                outRf = dR;
+                outGf = dG;
+                outBf = dB;
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+            
+        case COMPOSITE_SRC_ATOP:
+            // SrcAtop: Ar = As*Ad + Ad*(1-As) = Ad
+            outAf = dA;
+            if (outAf > 0.0f) {
+                outRf = (sR * sA + dR * (1.0f - sA));
+                outGf = (sG * sA + dG * (1.0f - sA));
+                outBf = (sB * sA + dB * (1.0f - sA));
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+            
+        case COMPOSITE_DST_ATOP:
+            // DstAtop: Ar = Ad*As + As*(1-Ad) = As
+            outAf = sA;
+            if (outAf > 0.0f) {
+                outRf = (dR * dA + sR * (1.0f - dA));
+                outGf = (dG * dA + sG * (1.0f - dA));
+                outBf = (dB * dA + sB * (1.0f - dA));
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+            
+        case COMPOSITE_XOR:
+            // Xor: Ar = As*(1-Ad) + Ad*(1-As)
+            outAf = sA * (1.0f - dA) + dA * (1.0f - sA);
+            if (outAf > 0.0f) {
+                outRf = (sR * sA * (1.0f - dA) + dR * dA * (1.0f - sA)) / outAf;
+                outGf = (sG * sA * (1.0f - dA) + dG * dA * (1.0f - sA)) / outAf;
+                outBf = (sB * sA * (1.0f - dA) + dB * dA * (1.0f - sA)) / outAf;
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+            
+        default:
+            // Unknown mode: fall back to SRC_OVER
+            outAf = sA + dA * (1.0f - sA);
+            if (outAf > 0.0f) {
+                outRf = (sR * sA + dR * dA * (1.0f - sA)) / outAf;
+                outGf = (sG * sA + dG * dA * (1.0f - sA)) / outAf;
+                outBf = (sB * sA + dB * dA * (1.0f - sA)) / outAf;
+            } else {
+                outRf = outGf = outBf = 0.0f;
+            }
+            break;
+    }
+    
+    // Clamp and convert back to uint8_t
+    outR = (uint8_t)(outRf * 255.0f + 0.5f);
+    outG = (uint8_t)(outGf * 255.0f + 0.5f);
+    outB = (uint8_t)(outBf * 255.0f + 0.5f);
+    
     if (dstInfo->mask_a) {
-        // source-over alpha
-        outA = (uint8_t)((srcA * 255 + dstA * ia + 127) / 255);
+        // Destination has alpha channel
+        outA = (uint8_t)(outAf * 255.0f + 0.5f);
     } else {
-        // no alpha in dst format -> keep opaque
+        // No alpha in dst format -> keep opaque
         outA = 255;
     }
 

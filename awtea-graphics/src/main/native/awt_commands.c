@@ -83,6 +83,15 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
                 surface.clip = ctx->clip;
                 log_debug("Set clip rect to [%d, %d, %d, %d]", 
                           cmd->x, cmd->y, cmd->width, cmd->height);
+                break;
+            case CMD_SET_COMPOSITE:
+                ctx->composite_mode = (CompositeMode)cmd->set_composite.mode;
+                ctx->composite_alpha = u32_to_float(cmd->set_composite.alpha);
+                // Also update our local render surface copy
+                surface.composite_mode = ctx->composite_mode;
+                surface.composite_alpha = ctx->composite_alpha;
+                log_debug("Set composite mode=%d, alpha=%.2f", 
+                          ctx->composite_mode, ctx->composite_alpha);
                 break;    
             // Drawing commands
             case CMD_BLIT_IMAGE:

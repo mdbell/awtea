@@ -14,7 +14,7 @@ export enum SurfaceOperation {
   CMD_SET_TRANSFORM = 2,
   /** Set clipping rectangle */
   CMD_SET_CLIP_RECT = 3,
-  /** Set compositing mode (unimplemented in WASM) */
+  /** Set compositing mode (Porter-Duff alpha blending) */
   CMD_SET_COMPOSITE = 4,
   /** Copy image to surface */
   CMD_BLIT_IMAGE = 5,

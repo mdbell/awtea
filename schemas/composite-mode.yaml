@@ -1,0 +1,46 @@
+name: CompositeMode
+description: Porter-Duff alpha compositing modes
+c_prefix: COMPOSITE_
+java_prefix: COMPOSITE_
+java_name: CompositeModeConstants
+java_package: me.mdbell.awtea.gfx.generated
+values:
+  - name: CLEAR
+    value: 1
+    description: Clear destination (alpha = 0)
+  - name: SRC
+    value: 2
+    description: Copy source to destination, replacing destination
+  - name: SRC_OVER
+    value: 3
+    description: Source over destination (default)
+  - name: DST_OVER
+    value: 4
+    description: Destination over source
+  - name: SRC_IN
+    value: 5
+    description: Source where destination is opaque
+  - name: DST_IN
+    value: 6
+    description: Destination where source is opaque
+  - name: SRC_OUT
+    value: 7
+    description: Source where destination is transparent
+  - name: DST_OUT
+    value: 8
+    description: Destination where source is transparent
+  - name: DST
+    value: 9
+    description: Leave destination unchanged
+  - name: SRC_ATOP
+    value: 10
+    description: Source over destination, only where destination is opaque
+  - name: DST_ATOP
+    value: 11
+    description: Destination over source, only where source is opaque
+  - name: XOR
+    value: 12
+    description: Source xor destination
+  - name: COUNT
+    c_only: true
+    description: Number of composite modes

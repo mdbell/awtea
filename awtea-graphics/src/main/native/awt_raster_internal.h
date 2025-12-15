@@ -7,6 +7,7 @@
 // Include auto-generated enums
 #include "generated/surface_operation.h"
 #include "generated/pixel_format.h"
+#include "generated/composite_mode.h"
 
 #define NUM_SURFACES 1024
 #define NUM_CONTEXTS 2048
@@ -42,6 +43,7 @@ typedef struct {
     union {
         struct { uint32_t argb, which; } set_color;
         struct { uint32_t surface_id; } blit;
+        struct { uint32_t mode; float alpha; } set_composite;
         //TODO: figure out how we're going to do transforms
         // struct { uint32_t m00, m01, m10, m11; } transform; 
         uint32_t args[2]; // Fallback for generic access
@@ -96,6 +98,8 @@ typedef struct {
     uint32_t    argb[COLOR_MAX + 1];
     Transform2D transform;
     ClipRect    clip;
+    CompositeMode composite_mode;
+    float       composite_alpha;
     
     // Fixed-size command buffer for this context
     SurfaceCommand* command_buffer;
@@ -116,4 +120,6 @@ typedef struct {
     uint32_t    argb[COLOR_MAX + 1];
     Transform2D transform;
     ClipRect    clip;
+    CompositeMode composite_mode;
+    float       composite_alpha;
 } RenderSurface;

@@ -48,7 +48,8 @@ void draw_filled_rect(RenderSurface* surface,
         // destination has alpha -> blend
         for (int j = y0; j < y1; j++) {
             for (int i = x0; i < x1; i++) {
-                blend_pixel(surface, i, j, PIXEL_FORMAT_ARGB, color);
+                blend_pixel_composite(surface, i, j, PIXEL_FORMAT_ARGB, color,
+                                     surface->composite_mode, surface->composite_alpha);
             }
         }
         log_debug("draw_filled_rect: blended %d pixels", (x1-x0)*(y1-y0));
@@ -101,8 +102,9 @@ void draw_filled_rect(RenderSurface* surface,
                 // opaque dst: just convert+write color
                 set_pixel_generic(surface, dx, dy, PIXEL_FORMAT_ARGB, color);
             } else {
-                // alpha dst: reuse existing blending logic
-                blend_pixel(surface, dx, dy, PIXEL_FORMAT_ARGB, color);
+                // alpha dst: use composite blending
+                blend_pixel_composite(surface, dx, dy, PIXEL_FORMAT_ARGB, color,
+                                     surface->composite_mode, surface->composite_alpha);
             }
         }
     }
@@ -168,7 +170,8 @@ void draw_line(RenderSurface* surf,
             y0 >= 0 && y0 < (int)surf->height) {
 
             if (hasAlpha) {
-                blend_pixel(surf, x0, y0, PIXEL_FORMAT_ARGB, color);
+                blend_pixel_composite(surf, x0, y0, PIXEL_FORMAT_ARGB, color,
+                                     surf->composite_mode, surf->composite_alpha);
             } else {
                 set_pixel_func(surf, x0, y0, PIXEL_FORMAT_ARGB, color);
             }
@@ -240,13 +243,14 @@ void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
             return;
         }
 
-        // Source *has* alpha → blend
+        // Source *has* alpha → blend with composite mode
         for (int dst_y = startY; dst_y < endY; ++dst_y) {
             int src_y = dst_y - y;
             for (int dst_x = startX; dst_x < endX; ++dst_x) {
                 int src_x = dst_x - x;
                 uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
-                blend_pixel(dst, dst_x, dst_y, src->format, srcPixel);
+                blend_pixel_composite(dst, dst_x, dst_y, src->format, srcPixel,
+                                     dst->composite_mode, dst->composite_alpha);
             }
         }
         return;
@@ -306,8 +310,9 @@ void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
                 SetPixelFunc set_pixel_func = get_set_pixel_func(src->format, dst->format);
                 set_pixel_func(dst, dx, dy, src->format, srcPixel);
             } else {
-                // has alpha -> blend
-                blend_pixel(dst, dx, dy, src->format, srcPixel);
+                // has alpha -> blend with composite mode
+                blend_pixel_composite(dst, dx, dy, src->format, srcPixel,
+                                     dst->composite_mode, dst->composite_alpha);
             }
         }
     }
