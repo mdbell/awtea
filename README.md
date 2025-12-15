@@ -74,7 +74,8 @@ This project is organized into multiple modules for better maintainability and m
 
 - **awtea-instrument**: Instrumentation and bytecode transformation
   - TeaVM bytecode transformers
-  - Method detours and monitoring
+  - Method detours for custom implementations
+  - Field accessor system for zero-copy optimizations
   - Performance monitoring tools
 
 - **awtea-ui**: UI widgets and development tools
@@ -209,6 +210,7 @@ canvas.destroy();
 - [Font Loading Strategy](docs/FONT_LOADING.md) - Runtime font loading with browser HTTP caching
 - [CSS Embedding](docs/CSS_EMBEDDING.md) - Embedding CSS files with CSS custom properties for theming
 - [System Properties](docs/SYSTEM_PROPERTIES.md) - Configuration via system properties
+- [Field Accessor Mechanism](docs/FIELD_ACCESSOR_MECHANISM.md) - Zero-copy optimizations via compile-time field accessors
 
 ### Development Tools
 
