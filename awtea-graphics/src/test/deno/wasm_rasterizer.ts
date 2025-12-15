@@ -16,13 +16,14 @@
 // Note: Edit schemas/*.yaml files to modify these enums
 import { PixelFormat } from "./generated/pixel-format.ts";
 import { SurfaceOperation } from "./generated/surface-operation.ts";
+import { CompositeMode } from "./generated/composite-mode.ts";
 
 // Color slot constants
 export const COLOR_FG = 0;
 export const COLOR_BG = 1;
 
 // Re-export for convenience
-export { PixelFormat, SurfaceOperation };
+export { PixelFormat, SurfaceOperation, CompositeMode };
 
 /**
  * Surface command structure (must match SurfaceCommand in awt_raster_internal.h)
@@ -551,6 +552,32 @@ export class WasmRasterizer {
       height: floatToU32(m10),
       arg1: floatToU32(m11),
       arg2: floatToU32(m12),
+    };
+  }
+
+  /**
+   * Helper: Create a SET_COMPOSITE command
+   */
+  static setCompositeCommand(
+    mode: CompositeMode,
+    alpha: number = 1.0,
+  ): SurfaceCommand {
+    // Convert float alpha to uint32 representation
+    const floatToU32 = (f: number): number => {
+      const buf = new ArrayBuffer(4);
+      new Float32Array(buf)[0] = f;
+      return new Uint32Array(buf)[0];
+    };
+
+    return {
+      operation: SurfaceOperation.CMD_SET_COMPOSITE,
+      reserved: [0, 0, 0],
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      arg1: mode,
+      arg2: floatToU32(alpha),
     };
   }
 

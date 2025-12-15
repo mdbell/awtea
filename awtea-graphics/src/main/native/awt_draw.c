@@ -45,7 +45,28 @@ void draw_filled_rect(RenderSurface* surface,
             return;
         }
 
-        // destination has alpha -> blend
+        // destination has alpha -> use composite blending
+        // Check if we can skip blending for certain modes
+        int needsBlending = (surface->composite_mode != COMPOSITE_SRC) && 
+                           (surface->composite_mode != COMPOSITE_DST);
+        
+        if (!needsBlending) {
+            // Fast path for SRC/DST modes
+            if (surface->composite_mode == COMPOSITE_SRC) {
+                SetPixelFunc set_pixel_func =
+                    get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
+                for (int j = y0; j < y1; j++) {
+                    for (int i = x0; i < x1; i++) {
+                        set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, color);
+                    }
+                }
+            }
+            // For DST mode, don't draw anything
+            log_debug("draw_filled_rect: used fast path for mode %d", surface->composite_mode);
+            return;
+        }
+        
+        // Normal blending path
         for (int j = y0; j < y1; j++) {
             for (int i = x0; i < x1; i++) {
                 blend_pixel_composite(surface, i, j, PIXEL_FORMAT_ARGB, color,
