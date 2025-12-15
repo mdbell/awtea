@@ -61,9 +61,9 @@ Plays a system beep sound using the Web Audio API. The implementation:
 public void sync()
 ```
 
-Synchronizes rendering operations by requesting an animation frame. This ensures all pending DOM and canvas operations are flushed before continuing. In traditional AWT, this would flush X11 operations; in awtea, it uses `requestAnimationFrame` to ensure browser rendering is complete.
+Synchronizes rendering operations by waiting for the next animation frame. This ensures all pending DOM and canvas operations are flushed before continuing. In traditional AWT, this would flush X11 operations; in awtea, it uses `requestAnimationFrame` with `JSPromise.await()` to block until browser rendering is complete.
 
-**Browser Limitation**: Unlike traditional AWT's `sync()` which blocks until rendering is complete, the browser implementation is asynchronous. It schedules a synchronization via `requestAnimationFrame` but returns immediately without blocking. This is a necessary deviation from the AWT specification due to JavaScript's single-threaded, event-driven nature where blocking operations would freeze the UI.
+**Implementation**: This method now properly blocks (using `JSPromise.await()`) until the next animation frame is processed, matching the synchronous behavior expected by the AWT specification. The browser's event loop handles the animation frame callback, and the method returns only after the callback executes.
 
 ### Font Management
 

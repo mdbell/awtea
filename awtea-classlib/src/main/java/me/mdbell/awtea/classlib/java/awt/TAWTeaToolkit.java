@@ -11,6 +11,7 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
+import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLImageElement;
 import org.teavm.jso.typedarrays.Uint8Array;
@@ -116,25 +117,29 @@ public class TAWTeaToolkit extends TToolkit {
 	@Override
 	public void sync() {
 		// In browser context, ensure all pending rendering operations are flushed.
-		// We use requestAnimationFrame callback to ensure the browser has processed
-		// all pending paint operations before continuing.
-		// 
-		// Note: Unlike traditional AWT's sync() which blocks, this implementation is
-		// asynchronous due to JavaScript's event-driven nature. It schedules the sync
-		// but returns immediately. This is a necessary deviation from the AWT spec.
-		syncRendering();
+		// We use requestAnimationFrame to wait for the browser to process all pending
+		// paint operations. Unlike the previous async implementation, this blocks
+		// until the animation frame callback is executed.
+		syncRendering().await();
 	}
 
 	/**
 	 * Synchronizes rendering by waiting for the next animation frame.
 	 * This ensures all pending DOM and canvas operations are flushed.
+	 * Returns a promise that resolves when the next animation frame is processed.
+	 * 
+	 * @return a promise that resolves after the next animation frame
 	 */
 	@JSBody(script = 
-		"if (typeof requestAnimationFrame !== 'undefined') {" +
-		"  requestAnimationFrame(function() {});" +
-		"}"
+		"return new Promise(function(resolve) {" +
+		"  if (typeof requestAnimationFrame !== 'undefined') {" +
+		"    requestAnimationFrame(function() { resolve(); });" +
+		"  } else {" +
+		"    resolve();" +
+		"  }" +
+		"});"
 	)
-	private static native void syncRendering();
+	private static native JSPromise<JSObject> syncRendering();
 
 	@Override
 	protected TEventQueue getSystemEventQueueImpl() {
