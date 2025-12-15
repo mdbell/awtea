@@ -34,6 +34,7 @@ dependencies {
     implementation(project(":awtea-util"))
     
     testImplementation(project(":awtea-test-util"))
+    testImplementation(project(":awtea-classlib"))  // For TeaVM to access AWT implementations
     testImplementation("org.teavm:teavm-tooling:0.13.0")
     testImplementation("org.teavm:teavm-platform:0.13.0")
     testImplementation("org.teavm:teavm-jso-impl:0.13.0")
