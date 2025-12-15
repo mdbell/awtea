@@ -17,6 +17,10 @@ public class Ball {
     // Physics constants
     private static final double GRAVITY = 400.0; // pixels/second^2
     private static final double DAMPING = 0.8;    // velocity multiplier on bounce
+    private static final double MIN_BOUNCE_VELOCITY = 50.0; // minimum velocity to bounce
+    
+    // Rendering constants
+    private static final int CIRCLE_SIDES = 20; // number of sides for circle approximation
     
     /**
      * Creates a new ball at the specified position.
@@ -87,7 +91,7 @@ public class Ball {
             vy = -vy * DAMPING;
             
             // Prevent sticking at the bottom
-            if (Math.abs(vy) < 50) {
+            if (Math.abs(vy) < MIN_BOUNCE_VELOCITY) {
                 vy = 0;
             }
         }
@@ -100,22 +104,21 @@ public class Ball {
      */
     public void draw(Graphics g) {
         // Approximate a circle using a polygon
-        int sides = 20; // Number of sides for the circle approximation
-        int[] xPoints = new int[sides];
-        int[] yPoints = new int[sides];
+        int[] xPoints = new int[CIRCLE_SIDES];
+        int[] yPoints = new int[CIRCLE_SIDES];
         
-        for (int i = 0; i < sides; i++) {
-            double angle = 2 * Math.PI * i / sides;
+        for (int i = 0; i < CIRCLE_SIDES; i++) {
+            double angle = 2 * Math.PI * i / CIRCLE_SIDES;
             xPoints[i] = (int)(x + radius * Math.cos(angle));
             yPoints[i] = (int)(y + radius * Math.sin(angle));
         }
         
         g.setColor(color);
-        g.fillPolygon(xPoints, yPoints, sides);
+        g.fillPolygon(xPoints, yPoints, CIRCLE_SIDES);
         
         // Draw outline
         g.setColor(Color.BLACK);
-        g.drawPolygon(xPoints, yPoints, sides);
+        g.drawPolygon(xPoints, yPoints, CIRCLE_SIDES);
     }
     
     /**
