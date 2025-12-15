@@ -123,8 +123,9 @@ int clip_x(int x, const RenderSurface* surf) {
     int min_x = 0;
     int max_x = surf->width;
     
-    // If clip rectangle is set, intersect with clip bounds
-    if (surf->clip.width > 0) {
+    // If clip rectangle is set (width >= 0), intersect with clip bounds
+    // Negative width is a sentinel value meaning "no clip"
+    if (surf->clip.width >= 0) {
         min_x = surf->clip.x < 0 ? 0 : surf->clip.x;
         max_x = surf->clip.x + surf->clip.width;
         if (max_x > surf->width) {
@@ -139,8 +140,9 @@ int clip_y(int y, const RenderSurface* surf) {
     int min_y = 0;
     int max_y = surf->height;
     
-    // If clip rectangle is set, intersect with clip bounds
-    if (surf->clip.height > 0) {
+    // If clip rectangle is set (height >= 0), intersect with clip bounds
+    // Negative height is a sentinel value meaning "no clip"
+    if (surf->clip.height >= 0) {
         min_y = surf->clip.y < 0 ? 0 : surf->clip.y;
         max_y = surf->clip.y + surf->clip.height;
         if (max_y > surf->height) {
@@ -195,11 +197,11 @@ int create_context(int surface_id) {
     ctx->transform.m11 = 1.0f;
     ctx->transform.m12 = 0.0f;
 
-    // clip_rect to full surface
+    // Initialize with no clip (sentinel value: negative width)
     ctx->clip.x = 0;
     ctx->clip.y = 0;
-    ctx->clip.width = surface->width;
-    ctx->clip.height = surface->height;
+    ctx->clip.width = -1;
+    ctx->clip.height = -1;
 
     // Allocate fixed command buffer
     ctx->max_commands = MAX_CONTEXT_COMMANDS;
