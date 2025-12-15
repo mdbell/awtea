@@ -122,25 +122,90 @@ public class FieldAccessorGenerator implements Generator {
 
 	/**
 	 * Finds the Java method corresponding to a TeaVM method reference.
+	 * Matches by name and parameter types.
 	 */
 	private Method findJavaMethod(ClassLoader cl, MethodReference ref) {
 		String ownerName = ref.getClassName().replace('/', '.');
 		try {
 			Class<?> owner = Class.forName(ownerName, false, cl);
 			
+			// Get parameter types from descriptor
+			int paramCount = ref.getDescriptor().parameterCount();
+			Class<?>[] expectedParamTypes = new Class<?>[paramCount];
+			
+			for (int i = 0; i < paramCount; i++) {
+				String paramTypeName = ref.getDescriptor().parameterType(i).toString();
+				expectedParamTypes[i] = getClassForTypeName(paramTypeName, cl);
+			}
+			
+			// Find matching method
 			for (Method m : owner.getDeclaredMethods()) {
 				if (!m.getName().equals(ref.getName())) {
 					continue;
 				}
-				if (m.getParameterCount() != ref.getDescriptor().parameterCount()) {
+				if (m.getParameterCount() != paramCount) {
 					continue;
 				}
-				return m;
+				
+				// Check parameter types match
+				Class<?>[] actualParamTypes = m.getParameterTypes();
+				boolean typesMatch = true;
+				for (int i = 0; i < paramCount; i++) {
+					if (!actualParamTypes[i].equals(expectedParamTypes[i])) {
+						typesMatch = false;
+						break;
+					}
+				}
+				
+				if (typesMatch) {
+					return m;
+				}
 			}
 			
 			throw new RuntimeException("Method not found via reflection: " + ref);
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException("Unable to load class for " + ref, e);
 		}
+	}
+	
+	/**
+	 * Converts a TeaVM type name to a Java Class.
+	 * Handles primitives and object types.
+	 */
+	private Class<?> getClassForTypeName(String typeName, ClassLoader cl) {
+		// Handle primitive types
+		switch (typeName) {
+			case "I": return int.class;
+			case "J": return long.class;
+			case "F": return float.class;
+			case "D": return double.class;
+			case "Z": return boolean.class;
+			case "B": return byte.class;
+			case "C": return char.class;
+			case "S": return short.class;
+			case "V": return void.class;
+		}
+		
+		// Handle object types (format: Ljava/lang/String;)
+		if (typeName.startsWith("L") && typeName.endsWith(";")) {
+			String className = typeName.substring(1, typeName.length() - 1).replace('/', '.');
+			try {
+				return Class.forName(className, false, cl);
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException("Unable to load class: " + className, e);
+			}
+		}
+		
+		// Handle array types (format: [I, [[Ljava/lang/String;, etc.)
+		if (typeName.startsWith("[")) {
+			try {
+				// For arrays, we can use Class.forName with the internal format
+				return Class.forName(typeName.replace('/', '.'), false, cl);
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException("Unable to load array class: " + typeName, e);
+			}
+		}
+		
+		throw new RuntimeException("Unknown type name format: " + typeName);
 	}
 }
