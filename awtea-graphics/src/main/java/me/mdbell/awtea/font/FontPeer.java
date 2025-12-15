@@ -1,20 +1,25 @@
 package me.mdbell.awtea.font;
 
+import me.mdbell.awtea.gfx.Surface;
+import me.mdbell.awtea.gfx.SurfaceContainer;
+
 /**
  * A peer that manages font rendering strategy selection and execution.
  *
- * <p>This abstraction, inspired by AWT's {@code java.awt.peer.FontPeer}, provides
+ * <p>
+ * This abstraction, inspired by AWT's {@code java.awt.peer.FontPeer}, provides
  * a layer of indirection between the logical font (represented by TFont) and
  * the actual rendering implementation. This design enables:
  *
  * <ul>
- *   <li>Backend-independent font management</li>
- *   <li>Pluggable rendering strategies (rasterization, SDF, canvas, etc.)</li>
- *   <li>Simplified testing and benchmarking of different approaches</li>
- *   <li>Easy addition of new rendering backends</li>
+ * <li>Backend-independent font management</li>
+ * <li>Pluggable rendering strategies (rasterization, SDF, canvas, etc.)</li>
+ * <li>Simplified testing and benchmarking of different approaches</li>
+ * <li>Easy addition of new rendering backends</li>
  * </ul>
  *
- * <p>The FontPeer holds a reference to both the font data ({@link TrueTypeFont})
+ * <p>
+ * The FontPeer holds a reference to both the font data ({@link TrueTypeFont})
  * and the rendering strategy ({@link FontRenderer}), coordinating between them
  * to provide a complete font rendering solution.
  *
@@ -66,23 +71,21 @@ public class FontPeer {
      * @param argb   the color in ARGB format
      */
     public void renderString(String text, Object target,
-                             float sizePx, int x, int y, int argb) {
+            float sizePx, int x, int y, int argb) {
         // Check if we have an atlas-based renderer
-        if (renderer instanceof me.mdbell.awtea.font.AtlasBasedFontRenderer) {
-            me.mdbell.awtea.font.AtlasBasedFontRenderer atlasRenderer = 
-                (me.mdbell.awtea.font.AtlasBasedFontRenderer) renderer;
-            
+        if (renderer instanceof AtlasBasedFontRenderer) {
+            AtlasBasedFontRenderer atlasRenderer = (AtlasBasedFontRenderer) renderer;
+
             // Get the surface from the target
-            if (target instanceof me.mdbell.awtea.gfx.SurfaceContainer) {
-                me.mdbell.awtea.gfx.Surface surface = 
-                    ((me.mdbell.awtea.gfx.SurfaceContainer) target).getSurface();
+            if (target instanceof SurfaceContainer) {
+                Surface surface = ((SurfaceContainer) target).getSurface();
                 if (surface != null) {
                     atlasRenderer.renderString(font, text, surface, sizePx, x, y, argb);
                     return;
                 }
             }
         }
-        
+
         // Fallback to RasterTarget-based rendering for backward compatibility
         if (target instanceof FontRenderer.RasterTarget) {
             renderer.renderString(font, text, (FontRenderer.RasterTarget) target, sizePx, x, y, argb);
@@ -110,8 +113,7 @@ public class FontPeer {
         return new FontMetrics(
                 font.getAscentPx(sizePx),
                 font.getDescentPx(sizePx),
-                font.getLineHeightPx(sizePx)
-        );
+                font.getLineHeightPx(sizePx));
     }
 
     /**

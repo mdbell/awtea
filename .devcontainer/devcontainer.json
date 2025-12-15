@@ -4,7 +4,7 @@
     "dockerfile": "Dockerfile",
     "context": "."
   },
-  
+
   "customizations": {
     "vscode": {
       "extensions": [
@@ -13,6 +13,7 @@
         "redhat.java",
         "vscjava.vscode-java-debug",
         "vscjava.vscode-java-test",
+        "ritwickdey.LiveServer",
         "denoland.vscode-deno"
       ],
       "settings": {
@@ -29,7 +30,7 @@
   "postCreateCommand": "bash -c 'source /home/vscode/.sdkman/bin/sdkman-init.sh && source /opt/emsdk/emsdk_env.sh && java -version && ./gradlew -v && deno --version && emcc --version'",
 
   "remoteUser": "vscode",
-  
+
   // Mount SSH agent socket for git operations
   "mounts": [
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly,type=bind"
