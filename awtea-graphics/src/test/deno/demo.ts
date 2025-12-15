@@ -86,28 +86,25 @@ async function demo1_FilledRectangles() {
   await rasterizer.load(WASM_PATH);
 
   const surfaceId = rasterizer.allocateSurface(20, 20);
+  const contextId = rasterizer.createContext(surfaceId);
 
-  // Draw three overlapping colored rectangles
-  const cmdBuffer = rasterizer.createCommandBuffer(6);
-
-  // Red rectangle
+  // Draw three overlapping colored rectangles using the new context buffer API
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.setColorCommand(red));
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.fillRectCommand(2, 2, 8, 8));
-
-  // Green rectangle (overlapping)
   const green = WasmRasterizer.makeARGB(255, 0, 255, 0);
-  rasterizer.writeCommand(cmdBuffer, 2, WasmRasterizer.setColorCommand(green));
-  rasterizer.writeCommand(cmdBuffer, 3, WasmRasterizer.fillRectCommand(6, 6, 8, 8));
-
-  // Blue rectangle
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
-  rasterizer.writeCommand(cmdBuffer, 4, WasmRasterizer.setColorCommand(blue));
-  rasterizer.writeCommand(cmdBuffer, 5, WasmRasterizer.fillRectCommand(10, 10, 8, 8));
 
-  rasterizer.renderCommands(surfaceId, cmdBuffer, 6);
+  rasterizer.renderCommandsToContext(contextId, [
+    WasmRasterizer.setColorCommand(red),
+    WasmRasterizer.fillRectCommand(2, 2, 8, 8),
+    WasmRasterizer.setColorCommand(green),
+    WasmRasterizer.fillRectCommand(6, 6, 8, 8),
+    WasmRasterizer.setColorCommand(blue),
+    WasmRasterizer.fillRectCommand(10, 10, 8, 8),
+  ]);
+
   printSurface(rasterizer, surfaceId);
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 }
 
@@ -121,25 +118,23 @@ async function demo2_Clipping() {
   await rasterizer.load(WASM_PATH);
 
   const surfaceId = rasterizer.allocateSurface(20, 20);
-
-  const cmdBuffer = rasterizer.createCommandBuffer(4);
+  const contextId = rasterizer.createContext(surfaceId);
 
   // Set clip rect to center 10x10 area
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.setClipRectCommand(5, 5, 10, 10));
-
-  // Set color to yellow
   const yellow = WasmRasterizer.makeARGB(255, 255, 255, 0);
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.setColorCommand(yellow));
 
-  // Try to fill entire surface (should be clipped to center)
-  rasterizer.writeCommand(cmdBuffer, 2, WasmRasterizer.fillRectCommand(0, 0, 20, 20));
+  rasterizer.renderCommandsToContext(contextId, [
+    WasmRasterizer.setClipRectCommand(5, 5, 10, 10),
+    WasmRasterizer.setColorCommand(yellow),
+    // Try to fill entire surface (should be clipped to center)
+    WasmRasterizer.fillRectCommand(0, 0, 20, 20),
+    // Draw a line that extends beyond clip (should be clipped)
+    WasmRasterizer.drawLineCommand(0, 10, 19, 10),
+  ]);
 
-  // Draw a line that extends beyond clip (should be clipped)
-  rasterizer.writeCommand(cmdBuffer, 3, WasmRasterizer.drawLineCommand(0, 10, 19, 10));
-
-  rasterizer.renderCommands(surfaceId, cmdBuffer, 4);
   printSurface(rasterizer, surfaceId);
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 }
 
@@ -156,28 +151,27 @@ async function demo3_Checkerboard() {
   const height = 16;
   const cellSize = 2;
   const surfaceId = rasterizer.allocateSurface(width, height);
+  const contextId = rasterizer.createContext(surfaceId);
 
   const black = WasmRasterizer.makeARGB(255, 0, 0, 0);
   const white = WasmRasterizer.makeARGB(255, 255, 255, 255);
 
   const numCellsX = width / cellSize;
   const numCellsY = height / cellSize;
-  const totalCells = numCellsX * numCellsY;
-  const cmdBuffer = rasterizer.createCommandBuffer(totalCells * 2);
+  const commands = [];
 
-  let cmdIdx = 0;
   for (let row = 0; row < numCellsY; row++) {
     for (let col = 0; col < numCellsX; col++) {
       const color = ((row + col) % 2 === 0) ? black : white;
-      rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.setColorCommand(color));
-      rasterizer.writeCommand(cmdBuffer, cmdIdx++, 
-        WasmRasterizer.fillRectCommand(col * cellSize, row * cellSize, cellSize, cellSize));
+      commands.push(WasmRasterizer.setColorCommand(color));
+      commands.push(WasmRasterizer.fillRectCommand(col * cellSize, row * cellSize, cellSize, cellSize));
     }
   }
 
-  rasterizer.renderCommands(surfaceId, cmdBuffer, cmdIdx);
+  rasterizer.renderCommandsToContext(contextId, commands);
   printSurface(rasterizer, surfaceId, 0x80);
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 }
 
@@ -208,16 +202,18 @@ async function demo4_ImageBlitting() {
 
   // Create surface and blit the image multiple times
   const surfaceId = rasterizer.allocateSurface(16, 16);
+  const contextId = rasterizer.createContext(surfaceId);
 
-  const cmdBuffer = rasterizer.createCommandBuffer(4);
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.blitImageCommand(imageId, 0, 0));
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.blitImageCommand(imageId, 6, 0));
-  rasterizer.writeCommand(cmdBuffer, 2, WasmRasterizer.blitImageCommand(imageId, 0, 6));
-  rasterizer.writeCommand(cmdBuffer, 3, WasmRasterizer.blitImageCommand(imageId, 6, 6));
+  rasterizer.renderCommandsToContext(contextId, [
+    WasmRasterizer.blitImageCommand(imageId, 0, 0),
+    WasmRasterizer.blitImageCommand(imageId, 6, 0),
+    WasmRasterizer.blitImageCommand(imageId, 0, 6),
+    WasmRasterizer.blitImageCommand(imageId, 6, 6),
+  ]);
 
-  rasterizer.renderCommands(surfaceId, cmdBuffer, 4);
   printSurface(rasterizer, surfaceId);
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 }
 
@@ -231,25 +227,23 @@ async function demo5_Transforms() {
   await rasterizer.load(WASM_PATH);
 
   const surfaceId = rasterizer.allocateSurface(20, 20);
+  const contextId = rasterizer.createContext(surfaceId);
 
-  const cmdBuffer = rasterizer.createCommandBuffer(4);
-
-  // Set a translation transform (shift by 5, 5)
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.setTransformCommand(1, 0, 5, 0, 1, 5));
-
-  // Set color
   const cyan = WasmRasterizer.makeARGB(255, 0, 255, 255);
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.setColorCommand(cyan));
 
-  // Draw at (0, 0) but should appear at (5, 5) due to transform
-  rasterizer.writeCommand(cmdBuffer, 2, WasmRasterizer.fillRectCommand(0, 0, 6, 6));
+  rasterizer.renderCommandsToContext(contextId, [
+    // Set a translation transform (shift by 5, 5)
+    WasmRasterizer.setTransformCommand(1, 0, 5, 0, 1, 5),
+    WasmRasterizer.setColorCommand(cyan),
+    // Draw at (0, 0) but should appear at (5, 5) due to transform
+    WasmRasterizer.fillRectCommand(0, 0, 6, 6),
+    // Reset transform to identity
+    WasmRasterizer.setTransformCommand(1, 0, 0, 0, 1, 0),
+  ]);
 
-  // Reset transform to identity
-  rasterizer.writeCommand(cmdBuffer, 3, WasmRasterizer.setTransformCommand(1, 0, 0, 0, 1, 0));
-
-  rasterizer.renderCommands(surfaceId, cmdBuffer, 4);
   printSurface(rasterizer, surfaceId);
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 }
 
@@ -265,46 +259,41 @@ async function demo6_ComplexScene() {
   const width = 30;
   const height = 30;
   const surfaceId = rasterizer.allocateSurface(width, height);
+  const contextId = rasterizer.createContext(surfaceId);
 
-  const cmdBuffer = rasterizer.createCommandBuffer(20);
-
-  let cmdIdx = 0;
-
-  // Background fill (light gray)
   const lightGray = WasmRasterizer.makeARGB(255, 200, 200, 200);
-  rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.setColorCommand(lightGray));
-  rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.fillRectCommand(0, 0, width, height));
-
-  // Draw a border (dark gray)
   const darkGray = WasmRasterizer.makeARGB(255, 50, 50, 50);
-  rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.setColorCommand(darkGray));
-  rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.drawRectCommand(0, 0, width, height));
+  const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
+  const green = WasmRasterizer.makeARGB(255, 0, 255, 0);
+  const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
+  const yellow = WasmRasterizer.makeARGB(255, 255, 255, 0);
 
-  // Draw some colored squares
-  const colors = [
-    WasmRasterizer.makeARGB(255, 255, 0, 0),   // red
-    WasmRasterizer.makeARGB(255, 0, 255, 0),   // green
-    WasmRasterizer.makeARGB(255, 0, 0, 255),   // blue
+  const commands = [
+    // Background fill (light gray)
+    WasmRasterizer.setColorCommand(lightGray),
+    WasmRasterizer.fillRectCommand(0, 0, width, height),
+    // Draw a border (dark gray)
+    WasmRasterizer.setColorCommand(darkGray),
+    WasmRasterizer.drawRectCommand(0, 0, width, height),
+    // Draw colored squares
+    WasmRasterizer.setColorCommand(red),
+    WasmRasterizer.fillRectCommand(5, 5, 6, 6),
+    WasmRasterizer.setColorCommand(green),
+    WasmRasterizer.fillRectCommand(13, 5, 6, 6),
+    WasmRasterizer.setColorCommand(blue),
+    WasmRasterizer.fillRectCommand(21, 5, 6, 6),
+    // Draw diagonal lines
+    WasmRasterizer.setColorCommand(yellow),
+    WasmRasterizer.drawLineCommand(0, 0, width - 1, height - 1),
+    WasmRasterizer.drawLineCommand(width - 1, 0, 0, height - 1),
+    // Clear a small area in the center
+    WasmRasterizer.clearRectCommand(12, 12, 6, 6),
   ];
 
-  for (let i = 0; i < colors.length; i++) {
-    rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.setColorCommand(colors[i]));
-    rasterizer.writeCommand(cmdBuffer, cmdIdx++, 
-      WasmRasterizer.fillRectCommand(5 + i * 8, 5, 6, 6));
-  }
-
-  // Draw diagonal lines
-  const yellow = WasmRasterizer.makeARGB(255, 255, 255, 0);
-  rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.setColorCommand(yellow));
-  rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.drawLineCommand(0, 0, width - 1, height - 1));
-  rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.drawLineCommand(width - 1, 0, 0, height - 1));
-
-  // Clear a small area in the center
-  rasterizer.writeCommand(cmdBuffer, cmdIdx++, WasmRasterizer.clearRectCommand(12, 12, 6, 6));
-
-  rasterizer.renderCommands(surfaceId, cmdBuffer, cmdIdx);
+  rasterizer.renderCommandsToContext(contextId, commands);
   printSurface(rasterizer, surfaceId, 0x20);
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 }
 
@@ -320,7 +309,8 @@ async function main() {
     await demo1_FilledRectangles();
     await demo2_Clipping();
     await demo3_Checkerboard();
-    await demo4_ImageBlitting();
+    // Note: Image blitting demo requires register_image WASM export (not yet implemented)
+    // await demo4_ImageBlitting();
     await demo5_Transforms();
     await demo6_ComplexScene();
 
