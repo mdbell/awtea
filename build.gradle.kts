@@ -58,6 +58,8 @@ tasks.register<JavaExec>("generateDocs") {
     doFirst {
         // Generate HTML report
         args("--format", "html")
+        // Pass the awtea-classlib build directory to avoid scanning TeaVM classes from classpath
+        args("--build-dir", project(":awtea-classlib").layout.buildDirectory.dir("classes/java/main").get().asFile.absolutePath)
     }
     
     doLast {
@@ -67,6 +69,8 @@ tasks.register<JavaExec>("generateDocs") {
                         project(":awtea-classlib").sourceSets["main"].output
             mainClass.set("me.mdbell.awtea.util.ApiDiff")
             args("--format", "markdown")
+            // Pass the awtea-classlib build directory to avoid scanning TeaVM classes from classpath
+            args("--build-dir", project(":awtea-classlib").layout.buildDirectory.dir("classes/java/main").get().asFile.absolutePath)
         }
         
         println("✓ Generated HTML report: docs/coverage/report.html")

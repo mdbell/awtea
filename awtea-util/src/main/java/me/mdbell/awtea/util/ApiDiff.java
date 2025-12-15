@@ -29,6 +29,7 @@ public class ApiDiff {
     private static final String CLASS_PREFIX = "T";
 
     private static CoverageData coverageData = null;
+    private static String buildDirectory = null;
 
 
     public static void main(String[] args) {
@@ -46,6 +47,8 @@ public class ApiDiff {
                 outputFormat = args[++i];
             } else if (args[i].equals("--output") && i + 1 < args.length) {
                 outputPath = args[++i];
+            } else if (args[i].equals("--build-dir") && i + 1 < args.length) {
+                buildDirectory = args[++i];
             } else if (args[i].equals("--missing-classes")) {
                 checkMissingClasses = true;
             } else if (args[i].equals("--packages") && i + 1 < args.length) {
@@ -141,6 +144,7 @@ public class ApiDiff {
         log.info("Options:");
         log.info("  --format <html|markdown>  Generate report in specified format");
         log.info("  --output <path>           Output file path (default: docs/coverage/report.<ext>)");
+        log.info("  --build-dir <path>        Build directory to scan for classes (default: build/classes/java/main)");
         log.info("  --missing-classes         Check for missing public classes in packages");
         log.info("  --packages <pkg1,pkg2>    Comma-separated list of packages to scan (default: java.awt.*)");
         log.info("  --help, -h                Show this help message");
@@ -370,8 +374,25 @@ public class ApiDiff {
     private static String[] findClassesInPackage(String pkg, ClassLoader loader) {
         Set<String> classes = new HashSet<>();
 
+        // Determine the build output directory to scan only project classes
+        Path buildDir;
+        if (buildDirectory != null) {
+            buildDir = Paths.get(buildDirectory).toAbsolutePath();
+        } else {
+            buildDir = Paths.get("build/classes/java/main").toAbsolutePath();
+            if (!Files.exists(buildDir)) {
+                // Fallback for different build configurations
+                buildDir = Paths.get("target/classes").toAbsolutePath();
+            }
+        }
+
+        if (!Files.exists(buildDir)) {
+            throw new RuntimeException("Build directory not found: " + buildDir + ". Please compile the project first or specify --build-dir.");
+        }
+
         try (ScanResult scanResult = new ClassGraph()
                 .overrideClassLoaders(loader)
+                .overrideClasspath(buildDir.toString())  // Only scan project's build output
                 .acceptPackages(pkg)
                 .scan()) {
 
