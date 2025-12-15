@@ -45,7 +45,11 @@ int find_free_surface() {
 }
 
 int reset_surface(int surface_id, int layer, int width, int height, PixelFormat format) {
-    STACK_ENTER_CTX(stack_format_surface_context(surface_id, width, height));
+    SurfaceData* surface = get_surface_data(surface_id);
+    uint16_t ref_count = (surface && surface->ptr) ? (uint16_t)surface->ref_count : 0;
+    
+    STACK_ENTER_EXT(stack_format_surface_context(surface_id, width, height), 
+                    surface_id, -1, 0, 0, ref_count);
     
     log_debug("reset_surface: id=%d, layer=%d, size=%dx%d, format=%d", 
               surface_id, layer, width, height, format);
@@ -54,15 +58,13 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
     {
         log_error("Invalid surface ID: %d (range: %d-%d)", 
                   surface_id, START_SURFACE_ID, END_SURFACE_ID - 1);
-        STACK_EXIT();
+        STACK_EXIT_ERR(-3);
         return -3;
     }
 
-    SurfaceData* surface = get_surface_data(surface_id);
-
     if(!surface) {
         log_error("Failed to get surface data for ID: %d", surface_id);
-        STACK_EXIT();
+        STACK_EXIT_ERR(-2);
         return -2;
     }
 
@@ -92,7 +94,7 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
         surface->ptr = 0;
         surface->width = 0;
         surface->height = 0;
-        STACK_EXIT();
+        STACK_EXIT_ERR(-1);
         return -1;
     }
     surface->ptr = (uint32_t)(uintptr_t)p;
@@ -178,28 +180,28 @@ int find_free_context() {
 }
 
 int create_context(int surface_id) {
-    STACK_ENTER();
+    STACK_ENTER_EXT(NULL, surface_id, -1, 0, 0, 0);
     
     log_debug("create_context: surface_id=%d", surface_id);
     
     SurfaceData* surface = get_surface_data(surface_id);
     if (!surface || !surface->ptr) {
         log_error("create_context: invalid surface %d", surface_id);
-        STACK_EXIT();
+        STACK_EXIT_ERR(-1);
         return -1; // invalid surface
     }
 
     int context_id = find_free_context();
     if (context_id == -1) {
         log_error("create_context: no free context for surface %d", surface_id);
-        STACK_EXIT();
+        STACK_EXIT_ERR(-1);
         return -1; // no free context
     }
 
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx) {
         log_error("create_context: failed to get context data for id %d", context_id);
-        STACK_EXIT();
+        STACK_EXIT_ERR(-1);
         return -1; // should not happen
     }
 
@@ -229,7 +231,7 @@ int create_context(int surface_id) {
     if (!ctx->command_buffer) {
         log_error("create_context: failed to allocate command buffer (%zu bytes)", bytes);
         ctx->surface_id = -1; // mark context as free again
-        STACK_EXIT();
+        STACK_EXIT_ERR(-1);
         return -1;
     }
     memset(ctx->command_buffer, 0, bytes);

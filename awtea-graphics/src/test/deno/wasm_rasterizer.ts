@@ -612,22 +612,58 @@ export class WasmRasterizer {
 
       let result = `Call stack (depth=${depth}):\n`;
 
-      // Each frame is 24 bytes: 4-byte function name ptr + 4-byte line number + 
-      // 8-byte timestamp + 4-byte context ptr + 4-byte reserved
+      // Each frame is 32 bytes: 4-byte function name ptr + 4-byte line number + 
+      // 8-byte timestamp + 4-byte context ptr + 4-byte error_code +
+      // 4-byte surface_id + 4-byte context_id + 2-byte operation_type +
+      // 2-byte command_index + 2-byte ref_count + 2-byte flags
       for (let i = 0; i < Math.min(depth, maxDepth); i++) {
-        const frameOffset = stackPtr + (i * 24);
+        const frameOffset = stackPtr + (i * 32);
 
         const view = new DataView(memory.buffer);
         const funcNamePtr = view.getUint32(frameOffset, true);
         const lineNumber = view.getInt32(frameOffset + 4, true);
         const timestamp = view.getFloat64(frameOffset + 8, true);
         const contextPtr = view.getUint32(frameOffset + 16, true);
+        const errorCode = view.getInt32(frameOffset + 20, true);
+        const surfaceId = view.getInt32(frameOffset + 24, true);
+        const contextId = view.getInt32(frameOffset + 28, true);
+        const operationType = view.getUint16(frameOffset + 32, true);
+        const commandIndex = view.getUint16(frameOffset + 34, true);
+        const refCount = view.getUint16(frameOffset + 36, true);
 
         // Read null-terminated function name
         const functionName = this.readNullTerminatedString(funcNamePtr);
 
         // Format the frame output
         result += `  #${i}: ${functionName} (line ${lineNumber}) [${timestamp.toFixed(3)}ms]`;
+
+        // Add error code if present
+        if (errorCode !== 0) {
+          result += ` ERR=${errorCode}`;
+        }
+
+        // Add surface/context IDs if valid
+        if (surfaceId >= 0) {
+          result += ` surf=${surfaceId}`;
+        }
+        if (contextId >= 0) {
+          result += ` ctx=${contextId}`;
+        }
+
+        // Add operation type if present
+        if (operationType !== 0) {
+          result += ` op=${operationType}`;
+        }
+
+        // Add command index if present
+        if (commandIndex !== 0) {
+          result += ` cmd=${commandIndex}`;
+        }
+
+        // Add reference count if present
+        if (refCount !== 0) {
+          result += ` refs=${refCount}`;
+        }
 
         // Add context if available
         if (contextPtr !== 0) {

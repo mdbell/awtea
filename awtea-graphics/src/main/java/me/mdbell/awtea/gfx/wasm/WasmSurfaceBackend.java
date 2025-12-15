@@ -192,15 +192,17 @@ public class WasmSurfaceBackend implements SurfaceBackend {
             sb.append("Call stack (depth=").append(depth).append("):\n");
             
             // Read stack frames from WASM memory
-            // Each frame is 24 bytes: 4-byte function name ptr + 4-byte line number + 
-            // 8-byte timestamp + 4-byte context ptr + 4-byte reserved
+            // Each frame is 32 bytes: 4-byte function name ptr + 4-byte line number + 
+            // 8-byte timestamp + 4-byte context ptr + 4-byte error_code +
+            // 4-byte surface_id + 4-byte context_id + 2-byte operation_type +
+            // 2-byte command_index + 2-byte ref_count + 2-byte flags
             for (int i = 0; i < Math.min(depth, maxDepth); i++) {
-                int frameOffset = stackPtr + (i * 24);
+                int frameOffset = stackPtr + (i * 32);
                 
                 org.teavm.jso.typedarrays.Int32Array frameData = new org.teavm.jso.typedarrays.Int32Array(
                     exports.getMemory().getBuffer(),
                     frameOffset,
-                    6  // 24 bytes / 4 = 6 int32 values
+                    8  // 32 bytes / 4 = 8 int32 values
                 );
                 
                 int funcNamePtr = frameData.get(0);
@@ -215,6 +217,19 @@ public class WasmSurfaceBackend implements SurfaceBackend {
                 double timestamp = timestampData.get(0);
                 
                 int contextPtr = frameData.get(4);
+                int errorCode = frameData.get(5);
+                int surfaceId = frameData.get(6);
+                int contextId = frameData.get(7);
+                
+                // Read 16-bit values from the last 8 bytes
+                org.teavm.jso.typedarrays.Int16Array shortData = new org.teavm.jso.typedarrays.Int16Array(
+                    exports.getMemory().getBuffer(),
+                    frameOffset + 24,
+                    4
+                );
+                int operationType = shortData.get(0) & 0xFFFF;
+                int commandIndex = shortData.get(1) & 0xFFFF;
+                int refCount = shortData.get(2) & 0xFFFF;
                 
                 // Read function name string
                 String functionName = readNullTerminatedString(funcNamePtr);
@@ -222,6 +237,34 @@ public class WasmSurfaceBackend implements SurfaceBackend {
                 // Format the frame output
                 sb.append(String.format("  #%d: %s (line %d) [%.3fms]", 
                     i, functionName, lineNumber, timestamp));
+                
+                // Add error code if present
+                if (errorCode != 0) {
+                    sb.append(String.format(" ERR=%d", errorCode));
+                }
+                
+                // Add surface/context IDs if valid
+                if (surfaceId >= 0) {
+                    sb.append(String.format(" surf=%d", surfaceId));
+                }
+                if (contextId >= 0) {
+                    sb.append(String.format(" ctx=%d", contextId));
+                }
+                
+                // Add operation type if present
+                if (operationType != 0) {
+                    sb.append(String.format(" op=%d", operationType));
+                }
+                
+                // Add command index if present
+                if (commandIndex != 0) {
+                    sb.append(String.format(" cmd=%d", commandIndex));
+                }
+                
+                // Add reference count if present
+                if (refCount != 0) {
+                    sb.append(String.format(" refs=%d", refCount));
+                }
                 
                 // Add context if available
                 if (contextPtr != 0) {

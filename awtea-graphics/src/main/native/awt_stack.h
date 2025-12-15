@@ -9,13 +9,19 @@
 // Maximum stack depth (circular buffer size)
 #define MAX_STACK_DEPTH 256
 
-// Stack frame structure (24 bytes per frame)
+// Stack frame structure (32 bytes per frame)
 typedef struct {
     const char* function_name;  // Pointer to static string (4 bytes)
     int line_number;            // Line where function was called (4 bytes)
     double timestamp_ms;        // Timestamp in milliseconds (8 bytes)
     const char* context;        // Optional context string pointer (4 bytes)
-    uint32_t reserved;          // Reserved for future use (4 bytes)
+    int32_t error_code;         // Return value/error code (4 bytes)
+    int32_t surface_id;         // Surface ID being operated on (-1 if N/A) (4 bytes)
+    int32_t context_id;         // Context ID being operated on (-1 if N/A) (4 bytes)
+    uint16_t operation_type;    // SurfaceOperation enum (2 bytes)
+    uint16_t command_index;     // Command index in batch (2 bytes)
+    uint16_t ref_count;         // Surface reference count (2 bytes)
+    uint16_t flags;             // Additional flags/state (2 bytes)
 } StackFrame;
 
 // Control stack tracking at compile time
@@ -52,7 +58,10 @@ void stack_pop(void);
 // Convenience macros for tracking function entry/exit
 #define STACK_ENTER() stack_push(__FUNCTION__, __LINE__)
 #define STACK_ENTER_CTX(ctx) stack_push_with_context(__FUNCTION__, __LINE__, ctx)
+#define STACK_ENTER_EXT(ctx, surf_id, ctx_id, op, cmd_idx, ref) \
+    stack_push_extended(__FUNCTION__, __LINE__, ctx, surf_id, ctx_id, op, cmd_idx, ref)
 #define STACK_EXIT() stack_pop()
+#define STACK_EXIT_ERR(err) do { stack_set_error(err); stack_pop(); } while(0)
 
 // RAII-style helper structure for automatic cleanup
 typedef struct {
@@ -93,7 +102,9 @@ static inline void stack_tracer_destroy(StackTracer* tracer) {
 #define init_stack_tracking() ((void)0)
 #define STACK_ENTER() ((void)0)
 #define STACK_ENTER_CTX(ctx) ((void)0)
+#define STACK_ENTER_EXT(ctx, surf_id, ctx_id, op, cmd_idx, ref) ((void)0)
 #define STACK_EXIT() ((void)0)
+#define STACK_EXIT_ERR(err) ((void)0)
 #define STACK_TRACE() ((void)0)
 #define STACK_TRACE_CTX(ctx) ((void)0)
 

@@ -21,21 +21,21 @@ int request_command_buffer(int max_commands) {
 }
 
 int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
-    STACK_ENTER();
+    STACK_ENTER_EXT(NULL, -1, context_id, 0, 0, 0);
     
     log_debug("render_awt: context_id=%d, cmdCount=%d", context_id, cmdCount);
 
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx || ctx->surface_id == -1) {
         log_error("render_awt: invalid context %d", context_id);
-        STACK_EXIT();
+        STACK_EXIT_ERR(-1);
         return -1; // invalid context
     }
 
     SurfaceData* data = get_surface_data(ctx->surface_id);
     if (!data || !data->ptr) {
         log_error("render_awt: invalid surface %d for context %d", ctx->surface_id, context_id);
-        STACK_EXIT();
+        STACK_EXIT_ERR(-2);
         return -2; // invalid surface
     }
 
@@ -48,7 +48,7 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
         cmds = ctx->command_buffer;
         if (!cmds) {
             log_error("render_awt: context %d has no command buffer", context_id);
-            STACK_EXIT();
+            STACK_EXIT_ERR(-1);
             return -1;
         }
     } else {
@@ -57,6 +57,10 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
     
     for (int i = 0; i < cmdCount; i++) {
         SurfaceCommand* cmd = &cmds[i];
+        
+        // Update stack frame with current command info
+        stack_push_extended("render_awt", __LINE__, NULL, ctx->surface_id, context_id, 
+                           cmd->operation, (uint16_t)i, (uint16_t)data->ref_count);
         
         // Debug log every command
         log_debug("Command %d/%d: operation=%d, x=%d, y=%d, w=%d, h=%d, arg1=%d, arg2=%d",
@@ -120,6 +124,9 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
                 // do nothing
                 break;
         }
+        
+        // Pop the command-specific stack frame
+        stack_pop();
     }
     STACK_EXIT();
     return 0;

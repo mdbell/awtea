@@ -33,7 +33,13 @@ void init_stack_tracking(void) {
         g_stack[i].line_number = 0;
         g_stack[i].timestamp_ms = 0.0;
         g_stack[i].context = NULL;
-        g_stack[i].reserved = 0;
+        g_stack[i].error_code = 0;
+        g_stack[i].surface_id = -1;
+        g_stack[i].context_id = -1;
+        g_stack[i].operation_type = 0;
+        g_stack[i].command_index = 0;
+        g_stack[i].ref_count = 0;
+        g_stack[i].flags = 0;
     }
     g_stack_pointer = 0;
     
@@ -50,11 +56,9 @@ void init_stack_tracking(void) {
              MAX_STACK_DEPTH, g_stack_buffer_ptr);
 }
 
-void stack_push(const char* function_name, int line) {
-    stack_push_with_context(function_name, line, NULL);
-}
-
-void stack_push_with_context(const char* function_name, int line, const char* context) {
+void stack_push_extended(const char* function_name, int line, const char* context,
+                        int32_t surface_id, int32_t context_id, 
+                        uint16_t operation_type, uint16_t command_index, uint16_t ref_count) {
     if (g_stack_pointer < 0) {
         g_stack_pointer = 0;  // safety check
     }
@@ -65,7 +69,13 @@ void stack_push_with_context(const char* function_name, int line, const char* co
     g_stack[index].line_number = line;
     g_stack[index].timestamp_ms = wasm_get_time_ms();
     g_stack[index].context = context;
-    g_stack[index].reserved = 0;
+    g_stack[index].error_code = 0;
+    g_stack[index].surface_id = surface_id;
+    g_stack[index].context_id = context_id;
+    g_stack[index].operation_type = operation_type;
+    g_stack[index].command_index = command_index;
+    g_stack[index].ref_count = ref_count;
+    g_stack[index].flags = 0;
     
     g_stack_pointer++;
     
@@ -75,9 +85,24 @@ void stack_push_with_context(const char* function_name, int line, const char* co
     }
 }
 
+void stack_push(const char* function_name, int line) {
+    stack_push_extended(function_name, line, NULL, -1, -1, 0, 0, 0);
+}
+
+void stack_push_with_context(const char* function_name, int line, const char* context) {
+    stack_push_extended(function_name, line, context, -1, -1, 0, 0, 0);
+}
+
 void stack_pop(void) {
     if (g_stack_pointer > 0) {
         g_stack_pointer--;
+    }
+}
+
+void stack_set_error(int32_t error_code) {
+    if (g_stack_pointer > 0) {
+        int index = (g_stack_pointer - 1) % MAX_STACK_DEPTH;
+        g_stack[index].error_code = error_code;
     }
 }
 
