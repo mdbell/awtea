@@ -1,5 +1,7 @@
 # awtea
 
+[![CI](https://github.com/mdbell/awtea/actions/workflows/ci.yml/badge.svg)](https://github.com/mdbell/awtea/actions/workflows/ci.yml)
+
 **Bringing Java back to the browser**
 
 awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime using [TeaVM](https://teavm.org/) and WebAssembly, enabling legacy and modern Java graphical applications to run natively in the browser.
