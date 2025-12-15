@@ -27,8 +27,7 @@ public class WasmRasterizer implements Rasterizer {
     public WasmRasterizer(WasmSurface surface, int contextId) {
         this.surface = surface;
         this.contextId = contextId;
-        this.commandBuffer = surface.createBuffer();
-        this.commandBuffer.setContextId(contextId);
+        this.commandBuffer = surface.createBufferForContext(contextId);
     }
 
     private WasmRasterizer(WasmRasterizer other) {
@@ -39,8 +38,7 @@ public class WasmRasterizer implements Rasterizer {
             throw new IllegalStateException("Failed to clone context");
         }
         // each rasterizer gets its own command buffer.
-        this.commandBuffer = this.surface.createBuffer();
-        this.commandBuffer.setContextId(this.contextId);
+        this.commandBuffer = this.surface.createBufferForContext(this.contextId);
     }
 
     @Override

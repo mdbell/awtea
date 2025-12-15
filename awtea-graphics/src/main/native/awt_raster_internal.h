@@ -26,6 +26,9 @@
 #define DEFAULT_FG_COLOR 0xFF000000 // opaque black
 #define DEFAULT_BG_COLOR 0xFFFFFFFF // opaque white
 
+// Maximum number of commands in each context's fixed command buffer
+#define MAX_CONTEXT_COMMANDS 512
+
 // Note: SurfaceOperation enum is now defined in generated/surface_operation.h
 // Edit schemas/surface-operation.yaml to modify the enum values
 
@@ -93,6 +96,10 @@ typedef struct {
     uint32_t    argb[COLOR_MAX + 1];
     Transform2D transform;
     ClipRect    clip;
+    
+    // Fixed-size command buffer for this context
+    SurfaceCommand* command_buffer;
+    int             max_commands;
 } SurfaceContext;
 
 // RenderSurface: temporary combined view of SurfaceData + SurfaceContext for rendering

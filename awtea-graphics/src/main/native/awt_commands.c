@@ -37,7 +37,18 @@ int render_awt(int context_id, uint32_t cmdPtr, int cmdCount) {
     // Build a RenderSurface from data + context for rendering
     RenderSurface surface = make_render_surface(data, ctx);
 
-    SurfaceCommand* cmds = (SurfaceCommand*)(uintptr_t)cmdPtr;
+    // Use context's buffer if cmdPtr is 0
+    SurfaceCommand* cmds;
+    if (cmdPtr == 0) {
+        cmds = ctx->command_buffer;
+        if (!cmds) {
+            log_error("render_awt: context %d has no command buffer", context_id);
+            return -1;
+        }
+    } else {
+        cmds = (SurfaceCommand*)(uintptr_t)cmdPtr;
+    }
+    
     for (int i = 0; i < cmdCount; i++) {
         SurfaceCommand* cmd = &cmds[i];
         

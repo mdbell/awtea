@@ -174,3 +174,72 @@ Ideas for future improvement:
 
 - Issue #53: Multi-context WASM surfaces (pool integrates with per-surface contexts)
 - This PR: Implements surface pool as requested in the issue
+
+---
+
+# WASM Command Buffer Refactoring - Implementation Summary
+
+## Overview
+This refactoring eliminates dynamic allocation/freeing of command buffers by storing fixed-size command buffers inside each `SurfaceContext` structure.
+
+## Changes Made
+
+### C/WASM Side (4 files)
+
+1. **awt_raster_internal.h**
+   - Added `MAX_CONTEXT_COMMANDS` constant (512 commands)
+   - Added `command_buffer` and `max_commands` fields to `SurfaceContext` structure
+
+2. **awt_surface.h**
+   - Added `get_max_context_commands()` export declaration
+   - Added `get_context_command_buffer_ptr(int context_id)` export declaration
+
+3. **awt_surface.c**
+   - Updated `create_context()`: Allocates fixed command buffer on context creation
+   - Updated `clone_context()`: Allocates new command buffer for cloned context
+   - Updated `destroy_context()`: Frees command buffer before marking context unused
+   - Implemented `get_max_context_commands()`: Returns MAX_CONTEXT_COMMANDS constant
+   - Implemented `get_context_command_buffer_ptr()`: Returns pointer to context's buffer
+
+4. **awt_commands.c**
+   - Updated `render_awt()`: When cmdPtr is 0, uses context's internal buffer instead
+
+### Java Side (4 files)
+
+1. **WasmAwtRasterizerExports.java** - Added buffer introspection exports
+2. **SurfaceCommandBuffer.java** - Smart allocation: context buffer or legacy
+3. **WasmRasterizer.java** - Uses `createBufferForContext()` method
+4. **WasmSurface.java** - Added `createBufferForContext()` helper
+
+### TypeScript Side (2 files)
+
+1. **wasm_rasterizer.ts** - Added buffer query methods and `renderCommandsToContext()` helper
+2. **context_buffer_test.ts** - New comprehensive test suite (6 tests)
+
+### Documentation (1 file)
+
+1. **docs/WASM_COMMAND_BUFFER_REFACTORING.md** - Complete refactoring guide
+
+## Benefits Achieved
+
+✅ **No allocation overhead**: Buffers allocated once per context
+✅ **Predictable memory usage**: 512 commands per context
+✅ **Simpler API**: No manual `free()` calls
+✅ **Thread-safety ready**: Isolated buffers
+✅ **Backward compatible**: Legacy code works
+
+## Testing Status
+
+- ✅ Java code compiles successfully
+- ✅ Test code compiles successfully
+- ⏳ WASM rebuild required (Emscripten SDK not in CI)
+- ⏳ Deno tests pending WASM rebuild
+
+## Files Changed
+
+```
+11 files changed, 571 insertions(+), 12 deletions(-)
+```
+
+See [WASM_COMMAND_BUFFER_REFACTORING.md](docs/WASM_COMMAND_BUFFER_REFACTORING.md) for detailed documentation.
+

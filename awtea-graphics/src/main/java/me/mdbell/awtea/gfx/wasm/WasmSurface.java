@@ -52,6 +52,14 @@ public final class WasmSurface implements Surface {
 		return new SurfaceCommandBuffer(this.exports, maxCommands);
 	}
 
+	/**
+	 * Create a command buffer associated with a specific context.
+	 * This uses the context's fixed-size internal buffer instead of allocating a new one.
+	 */
+	public SurfaceCommandBuffer createBufferForContext(int contextId) {
+		return new SurfaceCommandBuffer(contextId, this.exports, 0);
+	}
+
 	@Override
 	public Rasterizer createRasterizer() {
 		// Create a new context for this rasterizer

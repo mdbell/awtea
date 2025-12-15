@@ -66,6 +66,12 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSMethod("get_context_surface_id")
 	int getContextSurfaceId(int contextId);
 
+	@JSMethod("get_max_context_commands")
+	int getMaxContextCommands();
+
+	@JSMethod("get_context_command_buffer_ptr")
+	int getContextCommandBufferPtr(int contextId);
+
 	@JSMethod("free_pixels")
 	void freePixels(int ptr);
 

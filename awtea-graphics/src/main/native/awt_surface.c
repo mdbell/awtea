@@ -201,6 +201,17 @@ int create_context(int surface_id) {
     ctx->clip.width = surface->width;
     ctx->clip.height = surface->height;
 
+    // Allocate fixed command buffer
+    ctx->max_commands = MAX_CONTEXT_COMMANDS;
+    size_t bytes = ctx->max_commands * sizeof(SurfaceCommand);
+    ctx->command_buffer = (SurfaceCommand*)tracked_malloc(bytes);
+    if (!ctx->command_buffer) {
+        log_error("create_context: failed to allocate command buffer (%zu bytes)", bytes);
+        ctx->surface_id = -1; // mark context as free again
+        return -1;
+    }
+    memset(ctx->command_buffer, 0, bytes);
+
     // Increment surface reference count
     surface->ref_count++;
 
@@ -238,6 +249,17 @@ int clone_context(int context_id) {
     new_ctx->transform = src_ctx->transform;
     new_ctx->clip = src_ctx->clip;
 
+    // Allocate new command buffer for the cloned context
+    new_ctx->max_commands = MAX_CONTEXT_COMMANDS;
+    size_t bytes = new_ctx->max_commands * sizeof(SurfaceCommand);
+    new_ctx->command_buffer = (SurfaceCommand*)tracked_malloc(bytes);
+    if (!new_ctx->command_buffer) {
+        log_error("clone_context: failed to allocate command buffer (%zu bytes)", bytes);
+        new_ctx->surface_id = -1; // mark context as free again
+        return -1;
+    }
+    memset(new_ctx->command_buffer, 0, bytes);
+
     // Increment surface reference count
     SurfaceData* surface = get_surface_data(src_ctx->surface_id);
     if (surface) {
@@ -260,6 +282,13 @@ int destroy_context(int context_id) {
 
     int surface_id = ctx->surface_id;
     SurfaceData* surface = get_surface_data(surface_id);
+    
+    // Free the command buffer
+    if (ctx->command_buffer) {
+        tracked_free(ctx->command_buffer);
+        ctx->command_buffer = NULL;
+        ctx->max_commands = 0;
+    }
     
     // Mark context as free
     ctx->surface_id = -1;
@@ -319,4 +348,17 @@ int get_context_surface_id(int context_id) {
         return -1;
     }
     return ctx->surface_id;
+}
+
+int get_max_context_commands(void) {
+    return MAX_CONTEXT_COMMANDS;
+}
+
+uint32_t get_context_command_buffer_ptr(int context_id) {
+    SurfaceContext* ctx = get_context_data(context_id);
+    if (!ctx || !ctx->command_buffer) {
+        log_error("get_context_command_buffer_ptr: invalid context %d or no buffer", context_id);
+        return 0;
+    }
+    return (uint32_t)(uintptr_t)ctx->command_buffer;
 }
