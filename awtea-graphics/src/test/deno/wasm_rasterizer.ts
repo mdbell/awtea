@@ -1,9 +1,9 @@
 /**
  * WASM Rasterizer Test Harness
- * 
+ *
  * This module provides a TypeScript interface for testing the AWT rasterizer
  * WASM module in isolation, without the full awtea stack (Java GUI, TSurface, etc).
- * 
+ *
  * It includes utilities for:
  * - Loading the WASM module
  * - Allocating and managing surfaces
@@ -29,14 +29,14 @@ export { PixelFormat, SurfaceOperation };
  * Total size: 28 bytes
  */
 export interface SurfaceCommand {
-  operation: number;      // uint8_t (1 byte)
+  operation: number; // uint8_t (1 byte)
   reserved: [number, number, number]; // uint8_t[3] (3 bytes)
-  x: number;              // uint32_t (4 bytes)
-  y: number;              // uint32_t (4 bytes)
-  width: number;          // uint32_t (4 bytes)
-  height: number;         // uint32_t (4 bytes)
-  arg1: number;           // uint32_t (4 bytes)
-  arg2: number;           // uint32_t (4 bytes)
+  x: number; // uint32_t (4 bytes)
+  y: number; // uint32_t (4 bytes)
+  width: number; // uint32_t (4 bytes)
+  height: number; // uint32_t (4 bytes)
+  arg1: number; // uint32_t (4 bytes)
+  arg2: number; // uint32_t (4 bytes)
 }
 
 /**
@@ -51,48 +51,67 @@ export class WasmRasterizer {
   async load(wasmPath: string): Promise<void> {
     const wasmBytes = await Deno.readFile(wasmPath);
     const wasmModule = await WebAssembly.compile(wasmBytes);
-    
+
     // Provide the logging callback that the WASM module expects
     const imports = {
       env: {
-        wasm_log_callback: (level: number, messagePtr: number, messageLen: number) => {
+        wasm_log_callback: (
+          level: number,
+          messagePtr: number,
+          messageLen: number,
+        ) => {
           // Get the exports to access memory
           if (!this.wasmInstance) return;
-          const memory = (this.wasmInstance.exports.memory as WebAssembly.Memory);
+          const memory = this.wasmInstance.exports.memory as WebAssembly.Memory;
           if (!memory) return;
-          
+
           // Read the message from WASM memory
-          const messageBytes = new Uint8Array(memory.buffer, messagePtr, messageLen);
+          const messageBytes = new Uint8Array(
+            memory.buffer,
+            messagePtr,
+            messageLen,
+          );
           const message = new TextDecoder().decode(messageBytes);
-          
+
           // Log based on level (0=ERROR, 1=WARN, 2=INFO, 3=DEBUG, 4=TRACE)
-          const levelNames = ['ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'];
-          const levelName = levelNames[level] || 'UNKNOWN';
+          const levelNames = ["ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
+          const levelName = levelNames[level] || "UNKNOWN";
           console.log(`[WASM ${levelName}] ${message}`);
         },
         wasm_get_time_ms: (): number => {
           return performance.now();
         },
-        wasm_report_memory_usage: (allocatedBytes: number, peakBytes: number) => {
-          console.log(`[WASM MEMORY] allocated=${allocatedBytes} bytes, peak=${peakBytes} bytes`);
+        wasm_report_memory_usage: (
+          allocatedBytes: number,
+          peakBytes: number,
+        ) => {
+          console.log(
+            `[WASM MEMORY] allocated=${allocatedBytes} bytes, peak=${peakBytes} bytes`,
+          );
         },
-        wasm_assertion_failed: (exprPtr: number, exprLen: number, filePtr: number, fileLen: number, line: number) => {
+        wasm_assertion_failed: (
+          exprPtr: number,
+          exprLen: number,
+          filePtr: number,
+          fileLen: number,
+          line: number,
+        ) => {
           if (!this.wasmInstance) return;
-          const memory = (this.wasmInstance.exports.memory as WebAssembly.Memory);
+          const memory = this.wasmInstance.exports.memory as WebAssembly.Memory;
           if (!memory) return;
-          
+
           const exprBytes = new Uint8Array(memory.buffer, exprPtr, exprLen);
           const expr = new TextDecoder().decode(exprBytes);
           const fileBytes = new Uint8Array(memory.buffer, filePtr, fileLen);
           const file = new TextDecoder().decode(fileBytes);
-          
+
           console.error(`[WASM ASSERTION] ${expr} failed at ${file}:${line}`);
-        }
-      }
+        },
+      },
     };
-    
+
     this.wasmInstance = await WebAssembly.instantiate(wasmModule, imports);
-    
+
     // Initialize the surface system (sets contexts to free state)
     const wasm = this.getExports();
     wasm.init_surface_system();
@@ -111,18 +130,22 @@ export class WasmRasterizer {
   /**
    * Allocate a new surface
    */
-  allocateSurface(width: number, height: number, format: PixelFormat = PixelFormat.ARGB): number {
+  allocateSurface(
+    width: number,
+    height: number,
+    format: PixelFormat = PixelFormat.PIXEL_FORMAT_ARGB,
+  ): number {
     const wasm = this.getExports();
     const surfaceId = wasm.find_free_surface();
     if (surfaceId < 0) {
       throw new Error("No free surface slots available");
     }
-    
+
     const result = wasm.reset_surface(surfaceId, 0, width, height, format);
     if (result !== 0) {
       throw new Error(`Failed to reset surface: error code ${result}`);
     }
-    
+
     return surfaceId;
   }
 
@@ -132,13 +155,15 @@ export class WasmRasterizer {
   freeSurface(surfaceId: number): void {
     const wasm = this.getExports();
     // Reset with width=0, height=0 to free
-    wasm.reset_surface(surfaceId, 0, 0, 0, PixelFormat.ARGB);
+    wasm.reset_surface(surfaceId, 0, 0, 0, PixelFormat.PIXEL_FORMAT_ARGB);
   }
 
   /**
    * Get surface dimensions
    */
-  getSurfaceDimensions(surfaceId: number): { width: number; height: number; stride: number } {
+  getSurfaceDimensions(
+    surfaceId: number,
+  ): { width: number; height: number; stride: number } {
     const wasm = this.getExports();
     return {
       width: wasm.get_surface_width(surfaceId),
@@ -154,12 +179,14 @@ export class WasmRasterizer {
     const wasm = this.getExports();
     const ptr = wasm.get_surface_pixels_ptr(surfaceId);
     if (ptr === 0) {
-      throw new Error(`Invalid surface ID ${surfaceId} or surface not allocated`);
+      throw new Error(
+        `Invalid surface ID ${surfaceId} or surface not allocated`,
+      );
     }
-    
+
     const { width, height } = this.getSurfaceDimensions(surfaceId);
     const buffer = new Uint32Array(wasm.memory.buffer, ptr, width * height);
-    
+
     return buffer;
   }
 
@@ -198,7 +225,7 @@ export class WasmRasterizer {
     const wasm = this.getExports();
     const cmdSize = wasm.get_command_size();
     const offset = bufferPtr + (index * cmdSize);
-    
+
     const view = new DataView(wasm.memory.buffer);
     view.setUint8(offset + 0, cmd.operation);
     view.setUint8(offset + 1, cmd.reserved[0]);
@@ -216,7 +243,11 @@ export class WasmRasterizer {
    * Execute commands on a surface (using context)
    * Note: This now requires a context ID instead of surface ID
    */
-  renderCommands(contextId: number, bufferPtr: number, commandCount: number): void {
+  renderCommands(
+    contextId: number,
+    bufferPtr: number,
+    commandCount: number,
+  ): void {
     const wasm = this.getExports();
     const result = wasm.render_awt(contextId, bufferPtr, commandCount);
     if (result !== 0) {
@@ -255,7 +286,9 @@ export class WasmRasterizer {
     const wasm = this.getExports();
     const result = wasm.destroy_context(contextId);
     if (result !== 0) {
-      throw new Error(`Failed to destroy context ${contextId}: error code ${result}`);
+      throw new Error(
+        `Failed to destroy context ${contextId}: error code ${result}`,
+      );
     }
   }
 
@@ -295,55 +328,12 @@ export class WasmRasterizer {
   }
 
   /**
-   * Register an image buffer
-   */
-  registerImage(width: number, height: number, format: PixelFormat = PixelFormat.ARGB): number {
-    const wasm = this.getExports();
-    const stride = width * 4; // 4 bytes per pixel
-    const imageId = wasm.register_image(format, width, height, stride);
-    if (imageId < 0) {
-      throw new Error(`Failed to register image: error code ${imageId}`);
-    }
-    return imageId;
-  }
-
-  /**
-   * Get image pixel buffer
-   */
-  getImagePixels(imageId: number, width: number, height: number): Uint32Array {
-    const wasm = this.getExports();
-    const ptr = wasm.get_image_pixels_ptr(imageId);
-    if (ptr === 0) {
-      throw new Error(`Invalid image ID ${imageId} or image not allocated`);
-    }
-    
-    const buffer = new Uint32Array(wasm.memory.buffer, ptr, width * height);
-    return buffer;
-  }
-
-  /**
-   * Free image pixels
-   */
-  freeImage(imageId: number): void {
-    const bufferPtr = this.createCommandBuffer(1);
-    this.writeCommand(bufferPtr, 0, {
-      operation: SurfaceOperation.EXT_FREE_IMAGE,
-      reserved: [0, 0, 0],
-      x: imageId,
-      y: 0,
-      width: 0,
-      height: 0,
-      arg1: 0,
-      arg2: 0,
-    });
-    // Note: We need to execute this through a surface, using surface 0 as dummy
-    // In practice, EXT_FREE_IMAGE doesn't need a surface context
-  }
-
-  /**
    * Helper: Create a SET_COLOR command
    */
-  static setColorCommand(argb: number, which: number = COLOR_FG): SurfaceCommand {
+  static setColorCommand(
+    argb: number,
+    which: number = COLOR_FG,
+  ): SurfaceCommand {
     return {
       operation: SurfaceOperation.CMD_SET_COLOR,
       reserved: [0, 0, 0],
@@ -359,7 +349,12 @@ export class WasmRasterizer {
   /**
    * Helper: Create a FILL_RECT command
    */
-  static fillRectCommand(x: number, y: number, width: number, height: number): SurfaceCommand {
+  static fillRectCommand(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): SurfaceCommand {
     return {
       operation: SurfaceOperation.CMD_FILL_RECT,
       reserved: [0, 0, 0],
@@ -375,7 +370,12 @@ export class WasmRasterizer {
   /**
    * Helper: Create a DRAW_RECT command
    */
-  static drawRectCommand(x: number, y: number, width: number, height: number): SurfaceCommand {
+  static drawRectCommand(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): SurfaceCommand {
     return {
       operation: SurfaceOperation.CMD_DRAW_RECT,
       reserved: [0, 0, 0],
@@ -391,7 +391,12 @@ export class WasmRasterizer {
   /**
    * Helper: Create a DRAW_LINE command
    */
-  static drawLineCommand(x1: number, y1: number, x2: number, y2: number): SurfaceCommand {
+  static drawLineCommand(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+  ): SurfaceCommand {
     return {
       operation: SurfaceOperation.CMD_DRAW_LINE,
       reserved: [0, 0, 0],
@@ -407,7 +412,12 @@ export class WasmRasterizer {
   /**
    * Helper: Create a CLEAR_RECT command
    */
-  static clearRectCommand(x: number, y: number, width: number, height: number): SurfaceCommand {
+  static clearRectCommand(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): SurfaceCommand {
     return {
       operation: SurfaceOperation.CMD_CLEAR_RECT,
       reserved: [0, 0, 0],
@@ -423,7 +433,12 @@ export class WasmRasterizer {
   /**
    * Helper: Create a SET_CLIP_RECT command
    */
-  static setClipRectCommand(x: number, y: number, width: number, height: number): SurfaceCommand {
+  static setClipRectCommand(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): SurfaceCommand {
     return {
       operation: SurfaceOperation.CMD_SET_CLIP_RECT,
       reserved: [0, 0, 0],
@@ -439,7 +454,11 @@ export class WasmRasterizer {
   /**
    * Helper: Create a BLIT_IMAGE command
    */
-  static blitImageCommand(imageId: number, x: number, y: number): SurfaceCommand {
+  static blitImageCommand(
+    imageId: number,
+    x: number,
+    y: number,
+  ): SurfaceCommand {
     return {
       operation: SurfaceOperation.CMD_BLIT_IMAGE,
       reserved: [0, 0, 0],
@@ -458,7 +477,14 @@ export class WasmRasterizer {
    *   m00  m01  m02
    *   m10  m11  m12
    */
-  static setTransformCommand(m00: number, m01: number, m02: number, m10: number, m11: number, m12: number): SurfaceCommand {
+  static setTransformCommand(
+    m00: number,
+    m01: number,
+    m02: number,
+    m10: number,
+    m11: number,
+    m12: number,
+  ): SurfaceCommand {
     // Convert floats to uint32 representation
     const floatToU32 = (f: number): number => {
       const buf = new ArrayBuffer(4);
@@ -482,13 +508,16 @@ export class WasmRasterizer {
    * Helper: Convert ARGB color components to a single uint32
    */
   static makeARGB(a: number, r: number, g: number, b: number): number {
-    return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
+    return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) |
+      (b & 0xFF);
   }
 
   /**
    * Helper: Extract ARGB components from a uint32 color
    */
-  static extractARGB(argb: number): { a: number; r: number; g: number; b: number } {
+  static extractARGB(
+    argb: number,
+  ): { a: number; r: number; g: number; b: number } {
     return {
       a: (argb >>> 24) & 0xFF,
       r: (argb >>> 16) & 0xFF,
