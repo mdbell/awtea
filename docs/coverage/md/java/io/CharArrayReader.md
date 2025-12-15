@@ -1,0 +1,35 @@
+# Class: `CharArrayReader` ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Full Name:** `java.io.CharArrayReader`
+
+**Coverage:** 14 / 14 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+## ✓ Implemented Methods
+
+- `public boolean markSupported()`
+- `public boolean ready()`
+- `public int read()`
+- `public int read(char[], int, int)`
+- `public long skip(long)`
+- `public void close()`
+- `public void mark(int)`
+- `public void reset()`
+
+## ✓ Implemented Fields
+
+- `protected char[] buf`
+- `protected int count`
+- `protected int markedPos`
+- `protected int pos`
+
+## ✓ Implemented Constructors
+
+- `public java.io.CharArrayReader(char[])`
+- `public java.io.CharArrayReader(char[], int, int)`
+
+
+[← Back to Package](index.md)

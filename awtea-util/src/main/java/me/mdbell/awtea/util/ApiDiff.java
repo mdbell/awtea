@@ -114,9 +114,9 @@ public class ApiDiff {
                 compareClasses(teavmClass, runtimeClass);
             } catch (ClassNotFoundException e) {
                 // ignored
-//				log.info("No runtime class for %s -> %s%n", teavmName, runtimeName);
+//				log.info("No runtime class for {} -> {}", teavmName, runtimeName);
             } catch (Throwable t) {
-                log.info("Error loading %s or %s: %s%n", teavmName, runtimeName, t);
+                log.info("Error loading {} or {}: {}", teavmName, runtimeName, t);
             }
         }
 
@@ -264,11 +264,11 @@ public class ApiDiff {
         log.info("======================================================");
         log.info("Missing Classes Report");
         log.info("======================================================");
-        log.info("Total public classes found: %d%n", totalFound);
-        log.info("Total missing classes: %d%n", totalMissing);
-        log.info("Coverage: %d / %d (%.1f%%)%n",
+        log.info("Total public classes found: {}", totalFound);
+        log.info("Total missing classes: {}", totalMissing);
+        log.info("Coverage: {} / {} ({} %)",
                 totalFound - totalMissing, totalFound,
-                totalFound == 0 ? 100.0 : (100.0 * (totalFound - totalMissing) / totalFound));
+                totalFound == 0 ? "100.0" : String.format("%.1f", 100.0 * (totalFound - totalMissing) / totalFound));
         log.info("======================================================");
         log.info("");
 
@@ -277,7 +277,7 @@ public class ApiDiff {
                 String pkg = entry.getKey();
                 List<String> missing = entry.getValue();
 
-                log.info("Package: %s (%d missing)%n", pkg, missing.size());
+                log.info("Package: {} ({} missing)", pkg, missing.size());
                 for (String className : missing) {
                     log.info("{}", "  - " + className);
                 }
@@ -370,20 +370,8 @@ public class ApiDiff {
     private static String[] findClassesInPackage(String pkg, ClassLoader loader) {
         Set<String> classes = new HashSet<>();
 
-        // Determine the build output directory to scan only project classes
-        Path buildDir = Paths.get("build/classes/java/main").toAbsolutePath();
-        if (!Files.exists(buildDir)) {
-            // Fallback for different build configurations
-            buildDir = Paths.get("target/classes").toAbsolutePath();
-        }
-
-        if (!Files.exists(buildDir)) {
-            throw new RuntimeException("Build directory not found. Please compile the project first.");
-        }
-
         try (ScanResult scanResult = new ClassGraph()
                 .overrideClassLoaders(loader)
-                .overrideClasspath(buildDir.toString())  // Only scan project's build output
                 .acceptPackages(pkg)
                 .scan()) {
 
@@ -502,16 +490,16 @@ public class ApiDiff {
         if (coverageData == null) {
             // If class fully covered, you can skip printing
             if (missingMethods.isEmpty() && missingFields.isEmpty() && missingCtors.isEmpty()) {
-                log.info("=== %s: FULL COVERAGE (%d/%d = 100%%)%n",
+                log.info("=== {}: FULL COVERAGE ({}/{} = 100%)",
                         runtimeClass.getName(), implementedTotal, runtimeTotal);
                 return;
             }
 
             // Print diff
-            log.info("=== %s vs %s ===%n", teavmClass.getName(), runtimeClass.getName());
-            log.info("Coverage: %d/%d = %.1f%%%n",
+            log.info("=== {} vs {} ===", teavmClass.getName(), runtimeClass.getName());
+            log.info("Coverage: {}/{} = {}%",
                     implementedTotal, runtimeTotal,
-                    (runtimeTotal == 0 ? 100.0 : (100.0 * implementedTotal / runtimeTotal)));
+                    (runtimeTotal == 0 ? "100.0" : String.format("%.1f", 100.0 * implementedTotal / runtimeTotal)));
 
             if (!missingMethods.isEmpty()) {
                 log.info("  Missing methods:");

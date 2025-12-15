@@ -1,0 +1,68 @@
+# Package: `java.lang.annotation`
+
+**Coverage:** 17 / 24 (70.8%)
+
+```
+[███████████████████████████████████░░░░░░░░░░░░░░░] 70.8%
+```
+
+## Classes
+
+### [`Annotation`](Annotation.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 4 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`Documented`](Documented.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 0 / 0 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`ElementType`](ElementType.md) ![Coverage](https://img.shields.io/badge/coverage-76.9%25-green)
+
+**Coverage:** 10 / 13 (76.9%)
+
+```
+[██████████████████████████████████████░░░░░░░░░░░░] 76.9%
+```
+
+### [`Inherited`](Inherited.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 0 / 0 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`Retention`](Retention.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 1 / 1 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`RetentionPolicy`](RetentionPolicy.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 5 / 5 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`Target`](Target.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 1 / 1 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+
+[← Back to Index](../../../../../report.md)

@@ -1,0 +1,68 @@
+# Package: `java.util.concurrent.atomic`
+
+**Coverage:** 123 / 168 (73.2%)
+
+```
+[████████████████████████████████████░░░░░░░░░░░░░░] 73.2%
+```
+
+## Classes
+
+### [`AtomicBoolean`](AtomicBoolean.md) ![Coverage](https://img.shields.io/badge/coverage-40.9%25-orange)
+
+**Coverage:** 9 / 22 (40.9%)
+
+```
+[████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 40.9%
+```
+
+### [`AtomicInteger`](AtomicInteger.md) ![Coverage](https://img.shields.io/badge/coverage-63.9%25-yellow)
+
+**Coverage:** 23 / 36 (63.9%)
+
+```
+[███████████████████████████████░░░░░░░░░░░░░░░░░░░] 63.9%
+```
+
+### [`AtomicIntegerFieldUpdater`](AtomicIntegerFieldUpdater.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 18 / 18 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`AtomicLong`](AtomicLong.md) ![Coverage](https://img.shields.io/badge/coverage-63.9%25-yellow)
+
+**Coverage:** 23 / 36 (63.9%)
+
+```
+[███████████████████████████████░░░░░░░░░░░░░░░░░░░] 63.9%
+```
+
+### [`AtomicLongFieldUpdater`](AtomicLongFieldUpdater.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 18 / 18 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`AtomicReference`](AtomicReference.md) ![Coverage](https://img.shields.io/badge/coverage-76.9%25-green)
+
+**Coverage:** 20 / 26 (76.9%)
+
+```
+[██████████████████████████████████████░░░░░░░░░░░░] 76.9%
+```
+
+### [`AtomicReferenceFieldUpdater`](AtomicReferenceFieldUpdater.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 12 / 12 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+
+[← Back to Index](../../../../../../report.md)

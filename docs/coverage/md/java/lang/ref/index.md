@@ -1,0 +1,44 @@
+# Package: `java.lang.ref`
+
+**Coverage:** 13 / 15 (86.7%)
+
+```
+[███████████████████████████████████████████░░░░░░░] 86.7%
+```
+
+## Classes
+
+### [`Reference`](Reference.md) ![Coverage](https://img.shields.io/badge/coverage-66.7%25-yellow)
+
+**Coverage:** 4 / 6 (66.7%)
+
+```
+[█████████████████████████████████░░░░░░░░░░░░░░░░░] 66.7%
+```
+
+### [`ReferenceQueue`](ReferenceQueue.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 4 / 4 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`SoftReference`](SoftReference.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 3 / 3 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`WeakReference`](WeakReference.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 2 / 2 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+
+[← Back to Index](../../../../../report.md)

@@ -1,0 +1,36 @@
+# Package: `java.nio.file.attribute`
+
+**Coverage:** 19 / 22 (86.4%)
+
+```
+[███████████████████████████████████████████░░░░░░░] 86.4%
+```
+
+## Classes
+
+### [`BasicFileAttributes`](BasicFileAttributes.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 9 / 9 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`FileAttribute`](FileAttribute.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 2 / 2 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`FileTime`](FileTime.md) ![Coverage](https://img.shields.io/badge/coverage-72.7%25-yellow)
+
+**Coverage:** 8 / 11 (72.7%)
+
+```
+[████████████████████████████████████░░░░░░░░░░░░░░] 72.7%
+```
+
+
+[← Back to Index](../../../../../../report.md)
