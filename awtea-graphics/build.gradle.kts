@@ -161,10 +161,12 @@ tasks.register("buildDenoJavaTests") {
         
         tool.generate()
         
+        val maxProblemsToShow = 20
+        
         // Check for problems
         if (tool.problemProvider.severeProblems.isNotEmpty()) {
             println("ERROR: TeaVM encountered ${tool.problemProvider.severeProblems.size} severe problems:")
-            tool.problemProvider.severeProblems.take(20).forEach {
+            tool.problemProvider.severeProblems.take(maxProblemsToShow).forEach {
                 println("  Severity: ${it.severity}")
                 println("  Location: ${it.location}")
                 println("  Text: ${it.text}")
@@ -173,8 +175,8 @@ tasks.register("buildDenoJavaTests") {
                 }
                 println()
             }
-            if (tool.problemProvider.severeProblems.size > 20) {
-                println("  ... and ${tool.problemProvider.severeProblems.size - 20} more problems")
+            if (tool.problemProvider.severeProblems.size > maxProblemsToShow) {
+                println("  ... and ${tool.problemProvider.severeProblems.size - maxProblemsToShow} more problems")
             }
             throw GradleException("TeaVM compilation failed with severe problems")
         }

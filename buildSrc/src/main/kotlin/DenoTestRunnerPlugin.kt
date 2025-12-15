@@ -74,18 +74,18 @@ class DenoTestRunnerPlugin : Plugin<Project> {
      */
     private fun determinePackageName(project: Project, testSrcDir: File): String {
         // Prefer test files in a "test" package subdirectory for more consistent package naming
-        val testFiles = testSrcDir.walkTopDown()
+        val testFile = testSrcDir.walkTopDown()
             .filter { it.isFile && it.extension == "java" && it.name.contains("Test") }
-            .toList()
             .sortedByDescending { 
                 // Check if the file is in a /test/ subdirectory within the package structure
                 // (not just /src/test/java/)
                 val relativePath = it.relativeTo(testSrcDir).path
                 relativePath.contains("/test/")
             }
+            .firstOrNull()
         
-        if (testFiles.isNotEmpty()) {
-            val content = testFiles[0].readText()
+        if (testFile != null) {
+            val content = testFile.readText()
             val packageRegex = Regex("""package\s+([\w.]+);""")
             val match = packageRegex.find(content)
             if (match != null) {
