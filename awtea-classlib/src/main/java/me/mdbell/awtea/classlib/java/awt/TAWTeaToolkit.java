@@ -133,13 +133,13 @@ public class TAWTeaToolkit extends TToolkit {
 	@JSBody(script = 
 		"return new Promise(function(resolve) {" +
 		"  if (typeof requestAnimationFrame !== 'undefined') {" +
-		"    requestAnimationFrame(function() { resolve(); });" +
+		"    requestAnimationFrame(function() { resolve(null); });" +
 		"  } else {" +
-		"    resolve();" +
+		"    resolve(null);" +
 		"  }" +
 		"});"
 	)
-	private static native JSPromise<JSObject> syncRendering();
+	private static native JSPromise<Void> syncRendering();
 
 	@Override
 	protected TEventQueue getSystemEventQueueImpl() {
