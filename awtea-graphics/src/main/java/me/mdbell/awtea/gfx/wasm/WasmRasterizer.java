@@ -19,9 +19,10 @@ public class WasmRasterizer implements Rasterizer {
     private final int contextId;
     private transient final SurfaceCommandBuffer commandBuffer;
     private boolean disposed = false;
-    
+
     // Track references to surfaces used in blit commands
     private final List<Integer> blitReferences = new ArrayList<>();
+    private final List<WasmSurface> tempSurfaces = new ArrayList<>();
 
     public WasmRasterizer(WasmSurface surface, int contextId) {
         this.surface = surface;
@@ -63,6 +64,7 @@ public class WasmRasterizer implements Rasterizer {
             if (result < 0) {
                 log.error("WasmRasterizer: Failed to destroy context {}", contextId);
             }
+            commandBuffer.free();
             disposed = true;
         }
     }
@@ -70,7 +72,7 @@ public class WasmRasterizer implements Rasterizer {
     private void flushAndReleaseReferences() {
         // Flush commands first
         commandBuffer.flush();
-        
+
         // Release all blit references
         for (Integer surfaceId : blitReferences) {
             // Decrement ref count by calling release_reference
@@ -80,6 +82,12 @@ public class WasmRasterizer implements Rasterizer {
             }
         }
         blitReferences.clear();
+
+        // free up temp surfaces
+        for (WasmSurface surface : tempSurfaces) {
+            surface.backend.getSurfacePool().release(surface);
+        }
+        tempSurfaces.clear();
     }
 
     private void blitSurface(Surface srcSurface, int destX, int destY) {
@@ -87,17 +95,17 @@ public class WasmRasterizer implements Rasterizer {
         if (srcSurface instanceof WasmSurface) {
             WasmSurface wasmSurface = (WasmSurface) srcSurface;
             int srcSurfaceId = wasmSurface.getId();
-            
+
             // Create a reference to keep the source surface alive during deferred rendering
             int refResult = surface.getExports().createReference(srcSurfaceId);
             if (refResult < 0) {
                 log.error("WasmRasterizer: Failed to create reference for surface {}, skipping blit", srcSurfaceId);
                 return;
             }
-            
+
             // Track this reference so we can release it after flush
             blitReferences.add(srcSurfaceId);
-            
+
             commandBuffer.emitBlitImage(
                     srcSurfaceId,
                     destX, destY);
@@ -105,22 +113,29 @@ public class WasmRasterizer implements Rasterizer {
             // For non-WasmSurface, we need to upload to a temporary WASM surface
             WasmSurfaceBackend backend = surface.backend;
 
-            SurfaceLRUCache.SurfaceCacheEntry cacheEntry = backend.surfaceCache.create(srcSurface);
-            if (cacheEntry == null) {
+            WasmSurface wasmSurface = backend.getSurfacePool().acquire(srcSurface.getWidth(),
+                    srcSurface.getHeight(),
+                    srcSurface.getFormat());
+
+            if (wasmSurface == null) {
                 log.error("WasmRasterizer: blitSurface failed to create or retrieve surface cache entry");
                 return;
             }
 
-            // Sync the pixel data into the temporary surface
-            cacheEntry.sync();
-            
+            // Upload pixel data to the temporary WASM surface
+            boolean uploadSuccess = wasmSurface.uploadFromSurface(srcSurface);
+            if (!uploadSuccess) {
+                log.error("WasmRasterizer: Failed to upload pixel data to temporary WASM surface, skipping blit");
+                backend.getSurfacePool().release(wasmSurface);
+                return;
+            }
+
             // The cache entry now holds a surface ID that we can blit from
             commandBuffer.emitBlitImage(
-                    cacheEntry.surfaceId,
+                    wasmSurface.getId(),
                     destX, destY);
-            
-            // The cache will manage the lifecycle of this temporary surface
-            // No need to free immediately - the LRU cache handles cleanup
+
+            tempSurfaces.add(wasmSurface);
         }
     }
 
@@ -130,7 +145,7 @@ public class WasmRasterizer implements Rasterizer {
             // Silently return if disposed - commands may be queued from before disposal
             return;
         }
-        
+
         for (SurfaceCommand cmd : cmds) {
             switch (cmd.type) {
                 case DRAW_RECT:
@@ -144,7 +159,7 @@ public class WasmRasterizer implements Rasterizer {
                         log.error("WasmRasterizer: BLIT_IMAGE command missing SurfaceContainer object");
                     } else {
                         Surface surface1 = ((SurfaceContainer) cmd.obj).getSurface();
-                        //TODO: missing width/height args?
+                        // TODO: missing width/height args?
                         blitSurface(surface1, cmd.arg1, cmd.arg2);
                     }
                     break;

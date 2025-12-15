@@ -10,11 +10,12 @@ public final class WasmSurface implements Surface {
 	private final WasmAwtRasterizerExports exports;
 	private int surfaceId;
 	private final ArrayBuffer memoryBuffer;
-	//    private final int layer = 0; // presently unused
+	// private final int layer = 0; // presently unused
 	private final int pixelFormat;
 
-	// Note: commands are 8 * 4 bytes each (see TSurfaceCommand), so 1024 commands = 32KB
-	//       512 = 16KB
+	// Note: commands are 8 * 4 bytes each (see TSurfaceCommand), so 1024 commands =
+	// 32KB
+	// 512 = 16KB
 	private static final int MAX_COMMANDS = 512;
 
 	@Getter
@@ -27,12 +28,12 @@ public final class WasmSurface implements Surface {
 	private Uint8ClampedArray pixelsView = null;
 
 	WasmSurfaceBackend backend;
-	
+
 	// Track if this surface should be returned to the pool on destroy
 	private boolean poolable = true;
 
 	WasmSurface(WasmSurfaceBackend backend, int surfaceId,
-				int width, int height, int pixelFormat) {
+			int width, int height, int pixelFormat) {
 		this.backend = backend;
 		this.exports = backend.exports;
 		this.surfaceId = surfaceId;
@@ -125,7 +126,7 @@ public final class WasmSurface implements Surface {
 			}
 		}
 	}
-	
+
 	/**
 	 * Destroy this surface without returning it to the pool.
 	 * Used internally by the pool when evicting surfaces.
@@ -133,7 +134,7 @@ public final class WasmSurface implements Surface {
 	void destroyDirect() {
 		destroyInternal();
 	}
-	
+
 	/**
 	 * Internal method to actually destroy the surface.
 	 */
@@ -143,11 +144,12 @@ public final class WasmSurface implements Surface {
 			surfaceId = -1;
 		}
 	}
-	
+
 	/**
 	 * Set whether this surface should be pooled when destroyed.
 	 * 
-	 * @param poolable true to return to pool on destroy, false to destroy immediately
+	 * @param poolable true to return to pool on destroy, false to destroy
+	 *                 immediately
 	 */
 	public void setPoolable(boolean poolable) {
 		this.poolable = poolable;
@@ -159,5 +161,20 @@ public final class WasmSurface implements Surface {
 
 	public WasmAwtRasterizerExports getExports() {
 		return exports;
+	}
+
+	public boolean uploadFromSurface(Surface srcSurface) {
+		if (srcSurface.getWidth() != this.getWidth() ||
+				srcSurface.getHeight() != this.getHeight() ||
+				srcSurface.getFormat() != this.getFormat()) {
+			return false;
+		}
+
+		Uint8ClampedArray srcPixels = srcSurface.getPixelData();
+		Uint8ClampedArray destPixels = this.getPixelData();
+
+		destPixels.set(srcPixels);
+
+		return true;
 	}
 }
