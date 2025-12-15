@@ -43,13 +43,17 @@ public abstract class TInputEvent extends TComponentEvent {
 
 	/**
 	 * The Mouse Button2 modifier constant.
+	 * Note: Intentionally uses the same bit as ALT_MASK for backward compatibility
+	 * with the old java.awt.Event class.
 	 */
-	public static final int BUTTON2_MASK = 1 << 3;
+	public static final int BUTTON2_MASK = 1 << 3;  // Same as ALT_MASK
 
 	/**
 	 * The Mouse Button3 modifier constant.
+	 * Note: Intentionally uses the same bit as META_MASK for backward compatibility
+	 * with the old java.awt.Event class.
 	 */
-	public static final int BUTTON3_MASK = 1 << 2;
+	public static final int BUTTON3_MASK = 1 << 2;  // Same as META_MASK
 
 	/**
 	 * The Shift key extended modifier constant.

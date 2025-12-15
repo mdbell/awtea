@@ -118,6 +118,10 @@ public class TAWTeaToolkit extends TToolkit {
 		// In browser context, ensure all pending rendering operations are flushed.
 		// We use requestAnimationFrame callback to ensure the browser has processed
 		// all pending paint operations before continuing.
+		// 
+		// Note: Unlike traditional AWT's sync() which blocks, this implementation is
+		// asynchronous due to JavaScript's event-driven nature. It schedules the sync
+		// but returns immediately. This is a necessary deviation from the AWT spec.
 		syncRendering();
 	}
 
