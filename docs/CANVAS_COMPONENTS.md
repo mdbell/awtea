@@ -239,6 +239,7 @@ public class AnimatedCanvas extends TCanvas implements Runnable {
 import me.mdbell.awtea.classlib.java.awt.*;
 import me.mdbell.awtea.classlib.java.awt.THeavyCanvas;
 import org.teavm.jso.browser.Window;
+import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 
 /**
@@ -423,7 +424,7 @@ If you started with THeavyCanvas but want to embed it in an AWT container:
 ```java
 THeavyCanvas canvas = new THeavyCanvas(document, container, 400, 300);
 canvas.configureStandardEvents();
-document.body.appendChild(canvas.getCanvasElement());
+document.getBody().appendChild(canvas.getCanvasElement());
 
 // Manual rendering
 TGraphics g = canvas.getGraphics();

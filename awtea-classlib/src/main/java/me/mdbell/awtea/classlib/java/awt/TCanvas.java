@@ -110,6 +110,5 @@ public class TCanvas extends TComponent {
     @Override
     public void paint(TGraphics g) {
         // Override this method to provide custom drawing
-        // Default implementation does nothing
     }
 }
