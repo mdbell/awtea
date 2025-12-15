@@ -3,7 +3,9 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import java.io.File
 
@@ -59,9 +61,11 @@ class DenoTestRunnerPlugin : Plugin<Project> {
             java.srcDir(project.layout.buildDirectory.dir("generated/test/java"))
         }
         
-        // Make compileTestJava depend on generation
-        project.tasks.named("compileTestJava") {
+        // Make compileTestJava depend on generation and explicitly include generated sources
+        project.tasks.named<JavaCompile>("compileTestJava") {
             dependsOn("generateDenoJUnitRunner")
+            // Explicitly ensure the generated sources are included as inputs
+            source(project.layout.buildDirectory.dir("generated/test/java"))
         }
     }
     
