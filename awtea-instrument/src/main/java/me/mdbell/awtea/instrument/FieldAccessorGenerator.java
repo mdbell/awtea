@@ -26,6 +26,8 @@ public class FieldAccessorGenerator implements Generator {
 
 	@Override
 	public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
+		// Note: Method lookup uses reflection. For better compilation performance with many
+		// field accessors, consider implementing a caching mechanism in a future optimization.
 		Method javaMethod = findJavaMethod(context.getClassLoader(), methodRef);
 		
 		FieldAccessor accessorAnn = javaMethod.getAnnotation(FieldAccessor.class);
@@ -75,7 +77,7 @@ public class FieldAccessorGenerator implements Generator {
 		
 		// Generate: return instance.fieldName;
 		writer.append("return ");
-		writer.append(context.getParameterName(1));
+		writer.append(context.getParameterName(0));
 		writer.append(".").append(fieldName);
 		writer.append(";").softNewLine();
 	}
@@ -113,10 +115,10 @@ public class FieldAccessorGenerator implements Generator {
 		log.debug("Generating field setter for {}.{}", receiverAnn.target().getName(), fieldName);
 		
 		// Generate: instance.fieldName = value;
-		writer.append(context.getParameterName(1));
+		writer.append(context.getParameterName(0));
 		writer.append(".").append(fieldName);
 		writer.append(" = ");
-		writer.append(context.getParameterName(2));
+		writer.append(context.getParameterName(1));
 		writer.append(";").softNewLine();
 	}
 
@@ -199,8 +201,9 @@ public class FieldAccessorGenerator implements Generator {
 		// Handle array types (format: [I, [[Ljava/lang/String;, etc.)
 		if (typeName.startsWith("[")) {
 			try {
-				// For arrays, we can use Class.forName with the internal format
-				return Class.forName(typeName.replace('/', '.'), false, cl);
+				// For arrays, Class.forName expects the internal JVM format as-is
+				// Don't replace slashes - array descriptors use the internal format
+				return Class.forName(typeName, false, cl);
 			} catch (ClassNotFoundException e) {
 				throw new RuntimeException("Unable to load array class: " + typeName, e);
 			}
