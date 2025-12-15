@@ -60,11 +60,17 @@ public abstract class TToolkit {
 	}
 
 	public final Object getDesktopProperty(String name) {
+		// Desktop properties in browser environment
+		// Common properties that can be queried: awt.font.desktophints, DnD.gestureMotionThreshold, etc.
+		// For now, return null as there are no specific desktop properties in web context
+		// Subclasses can override if needed
 		return null;
 	}
 
 	public int getMaximumCursorColors() {
-		return 0;
+		// Browser environments typically support full-color cursors
+		// Return 2^24 (16 million colors) to indicate true color support
+		return 0x1000000;
 	}
 
 	public int getMenuShortcutKeyMask() {
@@ -94,7 +100,8 @@ public abstract class TToolkit {
 	}
 
 	public static String getProperty(String key, String defaultValue) {
-		return defaultValue;
+		// Delegate to system properties for consistency
+		return System.getProperty(key, defaultValue);
 	}
 
 	public static TToolkit getDefaultToolkit() {
