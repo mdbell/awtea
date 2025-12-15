@@ -5,6 +5,7 @@ plugins {
 
 import java.net.URL
 import java.net.URLClassLoader
+import org.gradle.api.tasks.testing.Test
 
 java {
     toolchain {
@@ -200,10 +201,28 @@ tasks.register<Exec>("denoTestJava") {
     group = "verification"
     
     dependsOn("buildDenoJavaTests")
+    dependsOn("buildAwtRasterWasm")  // Ensure WASM file is built
     
-    workingDir = file("src/test/deno")
-    commandLine("deno", "test", "--allow-read", "java_tests.ts")
+    // Run from module root so Java code can find WASM at build/wasm/awt_raster.wasm
+    workingDir = projectDir
+    
+    // Use absolute path to the test file and allow file reading
+    val testFile = file("src/test/deno/java_tests.ts").absolutePath
+    commandLine("deno", "test", "--allow-read", "--allow-net", testFile)
     
     inputs.files(sourceSets["test"].allSource)
     inputs.file("${layout.buildDirectory.get()}/deno-tests/classes.js")
+    inputs.file("build/wasm/awt_raster.wasm")
+    
+    // Set environment variable to help with file URL resolution
+    environment("DENO_DIR", layout.buildDirectory.dir(".deno").get().asFile.absolutePath)
+}
+
+// Integrate Deno tests with the standard test task
+tasks.named<Test>("test") {
+    // Skip standard JUnit test execution since tests run via Deno
+    enabled = false
+    
+    // Make test depend on denoTestJava to run Deno tests
+    dependsOn("denoTestJava")
 }
