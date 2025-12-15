@@ -575,4 +575,82 @@ export class WasmRasterizer {
       b: argb & 0xFF,
     };
   }
+
+  /**
+   * Get stack tracking information
+   */
+  getStackBufferPtr(): number {
+    const wasm = this.getExports();
+    return wasm.get_stack_buffer_ptr ? wasm.get_stack_buffer_ptr() : 0;
+  }
+
+  getStackDepth(): number {
+    const wasm = this.getExports();
+    return wasm.get_stack_depth ? wasm.get_stack_depth() : 0;
+  }
+
+  getMaxStackDepth(): number {
+    const wasm = this.getExports();
+    return wasm.get_max_stack_depth ? wasm.get_max_stack_depth() : 0;
+  }
+
+  /**
+   * Read the current stack trace from WASM memory
+   */
+  readStackTrace(): string {
+    try {
+      const stackPtr = this.getStackBufferPtr();
+      const depth = this.getStackDepth();
+      const maxDepth = this.getMaxStackDepth();
+
+      if (stackPtr === 0 || depth === 0) {
+        return "";
+      }
+
+      const wasm = this.getExports();
+      const memory = wasm.memory as WebAssembly.Memory;
+
+      let result = `Call stack (depth=${depth}):\n`;
+
+      // Each frame is 8 bytes: 4-byte function name pointer + 4-byte line number
+      for (let i = 0; i < Math.min(depth, maxDepth); i++) {
+        const frameOffset = stackPtr + (i * 8);
+
+        const view = new DataView(memory.buffer);
+        const funcNamePtr = view.getUint32(frameOffset, true);
+        const lineNumber = view.getInt32(frameOffset + 4, true);
+
+        // Read null-terminated function name
+        const functionName = this.readNullTerminatedString(funcNamePtr);
+
+        result += `  #${i}: ${functionName} (line ${lineNumber})\n`;
+      }
+
+      return result;
+    } catch (e) {
+      return `Error reading stack trace: ${e}`;
+    }
+  }
+
+  /**
+   * Read a null-terminated string from WASM memory
+   */
+  private readNullTerminatedString(ptr: number): string {
+    if (ptr === 0) return "<unknown>";
+
+    try {
+      const wasm = this.getExports();
+      const memory = wasm.memory as WebAssembly.Memory;
+      const buffer = new Uint8Array(memory.buffer, ptr, 256);
+
+      let len = 0;
+      while (len < 256 && buffer[len] !== 0) {
+        len++;
+      }
+
+      return new TextDecoder().decode(buffer.slice(0, len));
+    } catch (e) {
+      return "<error>";
+    }
+  }
 }
