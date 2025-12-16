@@ -4,11 +4,13 @@
 #include "awt_pixel.h"
 #include "awt_util.h"
 #include "awt_log.h"
+#include "awt_stack.h"
 
 void draw_filled_rect(RenderSurface* surface,
                                     int x, int y,
                                     int width, int height,
                                     uint32_t color) {
+    STACK_ENTER();
 
     if (is_identity_transform(&surface->transform)) {
         int x0 = clip_x(x, surface);
@@ -22,6 +24,7 @@ void draw_filled_rect(RenderSurface* surface,
         if (x0 >= x1 || y0 >= y1) {
             log_debug("draw_filled_rect: clipped out entirely (x0=%d >= x1=%d or y0=%d >= y1=%d)",
                       x0, x1, y0, y1);
+            STACK_EXIT();
             return;
         }
 
@@ -42,6 +45,7 @@ void draw_filled_rect(RenderSurface* surface,
                 }
             }
             log_debug("draw_filled_rect: wrote %d pixels", (x1-x0)*(y1-y0));
+            STACK_EXIT();
             return;
         }
 
@@ -85,6 +89,7 @@ void draw_filled_rect(RenderSurface* surface,
             }
         }
         log_debug("draw_filled_rect: blended %d pixels", (x1-x0)*(y1-y0));
+        STACK_EXIT();
         return;
     }
 
@@ -99,12 +104,14 @@ void draw_filled_rect(RenderSurface* surface,
     int y1 = clip_y(ty + th, surface);
 
     if (x0 >= x1 || y0 >= y1) {
+        STACK_EXIT();
         return;
     }
 
     // Invert the transform
     Transform2D inv;
     if (!invert_transform(&surface->transform, &inv)) {
+        STACK_EXIT();
         return; // non-invertible
     }
 
@@ -140,6 +147,7 @@ void draw_filled_rect(RenderSurface* surface,
             }
         }
     }
+    STACK_EXIT();
 }
 
 void clear_rect(RenderSurface* surface,
@@ -223,9 +231,12 @@ void draw_line(RenderSurface* surf,
 }
 
 void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
+    STACK_ENTER();
+    
     // Get source surface data
     SurfaceData* src = get_surface_data(src_surface_id);
     if (!src || !src->ptr || src->width == 0 || src->height == 0) {
+        STACK_EXIT();
         return;
     }
 
@@ -242,6 +253,7 @@ void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
         int endY   = clip_y(y + (int)src->height, dst);
 
         if (startX >= endX || startY >= endY) {
+            STACK_EXIT();
             return; // fully clipped
         }
 
@@ -260,6 +272,7 @@ void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
                     size_t row_bytes = (size_t)(endX - startX) * sizeof(uint32_t);
                     memcpy(dst_row, src_row, row_bytes);
                 }
+                STACK_EXIT();
                 return;
             }
 
@@ -272,6 +285,7 @@ void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
                     set_pixel_func(dst, dst_x, dst_y, src->format, srcPixel);
                 }
             }
+            STACK_EXIT();
             return;
         }
 
@@ -285,6 +299,7 @@ void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
                                      dst->composite_mode, dst->composite_alpha);
             }
         }
+        STACK_EXIT();
         return;
     }
 
@@ -299,12 +314,14 @@ void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
     int endY   = clip_y(ty + th, dst);
 
     if (startX >= endX || startY >= endY) {
+        STACK_EXIT();
         return; // fully clipped
     }
 
     // Invert the transform
     Transform2D inv;
     if (!invert_transform(&dst->transform, &inv)) {
+        STACK_EXIT();
         return; // non-invertible, nothing to draw
     }
 
@@ -348,4 +365,5 @@ void blit_image(RenderSurface* dst, int src_surface_id, int x, int y) {
             }
         }
     }
+    STACK_EXIT();
 }

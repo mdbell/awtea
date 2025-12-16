@@ -21,7 +21,8 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSMethod("find_free_surface")
 	int findFreeSurfaceId();
 
-	// int reset_surface(int surface_id, int layer, int width, int height, int pixel_format);
+	// int reset_surface(int surface_id, int layer, int width, int height, int
+	// pixel_format);
 	@JSMethod("reset_surface")
 	int resetSurface(int surfaceId, int layer, int width, int height, int pixelFormat);
 
@@ -73,4 +74,14 @@ interface WasmAwtRasterizerExports extends JSObject {
 	// Note: bytesUsed parameter is now in bytes (not command count)
 	@JSMethod("render_awt")
 	int renderAwt(int contextId, int commandsPtr, int bytesUsed);
+
+	// Stack tracking exports
+	@JSMethod("get_stack_buffer_ptr")
+	int getStackBufferPtr();
+
+	@JSMethod("get_stack_depth")
+	int getStackDepth();
+
+	@JSMethod("get_max_stack_depth")
+	int getMaxStackDepth();
 }
