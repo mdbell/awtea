@@ -53,7 +53,13 @@ const char* stack_format_surface_context(int id, int width, int height);
 // Push/pop functions (internal use)
 void stack_push(const char* function_name, int line);
 void stack_push_with_context(const char* function_name, int line, const char* context);
+void stack_push_extended(const char* function_name, int line, const char* context,
+                        int32_t surface_id, int32_t context_id, 
+                        uint16_t operation_type, uint16_t command_index, uint16_t ref_count);
 void stack_pop(void);
+
+// other stack ops
+void stack_set_error(int32_t error_code);
 
 // Convenience macros for tracking function entry/exit
 #define STACK_ENTER() stack_push(__FUNCTION__, __LINE__)
