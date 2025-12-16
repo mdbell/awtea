@@ -66,16 +66,12 @@ async function fetchPolyfill(
         const filePath = urlString.replace(/^file:\/\//, "");
 
         for (const path of fetch_roots) {
-            const p = `${path}/${filePath}`;
-
             try {
-                console.log(path, filePath);
                 // Read the file
-                const data = await Deno.readFile(p);
+                const data = await Deno.readFile(`${path}/${filePath}`);
 
                 // Determine content type from file extension
                 const ext = filePath.split(".").pop()?.toLowerCase() || "";
-                console.log(ext);
                 const contentType = getContentType(ext);
 
                 // Create a Response object
@@ -89,9 +85,6 @@ async function fetchPolyfill(
                 });
             } catch (error) {
                 // ignored
-                console.error(
-                    `Failed to read: ${p} (cwd:${Deno.cwd()})`,
-                );
             }
         }
         // File not found or read error

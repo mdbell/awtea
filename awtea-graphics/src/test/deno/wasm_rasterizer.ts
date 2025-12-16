@@ -26,14 +26,14 @@ export const COLOR_BG = 1;
 export const CMD_FLAG_EXTENDED = 0x01; // Bit 0: Extended command set (future use)
 
 // Re-export for convenience
-export { PixelFormat, SurfaceOperation, CompositeMode };
+export { CompositeMode, PixelFormat, SurfaceOperation };
 
 /**
  * ByteWriter for writing variable-length commands
- * 
+ *
  * Commands are written in the format:
  * [opcode: uint8][flags: uint8][length: uint16][data: length*4 bytes]
- * 
+ *
  * The length field is in words (4-byte units) and does NOT include the 4-byte header.
  */
 class ByteWriter {
@@ -300,7 +300,7 @@ export class WasmRasterizer {
   /**
    * Write a variable-length command using ByteWriter.
    * This is a low-level helper for writing commands directly.
-   * 
+   *
    * @param contextId The context to write to
    * @param writer Callback that uses ByteWriter to write the command
    * @returns The number of bytes used
@@ -327,7 +327,7 @@ export class WasmRasterizer {
   /**
    * Execute commands on a surface (using context).
    * Commands are written using ByteWriter callbacks.
-   * 
+   *
    * @param contextId The context to render to
    * @param writers Array of ByteWriter callbacks
    */
@@ -364,7 +364,9 @@ export class WasmRasterizer {
    * @deprecated Use variable-length commands instead
    */
   createCommandBuffer(maxCommands: number): number {
-    throw new Error("Legacy command buffers not supported. Use variable-length commands.");
+    throw new Error(
+      "Legacy command buffers not supported. Use variable-length commands.",
+    );
   }
 
   /**
@@ -372,7 +374,9 @@ export class WasmRasterizer {
    * @deprecated Use writeVariableLengthCommand instead
    */
   writeCommand(bufferPtr: number, index: number, cmd: any): void {
-    throw new Error("Legacy command writing not supported. Use writeVariableLengthCommand.");
+    throw new Error(
+      "Legacy command writing not supported. Use writeVariableLengthCommand.",
+    );
   }
 
   /**
@@ -384,7 +388,9 @@ export class WasmRasterizer {
     bufferPtr: number,
     commandCount: number,
   ): void {
-    throw new Error("Legacy renderCommands not supported. Use renderVariableLengthCommands.");
+    throw new Error(
+      "Legacy renderCommands not supported. Use renderVariableLengthCommands.",
+    );
   }
 
   /**
@@ -392,7 +398,9 @@ export class WasmRasterizer {
    * @deprecated Use renderVariableLengthCommands instead
    */
   renderCommandsToContext(contextId: number, commands: any[]): void {
-    throw new Error("Legacy renderCommandsToContext not supported. Use renderVariableLengthCommands.");
+    throw new Error(
+      "Legacy renderCommandsToContext not supported. Use renderVariableLengthCommands.",
+    );
   }
 
   /**
@@ -637,27 +645,15 @@ export class WasmRasterizer {
   /**
    * Helper: Create a SET_COMPOSITE command
    */
-  static setCompositeCommand(
+  static writeCompositCommand(
+    w: ByteWriter,
     mode: CompositeMode,
-    alpha: number = 1.0,
-  ): SurfaceCommand {
-    // Convert float alpha to uint32 representation
-    const floatToU32 = (f: number): number => {
-      const buf = new ArrayBuffer(4);
-      new Float32Array(buf)[0] = f;
-      return new Uint32Array(buf)[0];
-    };
-
-    return {
-      operation: SurfaceOperation.CMD_SET_COMPOSITE,
-      reserved: [0, 0, 0],
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      arg1: mode,
-      arg2: floatToU32(alpha),
-    };
+    alpha: number,
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_SET_COMPOSITE);
+    w.writeInt32(mode);
+    w.writeFloat(alpha);
+    w.finishCommand();
   }
 
   /**

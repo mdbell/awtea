@@ -227,4 +227,5 @@ tasks.named<Test>("test") {
     
     // Make test depend on denoTestJava to run Deno tests
     dependsOn("denoTestJava")
+    dependsOn("denoTest")
 }
