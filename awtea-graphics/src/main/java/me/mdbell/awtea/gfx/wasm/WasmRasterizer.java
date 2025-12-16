@@ -62,7 +62,7 @@ public class WasmRasterizer implements Rasterizer {
             if (result < 0) {
                 log.error("WasmRasterizer: Failed to destroy context {}", contextId);
             }
-            commandBuffer.free();
+            // Command buffer is owned by context and freed automatically
             disposed = true;
         }
     }
@@ -170,7 +170,15 @@ public class WasmRasterizer implements Rasterizer {
                     commandBuffer.emitSetColor(argb, cmd.arg1);
                     break;
                 case SET_CLIP_RECT:
-                    commandBuffer.emitSetClipRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    Shape shape = (Shape) cmd.obj;
+                    if (shape == null) {
+                        // Clear clip - use sentinel value (negative width/height) to indicate no
+                        // clipping
+                        commandBuffer.emitSetClipRect(0, 0, -1, -1);
+                    } else {
+                        Rectangle bounds = shape.getBounds();
+                        commandBuffer.emitSetClipRect(bounds.x, bounds.y, bounds.width, bounds.height);
+                    }
                     break;
                 case CLEAR_RECT:
                     commandBuffer.emitClearRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
@@ -187,6 +195,26 @@ public class WasmRasterizer implements Rasterizer {
                     break;
                 case DRAW_LINE:
                     commandBuffer.emitDrawLine(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    break;
+                case DRAW_POLYGON:
+                    SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
+                    commandBuffer.emitDrawPolygon(pts.xpoints, pts.ypoints);
+                    break;
+                case SET_COMPOSITE:
+                    if (!(cmd.obj instanceof java.awt.Composite)) {
+                        log.error("WasmRasterizer: SET_COMPOSITE command missing Composite object");
+                    } else {
+                        java.awt.Composite composite = (java.awt.Composite) cmd.obj;
+                        if (composite instanceof java.awt.AlphaComposite) {
+                            java.awt.AlphaComposite alphaComp = (java.awt.AlphaComposite) composite;
+                            // Map AlphaComposite rule to our CompositeMode constants
+                            int mode = alphaComp.getRule();
+                            float alpha = alphaComp.getAlpha();
+                            commandBuffer.emitSetComposite(mode, alpha);
+                        } else {
+                            log.warn("WasmRasterizer: Unsupported composite type: {}", composite.getClass().getName());
+                        }
+                    }
                     break;
                 case NO_OP:
                     break;

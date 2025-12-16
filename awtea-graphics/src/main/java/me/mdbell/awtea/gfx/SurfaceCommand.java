@@ -1,5 +1,6 @@
 package me.mdbell.awtea.gfx;
 
+import lombok.AllArgsConstructor;
 import me.mdbell.awtea.gfx.generated.Operation;
 
 public class SurfaceCommand {
@@ -48,6 +49,13 @@ public class SurfaceCommand {
         this(operation, null, arg1, arg2, arg3, arg4);
     }
 
-    // Note: Operation enum is now defined in me.mdbell.awtea.gfx.generated.Operation
+    // Note: Operation enum is now defined in
+    // me.mdbell.awtea.gfx.generated.Operation
     // Edit schemas/surface-operation.yaml to modify the enum values
+
+    @AllArgsConstructor
+    public static class PolygonPoints {
+        public int[] xpoints;
+        public int[] ypoints;
+    }
 }
