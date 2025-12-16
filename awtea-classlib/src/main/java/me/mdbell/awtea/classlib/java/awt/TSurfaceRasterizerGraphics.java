@@ -351,7 +351,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, deviceClip));
         } else {
             // For Software/WebGL rasterizers, send clip in user space
-            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, this.clip));
+            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, clip));
         }
     }
 
