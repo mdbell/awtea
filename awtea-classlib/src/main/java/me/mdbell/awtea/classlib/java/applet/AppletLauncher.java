@@ -163,13 +163,15 @@ public final class AppletLauncher {
         HTMLCanvasElement canvas = (HTMLCanvasElement) element;
         
         // Create applet instance from registry
-        TApplet applet = AppletRegistry.createApplet(appletName);
+        java.applet.Applet applet = AppletRegistry.createApplet(appletName);
         
         // Set up applet stub with parameters and canvas
         Properties props = new Properties();
         TeaAppletStub teaStub = new TeaAppletStub(props, canvas);
-        TAppletStub stub = new TeaAppletStubAdapter(teaStub);
-        applet.setStub(stub);
+        
+        // Set the stub on the applet using java.applet.AppletStub interface
+        // TeaAppletStub implements AppletStub which is compatible
+        applet.setStub(teaStub);
         
         // Get canvas dimensions
         int width = canvas.getWidth();

@@ -1,11 +1,9 @@
 package me.mdbell.awtea.examples.guidemo;
 
 import me.mdbell.awtea.classlib.java.applet.AppletRegistry;
-import me.mdbell.awtea.classlib.java.applet.TApplet;
-import me.mdbell.awtea.classlib.java.awt.TContainer;
-import me.mdbell.awtea.classlib.java.awt.TFont;
-import me.mdbell.awtea.classlib.java.awt.TGraphics;
-import org.teavm.classlib.java.awt.TColor;
+
+import java.applet.Applet;
+import java.awt.*;
 
 /**
  * Comprehensive GUI demo applet showcasing awtea features including:
@@ -15,7 +13,7 @@ import org.teavm.classlib.java.awt.TColor;
  * - Event handling
  * - Text rendering
  */
-public class GuiDemoApplet extends TApplet {
+public class GuiDemoApplet extends Applet {
     
     // Register this applet with the registry at class load time
     static {
@@ -25,20 +23,20 @@ public class GuiDemoApplet extends TApplet {
     @Override
     public void init() {
         // Create a container to hold everything
-        TContainer mainPanel = new TContainer();
+        Container mainPanel = new Container();
         
         // Add title panel at the top
-        TContainer titlePanel = new TContainer() {
+        Container titlePanel = new Container() {
             @Override
-            public void paint(TGraphics g) {
-                g.setColor(new TColor(70, 130, 180)); // Steel blue
+            public void paint(Graphics g) {
+                g.setColor(new Color(70, 130, 180)); // Steel blue
                 g.fillRect(0, 0, getWidth(), getHeight());
                 
-                g.setColor(TColor.WHITE);
-                g.setFont(new TFont("SansSerif", TFont.BOLD, 24));
+                g.setColor(Color.WHITE);
+                g.setFont(new Font("SansSerif", Font.BOLD, 24));
                 g.drawString("awtea GUI Demo", 250, 35);
                 
-                g.setFont(new TFont("SansSerif", TFont.PLAIN, 14));
+                g.setFont(new Font("SansSerif", Font.PLAIN, 14));
                 g.drawString("Interactive AWT components running in your browser", 200, 55);
             }
         };
@@ -61,27 +59,27 @@ public class GuiDemoApplet extends TApplet {
         mainPanel.add(alphaPanel);
         
         // Add info panel at the bottom
-        TContainer infoPanel = new TContainer() {
+        Container infoPanel = new Container() {
             @Override
-            public void paint(TGraphics g) {
-                g.setColor(new TColor(245, 245, 245));
+            public void paint(Graphics g) {
+                g.setColor(new Color(245, 245, 245));
                 g.fillRect(0, 0, getWidth(), getHeight());
                 
                 // Draw border
-                g.setColor(new TColor(200, 200, 200));
+                g.setColor(new Color(200, 200, 200));
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
                 
-                g.setColor(TColor.BLACK);
-                g.setFont(new TFont("SansSerif", TFont.BOLD, 12));
+                g.setColor(Color.BLACK);
+                g.setFont(new Font("SansSerif", Font.BOLD, 12));
                 g.drawString("Instructions:", 10, 20);
                 
-                g.setFont(new TFont("SansSerif", TFont.PLAIN, 11));
+                g.setFont(new Font("SansSerif", Font.PLAIN, 11));
                 g.drawString("• Click on the left canvas to draw colored squares", 10, 40);
                 g.drawString("• Move your mouse to see real-time coordinates", 10, 55);
                 g.drawString("• View graphics primitives and alpha blending on right", 10, 70);
                 
-                g.setFont(new TFont("SansSerif", TFont.ITALIC, 10));
-                g.setColor(TColor.GRAY);
+                g.setFont(new Font("SansSerif", Font.ITALIC, 10));
+                g.setColor(Color.GRAY);
                 g.drawString("Powered by awtea - Java AWT for the Web", 10, 95);
             }
         };

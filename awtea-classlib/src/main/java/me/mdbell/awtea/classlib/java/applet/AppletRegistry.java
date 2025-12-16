@@ -1,5 +1,6 @@
 package me.mdbell.awtea.classlib.java.applet;
 
+import java.applet.Applet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -68,7 +69,7 @@ public final class AppletRegistry {
      * @return a new instance of the applet
      * @throws IllegalArgumentException if no applet is registered with the given name
      */
-    public static TApplet createApplet(String name) {
+    public static Applet createApplet(String name) {
         AppletFactory factory = factories.get(name);
         if (factory == null) {
             throw new IllegalArgumentException("No applet registered with name: " + name + 

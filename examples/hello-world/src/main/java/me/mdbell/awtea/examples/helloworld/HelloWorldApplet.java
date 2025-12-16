@@ -1,50 +1,48 @@
 package me.mdbell.awtea.examples.helloworld;
 
 import me.mdbell.awtea.classlib.java.applet.AppletRegistry;
-import me.mdbell.awtea.classlib.java.applet.TApplet;
-import me.mdbell.awtea.classlib.java.awt.TCanvas;
-import me.mdbell.awtea.classlib.java.awt.TFont;
-import me.mdbell.awtea.classlib.java.awt.TGraphics;
-import org.teavm.classlib.java.awt.TColor;
+
+import java.applet.Applet;
+import java.awt.*;
 
 /**
  * A minimal awtea applet that displays "Hello, awtea!" in a canvas.
  * This demonstrates the basic structure of an awtea applet using the factory pattern.
  */
-public class HelloWorldApplet extends TApplet {
+public class HelloWorldApplet extends Applet {
     
     // Register this applet with the registry at class load time
     static {
         AppletRegistry.register("hello-world", HelloWorldApplet::new);
     }
     
-    private TCanvas canvas;
+    private Canvas canvas;
     
     @Override
     public void init() {
         // Create a canvas for custom drawing
-        canvas = new TCanvas() {
+        canvas = new Canvas() {
             @Override
-            public void paint(TGraphics g) {
+            public void paint(Graphics g) {
                 // Set background color
-                g.setColor(TColor.WHITE);
+                g.setColor(Color.WHITE);
                 g.fillRect(0, 0, getWidth(), getHeight());
                 
                 // Draw "Hello, awtea!" text
-                g.setColor(TColor.BLACK);
-                g.setFont(new TFont("SansSerif", TFont.BOLD, 32));
+                g.setColor(Color.BLACK);
+                g.setFont(new Font("SansSerif", Font.BOLD, 32));
                 
                 String message = "Hello, awtea!";
                 g.drawString(message, 150, 150);
                 
                 // Draw a subtitle
-                g.setFont(new TFont("SansSerif", TFont.PLAIN, 16));
-                g.setColor(new TColor(100, 100, 100));
+                g.setFont(new Font("SansSerif", Font.PLAIN, 16));
+                g.setColor(new Color(100, 100, 100));
                 String subtitle = "Java AWT running in your browser!";
                 g.drawString(subtitle, 120, 200);
                 
                 // Draw a simple box around the text
-                g.setColor(new TColor(70, 130, 180));
+                g.setColor(new Color(70, 130, 180));
                 g.drawRect(100, 100, 400, 150);
             }
         };

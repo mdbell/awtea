@@ -1,5 +1,7 @@
 package me.mdbell.awtea.classlib.java.applet;
 
+import java.applet.Applet;
+
 /**
  * Factory interface for creating applet instances.
  * This provides a compile-time safe way to instantiate applets without reflection.
@@ -7,7 +9,7 @@ package me.mdbell.awtea.classlib.java.applet;
  * <p>Example usage:
  * <pre>
  * public class MyAppletFactory implements AppletFactory {
- *     public TApplet createApplet() {
+ *     public Applet createApplet() {
  *         return new MyApplet();
  *     }
  * }
@@ -21,7 +23,7 @@ public interface AppletFactory {
     /**
      * Creates a new instance of an applet.
      * 
-     * @return a new TApplet instance
+     * @return a new Applet instance
      */
-    TApplet createApplet();
+    Applet createApplet();
 }
