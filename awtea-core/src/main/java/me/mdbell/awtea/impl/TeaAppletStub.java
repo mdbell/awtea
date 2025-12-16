@@ -1,10 +1,12 @@
 package me.mdbell.awtea.impl;
 
+import lombok.Getter;
 import lombok.SneakyThrows;
 import me.mdbell.awtea.util.URLSearchParams;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSString;
+import org.teavm.jso.dom.html.HTMLCanvasElement;
 
 import java.applet.AppletContext;
 import java.applet.AppletStub;
@@ -14,10 +16,16 @@ import java.util.Properties;
 public class TeaAppletStub implements AppletStub {
 
 	private final Properties props;
-
+	@Getter
+	private HTMLCanvasElement canvas;
 
 	public TeaAppletStub(Properties props) {
 		this.props = props;
+	}
+
+	public TeaAppletStub(Properties props, HTMLCanvasElement canvas) {
+		this.props = props;
+		this.canvas = canvas;
 	}
 
 	@Override
@@ -61,10 +69,13 @@ public class TeaAppletStub implements AppletStub {
 			return searchParams.get(name);
 		}
 
-//        String attr = "data-" + name.toLowerCase();
-//        if (canvas.hasAttribute(attr)) {
-//            return canvas.getAttribute(attr);
-//        }
+		// Check canvas data attributes if canvas is available
+		if (canvas != null) {
+			String attr = "data-" + name.toLowerCase();
+			if (canvas.hasAttribute(attr)) {
+				return canvas.getAttribute(attr);
+			}
+		}
 
 		return props.getProperty(name);
 	}

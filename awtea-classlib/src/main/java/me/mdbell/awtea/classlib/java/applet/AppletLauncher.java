@@ -165,9 +165,10 @@ public final class AppletLauncher {
         // Create applet instance from registry
         TApplet applet = AppletRegistry.createApplet(appletName);
         
-        // Set up applet stub with parameters
+        // Set up applet stub with parameters and canvas
         Properties props = new Properties();
-        TeaAppletStub stub = new TeaAppletStub(props);
+        TeaAppletStub teaStub = new TeaAppletStub(props, canvas);
+        TAppletStub stub = new TeaAppletStubAdapter(teaStub);
         applet.setStub(stub);
         
         // Get canvas dimensions
