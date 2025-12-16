@@ -337,8 +337,8 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         // Convert to integer rectangle in device coordinates
         int deviceX = (int) Math.floor(minX);
         int deviceY = (int) Math.floor(minY);
-        int deviceWidth = (int) Math.ceil(maxX) - deviceX;
-        int deviceHeight = (int) Math.ceil(maxY) - deviceY;
+        int deviceWidth = Math.max(0, (int) Math.ceil(maxX) - deviceX);
+        int deviceHeight = Math.max(0, (int) Math.ceil(maxY) - deviceY);
         
         // Create a transformed clip rectangle and push it
         TRectangle deviceClip = new TRectangle(deviceX, deviceY, deviceWidth, deviceHeight);
