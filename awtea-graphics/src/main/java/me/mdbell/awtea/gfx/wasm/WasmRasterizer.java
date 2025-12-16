@@ -62,7 +62,7 @@ public class WasmRasterizer implements Rasterizer {
             if (result < 0) {
                 log.error("WasmRasterizer: Failed to destroy context {}", contextId);
             }
-            commandBuffer.free();
+            // Command buffer is owned by context and freed automatically
             disposed = true;
         }
     }

@@ -44,20 +44,31 @@ public final class WasmSurface implements Surface {
 		resize(width, height);
 	}
 
+	/**
+	 * Create a command buffer associated with a specific context.
+	 * This uses the context's fixed-size internal buffer.
+	 * 
+	 * @deprecated Use createBufferForContext instead (context buffers are now mandatory)
+	 */
+	@Deprecated
 	public SurfaceCommandBuffer createBuffer() {
-		return createBuffer(MAX_COMMANDS);
+		throw new UnsupportedOperationException("Legacy buffer creation not supported. Use createBufferForContext(contextId) instead.");
 	}
 
+	/**
+	 * @deprecated Use createBufferForContext instead (context buffers are now mandatory)
+	 */
+	@Deprecated
 	public SurfaceCommandBuffer createBuffer(int maxCommands) {
-		return new SurfaceCommandBuffer(this.exports, maxCommands);
+		throw new UnsupportedOperationException("Legacy buffer creation not supported. Use createBufferForContext(contextId) instead.");
 	}
 
 	/**
 	 * Create a command buffer associated with a specific context.
-	 * This uses the context's fixed-size internal buffer instead of allocating a new one.
+	 * This uses the context's internal buffer (16KB).
 	 */
 	public SurfaceCommandBuffer createBufferForContext(int contextId) {
-		return new SurfaceCommandBuffer(contextId, this.exports, 0);
+		return new SurfaceCommandBuffer(contextId, this.exports);
 	}
 
 	@Override
