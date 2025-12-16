@@ -14,6 +14,7 @@ awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime 
 - Bytecode instrumentation for performance and extensibility
 - Zero-copy pixel buffers
 - Comprehensive debugging and monitoring tools
+- **Low-code applet launcher** with ES2015 module support and HTML data-attribute binding
 
 ## Getting Started
 
@@ -30,10 +31,37 @@ awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime 
 
 Check out the [examples/](examples/) directory for working demos:
 
-- **[hello-world](examples/hello-world/)**: Minimal "Hello, awtea!" application
+- **[hello-world](examples/hello-world/)**: Minimal "Hello, awtea!" application using the applet launcher
 - **[gui-demo](examples/gui-demo/)**: Comprehensive GUI with interactive components, graphics, and event handling
 
 Each example can be built and run independently. See the [examples README](examples/README.md) for detailed instructions.
+
+### Quick Start: Creating an Applet
+
+awtea provides a low-code pattern for launching Java applets in the browser:
+
+```java
+public class MyApplet extends java.applet.Applet {
+    static {
+        AppletRegistry.register("my-applet", MyApplet::new);
+    }
+    
+    @Override
+    public void init() {
+        // Initialize your applet
+    }
+}
+```
+
+```html
+<canvas id="app" data-awtea-applet="my-applet" width="800" height="600"></canvas>
+<script type="module">
+    import { main } from './js/my-app.js';
+    main([]);
+</script>
+```
+
+See the [Applet Launcher Guide](docs/APPLET_LAUNCHER.md) for complete documentation.
 
 ## Project Structure
 
