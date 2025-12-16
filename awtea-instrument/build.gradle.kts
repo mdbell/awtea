@@ -27,4 +27,6 @@ dependencies {
     
     implementation(project(":awtea-core"))
     implementation(project(":awtea-util"))
+    
+    testImplementation(project(":awtea-test-util"))
 }

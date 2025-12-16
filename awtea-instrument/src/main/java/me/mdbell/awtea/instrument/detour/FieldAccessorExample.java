@@ -5,7 +5,6 @@ import me.mdbell.awtea.instrument.DetourReceiver;
 import me.mdbell.awtea.instrument.FieldAccessor;
 import me.mdbell.awtea.instrument.FieldSetter;
 import me.mdbell.awtea.instrument.NoDetours;
-import org.teavm.backend.javascript.spi.GeneratedBy;
 
 import java.lang.reflect.Field;
 
@@ -25,14 +24,12 @@ public class FieldAccessorExample {
 	 * Accessor for the private 'name' field in java.lang.reflect.Field.
 	 */
 	@FieldAccessor("name")
-	@GeneratedBy(me.mdbell.awtea.instrument.FieldAccessorGenerator.class)
 	private static native String getName(Field field);
 
 	/**
 	 * Setter for the private 'name' field in java.lang.reflect.Field.
 	 */
 	@FieldSetter("name")
-	@GeneratedBy(me.mdbell.awtea.instrument.FieldAccessorGenerator.class)
 	private static native void setName(Field field, String name);
 
 	/**
