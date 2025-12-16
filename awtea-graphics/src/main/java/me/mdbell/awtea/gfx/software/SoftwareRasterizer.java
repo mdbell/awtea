@@ -221,18 +221,38 @@ public class SoftwareRasterizer implements Rasterizer {
 
     private void fillRect(int x, int y, int width, int height) {
 
-        // fast path, rectangle is completely outside clip
+        // Transform coordinates to device space first
+        int x0, y0, x1, y1;
+        
+        if (transform.isIdentity()) {
+            x0 = x + (int) transform.getTranslateX();
+            y0 = y + (int) transform.getTranslateY();
+            x1 = x + width - 1 + (int) transform.getTranslateX();
+            y1 = y + height - 1 + (int) transform.getTranslateY();
+        } else {
+            Point2D p1 = new Point2D.Float(x, y);
+            Point2D p2 = new Point2D.Float(x + width - 1, y + height - 1);
+            transform.transform(p1, p1);
+            transform.transform(p2, p2);
+            x0 = Math.round((float) p1.getX());
+            y0 = Math.round((float) p1.getY());
+            x1 = Math.round((float) p2.getX());
+            y1 = Math.round((float) p2.getY());
+        }
+
+        // Fast path: rectangle is completely outside clip (in device space)
         if (clip != null) {
-            if (x + width <= clip.x || x >= clip.x + clip.width ||
-                    y + height <= clip.y || y >= clip.y + clip.height) {
+            if (x1 < clip.x || x0 >= clip.x + clip.width ||
+                    y1 < clip.y || y0 >= clip.y + clip.height) {
                 return;
             }
         }
 
-        int x0 = clipX(x);
-        int y0 = clipY(y);
-        int x1 = clipX(x + width - 1);
-        int y1 = clipY(y + height - 1);
+        // Clip in device space
+        x0 = clipX(x0);
+        y0 = clipY(y0);
+        x1 = clipX(x1);
+        y1 = clipY(y1);
 
         if (x0 >= x1 || y0 >= y1) {
             return;
@@ -245,22 +265,6 @@ public class SoftwareRasterizer implements Rasterizer {
         int[] pixelDataAsInt32 = surface.getPixelDataAsInt32Array();
 
         int format = surface.getFormat();
-
-        if (transform.isIdentity()) {
-            x0 += (int) transform.getTranslateX();
-            y0 += (int) transform.getTranslateY();
-            x1 += (int) transform.getTranslateX();
-            y1 += (int) transform.getTranslateY();
-        } else {
-            Point2D p1 = new Point2D.Float(x0, y0);
-            Point2D p2 = new Point2D.Float(x1, y1);
-            transform.transform(p1, p1);
-            transform.transform(p2, p2);
-            x0 = Math.round((float) p1.getX());
-            y0 = Math.round((float) p1.getY());
-            x1 = Math.round((float) p2.getX());
-            y1 = Math.round((float) p2.getY());
-        }
 
         boolean blend = needsBlending();
 
@@ -296,7 +300,20 @@ public class SoftwareRasterizer implements Rasterizer {
 
     private void drawLine(int x1, int y1, int x2, int y2) {
 
-        // fast path, both points are outside clip
+        // Transform endpoints to device space first
+        Point2D p1 = new Point2D.Float(x1, y1);
+        Point2D p2 = new Point2D.Float(x2, y2);
+        if (!transform.isIdentity()) {
+            transform.transform(p1, p1);
+            transform.transform(p2, p2);
+        }
+
+        x1 = Math.round((float) p1.getX());
+        y1 = Math.round((float) p1.getY());
+        x2 = Math.round((float) p2.getX());
+        y2 = Math.round((float) p2.getY());
+
+        // Fast path: both points are outside clip (in device space)
         if (clip != null) {
             if ((x1 < clip.x && x2 < clip.x) ||
                     (x1 >= clip.x + clip.width && x2 >= clip.x + clip.width) ||
@@ -306,6 +323,7 @@ public class SoftwareRasterizer implements Rasterizer {
             }
         }
 
+        // Clip endpoints in device space
         x1 = clipX(x1);
         y1 = clipY(y1);
         x2 = clipX(x2);
@@ -324,19 +342,7 @@ public class SoftwareRasterizer implements Rasterizer {
             return;
         }
 
-        Point2D p1 = new Point2D.Float(x1, y1);
-        Point2D p2 = new Point2D.Float(x2, y2);
-        if (!transform.isIdentity()) {
-            transform.transform(p1, p1);
-            transform.transform(p2, p2);
-        }
-
         int[] pixelDataAsInt32 = surface.getPixelDataAsInt32Array();
-
-        x1 = Math.round((float) p1.getX());
-        y1 = Math.round((float) p1.getY());
-        x2 = Math.round((float) p2.getX());
-        y2 = Math.round((float) p2.getY());
 
         // Bresenham's line algorithm
         int dx = Math.abs(x2 - x1);
@@ -380,75 +386,37 @@ public class SoftwareRasterizer implements Rasterizer {
         if (srcSurface == null) {
             return;
         }
-        // fast path, rectangle is completely outside clip
+        
+        // Transform destination rectangle to device space first
+        Point2D topLeft = new Point2D.Float(destX, destY);
+        Point2D bottomRight = new Point2D.Float(destX + destWidth, destY + destHeight);
+        if (!transform.isIdentity()) {
+            transform.transform(topLeft, topLeft);
+            transform.transform(bottomRight, bottomRight);
+        }
+        
+        int transformedDestX = Math.round((float) topLeft.getX());
+        int transformedDestY = Math.round((float) topLeft.getY());
+        int transformedDestWidth = Math.round((float) bottomRight.getX()) - transformedDestX;
+        int transformedDestHeight = Math.round((float) bottomRight.getY()) - transformedDestY;
+        
+        // Fast path: rectangle is completely outside clip (in device space)
         if (clip != null) {
-            if (destX + destWidth <= clip.x || destX >= clip.x + clip.width ||
-                    destY + destHeight <= clip.y || destY >= clip.y + clip.height) {
+            if (transformedDestX + transformedDestWidth <= clip.x || transformedDestX >= clip.x + clip.width ||
+                    transformedDestY + transformedDestHeight <= clip.y || transformedDestY >= clip.y + clip.height) {
                 return;
             }
         }
+        
         blitImage(srcSurface, 0, 0,
                 srcSurface.getWidth(), srcSurface.getHeight(),
-                destX, destY, destWidth, destHeight);
-//        if (srcSurface == null) {
-//            return;
-//        }
-//
-//        // fast path, rectangle is completely outside clip
-//        if (clip != null) {
-//            if (destX + destWidth <= clip.x || destX >= clip.x + clip.width ||
-//                    destY + destHeight <= clip.y || destY >= clip.y + clip.height) {
-//                return;
-//            }
-//        }
-//
-//        Point2D pt = new Point2D.Float(destX, destY);
-//        if (!transform.isIdentity()) {
-//            transform.transform(pt, pt);
-//            destX = Math.round((float) pt.getX());
-//            destY = Math.round((float) pt.getY());
-//        } else {
-//            destX += (int) transform.getTranslateX();
-//            destY += (int) transform.getTranslateY();
-//        }
-//
-//        // For simplicity, only support 1:1 pixel mapping (no scaling)
-//        Uint8ClampedArray srcPixArray = srcSurface.getPixelData();
-//        int[] destPixels = surface.getPixelDataAsInt32Array();
-//
-//        if (srcPixArray == null || destPixels == null) {
-//            return;
-//        }
-//        int[] srcPixels = new Int32Array(srcPixArray.getBuffer(), srcPixArray.getByteOffset(),
-//                srcPixArray.getLength() / 4).toJavaArray();
-//
-//        int srcFormat = srcSurface.getFormat();
-//        int destFormat = surface.getFormat();
-//        int surfaceWidth = surface.getWidth();
-//
-//        for (int row = 0; row < destHeight; row++) {
-//            for (int col = 0; col < destWidth; col++) {
-//                int srcIdx = row * destWidth + col;
-//                int destIdx = (destY + row) * surfaceWidth + (destX + col);
-//
-//                int srcColor = srcPixels[srcIdx];
-//                int convertedColor = convertColor(srcColor, srcFormat, destFormat);
-//
-//                if (needsBlending()) {
-//                    int dstColor = destPixels[destIdx];
-//                    int blendedColor = blendPixel(convertColorToARGB(convertedColor, destFormat),
-//                            convertColorToARGB(dstColor, destFormat), composite);
-//                    destPixels[destIdx] = blendedColor;
-//                } else {
-//                    destPixels[destIdx] = convertedColor;
-//                }
-//            }
-//        }
+                transformedDestX, transformedDestY, transformedDestWidth, transformedDestHeight);
     }
 
     private void blitImage(Surface surface, int srcX, int srcY,
                            int srcWidth, int srcHeight,
                            int destX, int destY, int destWidth, int destHeight) {
+        // Clip in device space (coordinates are already transformed)
         int clippedDestX0 = clipX(destX);
         int clippedDestY0 = clipY(destY);
         int clippedDestX1 = clipX(destX + destWidth - 1);
@@ -466,16 +434,7 @@ public class SoftwareRasterizer implements Rasterizer {
             return;
         }
 
-        // Apply translation from transform
-        Point2D pt = new Point2D.Float(destX, destY);
-        if (!transform.isIdentity()) {
-            transform.transform(pt, pt);
-            destX = Math.round((float) pt.getX());
-            destY = Math.round((float) pt.getY());
-        } else {
-            destX += (int) transform.getTranslateX();
-            destY += (int) transform.getTranslateY();
-        }
+        // Coordinates are already in device space, no need to transform again
 
         Uint8ClampedArray srcPixArray = surface.getPixelData();
         int[] destPixels = this.surface.getPixelDataAsInt32Array();

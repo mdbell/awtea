@@ -309,11 +309,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     }
 
     /**
-     * Push the clip rectangle to the command buffer, transforming to device coordinates if needed.
-     * 
-     * The WASM rasterizer expects clips in device coordinates because it applies clipping in C code
-     * after transform operations. The Software and WebGL rasterizers handle transforms and clipping
-     * together in their own coordinate systems, so they expect clips in user space.
+     * Transform the current clip rectangle to device coordinates and push it to the command buffer.
+     * This is necessary because the clip is stored in user space but all rasterizers expect it in
+     * device coordinates.
      */
     private void pushTransformedClip() {
         if (clip == null) {
@@ -321,38 +319,30 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             return;
         }
         
-        // Check if this is a WASM rasterizer that needs device-space clips
-        boolean needsDeviceSpaceClip = rasterizer.getClass().getName().contains("WasmRasterizer");
+        // Transform the four corners of the clip rectangle
+        double[] pts = new double[]{
+            clip.x, clip.y,                          // top-left
+            clip.x + clip.width, clip.y,             // top-right
+            clip.x, clip.y + clip.height,            // bottom-left
+            clip.x + clip.width, clip.y + clip.height // bottom-right
+        };
+        transform.transform(pts, 0, pts, 0, 4);
         
-        if (needsDeviceSpaceClip) {
-            // Transform the four corners of the clip rectangle
-            double[] pts = new double[]{
-                clip.x, clip.y,                          // top-left
-                clip.x + clip.width, clip.y,             // top-right
-                clip.x, clip.y + clip.height,            // bottom-left
-                clip.x + clip.width, clip.y + clip.height // bottom-right
-            };
-            transform.transform(pts, 0, pts, 0, 4);
-            
-            // Find the bounding box of the transformed corners
-            double minX = Math.min(Math.min(pts[0], pts[2]), Math.min(pts[4], pts[6]));
-            double minY = Math.min(Math.min(pts[1], pts[3]), Math.min(pts[5], pts[7]));
-            double maxX = Math.max(Math.max(pts[0], pts[2]), Math.max(pts[4], pts[6]));
-            double maxY = Math.max(Math.max(pts[1], pts[3]), Math.max(pts[5], pts[7]));
-            
-            // Convert to integer rectangle in device coordinates
-            int deviceX = (int) Math.floor(minX);
-            int deviceY = (int) Math.floor(minY);
-            int deviceWidth = Math.max(0, (int) Math.ceil(maxX) - deviceX);
-            int deviceHeight = Math.max(0, (int) Math.ceil(maxY) - deviceY);
-            
-            // Create a transformed clip rectangle and push it
-            TRectangle deviceClip = new TRectangle(deviceX, deviceY, deviceWidth, deviceHeight);
-            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, deviceClip));
-        } else {
-            // For Software/WebGL rasterizers, send clip in user space
-            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, clip));
-        }
+        // Find the bounding box of the transformed corners
+        double minX = Math.min(Math.min(pts[0], pts[2]), Math.min(pts[4], pts[6]));
+        double minY = Math.min(Math.min(pts[1], pts[3]), Math.min(pts[5], pts[7]));
+        double maxX = Math.max(Math.max(pts[0], pts[2]), Math.max(pts[4], pts[6]));
+        double maxY = Math.max(Math.max(pts[1], pts[3]), Math.max(pts[5], pts[7]));
+        
+        // Convert to integer rectangle in device coordinates
+        int deviceX = (int) Math.floor(minX);
+        int deviceY = (int) Math.floor(minY);
+        int deviceWidth = Math.max(0, (int) Math.ceil(maxX) - deviceX);
+        int deviceHeight = Math.max(0, (int) Math.ceil(maxY) - deviceY);
+        
+        // Create a transformed clip rectangle and push it
+        TRectangle deviceClip = new TRectangle(deviceX, deviceY, deviceWidth, deviceHeight);
+        pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, deviceClip));
     }
 
     @Override
