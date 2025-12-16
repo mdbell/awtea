@@ -82,19 +82,3 @@ typedef struct {
     // Variable-length command buffer reader for this context
     CommandReader reader;
 } SurfaceContext;
-
-// RenderSurface: temporary combined view of SurfaceData + SurfaceContext for rendering
-// This struct combines pixel data and rendering state for use by rendering functions.
-typedef struct {
-    // Pixel data fields (from SurfaceData)
-    uint32_t    ptr;
-    PixelFormat format;
-    uint32_t    width;
-    uint32_t    height;
-    uint32_t    stride;
-    uint32_t    layer;
-    // Rendering state fields (from SurfaceContext)
-    uint32_t    argb[COLOR_MAX + 1];
-    Transform2D transform;
-    ClipRect    clip;
-} RenderSurface;

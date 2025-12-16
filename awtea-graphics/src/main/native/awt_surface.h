@@ -56,5 +56,5 @@ int get_context_buffer_size_words(void);
 __attribute__((export_name("get_context_buffer_ptr")))
 uint32_t get_context_buffer_ptr(int context_id);
 
-int clip_x(int x, const RenderSurface* surf);
-int clip_y(int y, const RenderSurface* surf);
+int clip_x(int x, const SurfaceData* surf, SurfaceContext* context);
+int clip_y(int y, const SurfaceData* surf, SurfaceContext* context);

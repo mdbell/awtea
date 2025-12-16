@@ -6,18 +6,18 @@
 #include "awt_log.h"
 
 // Forward declarations of command handlers
-typedef int (*CommandHandler)(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+typedef int (*CommandHandler)(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 
-static int handle_no_op(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
-static int handle_set_color(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
-static int handle_set_transform(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
-static int handle_set_clip_rect(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
-static int handle_set_composite(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
-static int handle_blit_image(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
-static int handle_draw_rect(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
-static int handle_fill_rect(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
-static int handle_clear_rect(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
-static int handle_draw_line(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_no_op(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_set_color(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_set_transform(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_set_clip_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_set_composite(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_blit_image(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_draw_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_fill_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_clear_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_draw_line(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 
 // Command handler function table (indexed by SurfaceOperation enum)
 static const CommandHandler command_handlers[] = {
@@ -50,9 +50,6 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
         log_error("render_awt: invalid surface %d for context %d", ctx->surface_id, context_id);
         return -2;
     }
-
-    // Build a RenderSurface from data + context for rendering
-    RenderSurface surface = make_render_surface(data, ctx);
 
     // Use context's buffer if cmdPtr is 0
     CommandReader* reader = &ctx->reader;
@@ -98,7 +95,7 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
 
         // Dispatch to handler
         CommandHandler handler = command_handlers[opcode];
-        int result = handler(ctx, &surface, reader, flags, length);
+        int result = handler(ctx, data, reader, flags, length);
         if (result != 0) {
             log_error("Command %d (opcode=%d) failed with error %d", 
                       commands_processed + 1, opcode, result);
@@ -114,13 +111,13 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
 
 // Command handler implementations
 
-static int handle_no_op(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_no_op(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Skip any data (should be 0 length anyway)
     reader_skip(reader, length * 4);
     return 0;
 }
 
-static int handle_set_color(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_set_color(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Expected: [argb: uint32][which: uint32]
     if (length != 2) {
         log_error("handle_set_color: expected length 2, got %d", length);
@@ -137,12 +134,11 @@ static int handle_set_color(SurfaceContext* ctx, RenderSurface* surface, Command
     }
 
     set_color(ctx, which, argb);
-    surface->argb[which] = argb;
     log_debug("Set color %d to 0x%08X", which, argb);
     return 0;
 }
 
-static int handle_set_transform(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_set_transform(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Expected: [m00: float][m01: float][m02: float][m10: float][m11: float][m12: float]
     if (length != 6) {
         log_error("handle_set_transform: expected length 6, got %d", length);
@@ -157,14 +153,13 @@ static int handle_set_transform(SurfaceContext* ctx, RenderSurface* surface, Com
     ctx->transform.m11 = read_float(reader);
     ctx->transform.m12 = read_float(reader);
 
-    surface->transform = ctx->transform;
     log_debug("Set transform: [[%.2f, %.2f, %.2f], [%.2f, %.2f, %.2f]]",
               ctx->transform.m00, ctx->transform.m01, ctx->transform.m02,
               ctx->transform.m10, ctx->transform.m11, ctx->transform.m12);
     return 0;
 }
 
-static int handle_set_clip_rect(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_set_clip_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Expected: [x: int32][y: int32][width: int32][height: int32]
     if (length != 4) {
         log_error("handle_set_clip_rect: expected length 4, got %d", length);
@@ -182,14 +177,14 @@ static int handle_set_clip_rect(SurfaceContext* ctx, RenderSurface* surface, Com
     return 0;
 }
 
-static int handle_set_composite(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_set_composite(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Not implemented yet, just skip
     log_debug("handle_set_composite: not implemented, skipping");
     reader_skip(reader, length * 4);
     return 0;
 }
 
-static int handle_blit_image(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_blit_image(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Expected: [surface_id: int32][x: int32][y: int32]
     if (length != 3) {
         log_error("handle_blit_image: expected length 3, got %d", length);
@@ -201,12 +196,12 @@ static int handle_blit_image(SurfaceContext* ctx, RenderSurface* surface, Comman
     int x = (int)read_u32(reader);
     int y = (int)read_u32(reader);
 
-    blit_image(surface, surface_id, x, y);
+    blit_image(surface, ctx, surface_id, x, y);
     log_debug("Blit image: surface_id=%d at (%d, %d)", surface_id, x, y);
     return 0;
 }
 
-static int handle_draw_rect(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_draw_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Expected: [x: int32][y: int32][width: int32][height: int32]
     if (length != 4) {
         log_error("handle_draw_rect: expected length 4, got %d", length);
@@ -219,12 +214,12 @@ static int handle_draw_rect(SurfaceContext* ctx, RenderSurface* surface, Command
     int width = (int)read_u32(reader);
     int height = (int)read_u32(reader);
 
-    draw_rect(surface, x, y, width, height, surface->argb[COLOR_FG]);
+    draw_rect(surface, ctx, x, y, width, height, ctx->argb[COLOR_FG]);
     log_debug("Draw rect: [%d, %d, %d, %d]", x, y, width, height);
     return 0;
 }
 
-static int handle_fill_rect(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_fill_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Expected: [x: int32][y: int32][width: int32][height: int32]
     if (length != 4) {
         log_error("handle_fill_rect: expected length 4, got %d", length);
@@ -237,13 +232,13 @@ static int handle_fill_rect(SurfaceContext* ctx, RenderSurface* surface, Command
     int width = (int)read_u32(reader);
     int height = (int)read_u32(reader);
 
-    draw_filled_rect(surface, x, y, width, height, surface->argb[COLOR_FG]);
+    draw_filled_rect(surface, ctx, x, y, width, height, ctx->argb[COLOR_FG]);
     log_debug("Fill rect: [%d, %d, %d, %d] with color 0x%08X",
-              x, y, width, height, surface->argb[COLOR_FG]);
+              x, y, width, height, ctx->argb[COLOR_FG]);
     return 0;
 }
 
-static int handle_clear_rect(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_clear_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Expected: [x: int32][y: int32][width: int32][height: int32]
     if (length != 4) {
         log_error("handle_clear_rect: expected length 4, got %d", length);
@@ -256,12 +251,12 @@ static int handle_clear_rect(SurfaceContext* ctx, RenderSurface* surface, Comman
     int width = (int)read_u32(reader);
     int height = (int)read_u32(reader);
 
-    clear_rect(surface, x, y, width, height);
+    clear_rect(surface, ctx, x, y, width, height);
     log_debug("Clear rect: [%d, %d, %d, %d]", x, y, width, height);
     return 0;
 }
 
-static int handle_draw_line(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+static int handle_draw_line(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
     // Expected: [x1: int32][y1: int32][x2: int32][y2: int32]
     if (length != 4) {
         log_error("handle_draw_line: expected length 4, got %d", length);
@@ -274,7 +269,7 @@ static int handle_draw_line(SurfaceContext* ctx, RenderSurface* surface, Command
     int x2 = (int)read_u32(reader);
     int y2 = (int)read_u32(reader);
 
-    draw_line(surface, x1, y1, x2, y2, surface->argb[COLOR_FG]);
+    draw_line(surface, ctx, x1, y1, x2, y2, ctx->argb[COLOR_FG]);
     log_debug("Draw line: (%d, %d) to (%d, %d)", x1, y1, x2, y2);
     return 0;
 }

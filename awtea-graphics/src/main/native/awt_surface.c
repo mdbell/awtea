@@ -119,15 +119,15 @@ int get_surface_stride(int surface_id) {
     return surface->stride;
 }
 
-int clip_x(int x, const RenderSurface* surf) {
+int clip_x(int x, const SurfaceData* surf, SurfaceContext* context) {
     int min_x = 0;
     int max_x = surf->width;
     
     // If clip rectangle is set (width >= 0), intersect with clip bounds
     // Negative width is a sentinel value meaning "no clip"
-    if (surf->clip.width >= 0) {
-        min_x = surf->clip.x < 0 ? 0 : surf->clip.x;
-        max_x = surf->clip.x + surf->clip.width;
+    if (context->clip.width >= 0) {
+        min_x = context->clip.x < 0 ? 0 : context->clip.x;
+        max_x = context->clip.x + context->clip.width;
         if (max_x > surf->width) {
             max_x = surf->width;
         }
@@ -136,15 +136,15 @@ int clip_x(int x, const RenderSurface* surf) {
     return clamp_int(x, min_x, max_x);
 }
 
-int clip_y(int y, const RenderSurface* surf) {
+int clip_y(int y, const SurfaceData* surf, SurfaceContext* context) {
     int min_y = 0;
     int max_y = surf->height;
     
     // If clip rectangle is set (height >= 0), intersect with clip bounds
     // Negative height is a sentinel value meaning "no clip"
-    if (surf->clip.height >= 0) {
-        min_y = surf->clip.y < 0 ? 0 : surf->clip.y;
-        max_y = surf->clip.y + surf->clip.height;
+    if (context->clip.height >= 0) {
+        min_y = context->clip.y < 0 ? 0 : context->clip.y;
+        max_y = context->clip.y + context->clip.height;
         if (max_y > surf->height) {
             max_y = surf->height;
         }
