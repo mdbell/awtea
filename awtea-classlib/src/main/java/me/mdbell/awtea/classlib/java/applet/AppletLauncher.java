@@ -274,29 +274,34 @@ public final class AppletLauncher {
         // Create applet instance from registry
         java.applet.Applet applet = AppletRegistry.createApplet(appletName);
         
-        // Set up applet stub with parameters and canvas
-        Properties props = new Properties();
-        TeaAppletStub teaStub = new TeaAppletStub(props, canvas);
-        
-        // Set the stub on the applet using java.applet.AppletStub interface
-        // TeaAppletStub implements AppletStub which is compatible
-        applet.setStub(teaStub);
-        
         // Get canvas dimensions
         int width = canvas.getWidth();
         int height = canvas.getHeight();
         
         if (width <= 0) {
             width = 800; // default width
-            canvas.setWidth(width);
-            log.debug("Canvas {} had no width, set to default: {}", canvasId, width);
+            log.debug("Canvas {} had no width, using default: {}", canvasId, width);
         }
         
         if (height <= 0) {
             height = 600; // default height
-            canvas.setHeight(height);
-            log.debug("Canvas {} had no height, set to default: {}", canvasId, height);
+            log.debug("Canvas {} had no height, using default: {}", canvasId, height);
         }
+        
+        // Create and configure heavyweight peer for the applet
+        // Note: At runtime, TeaVM aliases java.applet.Applet to TApplet,
+        // so this will work correctly in the browser
+        TAppletPeer peer = createPeerForApplet(applet, document, width, height);
+        
+        // Replace the canvas in the DOM with the peer's canvas
+        replaceDOMCanvas(canvas, peer.getCanvasElement(), canvasId);
+        
+        // Set up applet stub with parameters and the peer's canvas
+        Properties props = new Properties();
+        TeaAppletStub teaStub = new TeaAppletStub(props, peer.getCanvasElement());
+        
+        // Set the stub on the applet
+        applet.setStub(teaStub);
         
         applet.setSize(width, height);
         
@@ -309,4 +314,38 @@ public final class AppletLauncher {
         
         log.info("Successfully launched applet '{}' on canvas '{}'", appletName, canvasId);
     }
+    
+    /**
+     * Creates a peer for the applet using JavaScript interop.
+     * This works around compile-time type issues while maintaining runtime correctness.
+     */
+    @org.teavm.jso.JSBody(params = {"applet", "document", "width", "height"}, script =
+        "var peer = new (Java.type('me.mdbell.awtea.classlib.java.applet.TAppletPeer'))(document, applet, width, height);" +
+        "applet.setPeer(peer);" +
+        "return peer;"
+    )
+    private static native TAppletPeer createPeerForApplet(
+        java.applet.Applet applet,
+        HTMLDocument document,
+        int width,
+        int height
+    );
+    
+    /**
+     * Replaces a canvas element in the DOM with a new canvas element.
+     */
+    @org.teavm.jso.JSBody(params = {"oldCanvas", "newCanvas", "canvasId"}, script =
+        "var parent = oldCanvas.parentNode;" +
+        "if (parent) {" +
+        "    newCanvas.id = canvasId;" +
+        "    var attr = oldCanvas.getAttribute('data-awtea-applet');" +
+        "    if (attr) newCanvas.setAttribute('data-awtea-applet', attr);" +
+        "    parent.replaceChild(newCanvas, oldCanvas);" +
+        "}"
+    )
+    private static native void replaceDOMCanvas(
+        HTMLCanvasElement oldCanvas,
+        HTMLCanvasElement newCanvas,
+        String canvasId
+    );
 }
