@@ -15,6 +15,8 @@ public class WasmRasterizer implements Rasterizer {
 
     private static final Logger log = LoggerFactory.getLogger(WasmRasterizer.class);
 
+    private static final double AUTO_FLUSH_THRESHOLD = 0.8; // Flush at 80% capacity
+
     private final WasmSurface surface;
     private final int contextId;
     private transient final SurfaceCommandBuffer commandBuffer;
@@ -137,6 +139,14 @@ public class WasmRasterizer implements Rasterizer {
         }
     }
 
+    private void checkAndAutoFlush() {
+        if (commandBuffer.getUtilization() > AUTO_FLUSH_THRESHOLD) {
+            log.debug("WasmRasterizer:  Auto-flushing at {:.1f}% capacity",
+                    commandBuffer.getUtilization() * 100);
+            flushAndReleaseReferences();
+        }
+    }
+
     @Override
     public void rasterizeCommands(List<SurfaceCommand> cmds) {
         if (disposed) {
@@ -145,6 +155,9 @@ public class WasmRasterizer implements Rasterizer {
         }
 
         for (SurfaceCommand cmd : cmds) {
+
+            checkAndAutoFlush();
+
             switch (cmd.type) {
                 case DRAW_RECT:
                     commandBuffer.emitDrawRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
