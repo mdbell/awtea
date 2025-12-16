@@ -50,6 +50,13 @@ public class TApplet extends TContainer {
 
 	public final void setStub(TAppletStub stub) {
 		this.stub = stub;
+		
+		// If the stub provides a peer, set it automatically
+		// The peer is returned as Object to avoid circular dependencies
+		Object peerObj = stub.getPeer();
+		if (peerObj instanceof TAppletPeer) {
+			this.peer = (TAppletPeer) peerObj;
+		}
 	}
 	
 	/**

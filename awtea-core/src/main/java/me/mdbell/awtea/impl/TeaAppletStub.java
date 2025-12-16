@@ -1,6 +1,7 @@
 package me.mdbell.awtea.impl;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import me.mdbell.awtea.util.URLSearchParams;
 import org.teavm.jso.JSBody;
@@ -18,6 +19,14 @@ public class TeaAppletStub implements AppletStub {
 	private final Properties props;
 	@Getter
 	private HTMLCanvasElement canvas;
+	
+	/**
+	 * Holds a reference to the applet peer as Object to avoid circular dependency.
+	 * This will be cast to TAppletPeer in awtea-classlib where the type is known.
+	 */
+	@Getter
+	@Setter
+	private Object peer;
 
 	public TeaAppletStub(Properties props) {
 		this.props = props;
@@ -26,6 +35,12 @@ public class TeaAppletStub implements AppletStub {
 	public TeaAppletStub(Properties props, HTMLCanvasElement canvas) {
 		this.props = props;
 		this.canvas = canvas;
+	}
+	
+	public TeaAppletStub(Properties props, HTMLCanvasElement canvas, Object peer) {
+		this.props = props;
+		this.canvas = canvas;
+		this.peer = peer;
 	}
 
 	@Override

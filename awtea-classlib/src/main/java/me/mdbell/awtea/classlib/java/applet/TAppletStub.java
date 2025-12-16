@@ -19,5 +19,16 @@ public interface TAppletStub {
     void appletResize(int width, int height);
 
     HTMLCanvasElement getCanvas();
+    
+    /**
+     * Gets the peer associated with this stub, if any.
+     * This allows the stub to provide a heavyweight peer to the applet.
+     * Returns Object to avoid circular dependencies - will be cast to TAppletPeer in TApplet.
+     * 
+     * @return The peer as an Object, or null if this is a lightweight applet
+     */
+    default Object getPeer() {
+        return null;
+    }
 
 }

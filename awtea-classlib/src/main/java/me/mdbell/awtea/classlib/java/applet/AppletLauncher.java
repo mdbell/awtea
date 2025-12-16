@@ -288,19 +288,21 @@ public final class AppletLauncher {
             log.debug("Canvas {} had no height, using default: {}", canvasId, height);
         }
 
-        // Create and configure heavyweight peer for the applet
-        // Note: At runtime, TeaVM aliases java.applet.Applet to TApplet,
-        // so this will work correctly in the browser
-        TAppletPeer peer = createPeerForApplet(applet, document, width, height);
+        // Create heavyweight peer for the applet
+        // At runtime, TeaVM will have aliased java.applet.Applet to TApplet
+        // We pass the applet as Object to work around compile-time type constraints
+        TAppletPeer peer = createPeerForApplet((Object) applet, document, width, height);
 
         // Replace the canvas in the DOM with the peer's canvas
         replaceDOMCanvas(canvas, peer.getCanvasElement(), canvasId);
 
-        // Set up applet stub with parameters and the peer's canvas
+        // Set up applet stub with parameters, the peer's canvas, and the peer itself
+        // The stub will provide the peer to the applet when setStub() is called
         Properties props = new Properties();
-        TeaAppletStub teaStub = new TeaAppletStub(props, peer.getCanvasElement());
+        TeaAppletStub teaStub = new TeaAppletStub(props, peer.getCanvasElement(), peer);
 
         // Set the stub on the applet
+        // The applet's setStub() will automatically extract and set the peer
         applet.setStub(teaStub);
 
         applet.setSize(width, height);
@@ -314,22 +316,18 @@ public final class AppletLauncher {
 
         log.info("Successfully launched applet '{}' on canvas '{}'", appletName, canvasId);
     }
-
+    
     /**
-     * Creates a peer for the applet using JavaScript interop.
-     * This works around compile-time type issues while maintaining runtime
-     * correctness.
+     * Creates a peer for the applet.
+     * Takes Object to work around compile-time type constraints.
+     * At runtime, the object will be a TApplet due to TeaVM aliasing.
      */
-    @org.teavm.jso.JSBody(params = { "applet", "document", "width",
-            "height" }, script = "var peer = new (Java.type('me.mdbell.awtea.classlib.java.applet.TAppletPeer'))(document, applet, width, height);"
-                    +
-                    "applet.setPeer(peer);" +
-                    "return peer;")
-    private static native TAppletPeer createPeerForApplet(
-            java.applet.Applet applet,
-            HTMLDocument document,
-            int width,
-            int height);
+    private static TAppletPeer createPeerForApplet(Object applet, HTMLDocument document, int width, int height) {
+        // Cast to TApplet - this is safe at runtime due to TeaVM aliasing
+        @SuppressWarnings("unchecked")
+        TApplet tApplet = (TApplet) applet;
+        return new TAppletPeer(document, tApplet, width, height);
+    }
 
     /**
      * Replaces a canvas element in the DOM with a new canvas element.
