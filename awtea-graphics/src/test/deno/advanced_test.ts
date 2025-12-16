@@ -27,27 +27,13 @@ Deno.test("Identity transform", async () => {
 
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer with identity transform
-  const cmdBuffer = rasterizer.createCommandBuffer(3);
-
-  // Set identity transform (m00=1, m11=1, rest=0)
-  rasterizer.writeCommand(
-    cmdBuffer,
-    0,
-    WasmRasterizer.setTransformCommand(1, 0, 0, 0, 1, 0),
-  );
-
-  // Set color and fill rect
+  // Create command with identity transform
   const cyan = WasmRasterizer.makeARGB(255, 0, 255, 255);
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.setColorCommand(cyan));
-  rasterizer.writeCommand(
-    cmdBuffer,
-    2,
-    WasmRasterizer.fillRectCommand(5, 5, 10, 10),
-  );
-
-  // Execute
-  rasterizer.renderCommands(contextId, cmdBuffer, 3);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 0, 0, 1, 0),
+    (w) => WasmRasterizer.writeSetColorCommand(w, cyan),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 5, 5, 10, 10),
+  ]);
 
   // With identity transform, rect should be at (5, 5)
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -68,28 +54,13 @@ Deno.test("Translation transform", async () => {
   const surfaceId = rasterizer.allocateSurface(30, 30);
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer with translation
-  const cmdBuffer = rasterizer.createCommandBuffer(3);
-
-  // Set translation transform (move by +5, +5)
-  // m00=1, m01=0, m02=5, m10=0, m11=1, m12=5
-  rasterizer.writeCommand(
-    cmdBuffer,
-    0,
-    WasmRasterizer.setTransformCommand(1, 0, 5, 0, 1, 5),
-  );
-
-  // Set color and fill rect at (0, 0)
+  // Create command with translation transform
   const orange = WasmRasterizer.makeARGB(255, 255, 165, 0);
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.setColorCommand(orange));
-  rasterizer.writeCommand(
-    cmdBuffer,
-    2,
-    WasmRasterizer.fillRectCommand(0, 0, 5, 5),
-  );
-
-  // Execute
-  rasterizer.renderCommands(contextId, cmdBuffer, 3);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 5, 0, 1, 5),
+    (w) => WasmRasterizer.writeSetColorCommand(w, orange),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 5, 5),
+  ]);
 
   // With translation, rect at (0,0) should appear at (5, 5)
   const pixels = rasterizer.copySurfacePixels(surfaceId);

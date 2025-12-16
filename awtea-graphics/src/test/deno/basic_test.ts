@@ -75,7 +75,7 @@ Deno.test("Fill rect with red", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  // Using variable-length commands directly
+  const cmdBuffer = rasterizer.createCommandBuffer(2);
 
   // Set color to opaque red (0xFFFF0000)
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
@@ -111,7 +111,7 @@ Deno.test("Fill rect with partial area", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  // Using variable-length commands directly
+  const cmdBuffer = rasterizer.createCommandBuffer(2);
 
   // Set color to opaque blue (0xFF0000FF)
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
@@ -154,7 +154,7 @@ Deno.test("Clear rect", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  // Using variable-length commands directly
+  const cmdBuffer = rasterizer.createCommandBuffer(3);
 
   // Fill entire surface with red
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
@@ -203,7 +203,7 @@ Deno.test("Draw line", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  // Using variable-length commands directly
+  const cmdBuffer = rasterizer.createCommandBuffer(2);
 
   // Set color to white
   const white = WasmRasterizer.makeARGB(255, 255, 255, 255);
@@ -241,7 +241,7 @@ Deno.test("Draw rect outline", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  // Using variable-length commands directly
+  const cmdBuffer = rasterizer.createCommandBuffer(2);
 
   // Set color to green
   const green = WasmRasterizer.makeARGB(255, 0, 255, 0);
@@ -281,7 +281,7 @@ Deno.test("Clipping rect", async () => {
   const context = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  // Using variable-length commands directly
+  const cmdBuffer = rasterizer.createCommandBuffer(3);
 
   // Set clip rect to (5, 5, 10, 10)
   rasterizer.writeCommand(
@@ -343,18 +343,26 @@ Deno.test("Multiple surfaces", async () => {
   assertEquals(dims2.height, 20);
 
   // Fill surface1 with red
+  const cmdBuffer1 = rasterizer.createCommandBuffer(2);
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.renderVariableLengthCommands(contextId1, [
-    (w) => WasmRasterizer.writeSetColorCommand(w, red),
-    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 10, 10),
-  ]);
+  rasterizer.writeCommand(cmdBuffer1, 0, WasmRasterizer.setColorCommand(red));
+  rasterizer.writeCommand(
+    cmdBuffer1,
+    1,
+    WasmRasterizer.fillRectCommand(0, 0, 10, 10),
+  );
+  rasterizer.renderCommands(contextId1, cmdBuffer1, 2);
 
   // Fill surface2 with blue
+  const cmdBuffer2 = rasterizer.createCommandBuffer(2);
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
-  rasterizer.renderVariableLengthCommands(contextId2, [
-    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
-    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 20, 20),
-  ]);
+  rasterizer.writeCommand(cmdBuffer2, 0, WasmRasterizer.setColorCommand(blue));
+  rasterizer.writeCommand(
+    cmdBuffer2,
+    1,
+    WasmRasterizer.fillRectCommand(0, 0, 20, 20),
+  );
+  rasterizer.renderCommands(contextId2, cmdBuffer2, 2);
 
   // Verify each surface has its own color
   const pixels1 = rasterizer.copySurfacePixels(surface1);
