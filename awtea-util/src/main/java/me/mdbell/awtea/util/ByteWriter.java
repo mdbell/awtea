@@ -198,6 +198,15 @@ public class ByteWriter {
     }
     
     /**
+     * Check if currently writing a command.
+     * 
+     * @return true if a command is in progress
+     */
+    public boolean isInCommand() {
+        return inCommand;
+    }
+    
+    /**
      * Reset the writer position to the start of the buffer.
      * Any in-progress command is discarded.
      */

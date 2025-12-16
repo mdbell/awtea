@@ -109,21 +109,11 @@ static inline float read_float(CommandReader* reader) {
         log_error("read_float: buffer underflow at pos %zu (limit %zu)", reader->pos, reader->limit);
         return 0.0f;
     }
+    
     uint32_t raw = read_u32(reader);
-    reader->pos -= 4; // Undo the position increment from read_u32
-    
-    // Read as bytes for proper alignment
-    uint8_t* ptr = (uint8_t*)reader->buffer;
-    raw = ptr[reader->pos] |
-          ((uint32_t)ptr[reader->pos + 1] << 8) |
-          ((uint32_t)ptr[reader->pos + 2] << 16) |
-          ((uint32_t)ptr[reader->pos + 3] << 24);
-    reader->pos += 4;
-    
-    // Reinterpret bits as float
-    union { uint32_t u; float f; } converter;
-    converter.u = raw;
-    return converter.f;
+    float result;
+    memcpy(&result, &raw, sizeof(float));
+    return result;
 }
 
 /**

@@ -80,10 +80,8 @@ public final class SurfaceCommandBuffer {
      */
     public void flush() {
         // Finish any in-progress command
-        try {
+        if (writer.isInCommand()) {
             writer.finishCommand();
-        } catch (IllegalStateException e) {
-            // No command in progress, that's fine
         }
         
         int bytesUsed = writer.getBytesUsed();
@@ -104,73 +102,79 @@ public final class SurfaceCommandBuffer {
 
     // ---- Command emission methods ----
 
+    /**
+     * Begin writing a new command.
+     * 
+     * <p>If a previous command was started but not finished, it will be automatically finished.
+     * 
+     * @param operation The command operation
+     * @param flags Command flags (0-255). Bit 0 reserved for CMD_FLAG_EXTENDED.
+     */
+    private void beginCommand(Operation operation, int flags) {
+        writer.beginCommand(operation.ordinal(), flags);
+    }
+
     public void emitSetColor(int argb, int which) {
         log.trace("SurfaceCommandBuffer.emitSetColor: argb=0x{}, which={}",
                 Integer.toHexString(argb), which);
         
-        writer.beginCommand(Operation.SET_COLOR.ordinal(), 0);
+        beginCommand(Operation.SET_COLOR, 0);
         writer.writeInt32(argb);
         writer.writeInt32(which);
-        writer.finishCommand();
     }
 
     public void emitFillRect(int x, int y, int w, int h) {
         log.trace("SurfaceCommandBuffer.emitFillRect: x={}, y={}, w={}, h={}",
                 x, y, w, h);
         
-        writer.beginCommand(Operation.FILL_RECT.ordinal(), 0);
+        beginCommand(Operation.FILL_RECT, 0);
         writer.writeInt32(x);
         writer.writeInt32(y);
         writer.writeInt32(w);
         writer.writeInt32(h);
-        writer.finishCommand();
     }
 
     public void emitDrawRect(int x, int y, int w, int h) {
         log.trace("SurfaceCommandBuffer.emitDrawRect: x={}, y={}, w={}, h={}",
                 x, y, w, h);
         
-        writer.beginCommand(Operation.DRAW_RECT.ordinal(), 0);
+        beginCommand(Operation.DRAW_RECT, 0);
         writer.writeInt32(x);
         writer.writeInt32(y);
         writer.writeInt32(w);
         writer.writeInt32(h);
-        writer.finishCommand();
     }
 
     public void emitClearRect(int x, int y, int w, int h) {
         log.trace("SurfaceCommandBuffer.emitClearRect: x={}, y={}, w={}, h={}",
                 x, y, w, h);
         
-        writer.beginCommand(Operation.CLEAR_RECT.ordinal(), 0);
+        beginCommand(Operation.CLEAR_RECT, 0);
         writer.writeInt32(x);
         writer.writeInt32(y);
         writer.writeInt32(w);
         writer.writeInt32(h);
-        writer.finishCommand();
     }
 
     public void emitSetClipRect(int x, int y, int w, int h) {
         log.trace("SurfaceCommandBuffer.emitSetClipRect: x={}, y={}, w={}, h={}",
                 x, y, w, h);
         
-        writer.beginCommand(Operation.SET_CLIP_RECT.ordinal(), 0);
+        beginCommand(Operation.SET_CLIP_RECT, 0);
         writer.writeInt32(x);
         writer.writeInt32(y);
         writer.writeInt32(w);
         writer.writeInt32(h);
-        writer.finishCommand();
     }
 
     public void emitBlitImage(int surfaceId, int x, int y) {
         log.trace("SurfaceCommandBuffer.emitBlitImage: surfaceId={}, x={}, y={}",
                 surfaceId, x, y);
         
-        writer.beginCommand(Operation.BLIT_IMAGE.ordinal(), 0);
+        beginCommand(Operation.BLIT_IMAGE, 0);
         writer.writeInt32(surfaceId);
         writer.writeInt32(x);
         writer.writeInt32(y);
-        writer.finishCommand();
     }
 
     public void emitSetTransform(
@@ -182,26 +186,24 @@ public final class SurfaceCommandBuffer {
                 m00, m01, m02,
                 m10, m11, m12);
         
-        writer.beginCommand(Operation.SET_TRANSFORM.ordinal(), 0);
+        beginCommand(Operation.SET_TRANSFORM, 0);
         writer.writeFloat(m00);
         writer.writeFloat(m01);
         writer.writeFloat(m02);
         writer.writeFloat(m10);
         writer.writeFloat(m11);
         writer.writeFloat(m12);
-        writer.finishCommand();
     }
 
     public void emitDrawLine(int x0, int y0, int x1, int y1) {
         log.trace("SurfaceCommandBuffer.emitDrawLine: x0={}, y0={}, x1={}, y1={}",
                 x0, y0, x1, y1);
         
-        writer.beginCommand(Operation.DRAW_LINE.ordinal(), 0);
+        beginCommand(Operation.DRAW_LINE, 0);
         writer.writeInt32(x0);
         writer.writeInt32(y0);
         writer.writeInt32(x1);
         writer.writeInt32(y1);
-        writer.finishCommand();
     }
 
     public void emitDrawSurface(WasmSurface surface, int imgX, int imgY) {

@@ -36,17 +36,6 @@ static const CommandHandler command_handlers[] = {
 // Number of command handlers
 #define NUM_COMMAND_HANDLERS (sizeof(command_handlers) / sizeof(command_handlers[0]))
 
-// Legacy exports for backward compatibility (no longer used)
-int get_command_size() {
-    log_warn("get_command_size: DEPRECATED - variable-length commands are now used");
-    return 0;
-}
-
-int request_command_buffer(int max_commands) {
-    log_warn("request_command_buffer: DEPRECATED - use context-owned buffers instead");
-    return 0;
-}
-
 int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
     log_debug("render_awt: context_id=%d, bytesUsed=%d", context_id, bytesUsed);
 
@@ -93,19 +82,6 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
 
         log_debug("Command %d: opcode=%d, flags=0x%02X, length=%d words", 
                   commands_processed + 1, opcode, flags, length);
-
-        // Check for extended command flag
-        if (flags & CMD_FLAG_EXTENDED) {
-            log_warn("Command %d: extended flag set (0x%02X) - not yet supported, skipping",
-                     commands_processed + 1, flags);
-            // Skip the command data
-            if (!reader_skip(reader, length * 4)) {
-                log_error("render_awt: failed to skip extended command at pos %zu", reader_position(reader));
-                return -5;
-            }
-            commands_processed++;
-            continue;
-        }
 
         // Validate opcode
         if (opcode >= NUM_COMMAND_HANDLERS || command_handlers[opcode] == NULL) {
@@ -201,7 +177,6 @@ static int handle_set_clip_rect(SurfaceContext* ctx, RenderSurface* surface, Com
     ctx->clip.width = (int)read_u32(reader);
     ctx->clip.height = (int)read_u32(reader);
 
-    surface->clip = ctx->clip;
     log_debug("Set clip rect to [%d, %d, %d, %d]",
               ctx->clip.x, ctx->clip.y, ctx->clip.width, ctx->clip.height);
     return 0;
