@@ -3,7 +3,9 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import java.io.File
 
@@ -59,9 +61,11 @@ class DenoTestRunnerPlugin : Plugin<Project> {
             java.srcDir(project.layout.buildDirectory.dir("generated/test/java"))
         }
         
-        // Make compileTestJava depend on generation
-        project.tasks.named("compileTestJava") {
+        // Make compileTestJava depend on generation and explicitly include generated sources
+        project.tasks.named<JavaCompile>("compileTestJava") {
             dependsOn("generateDenoJUnitRunner")
+            // Explicitly ensure the generated sources are included as inputs
+            source(project.layout.buildDirectory.dir("generated/test/java"))
         }
     }
     
@@ -69,14 +73,19 @@ class DenoTestRunnerPlugin : Plugin<Project> {
      * Determine the package name for generated test runner based on project structure
      */
     private fun determinePackageName(project: Project, testSrcDir: File): String {
-        // Try to find a test file to extract package name
-        val testFiles = testSrcDir.walkTopDown()
+        // Prefer test files in a "test" package subdirectory for more consistent package naming
+        val testFile = testSrcDir.walkTopDown()
             .filter { it.isFile && it.extension == "java" && it.name.contains("Test") }
-            .take(1)
-            .toList()
+            .sortedByDescending { 
+                // Check if the file is in a /test/ subdirectory within the package structure
+                // (not just /src/test/java/)
+                val relativePath = it.relativeTo(testSrcDir).path
+                relativePath.contains("/test/")
+            }
+            .firstOrNull()
         
-        if (testFiles.isNotEmpty()) {
-            val content = testFiles[0].readText()
+        if (testFile != null) {
+            val content = testFile.readText()
             val packageRegex = Regex("""package\s+([\w.]+);""")
             val match = packageRegex.find(content)
             if (match != null) {

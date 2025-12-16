@@ -47,22 +47,30 @@ tasks.register<JavaExec>("generateDocs") {
     group = "documentation"
     description = "Generate API coverage reports in HTML and Markdown formats"
     
-    dependsOn(":awtea-util:classes")
+    // Depend on both util and classlib being compiled
+    dependsOn(":awtea-util:classes", ":awtea-classlib:classes")
     
-    classpath = project(":awtea-util").sourceSets["main"].runtimeClasspath
+    // Include both awtea-util and awtea-classlib in the classpath
+    classpath = project(":awtea-util").sourceSets["main"].runtimeClasspath +
+                project(":awtea-classlib").sourceSets["main"].output
     mainClass.set("me.mdbell.awtea.util.ApiDiff")
     
     doFirst {
         // Generate HTML report
         args("--format", "html")
+        // Pass the awtea-classlib build directory to avoid scanning TeaVM classes from classpath
+        args("--build-dir", project(":awtea-classlib").layout.buildDirectory.dir("classes/java/main").get().asFile.absolutePath)
     }
     
     doLast {
         // Generate Markdown report in a separate execution
         project.javaexec {
-            classpath = project(":awtea-util").sourceSets["main"].runtimeClasspath
+            classpath = project(":awtea-util").sourceSets["main"].runtimeClasspath +
+                        project(":awtea-classlib").sourceSets["main"].output
             mainClass.set("me.mdbell.awtea.util.ApiDiff")
             args("--format", "markdown")
+            // Pass the awtea-classlib build directory to avoid scanning TeaVM classes from classpath
+            args("--build-dir", project(":awtea-classlib").layout.buildDirectory.dir("classes/java/main").get().asFile.absolutePath)
         }
         
         println("✓ Generated HTML report: docs/coverage/report.html")
