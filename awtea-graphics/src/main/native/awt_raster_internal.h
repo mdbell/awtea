@@ -32,28 +32,9 @@
 // Edit schemas/surface-operation.yaml to modify the enum values
 
 typedef struct {
-    uint8_t operation; // SurfaceOperation
-    uint8_t reserved[3]; // Padding for alignment
-    uint32_t x; // X coordinate for the command
-    uint32_t y; // Y coordinate for the command
-    uint32_t width; // Width parameter
-    uint32_t height; // Height parameter
-    union {
-        struct { uint32_t argb, which; } set_color;
-        struct { uint32_t surface_id; } blit;
-        struct { uint32_t mode, alpha; } set_composite; // alpha stored as uint32_t, converted via u32_to_float
-        //TODO: figure out how we're going to do transforms
-        // struct { uint32_t m00, m01, m10, m11; } transform; 
-        uint32_t args[2]; // Fallback for generic access
-    };
-} SurfaceCommand;
-
-typedef struct {
     float m00, m01, m02; // first row: x' = m00*x + m01*y + m02
     float m10, m11, m12; // second row: y' = m10*x + m11*y + m12
 } Transform2D;
-
-
 
 // Note: PixelFormat enum is now defined in generated/pixel_format.h
 // Edit schemas/pixel-format.yaml to modify the enum values

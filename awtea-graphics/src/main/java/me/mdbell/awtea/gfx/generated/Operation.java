@@ -26,7 +26,9 @@ public enum Operation {
 	/** Clear rectangle */
 	CLEAR_RECT(8),
 	/** Draw line */
-	DRAW_LINE(9);
+	DRAW_LINE(9),
+	/** Draw a polygon */
+	DRAW_POLYGON(10);
 
 	private final int value;
 

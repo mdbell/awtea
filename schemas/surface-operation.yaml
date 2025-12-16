@@ -24,6 +24,8 @@ values:
     description: Clear rectangle
   - name: DRAW_LINE
     description: Draw line
+  - name: DRAW_POLYGON
+    description: Draw a polygon
   - name: COUNT
     c_only: true
     description: Number of standard commands
