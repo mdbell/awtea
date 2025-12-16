@@ -16,6 +16,14 @@
 - **awtea-util**: Utilities, JSO extensions, logging framework, coverage analysis
 - **awtea-test-util**: Lightweight test framework for Deno execution (replaces JUnit for browser tests)
 
+### TeaVM Aliasing System
+**IMPORTANT**: T-prefixed classes in `awtea-classlib` (like `TFrame`, `TApplet`, `TGraphics`) become their standard `java.awt.*` equivalents at compile time through TeaVM aliasing. This means:
+- In user code: Use standard `java.applet.Applet`, `java.awt.Frame`, etc.
+- In awtea-core: Use standard interfaces like `AppletStub` (not `TAppletStub`)
+- At runtime: TeaVM automatically maps standard classes to T-prefixed implementations
+- **Never create adapter classes** to bridge T-prefixed to standard classes - they're the same at compile time
+- Example: `TAppletStub` interface in classlib becomes `AppletStub` at compile time, so implementations should use `AppletStub` directly
+
 ### Component Hierarchy Pattern
 - **Heavyweight components** (e.g., `TFrame`, `TApplet`): Have DOM elements (`<canvas>`), use Peer classes, have their own Surface, receive native browser events
 - **Lightweight components** (e.g., `TPanel`, `TCanvas`): Pure Java rendering into parent's surface, no DOM elements, events dispatched through hierarchy

@@ -14,17 +14,8 @@ public class GuiDemoLauncher {
         // Configure logging
         LoggerFactory.setGlobalLevel(LogLevel.TRACE);
         
-        // Configure graphics backend and font settings
-        System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
-        System.setProperty("me.mdbell.awtea.font.supersample", "4");
-        
-        // Ensure GuiDemoApplet is loaded and registered
-        // This triggers the static block in GuiDemoApplet
-        try {
-            Class.forName("me.mdbell.awtea.examples.guidemo.GuiDemoApplet");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Failed to load GuiDemoApplet", e);
-        }
+        // System properties should be set from JavaScript using setProperty()
+        // This allows runtime configuration without recompiling
         
         // Launch applets using the automatic discovery mechanism
         AppletLauncher.main(args);

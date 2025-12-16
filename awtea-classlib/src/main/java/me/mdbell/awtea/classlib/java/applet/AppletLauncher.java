@@ -1,5 +1,6 @@
 package me.mdbell.awtea.classlib.java.applet;
 
+import me.mdbell.awtea.Helper;
 import me.mdbell.awtea.impl.TeaAppletStub;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
@@ -9,6 +10,7 @@ import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
 
+import java.awt.Frame;
 import java.util.Properties;
 
 /**
@@ -60,12 +62,20 @@ public final class AppletLauncher {
      * Scans the DOM for canvas elements with the {@code data-awtea-applet} attribute
      * and launches the corresponding registered applets.
      * 
-     * <p>This method is exported as an ES2015 module function and can be called from JavaScript.
+     * <p>When running on the JVM (not TeaVM), creates a Frame for each registered applet
+     * to enable side-by-side comparison with browser version.
      * 
      * @param args command-line arguments (currently unused)
      */
-    @JSExport
     public static void main(String[] args) {
+        // Check if we're running on TeaVM or standard JVM
+        if (!Helper.isTeaVM()) {
+            // Running on standard JVM - launch applets in Frames
+            launchOnJVM();
+            return;
+        }
+        
+        // Running on TeaVM - use browser DOM discovery
         log.info("AppletLauncher: Starting automatic applet discovery");
         
         HTMLDocument document = Window.current().getDocument();
@@ -138,6 +148,105 @@ public final class AppletLauncher {
                 appletName, canvasId, e.getMessage(), e);
             return false;
         }
+    }
+    
+    /**
+     * Sets a system property from JavaScript.
+     * This allows configuring awtea settings without recompiling.
+     * 
+     * @param key the property key
+     * @param value the property value
+     */
+    @JSExport
+    public static void setProperty(String key, String value) {
+        System.setProperty(key, value);
+        log.debug("System property set: {}={}", key, value);
+    }
+    
+    /**
+     * Launches all registered applets on the JVM by creating a Frame for each.
+     * This enables side-by-side comparison with the browser version.
+     */
+    private static void launchOnJVM() {
+        log.info("AppletLauncher: Running on JVM, creating Frames for registered applets");
+        
+        var registeredNames = AppletRegistry.getRegisteredNames();
+        
+        if (registeredNames.isEmpty()) {
+            log.warn("No applets registered. Available applets: {}", registeredNames);
+            return;
+        }
+        
+        int launchedCount = 0;
+        
+        for (String appletName : registeredNames) {
+            try {
+                // Create the applet
+                java.applet.Applet applet = AppletRegistry.createApplet(appletName);
+                
+                // Create a Frame to host the applet
+                Frame frame = new Frame();
+                frame.setTitle(appletName + " - awtea JVM");
+                frame.setSize(800, 600);
+                
+                // Set up a simple applet stub for JVM mode
+                Properties props = new Properties();
+                java.applet.AppletStub stub = new java.applet.AppletStub() {
+                    @Override
+                    public boolean isActive() { return true; }
+                    
+                    @Override
+                    public java.net.URL getDocumentBase() {
+                        try {
+                            return new java.net.URL("file:///");
+                        } catch (java.net.MalformedURLException e) {
+                            return null;
+                        }
+                    }
+                    
+                    @Override
+                    public java.net.URL getCodeBase() {
+                        return getDocumentBase();
+                    }
+                    
+                    @Override
+                    public String getParameter(String name) {
+                        return props.getProperty(name);
+                    }
+                    
+                    @Override
+                    public java.applet.AppletContext getAppletContext() {
+                        return null;
+                    }
+                    
+                    @Override
+                    public void appletResize(int width, int height) {
+                        frame.setSize(width, height);
+                    }
+                };
+                
+                applet.setStub(stub);
+                applet.setSize(800, 600);
+                
+                // Add applet to frame
+                frame.add(applet);
+                
+                // Initialize and start the applet
+                applet.init();
+                applet.start();
+                
+                // Show the frame
+                frame.setVisible(true);
+                
+                launchedCount++;
+                log.info("Successfully launched applet '{}' in Frame", appletName);
+                
+            } catch (Exception e) {
+                log.error("Failed to launch applet '{}' on JVM: {}", appletName, e.getMessage(), e);
+            }
+        }
+        
+        log.info("AppletLauncher: Launched {} applet(s) on JVM", launchedCount);
     }
     
     /**

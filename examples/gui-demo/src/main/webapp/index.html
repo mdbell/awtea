@@ -78,7 +78,11 @@
     </div>
 </div>
 <script type="module">
-    import { main } from './js/gui-demo.js';
+    import { main, setProperty } from './js/gui-demo.js';
+
+    // Configure graphics backend and font settings
+    setProperty('me.mdbell.awtea.wasm.module_path', '/awtea-graphics/build/wasm/awt_raster.wasm');
+    setProperty('me.mdbell.awtea.font.supersample', '4');
 
     main([]);
 </script>

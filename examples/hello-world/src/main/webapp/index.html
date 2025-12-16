@@ -64,7 +64,10 @@
     </div>
 </div>
 <script type="module">
-    import { main } from './js/hello-world.js';
+    import { main, setProperty } from './js/hello-world.js';
+
+    // Configure graphics backend
+    setProperty('me.mdbell.awtea.gfx.backend', 'java');
 
     main([]);
 </script>

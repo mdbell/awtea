@@ -93,12 +93,8 @@ public class MyLauncher {
         // Configure system properties
         LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
         
-        // Load applet classes to trigger registration
-        try {
-            Class.forName("com.example.MyApplet");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        // Applets are automatically registered via their static blocks
+        // No need for explicit Class.forName() calls
         
         // Launch applets
         AppletLauncher.main(args);

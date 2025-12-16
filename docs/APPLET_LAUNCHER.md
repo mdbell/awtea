@@ -70,12 +70,8 @@ import me.mdbell.awtea.classlib.java.applet.AppletLauncher;
 public class MyAppLauncher {
     
     public static void main(String[] args) {
-        // Ensure your applet class is loaded (triggers static block)
-        try {
-            Class.forName("com.example.myapp.MyApplet");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Failed to load MyApplet", e);
-        }
+        // Applet classes are automatically loaded and registered
+        // via their static blocks when referenced by TeaVM
         
         // Launch applets using automatic discovery
         AppletLauncher.main(args);
@@ -188,14 +184,8 @@ Register multiple applets in your launcher:
 public class MultiAppLauncher {
     
     public static void main(String[] args) {
-        // Load all applet classes
-        try {
-            Class.forName("com.example.AppletOne");
-            Class.forName("com.example.AppletTwo");
-            Class.forName("com.example.AppletThree");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Failed to load applet classes", e);
-        }
+        // Applet classes are automatically loaded and registered
+        // by TeaVM when they are referenced in the code
         
         // Launch all registered applets
         AppletLauncher.main(args);
@@ -413,21 +403,20 @@ public class MyApplet extends Applet {
 }
 ```
 
-### 3. Explicit Class Loading
+### 3. Register Applets in Static Blocks
 
-Always explicitly load applet classes in your launcher to ensure static blocks run:
+Register applets in static initialization blocks to ensure they're available before `main()` runs:
 
 ```java
-public static void main(String[] args) {
-    try {
-        Class.forName("com.example.MyApplet");
-    } catch (ClassNotFoundException e) {
-        throw new RuntimeException("Failed to load applet", e);
+public class MyApplet extends Applet {
+    static {
+        AppletRegistry.register("my-applet", MyApplet::new);
     }
-    
-    AppletLauncher.main(args);
+    // ... implementation
 }
 ```
+
+Note: TeaVM automatically loads all classes referenced in your code, so explicit `Class.forName()` calls are not needed.
 
 ### 4. Set Canvas Dimensions
 
@@ -489,11 +478,7 @@ public class NewApp extends Applet {
 // Launcher class
 public class NewAppLauncher {
     public static void main(String[] args) {
-        try {
-            Class.forName("com.example.NewApp");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        // TeaVM automatically loads referenced classes
         AppletLauncher.main(args);
     }
 }
@@ -513,7 +498,7 @@ public class NewAppLauncher {
 1. **Extend `Applet`** instead of creating a `Frame`
 2. **Use `init()` and `start()`** lifecycle methods instead of `main()`
 3. **Register in static block** with a unique name
-4. **Create a launcher class** that loads applet classes and calls `AppletLauncher.main()`
+4. **Create a launcher class** that calls `AppletLauncher.main()`
 5. **Update HTML** to use `<canvas>` with `data-awtea-applet` attribute
 6. **Update build config** to use the launcher as the main class
 

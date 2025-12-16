@@ -14,16 +14,8 @@ public class HelloWorldLauncher {
         // Configure logging
         LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
         
-        // Configure graphics backend
-        System.setProperty("me.mdbell.awtea.gfx.backend", "java");
-        
-        // Ensure HelloWorldApplet is loaded and registered
-        // This triggers the static block in HelloWorldApplet
-        try {
-            Class.forName("me.mdbell.awtea.examples.helloworld.HelloWorldApplet");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Failed to load HelloWorldApplet", e);
-        }
+        // System properties should be set from JavaScript using setProperty()
+        // This allows runtime configuration without recompiling
         
         // Launch applets using the automatic discovery mechanism
         AppletLauncher.main(args);
