@@ -46,7 +46,11 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     }
 
     private void handleAbort() {
+        String stackTrace = readWasmStackTrace();
         log.error("WASM module aborted execution");
+        if (!stackTrace.isEmpty()) {
+            log.error("WASM call stack:\n{}", stackTrace);
+        }
         throw new IllegalStateException("WASM module aborted execution");
     }
 
@@ -94,6 +98,11 @@ public class WasmSurfaceBackend implements SurfaceBackend {
         String file = new String(fileArr.copyToJavaArray());
 
         log.error("WASM assertion failed: {} at {}:{}", expr, file, line);
+        
+        String stackTrace = readWasmStackTrace();
+        if (!stackTrace.isEmpty()) {
+            log.error("WASM call stack:\n{}", stackTrace);
+        }
     }
 
     public WasmSurface createSurface(int width, int height, int pixelFormat) {
@@ -167,5 +176,132 @@ public class WasmSurfaceBackend implements SurfaceBackend {
             }
         }
         return 100;
+    }
+
+    private String readWasmStackTrace() {
+        try {
+            int stackPtr = exports.getStackBufferPtr();
+            int depth = exports.getStackDepth();
+            int maxDepth = exports.getMaxStackDepth();
+            
+            if (stackPtr == 0 || depth == 0) {
+                return "";
+            }
+            
+            StringBuilder sb = new StringBuilder();
+            sb.append("Call stack (depth=").append(depth).append("):\n");
+            
+            // Read stack frames from WASM memory
+            // Each frame is 32 bytes: 4-byte function name ptr + 4-byte line number + 
+            // 8-byte timestamp + 4-byte context ptr + 4-byte error_code +
+            // 4-byte surface_id + 4-byte context_id + 2-byte operation_type +
+            // 2-byte command_index + 2-byte ref_count + 2-byte flags
+            for (int i = 0; i < Math.min(depth, maxDepth); i++) {
+                int frameOffset = stackPtr + (i * 32);
+                
+                org.teavm.jso.typedarrays.Int32Array frameData = new org.teavm.jso.typedarrays.Int32Array(
+                    exports.getMemory().getBuffer(),
+                    frameOffset,
+                    8  // 32 bytes / 4 = 8 int32 values
+                );
+                
+                int funcNamePtr = frameData.get(0);
+                int lineNumber = frameData.get(1);
+                
+                // Read timestamp (double stored as two int32 values)
+                org.teavm.jso.typedarrays.Float64Array timestampData = new org.teavm.jso.typedarrays.Float64Array(
+                    exports.getMemory().getBuffer(),
+                    frameOffset + 8,
+                    1
+                );
+                double timestamp = timestampData.get(0);
+                
+                int contextPtr = frameData.get(4);
+                int errorCode = frameData.get(5);
+                int surfaceId = frameData.get(6);
+                int contextId = frameData.get(7);
+                
+                // Read 16-bit values from the last 8 bytes
+                org.teavm.jso.typedarrays.Int16Array shortData = new org.teavm.jso.typedarrays.Int16Array(
+                    exports.getMemory().getBuffer(),
+                    frameOffset + 24,
+                    4
+                );
+                int operationType = shortData.get(0) & 0xFFFF;
+                int commandIndex = shortData.get(1) & 0xFFFF;
+                int refCount = shortData.get(2) & 0xFFFF;
+                
+                // Read function name string
+                String functionName = readNullTerminatedString(funcNamePtr);
+                
+                // Format the frame output
+                sb.append(String.format("  #%d: %s (line %d) [%.3fms]", 
+                    i, functionName, lineNumber, timestamp));
+                
+                // Add error code if present
+                if (errorCode != 0) {
+                    sb.append(String.format(" ERR=%d", errorCode));
+                }
+                
+                // Add surface/context IDs if valid
+                if (surfaceId >= 0) {
+                    sb.append(String.format(" surf=%d", surfaceId));
+                }
+                if (contextId >= 0) {
+                    sb.append(String.format(" ctx=%d", contextId));
+                }
+                
+                // Add operation type if present
+                if (operationType != 0) {
+                    sb.append(String.format(" op=%d", operationType));
+                }
+                
+                // Add command index if present
+                if (commandIndex != 0) {
+                    sb.append(String.format(" cmd=%d", commandIndex));
+                }
+                
+                // Add reference count if present
+                if (refCount != 0) {
+                    sb.append(String.format(" refs=%d", refCount));
+                }
+                
+                // Add context if available
+                if (contextPtr != 0) {
+                    String context = readNullTerminatedString(contextPtr);
+                    if (!context.isEmpty() && !context.equals("<unknown>")) {
+                        sb.append(String.format(" - %s", context));
+                    }
+                }
+                
+                sb.append("\n");
+            }
+            
+            return sb.toString();
+        } catch (Exception e) {
+            log.warn("Failed to read WASM stack trace: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    private String readNullTerminatedString(int ptr) {
+        if (ptr == 0) return "<unknown>";
+        
+        try {
+            // Read bytes until null terminator (max 256 chars for safety)
+            Int8Array memory = new Int8Array(exports.getMemory().getBuffer(), ptr, 256);
+            int len = 0;
+            while (len < 256 && memory.get(len) != 0) {
+                len++;
+            }
+            
+            byte[] bytes = new byte[len];
+            for (int i = 0; i < len; i++) {
+                bytes[i] = memory.get(i);
+            }
+            return new String(bytes);
+        } catch (Exception e) {
+            return "<error reading string>";
+        }
     }
 }

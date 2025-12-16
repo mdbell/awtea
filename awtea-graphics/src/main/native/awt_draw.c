@@ -4,11 +4,13 @@
 #include "awt_pixel.h"
 #include "awt_util.h"
 #include "awt_log.h"
+#include "awt_stack.h"
 
 void draw_filled_rect(SurfaceData* surface, SurfaceContext* context,
                                     int x, int y,
                                     int width, int height,
                                     uint32_t color) {
+    STACK_ENTER();
 
     if (is_identity_transform(&context->transform)) {
         int x0 = clip_x(x, surface, context);
@@ -22,6 +24,7 @@ void draw_filled_rect(SurfaceData* surface, SurfaceContext* context,
         if (x0 >= x1 || y0 >= y1) {
             log_debug("draw_filled_rect: clipped out entirely (x0=%d >= x1=%d or y0=%d >= y1=%d)",
                       x0, x1, y0, y1);
+            STACK_EXIT();
             return;
         }
 
@@ -42,16 +45,51 @@ void draw_filled_rect(SurfaceData* surface, SurfaceContext* context,
                 }
             }
             log_debug("draw_filled_rect: wrote %d pixels", (x1-x0)*(y1-y0));
+            STACK_EXIT();
             return;
         }
 
-        // destination has alpha -> blend
+        // destination has alpha -> use composite blending
+        // Check if we can skip blending for certain modes
+        int needsBlending = (surface->composite_mode != COMPOSITE_SRC) && 
+                           (surface->composite_mode != COMPOSITE_DST) &&
+                           (surface->composite_mode != COMPOSITE_CLEAR);
+        
+        if (!needsBlending) {
+            // Fast path for SRC/DST/CLEAR modes
+            if (surface->composite_mode == COMPOSITE_SRC) {
+                SetPixelFunc set_pixel_func =
+                    get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
+                for (int j = y0; j < y1; j++) {
+                    for (int i = x0; i < x1; i++) {
+                        set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, color);
+                    }
+                }
+            } else if (surface->composite_mode == COMPOSITE_CLEAR) {
+                // For CLEAR mode, write transparent pixels
+                uint32_t clearColor = 0x00000000;
+                SetPixelFunc set_pixel_func =
+                    get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
+                for (int j = y0; j < y1; j++) {
+                    for (int i = x0; i < x1; i++) {
+                        set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, clearColor);
+                    }
+                }
+            }
+            // For DST mode, don't draw anything
+            log_debug("draw_filled_rect: used fast path for mode %d", surface->composite_mode);
+            return;
+        }
+        
+        // Normal blending path
         for (int j = y0; j < y1; j++) {
             for (int i = x0; i < x1; i++) {
-                blend_pixel(surface, i, j, PIXEL_FORMAT_ARGB, color);
+                blend_pixel_composite(surface, i, j, PIXEL_FORMAT_ARGB, color,
+                                     surface->composite_mode, surface->composite_alpha);
             }
         }
         log_debug("draw_filled_rect: blended %d pixels", (x1-x0)*(y1-y0));
+        STACK_EXIT();
         return;
     }
 
@@ -66,12 +104,14 @@ void draw_filled_rect(SurfaceData* surface, SurfaceContext* context,
     int y1 = clip_y(ty + th, surface, context);
 
     if (x0 >= x1 || y0 >= y1) {
+        STACK_EXIT();
         return;
     }
 
     // Invert the transform
     Transform2D inv;
     if (!invert_transform(&context->transform, &inv)) {
+        STACK_EXIT();
         return; // non-invertible
     }
 
@@ -101,11 +141,13 @@ void draw_filled_rect(SurfaceData* surface, SurfaceContext* context,
                 // opaque dst: just convert+write color
                 set_pixel_generic(surface, dx, dy, PIXEL_FORMAT_ARGB, color);
             } else {
-                // alpha dst: reuse existing blending logic
-                blend_pixel(surface, dx, dy, PIXEL_FORMAT_ARGB, color);
+                // alpha dst: use composite blending
+                blend_pixel_composite(surface, dx, dy, PIXEL_FORMAT_ARGB, color,
+                                     surface->composite_mode, surface->composite_alpha);
             }
         }
     }
+    STACK_EXIT();
 }
 
 void clear_rect(SurfaceData* surface, SurfaceContext* context,
@@ -168,7 +210,8 @@ void draw_line(SurfaceData* surf, SurfaceContext* context,
             y0 >= 0 && y0 < (int)surf->height) {
 
             if (hasAlpha) {
-                blend_pixel(surf, x0, y0, PIXEL_FORMAT_ARGB, color);
+                blend_pixel_composite(surf, x0, y0, PIXEL_FORMAT_ARGB, color,
+                                     surf->composite_mode, surf->composite_alpha);
             } else {
                 set_pixel_func(surf, x0, y0, PIXEL_FORMAT_ARGB, color);
             }
@@ -188,9 +231,12 @@ void draw_line(SurfaceData* surf, SurfaceContext* context,
 }
 
 void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, int x, int y) {
+    STACK_ENTER();
+    
     // Get source surface data
     SurfaceData* src = get_surface_data(src_surface_id);
     if (!src || !src->ptr || src->width == 0 || src->height == 0) {
+        STACK_EXIT();
         return;
     }
 
@@ -207,6 +253,7 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
         int endY   = clip_y(y + (int)src->height, dst, context);
 
         if (startX >= endX || startY >= endY) {
+            STACK_EXIT();
             return; // fully clipped
         }
 
@@ -225,6 +272,7 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
                     size_t row_bytes = (size_t)(endX - startX) * sizeof(uint32_t);
                     memcpy(dst_row, src_row, row_bytes);
                 }
+                STACK_EXIT();
                 return;
             }
 
@@ -237,18 +285,21 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
                     set_pixel_func(dst, dst_x, dst_y, src->format, srcPixel);
                 }
             }
+            STACK_EXIT();
             return;
         }
 
-        // Source *has* alpha → blend
+        // Source *has* alpha → blend with composite mode
         for (int dst_y = startY; dst_y < endY; ++dst_y) {
             int src_y = dst_y - y;
             for (int dst_x = startX; dst_x < endX; ++dst_x) {
                 int src_x = dst_x - x;
                 uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
-                blend_pixel(dst, dst_x, dst_y, src->format, srcPixel);
+                blend_pixel_composite(dst, dst_x, dst_y, src->format, srcPixel,
+                                     dst->composite_mode, dst->composite_alpha);
             }
         }
+        STACK_EXIT();
         return;
     }
 
@@ -263,19 +314,21 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
     int endY   = clip_y(ty + th, dst, context);
 
     if (startX >= endX || startY >= endY) {
+        STACK_EXIT();
         return; // fully clipped
     }
 
     // Invert the transform
     Transform2D inv;
     if (!invert_transform(&context->transform, &inv)) {
+        STACK_EXIT();
         return; // non-invertible, nothing to draw
     }
 
     // We will sample source per destination pixel
     int hasAlpha = (srcInfo->mask_a != 0);
 
-    SetPixelFunc set_pixel_func = hasAlpha ? blend_pixel : set_pixel_func;
+    SetPixelFunc set_pixel_func = get_set_pixel_func(src->format, dst->format);
 
     for (int dy = startY; dy < endY; ++dy) {
         for (int dx = startX; dx < endX; ++dx) {
@@ -303,7 +356,16 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
 
             uint32_t srcPixel = src_pixels[isy * src_stride + isx];
 
-            set_pixel_func(dst, dx, dy, src->format, srcPixel);
+            if (!hasAlpha) {
+                // no alpha in src -> direct write/convert
+                SetPixelFunc set_pixel_func = get_set_pixel_func(src->format, dst->format);
+                set_pixel_func(dst, dx, dy, src->format, srcPixel);
+            } else {
+                // has alpha -> blend with composite mode
+                blend_pixel_composite(dst, dx, dy, src->format, srcPixel,
+                                     dst->composite_mode, dst->composite_alpha);
+            }
         }
     }
+    STACK_EXIT();
 }

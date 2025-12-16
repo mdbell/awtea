@@ -4,6 +4,7 @@
 #include "awt_draw.h"
 #include "awt_util.h"
 #include "awt_log.h"
+#include "awt_stack.h"
 
 // Forward declarations of command handlers
 typedef int (*CommandHandler)(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
@@ -37,17 +38,21 @@ static const CommandHandler command_handlers[] = {
 #define NUM_COMMAND_HANDLERS (sizeof(command_handlers) / sizeof(command_handlers[0]))
 
 int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
+    STACK_ENTER_EXT(NULL, -1, context_id, 0, 0, 0);
+    
     log_debug("render_awt: context_id=%d, bytesUsed=%d", context_id, bytesUsed);
 
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx || ctx->surface_id == -1) {
         log_error("render_awt: invalid context %d", context_id);
+        STACK_EXIT_ERR(-1);
         return -1;
     }
 
     SurfaceData* data = get_surface_data(ctx->surface_id);
     if (!data || !data->ptr) {
         log_error("render_awt: invalid surface %d for context %d", ctx->surface_id, context_id);
+        STACK_EXIT_ERR(-2);
         return -2;
     }
 
@@ -58,6 +63,7 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
         log_warn("render_awt: using external buffer at 0x%08X (not recommended)", cmdPtr);
         // We can't safely use an external buffer with our reader, so return error
         log_error("render_awt: external buffers not supported with variable-length commands");
+        STACK_EXIT_ERR(-3);
         return -3;
     }
 
@@ -70,6 +76,7 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
         // Read command header: [opcode:1][flags:1][length:2]
         if (!reader_has_bytes(reader, 4)) {
             log_error("render_awt: incomplete command header at pos %zu", reader_position(reader));
+            STACK_EXIT_ERR(-4);
             return -4;
         }
 
@@ -79,6 +86,9 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
 
         log_debug("Command %d: opcode=%d, flags=0x%02X, length=%d words", 
                   commands_processed + 1, opcode, flags, length);
+
+        stack_push_extended("render_awt", __LINE__, NULL, ctx->surface_id, context_id, 
+                           opcode, (uint16_t)commands_processed + 1, (uint16_t)data->ref_count);
 
         // Validate opcode
         if (opcode >= NUM_COMMAND_HANDLERS || command_handlers[opcode] == NULL) {
@@ -101,11 +111,12 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
                       commands_processed + 1, opcode, result);
             return -7;
         }
-
+        stack_pop();
         commands_processed++;
     }
 
     log_debug("render_awt: processed %d commands successfully", commands_processed);
+    STACK_EXIT();
     return 0;
 }
 
@@ -178,9 +189,15 @@ static int handle_set_clip_rect(SurfaceContext* ctx, SurfaceData* surface, Comma
 }
 
 static int handle_set_composite(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
-    // Not implemented yet, just skip
-    log_debug("handle_set_composite: not implemented, skipping");
-    reader_skip(reader, length * 4);
+    if(length != 2) {
+        log_error("handle_set_composite: expected length 2, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    ctx->composite_mode = (CompositeMode) read_u32(reader);
+    ctx->composite_alpha = read_float(reader);
+    log_debug("Set composite mode=%d, alpha=%.2f", 
+                ctx->composite_mode, ctx->composite_alpha);
     return 0;
 }
 

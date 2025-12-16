@@ -16,6 +16,7 @@
 // Note: Edit schemas/*.yaml files to modify these enums
 import { PixelFormat } from "./generated/pixel-format.ts";
 import { SurfaceOperation } from "./generated/surface-operation.ts";
+import { CompositeMode } from "./generated/composite-mode.ts";
 
 // Color slot constants
 export const COLOR_FG = 0;
@@ -25,14 +26,14 @@ export const COLOR_BG = 1;
 export const CMD_FLAG_EXTENDED = 0x01; // Bit 0: Extended command set (future use)
 
 // Re-export for convenience
-export { PixelFormat, SurfaceOperation };
+export { CompositeMode, PixelFormat, SurfaceOperation };
 
 /**
  * ByteWriter for writing variable-length commands
- * 
+ *
  * Commands are written in the format:
  * [opcode: uint8][flags: uint8][length: uint16][data: length*4 bytes]
- * 
+ *
  * The length field is in words (4-byte units) and does NOT include the 4-byte header.
  */
 class ByteWriter {
@@ -299,7 +300,7 @@ export class WasmRasterizer {
   /**
    * Write a variable-length command using ByteWriter.
    * This is a low-level helper for writing commands directly.
-   * 
+   *
    * @param contextId The context to write to
    * @param writer Callback that uses ByteWriter to write the command
    * @returns The number of bytes used
@@ -326,7 +327,7 @@ export class WasmRasterizer {
   /**
    * Execute commands on a surface (using context).
    * Commands are written using ByteWriter callbacks.
-   * 
+   *
    * @param contextId The context to render to
    * @param writers Array of ByteWriter callbacks
    */
@@ -363,7 +364,9 @@ export class WasmRasterizer {
    * @deprecated Use variable-length commands instead
    */
   createCommandBuffer(maxCommands: number): number {
-    throw new Error("Legacy command buffers not supported. Use variable-length commands.");
+    throw new Error(
+      "Legacy command buffers not supported. Use variable-length commands.",
+    );
   }
 
   /**
@@ -371,7 +374,9 @@ export class WasmRasterizer {
    * @deprecated Use writeVariableLengthCommand instead
    */
   writeCommand(bufferPtr: number, index: number, cmd: any): void {
-    throw new Error("Legacy command writing not supported. Use writeVariableLengthCommand.");
+    throw new Error(
+      "Legacy command writing not supported. Use writeVariableLengthCommand.",
+    );
   }
 
   /**
@@ -383,7 +388,9 @@ export class WasmRasterizer {
     bufferPtr: number,
     commandCount: number,
   ): void {
-    throw new Error("Legacy renderCommands not supported. Use renderVariableLengthCommands.");
+    throw new Error(
+      "Legacy renderCommands not supported. Use renderVariableLengthCommands.",
+    );
   }
 
   /**
@@ -391,7 +398,9 @@ export class WasmRasterizer {
    * @deprecated Use renderVariableLengthCommands instead
    */
   renderCommandsToContext(contextId: number, commands: any[]): void {
-    throw new Error("Legacy renderCommandsToContext not supported. Use renderVariableLengthCommands.");
+    throw new Error(
+      "Legacy renderCommandsToContext not supported. Use renderVariableLengthCommands.",
+    );
   }
 
   /**
@@ -634,6 +643,20 @@ export class WasmRasterizer {
   }
 
   /**
+   * Helper: Create a SET_COMPOSITE command
+   */
+  static writeCompositCommand(
+    w: ByteWriter,
+    mode: CompositeMode,
+    alpha: number,
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_SET_COMPOSITE);
+    w.writeInt32(mode);
+    w.writeFloat(alpha);
+    w.finishCommand();
+  }
+
+  /**
    * Helper: Convert ARGB color components to a single uint32
    */
   static makeARGB(a: number, r: number, g: number, b: number): number {
@@ -653,5 +676,133 @@ export class WasmRasterizer {
       g: (argb >>> 8) & 0xFF,
       b: argb & 0xFF,
     };
+  }
+
+  /**
+   * Get stack tracking information
+   */
+  getStackBufferPtr(): number {
+    const wasm = this.getExports();
+    return wasm.get_stack_buffer_ptr ? wasm.get_stack_buffer_ptr() : 0;
+  }
+
+  getStackDepth(): number {
+    const wasm = this.getExports();
+    return wasm.get_stack_depth ? wasm.get_stack_depth() : 0;
+  }
+
+  getMaxStackDepth(): number {
+    const wasm = this.getExports();
+    return wasm.get_max_stack_depth ? wasm.get_max_stack_depth() : 0;
+  }
+
+  /**
+   * Read the current stack trace from WASM memory
+   */
+  readStackTrace(): string {
+    try {
+      const stackPtr = this.getStackBufferPtr();
+      const depth = this.getStackDepth();
+      const maxDepth = this.getMaxStackDepth();
+
+      if (stackPtr === 0 || depth === 0) {
+        return "";
+      }
+
+      const wasm = this.getExports();
+      const memory = wasm.memory as WebAssembly.Memory;
+
+      let result = `Call stack (depth=${depth}):\n`;
+
+      // Each frame is 32 bytes: 4-byte function name ptr + 4-byte line number + 
+      // 8-byte timestamp + 4-byte context ptr + 4-byte error_code +
+      // 4-byte surface_id + 4-byte context_id + 2-byte operation_type +
+      // 2-byte command_index + 2-byte ref_count + 2-byte flags
+      for (let i = 0; i < Math.min(depth, maxDepth); i++) {
+        const frameOffset = stackPtr + (i * 32);
+
+        const view = new DataView(memory.buffer);
+        const funcNamePtr = view.getUint32(frameOffset, true);
+        const lineNumber = view.getInt32(frameOffset + 4, true);
+        const timestamp = view.getFloat64(frameOffset + 8, true);
+        const contextPtr = view.getUint32(frameOffset + 16, true);
+        const errorCode = view.getInt32(frameOffset + 20, true);
+        const surfaceId = view.getInt32(frameOffset + 24, true);
+        const contextId = view.getInt32(frameOffset + 28, true);
+        const operationType = view.getUint16(frameOffset + 32, true);
+        const commandIndex = view.getUint16(frameOffset + 34, true);
+        const refCount = view.getUint16(frameOffset + 36, true);
+
+        // Read null-terminated function name
+        const functionName = this.readNullTerminatedString(funcNamePtr);
+
+        // Format the frame output
+        result += `  #${i}: ${functionName} (line ${lineNumber}) [${timestamp.toFixed(3)}ms]`;
+
+        // Add error code if present
+        if (errorCode !== 0) {
+          result += ` ERR=${errorCode}`;
+        }
+
+        // Add surface/context IDs if valid
+        if (surfaceId >= 0) {
+          result += ` surf=${surfaceId}`;
+        }
+        if (contextId >= 0) {
+          result += ` ctx=${contextId}`;
+        }
+
+        // Add operation type if present
+        if (operationType !== 0) {
+          result += ` op=${operationType}`;
+        }
+
+        // Add command index if present
+        if (commandIndex !== 0) {
+          result += ` cmd=${commandIndex}`;
+        }
+
+        // Add reference count if present
+        if (refCount !== 0) {
+          result += ` refs=${refCount}`;
+        }
+
+        // Add context if available
+        if (contextPtr !== 0) {
+          const context = this.readNullTerminatedString(contextPtr);
+          if (context && context !== "<unknown>") {
+            result += ` - ${context}`;
+          }
+        }
+
+        result += "\n";
+      }
+
+      return result;
+    } catch (e) {
+      return `Error reading stack trace: ${e}`;
+    }
+  }
+
+  /**
+   * Read a null-terminated string from WASM memory
+   */
+  private readNullTerminatedString(ptr: number): string {
+    if (ptr === 0) return "<unknown>";
+
+    try {
+      const wasm = this.getExports();
+      const memory = wasm.memory as WebAssembly.Memory;
+      const buffer = new Uint8Array(memory.buffer, ptr, 256);
+
+      let len = 0;
+      while (len < 256 && buffer[len] !== 0) {
+        len++;
+      }
+
+      return new TextDecoder().decode(buffer.slice(0, len));
+    } catch (e) {
+      return "<error>";
+    }
   }
 }

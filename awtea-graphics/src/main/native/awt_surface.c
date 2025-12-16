@@ -2,17 +2,26 @@
 #include "awt_surface.h"
 #include "awt_util.h"
 #include "awt_log.h"
+#include "awt_stack.h"
 
 SurfaceData g_surfaces[NUM_SURFACES];
 SurfaceContext g_contexts[NUM_CONTEXTS];
 
 void init_surface_system(void) {
+    STACK_ENTER();
+    
     // Initialize all contexts to mark them as free
     for (int i = 0; i < NUM_CONTEXTS; i++) {
         g_contexts[i].surface_id = -1;
     }
+    
+    // Initialize stack tracking system
+    init_stack_tracking();
+    
     log_info("Initialized surface system: %d surfaces, %d contexts", 
              NUM_SURFACES, NUM_CONTEXTS);
+    
+    STACK_EXIT();
 }
 
 SurfaceData* get_surface_data(int id) {
@@ -36,6 +45,12 @@ int find_free_surface() {
 }
 
 int reset_surface(int surface_id, int layer, int width, int height, PixelFormat format) {
+    SurfaceData* surface = get_surface_data(surface_id);
+    uint16_t ref_count = (surface && surface->ptr) ? (uint16_t)surface->ref_count : 0;
+    
+    STACK_ENTER_EXT(stack_format_surface_context(surface_id, width, height), 
+                    surface_id, -1, 0, 0, ref_count);
+    
     log_debug("reset_surface: id=%d, layer=%d, size=%dx%d, format=%d", 
               surface_id, layer, width, height, format);
 
@@ -43,13 +58,13 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
     {
         log_error("Invalid surface ID: %d (range: %d-%d)", 
                   surface_id, START_SURFACE_ID, END_SURFACE_ID - 1);
+        STACK_EXIT_ERR(-3);
         return -3;
     }
 
-    SurfaceData* surface = get_surface_data(surface_id);
-
     if(!surface) {
         log_error("Failed to get surface data for ID: %d", surface_id);
+        STACK_EXIT_ERR(-2);
         return -2;
     }
 
@@ -60,6 +75,7 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
     memset(surface, 0, sizeof(SurfaceData));
 
     if(width == 0 || height == 0 || layer < 0) {
+        STACK_EXIT();
         return 0; // zero-sized surface (freeing the surface)
     }
 
@@ -78,12 +94,14 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
         surface->ptr = 0;
         surface->width = 0;
         surface->height = 0;
+        STACK_EXIT_ERR(-1);
         return -1;
     }
     surface->ptr = (uint32_t)(uintptr_t)p;
 
     log_info("Created surface %d: %dx%d, %zu bytes", surface_id, width, height, bytes);
 
+    STACK_EXIT();
     return 0;
 }
 
@@ -164,23 +182,28 @@ int find_free_context() {
 }
 
 int create_context(int surface_id) {
+    STACK_ENTER_EXT(NULL, surface_id, -1, 0, 0, 0);
+    
     log_debug("create_context: surface_id=%d", surface_id);
     
     SurfaceData* surface = get_surface_data(surface_id);
     if (!surface || !surface->ptr) {
         log_error("create_context: invalid surface %d", surface_id);
+        STACK_EXIT_ERR(-1);
         return -1; // invalid surface
     }
 
     int context_id = find_free_context();
     if (context_id == -1) {
         log_error("create_context: no free context for surface %d", surface_id);
+        STACK_EXIT_ERR(-1);
         return -1; // no free context
     }
 
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx) {
         log_error("create_context: failed to get context data for id %d", context_id);
+        STACK_EXIT_ERR(-1);
         return -1; // should not happen
     }
 
@@ -202,6 +225,10 @@ int create_context(int surface_id) {
     ctx->clip.y = 0;
     ctx->clip.width = -1;
     ctx->clip.height = -1;
+    
+    // Initialize composite mode to SRC_OVER with full alpha (default)
+    ctx->composite_mode = COMPOSITE_SRC_OVER;
+    ctx->composite_alpha = 1.0f;
 
     // Allocate command buffer for the reader
     size_t bytes = COMMAND_BUFFER_SIZE_WORDS * sizeof(uint32_t);
@@ -209,6 +236,7 @@ int create_context(int surface_id) {
     if (!ctx->reader.buffer) {
         log_error("create_context: failed to allocate command buffer (%zu bytes)", bytes);
         ctx->surface_id = -1; // mark context as free again
+        STACK_EXIT_ERR(-1);
         return -1;
     }
     ctx->reader.size_words = COMMAND_BUFFER_SIZE_WORDS;
@@ -222,6 +250,7 @@ int create_context(int surface_id) {
     log_info("Created context %d for surface %d (ref_count=%d)", 
              context_id, surface_id, surface->ref_count);
 
+    STACK_EXIT();
     return context_id;
 }
 
@@ -252,6 +281,8 @@ int clone_context(int context_id) {
     new_ctx->argb[COLOR_BG] = src_ctx->argb[COLOR_BG];
     new_ctx->transform = src_ctx->transform;
     new_ctx->clip = src_ctx->clip;
+    new_ctx->composite_mode = src_ctx->composite_mode;
+    new_ctx->composite_alpha = src_ctx->composite_alpha;
 
     // Allocate new command buffer for the cloned context
     size_t bytes = COMMAND_BUFFER_SIZE_WORDS * sizeof(uint32_t);

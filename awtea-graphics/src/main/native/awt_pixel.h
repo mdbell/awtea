@@ -30,3 +30,10 @@ void blend_pixel(SurfaceData* surface,
                     int x, int y,
                     PixelFormat srcFormat,
                     uint32_t srcPixel);
+
+void blend_pixel_composite(RenderSurface* surface,
+                           int x, int y,
+                           PixelFormat srcFormat,
+                           uint32_t srcPixel,
+                           CompositeMode mode,
+                           float alpha);
