@@ -103,6 +103,35 @@ public final class SurfaceCommandBuffer {
         }
     }
 
+    /**
+     * Get the number of bytes remaining in the buffer.
+     * 
+     * @return Available bytes
+     */
+    public int getRemainingBytes() {
+        return writer.getRemainingBytes();
+    }
+
+    /**
+     * Check if the buffer has enough space for a typical command.
+     * Uses a conservative estimate of 256 bytes per command.
+     * 
+     * @return true if buffer should be flushed soon
+     */
+    public boolean shouldFlush() {
+        // Flush when less than 512 bytes remain (conservative buffer)
+        return getRemainingBytes() < 512;
+    }
+
+    /**
+     * Get buffer utilization (0.0 to 1.0).
+     * 
+     * @return Current buffer usage percentage
+     */
+    public double getUtilization() {
+        return writer.getUtilization();
+    }
+
     // ---- Command emission methods ----
 
     /**

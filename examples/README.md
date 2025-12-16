@@ -22,6 +22,19 @@ A more comprehensive example showcasing multiple AWT components, layouts, graphi
 - Text rendering with different fonts
 - User interaction
 
+### 3. Animation Demo (`animation-demo/`)
+An advanced example demonstrating real-time animation, physics simulation, and interactive controls.
+
+**Features demonstrated:**
+- Frame-based animation loop (~60 FPS)
+- Physics simulation with gravity and collision detection
+- FPS monitoring and performance tracking
+- Double buffering for smooth rendering
+- Mouse interaction (add balls with clicks)
+- Keyboard controls (pause, reset, visual effects)
+- Delta-time based physics for frame-independent movement
+- Motion trails and velocity vector visualization
+
 ## Building and Running Examples
 
 The examples are integrated as subprojects of the main awtea build.
@@ -50,8 +63,11 @@ From the root awtea directory, you can build individual examples:
 # Build gui-demo example
 ./gradlew :examples:gui-demo:build
 
+# Build animation-demo example
+./gradlew :examples:animation-demo:build
+
 # Build all examples
-./gradlew :examples:hello-world:build :examples:gui-demo:build
+./gradlew :examples:hello-world:build :examples:gui-demo:build :examples:animation-demo:build
 ```
 
 This will:

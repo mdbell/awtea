@@ -14,8 +14,8 @@
 #include <string.h>
 #include "awt_log.h"
 
-// Buffer size: 16KB = 4096 words
-#define COMMAND_BUFFER_SIZE_WORDS 4096
+// Buffer size: 32KB = 8192 words
+#define COMMAND_BUFFER_SIZE_WORDS 8192 
 
 // Command flags
 #define CMD_FLAG_EXTENDED 0x01  // Bit 0: Command is part of extended set (future use)
