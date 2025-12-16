@@ -17,20 +17,27 @@ import java.util.List;
 /**
  * Pure Java software rasterizer implementation.
  * <p>
- * This rasterizer supports all standard SurfaceCommand operations and can read/write
- * all pixel formats (ARGB, RGB, RGBA, ABGR, BGR) through format conversion logic.
+ * This rasterizer supports all standard SurfaceCommand operations and can
+ * read/write
+ * all pixel formats (ARGB, RGB, RGBA, ABGR, BGR) through format conversion
+ * logic.
  * <p>
- * Note: The parent SoftwareSurface can only be created with ARGB, RGB, or BGR formats,
- * but this rasterizer can blit from surfaces with any format via automatic conversion.
+ * Note: The parent SoftwareSurface can only be created with ARGB, RGB, or BGR
+ * formats,
+ * but this rasterizer can blit from surfaces with any format via automatic
+ * conversion.
  * <p>
- * Transform support: Currently only translation is implemented. Full affine transforms
- * (scale, rotation, shear) would require more complex scan conversion and are deferred
+ * Transform support: Currently only translation is implemented. Full affine
+ * transforms
+ * (scale, rotation, shear) would require more complex scan conversion and are
+ * deferred
  * as a future enhancement for this software fallback renderer.
  * <p>
- * Alpha blending: Supports standard Porter-Duff compositing rules via AlphaComposite.
+ * Alpha blending: Supports standard Porter-Duff compositing rules via
+ * AlphaComposite.
  * The default composite is SRC_OVER with alpha = 1.0.
  */
-//@Monitored.AllMethods
+// @Monitored.AllMethods
 public class SoftwareRasterizer implements Rasterizer {
 
     private static final Logger log = LoggerFactory.getLogger(SoftwareRasterizer.class);
@@ -48,7 +55,8 @@ public class SoftwareRasterizer implements Rasterizer {
     private final AffineTransform transform = new AffineTransform();
     private Rectangle clip = null;
 
-    // Color caching: store both Color objects and their encoded values for current format
+    // Color caching: store both Color objects and their encoded values for current
+    // format
     private Color foreground = Color.WHITE;
     private Color background = Color.BLACK;
     private int encodedForeground = 0;
@@ -58,7 +66,6 @@ public class SoftwareRasterizer implements Rasterizer {
     // Compositing state
     private Composite composite = AlphaComposite.SrcOver;
     private boolean needsBlending = false; // Cached result to avoid repeated instanceof checks
-
 
     SoftwareRasterizer(SoftwareSurface surface) {
         this.surface = surface;
@@ -75,8 +82,10 @@ public class SoftwareRasterizer implements Rasterizer {
         this.encodedForeground = other.encodedForeground;
         this.encodedBackground = other.encodedBackground;
         this.cachedFormat = other.cachedFormat;
-        // Clone the clip rectangle manually (Rectangle copy constructor not available in TeaVM)
-        this.clip = other.clip != null ? new Rectangle(other.clip.x, other.clip.y, other.clip.width, other.clip.height) : null;
+        // Clone the clip rectangle manually (Rectangle copy constructor not available
+        // in TeaVM)
+        this.clip = other.clip != null ? new Rectangle(other.clip.x, other.clip.y, other.clip.width, other.clip.height)
+                : null;
         this.composite = other.composite;
         this.needsBlending = other.needsBlending;
     }
@@ -175,6 +184,10 @@ public class SoftwareRasterizer implements Rasterizer {
                 case DRAW_LINE:
                     drawLine(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
                     break;
+                case DRAW_POLYGON:
+                    SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
+                    drawPolygon(pts.xpoints, pts.ypoints);
+                    break;
                 case NO_OP:
                     break;
                 default:
@@ -223,7 +236,7 @@ public class SoftwareRasterizer implements Rasterizer {
 
         // Transform coordinates to device space first
         int x0, y0, x1, y1;
-        
+
         if (transform.isIdentity()) {
             x0 = x + (int) transform.getTranslateX();
             y0 = y + (int) transform.getTranslateY();
@@ -275,7 +288,8 @@ public class SoftwareRasterizer implements Rasterizer {
             for (int row = y0; row <= y1; row++) {
                 for (int col = x0; col <= x1; col++) {
                     int dstColor = pixelDataAsInt32[row * surfaceWidth + col];
-                    pixelDataAsInt32[row * surfaceWidth + col] = blendPixel(srcColorARGB, convertColorToARGB(dstColor, format), composite);
+                    pixelDataAsInt32[row * surfaceWidth + col] = blendPixel(srcColorARGB,
+                            convertColorToARGB(dstColor, format), composite);
                 }
             }
         } else {
@@ -335,7 +349,8 @@ public class SoftwareRasterizer implements Rasterizer {
             int idx = y1 * surface.getWidth() + x1;
             if (needsBlending()) {
                 int dstColor = pixelDataAsInt32[idx];
-                pixelDataAsInt32[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()), convertColorToARGB(dstColor, surface.getFormat()), composite);
+                pixelDataAsInt32[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()),
+                        convertColorToARGB(dstColor, surface.getFormat()), composite);
             } else {
                 pixelDataAsInt32[idx] = encodedForeground;
             }
@@ -359,7 +374,8 @@ public class SoftwareRasterizer implements Rasterizer {
             if (needsBlend) {
                 int idx = y1 * surface.getWidth() + x1;
                 int dstColor = pixelDataAsInt32[idx];
-                pixelDataAsInt32[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()), convertColorToARGB(dstColor, surface.getFormat()), composite);
+                pixelDataAsInt32[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()),
+                        convertColorToARGB(dstColor, surface.getFormat()), composite);
             } else {
                 if (x1 >= 0 && x1 < surface.getWidth() && y1 >= 0 && y1 < surface.getHeight()) {
                     int idx = y1 * surface.getWidth() + x1;
@@ -382,11 +398,19 @@ public class SoftwareRasterizer implements Rasterizer {
         }
     }
 
+    private void drawPolygon(int[] xpoints, int[] ypoints) {
+        int count = xpoints.length;
+        for (int i = 1; i < count; i++) {
+            drawLine(xpoints[i], ypoints[i], xpoints[i - 1], ypoints[i - 1]);
+        }
+        drawLine(xpoints[0], ypoints[0], xpoints[count - 1], ypoints[count - 1]);
+    }
+
     private void blitImage(Surface srcSurface, int destX, int destY, int destWidth, int destHeight) {
         if (srcSurface == null) {
             return;
         }
-        
+
         // Transform destination rectangle to device space first
         Point2D topLeft = new Point2D.Float(destX, destY);
         Point2D bottomRight = new Point2D.Float(destX + destWidth, destY + destHeight);
@@ -394,12 +418,12 @@ public class SoftwareRasterizer implements Rasterizer {
             transform.transform(topLeft, topLeft);
             transform.transform(bottomRight, bottomRight);
         }
-        
+
         int transformedDestX = Math.round((float) topLeft.getX());
         int transformedDestY = Math.round((float) topLeft.getY());
         int transformedDestWidth = Math.round((float) bottomRight.getX()) - transformedDestX;
         int transformedDestHeight = Math.round((float) bottomRight.getY()) - transformedDestY;
-        
+
         // Fast path: rectangle is completely outside clip (in device space)
         if (clip != null) {
             if (transformedDestX + transformedDestWidth <= clip.x || transformedDestX >= clip.x + clip.width ||
@@ -407,15 +431,15 @@ public class SoftwareRasterizer implements Rasterizer {
                 return;
             }
         }
-        
+
         blitImage(srcSurface, 0, 0,
                 srcSurface.getWidth(), srcSurface.getHeight(),
                 transformedDestX, transformedDestY, transformedDestWidth, transformedDestHeight);
     }
 
     private void blitImage(Surface surface, int srcX, int srcY,
-                           int srcWidth, int srcHeight,
-                           int destX, int destY, int destWidth, int destHeight) {
+            int srcWidth, int srcHeight,
+            int destX, int destY, int destWidth, int destHeight) {
         // Clip in device space (coordinates are already transformed)
         int clippedDestX0 = clipX(destX);
         int clippedDestY0 = clipY(destY);
@@ -499,42 +523,42 @@ public class SoftwareRasterizer implements Rasterizer {
             case Surface.FORMAT_INT_ARGB:
                 return (pixels, idx, color) -> {
                     // 0xAARRGGBB: write as [BB, GG, RR, AA]
-                    pixels.set(idx, color & 0xFF);         // B
-                    pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
+                    pixels.set(idx, color & 0xFF); // B
+                    pixels.set(idx + 1, (color >> 8) & 0xFF); // G
                     pixels.set(idx + 2, (color >> 16) & 0xFF); // R
                     pixels.set(idx + 3, (color >> 24) & 0xFF); // A
                 };
             case Surface.FORMAT_INT_RGB:
                 return (pixels, idx, color) -> {
                     // 0x00RRGGBB: write as [BB, GG, RR, 0xFF]
-                    pixels.set(idx, color & 0xFF);         // B
-                    pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
+                    pixels.set(idx, color & 0xFF); // B
+                    pixels.set(idx + 1, (color >> 8) & 0xFF); // G
                     pixels.set(idx + 2, (color >> 16) & 0xFF); // R
-                    pixels.set(idx + 3, 0xFF);             // A = opaque
+                    pixels.set(idx + 3, 0xFF); // A = opaque
                 };
             case Surface.FORMAT_INT_RGBA:
                 return (pixels, idx, color) -> {
                     // 0xRRGGBBAA: write as [AA, BB, GG, RR]
-                    pixels.set(idx, color & 0xFF);         // A
-                    pixels.set(idx + 1, (color >> 8) & 0xFF);  // B
+                    pixels.set(idx, color & 0xFF); // A
+                    pixels.set(idx + 1, (color >> 8) & 0xFF); // B
                     pixels.set(idx + 2, (color >> 16) & 0xFF); // G
                     pixels.set(idx + 3, (color >> 24) & 0xFF); // R
                 };
             case Surface.FORMAT_INT_ABGR:
                 return (pixels, idx, color) -> {
                     // 0xAABBGGRR: write as [RR, GG, BB, AA]
-                    pixels.set(idx, color & 0xFF);         // R
-                    pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
+                    pixels.set(idx, color & 0xFF); // R
+                    pixels.set(idx + 1, (color >> 8) & 0xFF); // G
                     pixels.set(idx + 2, (color >> 16) & 0xFF); // B
                     pixels.set(idx + 3, (color >> 24) & 0xFF); // A
                 };
             case Surface.FORMAT_INT_BGR:
                 return (pixels, idx, color) -> {
                     // 0x00BBGGRR: write as [RR, GG, BB, 0xFF]
-                    pixels.set(idx, color & 0xFF);         // R
-                    pixels.set(idx + 1, (color >> 8) & 0xFF);  // G
+                    pixels.set(idx, color & 0xFF); // R
+                    pixels.set(idx + 1, (color >> 8) & 0xFF); // G
                     pixels.set(idx + 2, (color >> 16) & 0xFF); // B
-                    pixels.set(idx + 3, 0xFF);             // A = opaque
+                    pixels.set(idx + 3, 0xFF); // A = opaque
                 };
             default:
                 // Default to ARGB
@@ -677,7 +701,7 @@ public class SoftwareRasterizer implements Rasterizer {
                 return dstColor;
 
             case AlphaComposite.SRC_OVER:
-                // Source over destination (default blending  - inline calculation for clarity)
+                // Source over destination (default blending - inline calculation for clarity)
                 outAlpha = srcAlpha + dstAlpha * (1.0f - srcAlpha);
 
                 // Calculate output colors directly using SRC_OVER formula

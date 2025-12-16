@@ -18,7 +18,7 @@ public class GuiDemo {
     public static void main(String[] args) {
 
         LoggerFactory.setGlobalLevel(LogLevel.TRACE);
-        System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
+        System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graaaphics/build/wasm/awt_raster.wasm");
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 
         // Create the main window
