@@ -125,6 +125,7 @@ Deno.test("Fill rect with partial area", async () => {
   const insideIdx2 = 6 * width + 6; // (6, 6)
   assertPixelEquals(pixels[insideIdx2], blue, "Pixel (6,6) should be blue");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -150,6 +151,7 @@ Deno.test("Clear rect", async () => {
   const defaultBgColor = WasmRasterizer.makeARGB(255, 255, 255, 255);
   assertPixelEquals(pixels[clearedIdx], defaultBgColor, "Pixel (3,3) should be cleared");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -178,6 +180,7 @@ Deno.test("Draw line", async () => {
   const afterIdx = 10 * width + 16;
   assertEquals(pixels[afterIdx], 0, "Pixel (16,10) should be 0");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -202,6 +205,7 @@ Deno.test("Draw rect outline", async () => {
   const insideIdx = 10 * width + 10;
   assertEquals(pixels[insideIdx], 0, "Pixel (10,10) should be 0 (not filled)");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -226,6 +230,7 @@ Deno.test("Clipping rect", async () => {
   const insideIdx = 10 * width + 10;
   assertPixelEquals(pixels[insideIdx], yellow, "Pixel (10,10) should be yellow");
 
+  rasterizer.destroyContext(context);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -270,6 +275,8 @@ Deno.test("Multiple surfaces", async () => {
   const pixels2 = rasterizer.copySurfacePixels(surface2);
   assertPixelEquals(pixels2[0], blue, "Surface 2 should be blue");
 
+  rasterizer.destroyContext(contextId1);
+  rasterizer.destroyContext(contextId2);
   rasterizer.freeSurface(surface1);
   rasterizer.freeSurface(surface2);
 });

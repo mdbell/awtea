@@ -13,7 +13,7 @@ values:
   - name: SET_CLIP_RECT
     description: Set clipping rectangle
   - name: SET_COMPOSITE
-    description: Set compositing mode (unimplemented in WASM)
+    description: Set compositing mode (Porter-Duff alpha blending)
   - name: BLIT_IMAGE
     description: Copy image to surface
   - name: DRAW_RECT

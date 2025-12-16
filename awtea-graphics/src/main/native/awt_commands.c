@@ -183,9 +183,17 @@ static int handle_set_clip_rect(SurfaceContext* ctx, RenderSurface* surface, Com
 }
 
 static int handle_set_composite(SurfaceContext* ctx, RenderSurface* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
-    // Not implemented yet, just skip
-    log_debug("handle_set_composite: not implemented, skipping");
-    reader_skip(reader, length * 4);
+    if(length != 2) {
+        log_error("handle_set_composite: expected length 2, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    ctx->composite_mode = (CompositeMode) read_u32(reader);
+    ctx->composite_alpha = read_float(reader);
+    surface->composite_mode = ctx->composite_mode;
+    surface->composite_alpha = ctx->composite_alpha;
+    log_debug("Set composite mode=%d, alpha=%.2f", 
+                ctx->composite_mode, ctx->composite_alpha);
     return 0;
 }
 

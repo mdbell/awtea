@@ -15,7 +15,7 @@ public enum Operation {
 	SET_TRANSFORM(2),
 	/** Set clipping rectangle */
 	SET_CLIP_RECT(3),
-	/** Set compositing mode (unimplemented in WASM) */
+	/** Set compositing mode (Porter-Duff alpha blending) */
 	SET_COMPOSITE(4),
 	/** Copy image to surface */
 	BLIT_IMAGE(5),

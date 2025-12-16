@@ -7,6 +7,7 @@
 // Include auto-generated enums
 #include "generated/surface_operation.h"
 #include "generated/pixel_format.h"
+#include "generated/composite_mode.h"
 #include "awt_command_reader.h"
 
 #define NUM_SURFACES 1024
@@ -29,6 +30,23 @@
 
 // Note: SurfaceOperation enum is now defined in generated/surface_operation.h
 // Edit schemas/surface-operation.yaml to modify the enum values
+
+typedef struct {
+    uint8_t operation; // SurfaceOperation
+    uint8_t reserved[3]; // Padding for alignment
+    uint32_t x; // X coordinate for the command
+    uint32_t y; // Y coordinate for the command
+    uint32_t width; // Width parameter
+    uint32_t height; // Height parameter
+    union {
+        struct { uint32_t argb, which; } set_color;
+        struct { uint32_t surface_id; } blit;
+        struct { uint32_t mode, alpha; } set_composite; // alpha stored as uint32_t, converted via u32_to_float
+        //TODO: figure out how we're going to do transforms
+        // struct { uint32_t m00, m01, m10, m11; } transform; 
+        uint32_t args[2]; // Fallback for generic access
+    };
+} SurfaceCommand;
 
 typedef struct {
     float m00, m01, m02; // first row: x' = m00*x + m01*y + m02
@@ -78,6 +96,8 @@ typedef struct {
     uint32_t    argb[COLOR_MAX + 1];
     Transform2D transform;
     ClipRect    clip;
+    CompositeMode composite_mode;
+    float       composite_alpha;
     
     // Variable-length command buffer reader for this context
     CommandReader reader;
@@ -97,4 +117,6 @@ typedef struct {
     uint32_t    argb[COLOR_MAX + 1];
     Transform2D transform;
     ClipRect    clip;
+    CompositeMode composite_mode;
+    float       composite_alpha;
 } RenderSurface;
