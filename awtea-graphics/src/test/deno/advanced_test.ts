@@ -58,6 +58,7 @@ Deno.test("Identity transform", async () => {
     "Pixel (5,5) should be cyan with identity transform",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -105,6 +106,7 @@ Deno.test("Translation transform", async () => {
     "Pixel (5,5) should be orange (translated)",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -163,6 +165,7 @@ Deno.test("Complex drawing pattern - checkerboard", async () => {
   const idx2 = 5 * width;
   assertPixelEquals(pixels[idx2], white, "Pixel (0,5) should be white");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -217,6 +220,7 @@ Deno.test("Drawing with background color", async () => {
     "Pixel (3,3) should be gray (background color)",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -256,6 +260,7 @@ Deno.test("Large surface allocation", async () => {
     "Last pixel should be mid-gray",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -317,6 +322,7 @@ Deno.test("Multiple command batches", async () => {
     "Pixel (5,15) should be green from line",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -370,5 +376,6 @@ Deno.test("Pixel format ARGB consistency", async () => {
   assertEquals(extracted.g, 150, "Green should be 150");
   assertEquals(extracted.b, 75, "Blue should be 75");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
