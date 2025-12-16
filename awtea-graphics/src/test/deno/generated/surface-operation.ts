@@ -26,4 +26,6 @@ export enum SurfaceOperation {
   CMD_CLEAR_RECT = 8,
   /** Draw line */
   CMD_DRAW_LINE = 9,
+  /** Draw a polygon */
+  CMD_DRAW_POLYGON = 10,
 }

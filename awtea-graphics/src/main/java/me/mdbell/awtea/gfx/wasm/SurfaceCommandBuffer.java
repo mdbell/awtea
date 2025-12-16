@@ -220,6 +220,16 @@ public final class SurfaceCommandBuffer {
         writer.writeFloat(alpha);
     }
 
+    public void emitDrawPolygon(int[] xpoints, int[] ypoints) {
+        log.trace("SurfaceCommandBuffer.emitDrawPolygon: xpoints={}, ypoints={}", xpoints, ypoints);
+
+        beginCommand(Operation.DRAW_POLYGON, 0);
+        for (int i = 0; i < xpoints.length; i++) {
+            writer.writeInt32(xpoints[i]);
+            writer.writeInt32(ypoints[i]);
+        }
+    }
+
     public void emitDrawSurface(WasmSurface surface, int imgX, int imgY) {
         emitBlitImage(surface.getId(), imgX, imgY);
     }

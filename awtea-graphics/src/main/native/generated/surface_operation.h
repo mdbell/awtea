@@ -30,6 +30,8 @@ typedef enum {
     CMD_CLEAR_RECT,
     // Draw line
     CMD_DRAW_LINE,
+    // Draw a polygon
+    CMD_DRAW_POLYGON,
     // Number of standard commands
     CMD_COUNT,
 } SurfaceOperation;

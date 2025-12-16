@@ -19,6 +19,7 @@ static int handle_draw_rect(SurfaceContext* ctx, SurfaceData* surface, CommandRe
 static int handle_fill_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 static int handle_clear_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 static int handle_draw_line(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_draw_polygon(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 
 // Command handler function table (indexed by SurfaceOperation enum)
 static const CommandHandler command_handlers[] = {
@@ -32,6 +33,7 @@ static const CommandHandler command_handlers[] = {
     [CMD_FILL_RECT] = handle_fill_rect,
     [CMD_CLEAR_RECT] = handle_clear_rect,
     [CMD_DRAW_LINE] = handle_draw_line,
+    [CMD_DRAW_POLYGON] = handle_draw_polygon
 };
 
 // Number of command handlers
@@ -288,5 +290,34 @@ static int handle_draw_line(SurfaceContext* ctx, SurfaceData* surface, CommandRe
 
     draw_line(surface, ctx, x1, y1, x2, y2, ctx->argb[COLOR_FG]);
     log_debug("Draw line: (%d, %d) to (%d, %d)", x1, y1, x2, y2);
+    return 0;
+}
+
+static int handle_draw_polygon(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+    if(length < 4) {
+        log_error("handle_draw_polygon: expected min length of 4, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+
+    int npoints = length / 2; // 2 words per point
+    int firstX = (int)read_u32(reader);
+    int firstY = (int)read_u32(reader);
+    int lastX = firstX;
+    int lastY = firstY;
+    int currX, currY;
+
+    for(int point = 1; point < npoints; point++){
+        currX = (int)read_u32(reader);
+        currY = (int)read_u32(reader);
+        draw_line(surface, ctx, lastX, lastY, currX, currY, ctx->argb[COLOR_FG]);
+
+        lastX = currX;
+        lastY = currY;
+    }
+
+    //connect the last point to the first one
+    draw_line(surface, ctx, firstX, firstY, currX, currY, ctx->argb[COLOR_FG]);
+
     return 0;
 }
