@@ -1,0 +1,28 @@
+# Package: `java.applet`
+
+**Coverage:** 6 / 16 (37.5%)
+
+```
+[██████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 37.5%
+```
+
+## Classes
+
+### [`AppletContext`](AppletContext.md) ![Coverage](https://img.shields.io/badge/coverage-0.0%25-red)
+
+**Coverage:** 0 / 10 (0.0%)
+
+```
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
+```
+
+### [`AppletStub`](AppletStub.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 6 / 6 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+
+[← Back to Index](../../../../report.md)

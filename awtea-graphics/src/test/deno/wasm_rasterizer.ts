@@ -22,22 +22,120 @@ import { CompositeMode } from "./generated/composite-mode.ts";
 export const COLOR_FG = 0;
 export const COLOR_BG = 1;
 
+// Command flags
+export const CMD_FLAG_EXTENDED = 0x01; // Bit 0: Extended command set (future use)
+
 // Re-export for convenience
 export { PixelFormat, SurfaceOperation, CompositeMode };
 
 /**
- * Surface command structure (must match SurfaceCommand in awt_raster_internal.h)
- * Total size: 28 bytes
+ * ByteWriter for writing variable-length commands
+ * 
+ * Commands are written in the format:
+ * [opcode: uint8][flags: uint8][length: uint16][data: length*4 bytes]
+ * 
+ * The length field is in words (4-byte units) and does NOT include the 4-byte header.
  */
-export interface SurfaceCommand {
-  operation: number; // uint8_t (1 byte)
-  reserved: [number, number, number]; // uint8_t[3] (3 bytes)
-  x: number; // uint32_t (4 bytes)
-  y: number; // uint32_t (4 bytes)
-  width: number; // uint32_t (4 bytes)
-  height: number; // uint32_t (4 bytes)
-  arg1: number; // uint32_t (4 bytes)
-  arg2: number; // uint32_t (4 bytes)
+class ByteWriter {
+  private view: DataView;
+  private basePtr: number;
+  private maxBytes: number;
+  private position: number;
+  private commandStartPos: number;
+  private inCommand: boolean;
+
+  constructor(memory: WebAssembly.Memory, basePtr: number, maxWords: number) {
+    this.view = new DataView(memory.buffer);
+    this.basePtr = basePtr;
+    this.maxBytes = maxWords * 4;
+    this.position = basePtr;
+    this.commandStartPos = -1;
+    this.inCommand = false;
+  }
+
+  beginCommand(opcode: number, flags: number = 0): void {
+    // Auto-finish previous command if needed
+    if (this.inCommand) {
+      this.finishCommand();
+    }
+
+    // Ensure space for header (4 bytes)
+    if (this.position + 4 > this.basePtr + this.maxBytes) {
+      throw new Error("Buffer overflow: cannot write command header");
+    }
+
+    this.commandStartPos = this.position;
+
+    // Write header with placeholder length
+    this.view.setUint8(this.position, opcode & 0xFF);
+    this.view.setUint8(this.position + 1, flags & 0xFF);
+    this.view.setUint16(this.position + 2, 0, true); // Placeholder length (little-endian)
+
+    this.position += 4;
+    this.inCommand = true;
+  }
+
+  finishCommand(): void {
+    if (!this.inCommand) {
+      throw new Error("No command in progress");
+    }
+
+    // Calculate data length in bytes (excluding header)
+    const dataBytes = this.position - this.commandStartPos - 4;
+
+    // Length must be word-aligned
+    if (dataBytes % 4 !== 0) {
+      throw new Error(`Command data not word-aligned: ${dataBytes} bytes`);
+    }
+
+    const lengthWords = dataBytes / 4;
+
+    // Back-patch the length field
+    this.view.setUint16(this.commandStartPos + 2, lengthWords, true);
+
+    this.inCommand = false;
+    this.commandStartPos = -1;
+  }
+
+  writeInt32(value: number): void {
+    this.ensureInCommand();
+    this.ensureSpace(4);
+    this.view.setInt32(this.position, value, true);
+    this.position += 4;
+  }
+
+  writeFloat(value: number): void {
+    this.ensureInCommand();
+    this.ensureSpace(4);
+    this.view.setFloat32(this.position, value, true);
+    this.position += 4;
+  }
+
+  getBytesUsed(): number {
+    return this.position - this.basePtr;
+  }
+
+  reset(): void {
+    this.position = this.basePtr;
+    this.commandStartPos = -1;
+    this.inCommand = false;
+  }
+
+  private ensureInCommand(): void {
+    if (!this.inCommand) {
+      throw new Error("No command in progress. Call beginCommand() first.");
+    }
+  }
+
+  private ensureSpace(bytes: number): void {
+    if (this.position + bytes > this.basePtr + this.maxBytes) {
+      throw new Error(
+        `Buffer overflow: need ${bytes} bytes, ${
+          this.basePtr + this.maxBytes - this.position
+        } available`,
+      );
+    }
+  }
 }
 
 /**
@@ -200,90 +298,101 @@ export class WasmRasterizer {
   }
 
   /**
-   * Create a command buffer
+   * Write a variable-length command using ByteWriter.
+   * This is a low-level helper for writing commands directly.
+   * 
+   * @param contextId The context to write to
+   * @param writer Callback that uses ByteWriter to write the command
+   * @returns The number of bytes used
+   */
+  writeVariableLengthCommand(
+    contextId: number,
+    writer: (w: ByteWriter) => void,
+  ): number {
+    const wasm = this.getExports();
+    const bufferPtr = wasm.get_context_buffer_ptr(contextId);
+    const bufferSizeWords = wasm.get_context_buffer_size_words();
+
+    const byteWriter = new ByteWriter(
+      wasm.memory as WebAssembly.Memory,
+      bufferPtr,
+      bufferSizeWords,
+    );
+    byteWriter.reset();
+    writer(byteWriter);
+
+    return byteWriter.getBytesUsed();
+  }
+
+  /**
+   * Execute commands on a surface (using context).
+   * Commands are written using ByteWriter callbacks.
+   * 
+   * @param contextId The context to render to
+   * @param writers Array of ByteWriter callbacks
+   */
+  renderVariableLengthCommands(
+    contextId: number,
+    writers: Array<(w: ByteWriter) => void>,
+  ): void {
+    const wasm = this.getExports();
+    const bufferPtr = wasm.get_context_buffer_ptr(contextId);
+    const bufferSizeWords = wasm.get_context_buffer_size_words();
+
+    const byteWriter = new ByteWriter(
+      wasm.memory as WebAssembly.Memory,
+      bufferPtr,
+      bufferSizeWords,
+    );
+    byteWriter.reset();
+
+    // Write all commands
+    for (const writer of writers) {
+      writer(byteWriter);
+    }
+
+    // Render with cmdPtr=0 to use context buffer
+    const bytesUsed = byteWriter.getBytesUsed();
+    const result = wasm.render_awt(contextId, 0, bytesUsed);
+    if (result !== 0) {
+      throw new Error(`render_awt failed with error code ${result}`);
+    }
+  }
+
+  /**
+   * Legacy method: Create a command buffer (deprecated)
+   * @deprecated Use variable-length commands instead
    */
   createCommandBuffer(maxCommands: number): number {
-    const wasm = this.getExports();
-    const ptr = wasm.request_command_buffer(maxCommands);
-    if (ptr === 0) {
-      throw new Error("Failed to allocate command buffer");
-    }
-    return ptr;
+    throw new Error("Legacy command buffers not supported. Use variable-length commands.");
   }
 
   /**
-   * Get command size in bytes
+   * Legacy method: Write a command to the buffer (deprecated)
+   * @deprecated Use writeVariableLengthCommand instead
    */
-  getCommandSize(): number {
-    const wasm = this.getExports();
-    return wasm.get_command_size();
+  writeCommand(bufferPtr: number, index: number, cmd: any): void {
+    throw new Error("Legacy command writing not supported. Use writeVariableLengthCommand.");
   }
 
   /**
-   * Write a command to the buffer
-   */
-  writeCommand(bufferPtr: number, index: number, cmd: SurfaceCommand): void {
-    const wasm = this.getExports();
-    const cmdSize = wasm.get_command_size();
-    const offset = bufferPtr + (index * cmdSize);
-
-    const view = new DataView(wasm.memory.buffer);
-    view.setUint8(offset + 0, cmd.operation);
-    view.setUint8(offset + 1, cmd.reserved[0]);
-    view.setUint8(offset + 2, cmd.reserved[1]);
-    view.setUint8(offset + 3, cmd.reserved[2]);
-    view.setUint32(offset + 4, cmd.x, true);
-    view.setUint32(offset + 8, cmd.y, true);
-    view.setUint32(offset + 12, cmd.width, true);
-    view.setUint32(offset + 16, cmd.height, true);
-    view.setUint32(offset + 20, cmd.arg1, true);
-    view.setUint32(offset + 24, cmd.arg2, true);
-  }
-
-  /**
-   * Execute commands on a surface (using context)
-   * Note: This now requires a context ID instead of surface ID
+   * Legacy method: Execute commands on a surface (deprecated)
+   * @deprecated Use renderVariableLengthCommands instead
    */
   renderCommands(
     contextId: number,
     bufferPtr: number,
     commandCount: number,
   ): void {
-    const wasm = this.getExports();
-    const result = wasm.render_awt(contextId, bufferPtr, commandCount);
-    if (result !== 0) {
-      throw new Error(`render_awt failed with error code ${result}`);
-    }
+    throw new Error("Legacy renderCommands not supported. Use renderVariableLengthCommands.");
   }
 
   /**
-   * Execute commands using the context's internal command buffer.
-   * This is more efficient than allocating a temporary buffer.
-   *
-   * @param contextId The context to render to
-   * @param commands Array of commands to execute
+   * Legacy method: Execute commands using the context's internal command buffer (deprecated)
+   * @deprecated Use renderVariableLengthCommands instead
    */
-  renderCommandsToContext(contextId: number, commands: SurfaceCommand[]): void {
-    const wasm = this.getExports();
-
-    // Get the context's command buffer
-    const bufferPtr = this.getContextCommandBufferPtr(contextId);
-    const maxCommands = this.getMaxContextCommands();
-
-    if (commands.length > maxCommands) {
-      throw new Error(`Too many commands: ${commands.length} > ${maxCommands}`);
-    }
-
-    // Write commands to the context buffer
-    for (let i = 0; i < commands.length; i++) {
-      this.writeCommand(bufferPtr, i, commands[i]);
-    }
-
-    // Render using the context buffer (pass 0 as bufferPtr to use context buffer)
-    const result = wasm.render_awt(contextId, 0, commands.length);
-    if (result !== 0) {
-      throw new Error(`render_awt failed with error code ${result}`);
-    }
+  renderCommandsToContext(contextId: number, commands: any[]): void {
+    throw new Error("Legacy renderCommandsToContext not supported. Use renderVariableLengthCommands.");
   }
 
   /**
@@ -359,200 +468,170 @@ export class WasmRasterizer {
   }
 
   /**
-   * Get the maximum number of commands that can be stored in a context's command buffer
+   * Get the maximum number of words (4-byte units) in context's command buffer
    */
-  getMaxContextCommands(): number {
+  getContextBufferSizeWords(): number {
     const wasm = this.getExports();
-    return wasm.get_max_context_commands();
+    return wasm.get_context_buffer_size_words();
   }
 
   /**
-   * Get the pointer to a context's fixed command buffer
+   * Get the pointer to a context's command buffer
    */
-  getContextCommandBufferPtr(contextId: number): number {
+  getContextBufferPtr(contextId: number): number {
     const wasm = this.getExports();
-    const ptr = wasm.get_context_command_buffer_ptr(contextId);
+    const ptr = wasm.get_context_buffer_ptr(contextId);
     if (ptr === 0) {
       throw new Error(`Failed to get command buffer for context ${contextId}`);
     }
     return ptr;
   }
 
+  // ========== Helper methods for common commands ==========
+
   /**
-   * Helper: Create a SET_COLOR command
+   * Helper: Write a SET_COLOR command
    */
-  static setColorCommand(
+  static writeSetColorCommand(
+    w: ByteWriter,
     argb: number,
     which: number = COLOR_FG,
-  ): SurfaceCommand {
-    return {
-      operation: SurfaceOperation.CMD_SET_COLOR,
-      reserved: [0, 0, 0],
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      arg1: argb,
-      arg2: which,
-    };
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_SET_COLOR);
+    w.writeInt32(argb);
+    w.writeInt32(which);
+    w.finishCommand();
   }
 
   /**
-   * Helper: Create a FILL_RECT command
+   * Helper: Write a FILL_RECT command
    */
-  static fillRectCommand(
+  static writeFillRectCommand(
+    w: ByteWriter,
     x: number,
     y: number,
     width: number,
     height: number,
-  ): SurfaceCommand {
-    return {
-      operation: SurfaceOperation.CMD_FILL_RECT,
-      reserved: [0, 0, 0],
-      x,
-      y,
-      width,
-      height,
-      arg1: 0,
-      arg2: 0,
-    };
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_FILL_RECT);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.finishCommand();
   }
 
   /**
-   * Helper: Create a DRAW_RECT command
+   * Helper: Write a DRAW_RECT command
    */
-  static drawRectCommand(
+  static writeDrawRectCommand(
+    w: ByteWriter,
     x: number,
     y: number,
     width: number,
     height: number,
-  ): SurfaceCommand {
-    return {
-      operation: SurfaceOperation.CMD_DRAW_RECT,
-      reserved: [0, 0, 0],
-      x,
-      y,
-      width,
-      height,
-      arg1: 0,
-      arg2: 0,
-    };
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_DRAW_RECT);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.finishCommand();
   }
 
   /**
-   * Helper: Create a DRAW_LINE command
+   * Helper: Write a DRAW_LINE command
    */
-  static drawLineCommand(
+  static writeDrawLineCommand(
+    w: ByteWriter,
     x1: number,
     y1: number,
     x2: number,
     y2: number,
-  ): SurfaceCommand {
-    return {
-      operation: SurfaceOperation.CMD_DRAW_LINE,
-      reserved: [0, 0, 0],
-      x: x1,
-      y: y1,
-      width: x2,
-      height: y2,
-      arg1: 0,
-      arg2: 0,
-    };
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_DRAW_LINE);
+    w.writeInt32(x1);
+    w.writeInt32(y1);
+    w.writeInt32(x2);
+    w.writeInt32(y2);
+    w.finishCommand();
   }
 
   /**
-   * Helper: Create a CLEAR_RECT command
+   * Helper: Write a CLEAR_RECT command
    */
-  static clearRectCommand(
+  static writeClearRectCommand(
+    w: ByteWriter,
     x: number,
     y: number,
     width: number,
     height: number,
-  ): SurfaceCommand {
-    return {
-      operation: SurfaceOperation.CMD_CLEAR_RECT,
-      reserved: [0, 0, 0],
-      x,
-      y,
-      width,
-      height,
-      arg1: 0,
-      arg2: 0,
-    };
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_CLEAR_RECT);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.finishCommand();
   }
 
   /**
-   * Helper: Create a SET_CLIP_RECT command
+   * Helper: Write a SET_CLIP_RECT command
    */
-  static setClipRectCommand(
+  static writeSetClipRectCommand(
+    w: ByteWriter,
     x: number,
     y: number,
     width: number,
     height: number,
-  ): SurfaceCommand {
-    return {
-      operation: SurfaceOperation.CMD_SET_CLIP_RECT,
-      reserved: [0, 0, 0],
-      x,
-      y,
-      width,
-      height,
-      arg1: 0,
-      arg2: 0,
-    };
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_SET_CLIP_RECT);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.finishCommand();
   }
 
   /**
-   * Helper: Create a BLIT_IMAGE command
+   * Helper: Write a BLIT_IMAGE command
    */
-  static blitImageCommand(
+  static writeBlitImageCommand(
+    w: ByteWriter,
     imageId: number,
     x: number,
     y: number,
-  ): SurfaceCommand {
-    return {
-      operation: SurfaceOperation.CMD_BLIT_IMAGE,
-      reserved: [0, 0, 0],
-      x,
-      y,
-      width: 0,
-      height: 0,
-      arg1: imageId,
-      arg2: 0,
-    };
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_BLIT_IMAGE);
+    w.writeInt32(imageId);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.finishCommand();
   }
 
   /**
-   * Helper: Create a SET_TRANSFORM command
+   * Helper: Write a SET_TRANSFORM command
    * Transform is a 2x3 affine transform matrix:
    *   m00  m01  m02
    *   m10  m11  m12
    */
-  static setTransformCommand(
+  static writeSetTransformCommand(
+    w: ByteWriter,
     m00: number,
     m01: number,
     m02: number,
     m10: number,
     m11: number,
     m12: number,
-  ): SurfaceCommand {
-    // Convert floats to uint32 representation
-    const floatToU32 = (f: number): number => {
-      const buf = new ArrayBuffer(4);
-      new Float32Array(buf)[0] = f;
-      return new Uint32Array(buf)[0];
-    };
-
-    return {
-      operation: SurfaceOperation.CMD_SET_TRANSFORM,
-      reserved: [0, 0, 0],
-      x: floatToU32(m00),
-      y: floatToU32(m01),
-      width: floatToU32(m02),
-      height: floatToU32(m10),
-      arg1: floatToU32(m11),
-      arg2: floatToU32(m12),
-    };
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_SET_TRANSFORM);
+    w.writeFloat(m00);
+    w.writeFloat(m01);
+    w.writeFloat(m02);
+    w.writeFloat(m10);
+    w.writeFloat(m11);
+    w.writeFloat(m12);
+    w.finishCommand();
   }
 
   /**

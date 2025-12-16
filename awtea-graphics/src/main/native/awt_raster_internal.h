@@ -8,6 +8,7 @@
 #include "generated/surface_operation.h"
 #include "generated/pixel_format.h"
 #include "generated/composite_mode.h"
+#include "awt_command_reader.h"
 
 #define NUM_SURFACES 1024
 #define NUM_CONTEXTS 2048
@@ -26,9 +27,6 @@
 
 #define DEFAULT_FG_COLOR 0xFF000000 // opaque black
 #define DEFAULT_BG_COLOR 0xFFFFFFFF // opaque white
-
-// Maximum number of commands in each context's fixed command buffer
-#define MAX_CONTEXT_COMMANDS 512
 
 // Note: SurfaceOperation enum is now defined in generated/surface_operation.h
 // Edit schemas/surface-operation.yaml to modify the enum values
@@ -101,9 +99,8 @@ typedef struct {
     CompositeMode composite_mode;
     float       composite_alpha;
     
-    // Fixed-size command buffer for this context
-    SurfaceCommand* command_buffer;
-    int             max_commands;
+    // Variable-length command buffer reader for this context
+    CommandReader reader;
 } SurfaceContext;
 
 // RenderSurface: temporary combined view of SurfaceData + SurfaceContext for rendering
