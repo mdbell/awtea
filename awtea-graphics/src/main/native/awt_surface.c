@@ -137,14 +137,15 @@ int get_surface_stride(int surface_id) {
     return surface->stride;
 }
 
-int clip_x(int x, const RenderSurface* surf) {
+int clip_x(int x, const SurfaceData* surf, SurfaceContext* context) {
     int min_x = 0;
     int max_x = surf->width;
     
-    // If clip rectangle is set, intersect with clip bounds
-    if (surf->clip.width > 0) {
-        min_x = surf->clip.x > 0 ? surf->clip.x : 0;
-        max_x = surf->clip.x + surf->clip.width;
+    // If clip rectangle is set (width >= 0), intersect with clip bounds
+    // Negative width is a sentinel value meaning "no clip"
+    if (context->clip.width >= 0) {
+        min_x = context->clip.x < 0 ? 0 : context->clip.x;
+        max_x = context->clip.x + context->clip.width;
         if (max_x > surf->width) {
             max_x = surf->width;
         }
@@ -153,14 +154,15 @@ int clip_x(int x, const RenderSurface* surf) {
     return clamp_int(x, min_x, max_x);
 }
 
-int clip_y(int y, const RenderSurface* surf) {
+int clip_y(int y, const SurfaceData* surf, SurfaceContext* context) {
     int min_y = 0;
     int max_y = surf->height;
     
-    // If clip rectangle is set, intersect with clip bounds
-    if (surf->clip.height > 0) {
-        min_y = surf->clip.y > 0 ? surf->clip.y : 0;
-        max_y = surf->clip.y + surf->clip.height;
+    // If clip rectangle is set (height >= 0), intersect with clip bounds
+    // Negative height is a sentinel value meaning "no clip"
+    if (context->clip.height >= 0) {
+        min_y = context->clip.y < 0 ? 0 : context->clip.y;
+        max_y = context->clip.y + context->clip.height;
         if (max_y > surf->height) {
             max_y = surf->height;
         }
@@ -218,11 +220,11 @@ int create_context(int surface_id) {
     ctx->transform.m11 = 1.0f;
     ctx->transform.m12 = 0.0f;
 
-    // clip_rect to full surface
+    // Initialize with no clip (sentinel value: negative width)
     ctx->clip.x = 0;
     ctx->clip.y = 0;
-    ctx->clip.width = surface->width;
-    ctx->clip.height = surface->height;
+    ctx->clip.width = -1;
+    ctx->clip.height = -1;
     
     // Initialize composite mode to SRC_OVER with full alpha (default)
     ctx->composite_mode = COMPOSITE_SRC_OVER;

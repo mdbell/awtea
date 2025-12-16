@@ -64,7 +64,7 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
     }
 };
 
-void set_pixel_generic(RenderSurface* surface, int x, int y, PixelFormat srcFormat,
+void set_pixel_generic(SurfaceData* surface, int x, int y, PixelFormat srcFormat,
     uint32_t srcPixel) {
     uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
     uint32_t stride = surface->stride / 4; // in pixels
@@ -80,7 +80,7 @@ void set_pixel_generic(RenderSurface* surface, int x, int y, PixelFormat srcForm
 
 }
 
-void set_pixel_same_format(RenderSurface* surface, int x, int y, PixelFormat srcFormat,
+void set_pixel_same_format(SurfaceData* surface, int x, int y, PixelFormat srcFormat,
     uint32_t pixel) {
     uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
     uint32_t stride = surface->stride / 4; // in pixels
@@ -88,7 +88,7 @@ void set_pixel_same_format(RenderSurface* surface, int x, int y, PixelFormat src
     framebuffer[y * stride + x] = pixel;
 }
 
-void set_pixel_no_alpha_src(RenderSurface* surface, int x, int y, PixelFormat srcFormat,
+void set_pixel_no_alpha_src(SurfaceData* surface, int x, int y, PixelFormat srcFormat,
     uint32_t pixel) {
 
     uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
@@ -134,7 +134,7 @@ uint32_t pack_pixel(const PixelFormatInfo* info,
     return pixel;
 }
 
-void blend_pixel(RenderSurface* surface,
+void blend_pixel(SurfaceData* surface,
                         int x, int y,
                         PixelFormat srcFormat,
                         uint32_t srcPixel) {
@@ -143,7 +143,7 @@ void blend_pixel(RenderSurface* surface,
                          COMPOSITE_SRC_OVER, 1.0f);
 }
 
-void blend_pixel_composite(RenderSurface* surface,
+void blend_pixel_composite(SurfaceData* surface,
                            int x, int y,
                            PixelFormat srcFormat,
                            uint32_t srcPixel,
