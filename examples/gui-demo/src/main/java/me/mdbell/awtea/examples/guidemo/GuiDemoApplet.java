@@ -14,12 +14,7 @@ import java.awt.*;
  * - Text rendering
  */
 public class GuiDemoApplet extends Applet {
-    
-    // Register this applet with the registry at class load time
-    static {
-        AppletRegistry.register("gui-demo", GuiDemoApplet::new);
-    }
-    
+
     @Override
     public void init() {
         // Create a container to hold everything
@@ -91,10 +86,10 @@ public class GuiDemoApplet extends Applet {
         // Add the main panel to the applet
         add(mainPanel);
     }
-    
-    @Override
+
+@Override
     public void start() {
-        // Request repaint when applet starts
+// Request repaint when applet starts
         repaint();
     }
 }
