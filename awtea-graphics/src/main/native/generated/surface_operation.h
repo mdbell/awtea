@@ -18,7 +18,7 @@ typedef enum {
     CMD_SET_TRANSFORM,
     // Set clipping rectangle
     CMD_SET_CLIP_RECT,
-    // Set compositing mode (unimplemented in WASM)
+    // Set compositing mode (Porter-Duff alpha blending)
     CMD_SET_COMPOSITE,
     // Copy image to surface
     CMD_BLIT_IMAGE,

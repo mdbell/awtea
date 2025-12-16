@@ -223,18 +223,24 @@ int create_context(int surface_id) {
     ctx->clip.y = 0;
     ctx->clip.width = surface->width;
     ctx->clip.height = surface->height;
+    
+    // Initialize composite mode to SRC_OVER with full alpha (default)
+    ctx->composite_mode = COMPOSITE_SRC_OVER;
+    ctx->composite_alpha = 1.0f;
 
-    // Allocate fixed command buffer
-    ctx->max_commands = MAX_CONTEXT_COMMANDS;
-    size_t bytes = ctx->max_commands * sizeof(SurfaceCommand);
-    ctx->command_buffer = (SurfaceCommand*)tracked_malloc(bytes);
-    if (!ctx->command_buffer) {
+    // Allocate command buffer for the reader
+    size_t bytes = COMMAND_BUFFER_SIZE_WORDS * sizeof(uint32_t);
+    ctx->reader.buffer = (uint32_t*)tracked_malloc(bytes);
+    if (!ctx->reader.buffer) {
         log_error("create_context: failed to allocate command buffer (%zu bytes)", bytes);
         ctx->surface_id = -1; // mark context as free again
         STACK_EXIT_ERR(-1);
         return -1;
     }
-    memset(ctx->command_buffer, 0, bytes);
+    ctx->reader.size_words = COMMAND_BUFFER_SIZE_WORDS;
+    ctx->reader.pos = 0;
+    ctx->reader.limit = 0;
+    memset(ctx->reader.buffer, 0, bytes);
 
     // Increment surface reference count
     surface->ref_count++;
@@ -273,17 +279,21 @@ int clone_context(int context_id) {
     new_ctx->argb[COLOR_BG] = src_ctx->argb[COLOR_BG];
     new_ctx->transform = src_ctx->transform;
     new_ctx->clip = src_ctx->clip;
+    new_ctx->composite_mode = src_ctx->composite_mode;
+    new_ctx->composite_alpha = src_ctx->composite_alpha;
 
     // Allocate new command buffer for the cloned context
-    new_ctx->max_commands = MAX_CONTEXT_COMMANDS;
-    size_t bytes = new_ctx->max_commands * sizeof(SurfaceCommand);
-    new_ctx->command_buffer = (SurfaceCommand*)tracked_malloc(bytes);
-    if (!new_ctx->command_buffer) {
+    size_t bytes = COMMAND_BUFFER_SIZE_WORDS * sizeof(uint32_t);
+    new_ctx->reader.buffer = (uint32_t*)tracked_malloc(bytes);
+    if (!new_ctx->reader.buffer) {
         log_error("clone_context: failed to allocate command buffer (%zu bytes)", bytes);
         new_ctx->surface_id = -1; // mark context as free again
         return -1;
     }
-    memset(new_ctx->command_buffer, 0, bytes);
+    new_ctx->reader.size_words = COMMAND_BUFFER_SIZE_WORDS;
+    new_ctx->reader.pos = 0;
+    new_ctx->reader.limit = 0;
+    memset(new_ctx->reader.buffer, 0, bytes);
 
     // Increment surface reference count
     SurfaceData* surface = get_surface_data(src_ctx->surface_id);
@@ -309,10 +319,10 @@ int destroy_context(int context_id) {
     SurfaceData* surface = get_surface_data(surface_id);
     
     // Free the command buffer
-    if (ctx->command_buffer) {
-        tracked_free(ctx->command_buffer);
-        ctx->command_buffer = NULL;
-        ctx->max_commands = 0;
+    if (ctx->reader.buffer) {
+        tracked_free(ctx->reader.buffer);
+        ctx->reader.buffer = NULL;
+        ctx->reader.size_words = 0;
     }
     
     // Mark context as free
@@ -375,15 +385,15 @@ int get_context_surface_id(int context_id) {
     return ctx->surface_id;
 }
 
-int get_max_context_commands(void) {
-    return MAX_CONTEXT_COMMANDS;
+int get_context_buffer_size_words(void) {
+    return COMMAND_BUFFER_SIZE_WORDS;
 }
 
-uint32_t get_context_command_buffer_ptr(int context_id) {
+uint32_t get_context_buffer_ptr(int context_id) {
     SurfaceContext* ctx = get_context_data(context_id);
-    if (!ctx || !ctx->command_buffer) {
-        log_error("get_context_command_buffer_ptr: invalid context %d or no buffer", context_id);
+    if (!ctx || !ctx->reader.buffer) {
+        log_error("get_context_buffer_ptr: invalid context %d or no buffer", context_id);
         return 0;
     }
-    return (uint32_t)(uintptr_t)ctx->command_buffer;
+    return (uint32_t)(uintptr_t)ctx->reader.buffer;
 }

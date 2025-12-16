@@ -50,11 +50,11 @@ int release_reference(int surface_id);
 __attribute__((export_name("get_context_surface_id")))
 int get_context_surface_id(int context_id);
 
-__attribute__((export_name("get_max_context_commands")))
-int get_max_context_commands(void);
+__attribute__((export_name("get_context_buffer_size_words")))
+int get_context_buffer_size_words(void);
 
-__attribute__((export_name("get_context_command_buffer_ptr")))
-uint32_t get_context_command_buffer_ptr(int context_id);
+__attribute__((export_name("get_context_buffer_ptr")))
+uint32_t get_context_buffer_ptr(int context_id);
 
 int clip_x(int x, const RenderSurface* surf);
 int clip_y(int y, const RenderSurface* surf);

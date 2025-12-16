@@ -5,6 +5,7 @@ plugins {
 
 import java.net.URL
 import java.net.URLClassLoader
+import org.gradle.api.tasks.testing.Test
 
 java {
     toolchain {
@@ -34,6 +35,7 @@ dependencies {
     implementation(project(":awtea-util"))
     
     testImplementation(project(":awtea-test-util"))
+    testImplementation(project(":awtea-classlib"))  // For TeaVM to access AWT implementations
     testImplementation("org.teavm:teavm-tooling:0.13.0")
     testImplementation("org.teavm:teavm-platform:0.13.0")
     testImplementation("org.teavm:teavm-jso-impl:0.13.0")
@@ -143,6 +145,7 @@ tasks.register("buildDenoJavaTests") {
         tool.setTargetFileName("classes.js")
         tool.mainClass = "me.mdbell.awtea.gfx.test.DenoJUnitRunner"
         tool.optimizationLevel = org.teavm.vm.TeaVMOptimizationLevel.SIMPLE
+        tool.setObfuscated(false)
         tool.isSourceMapsFileGenerated = true
         tool.isDebugInformationGenerated = true
         tool.targetType = org.teavm.tooling.TeaVMTargetType.JAVASCRIPT
@@ -156,8 +159,41 @@ tasks.register("buildDenoJavaTests") {
         val classLoader = URLClassLoader(urls.toTypedArray(), Thread.currentThread().contextClassLoader)
         tool.classLoader = classLoader
         
+        println("Generating JavaScript with TeaVM...")
+        println("Main class: ${tool.mainClass}")
+        println("Output: ${outputDir}/classes.js")
+        
         tool.generate()
-        println("Generated JavaScript test bundle: ${outputDir}/classes.js")
+        
+        val maxProblemsToShow = 20
+        
+        // Check for problems
+        if (tool.problemProvider.severeProblems.isNotEmpty()) {
+            println("ERROR: TeaVM encountered ${tool.problemProvider.severeProblems.size} severe problems:")
+            tool.problemProvider.severeProblems.take(maxProblemsToShow).forEach {
+                println("  Severity: ${it.severity}")
+                println("  Location: ${it.location}")
+                println("  Text: ${it.text}")
+                if (it.params != null && it.params.isNotEmpty()) {
+                    println("  Params: ${it.params.joinToString(", ")}")
+                }
+                println()
+            }
+            if (tool.problemProvider.severeProblems.size > maxProblemsToShow) {
+                println("  ... and ${tool.problemProvider.severeProblems.size - maxProblemsToShow} more problems")
+            }
+            throw GradleException("TeaVM compilation failed with severe problems")
+        }
+        
+        if (tool.problemProvider.problems.isNotEmpty()) {
+            println("WARNING: TeaVM encountered problems:")
+            tool.problemProvider.problems.forEach {
+                println("  - ${it.location}: ${it.text}")
+            }
+        }
+        
+        val outputFile = File(outputDir, "classes.js")
+        println("Generated JavaScript test bundle: ${outputDir}/classes.js (${outputFile.length()} bytes)")
     }
 }
 
@@ -167,10 +203,30 @@ tasks.register<Exec>("denoTestJava") {
     group = "verification"
     
     dependsOn("buildDenoJavaTests")
+    dependsOn("buildAwtRasterWasm")  // Ensure WASM file is built
     
-    workingDir = file("src/test/deno")
-    commandLine("deno", "test", "--allow-read", "java_tests.ts")
+    // Run from module root so Java code can find WASM at build/wasm/awt_raster.wasm
+    workingDir = projectDir
+    
+    // Use absolute path to the test file and allow file reading
+    val testFile = file("src/test/deno/java_tests.ts").absolutePath
+    commandLine("deno", "test", "-A", testFile)
     
     inputs.files(sourceSets["test"].allSource)
     inputs.file("${layout.buildDirectory.get()}/deno-tests/classes.js")
+    inputs.file("build/wasm/awt_raster.wasm")
+    
+    // Set environment variable to help with file URL resolution
+    environment("DENO_DIR", layout.buildDirectory.dir(".deno").get().asFile.absolutePath)
+    environment("DENO_JOBS", "1")
+}
+
+// Integrate Deno tests with the standard test task
+tasks.named<Test>("test") {
+    // Skip standard JUnit test execution since tests run via Deno
+    enabled = false
+    
+    // Make test depend on denoTestJava to run Deno tests
+    dependsOn("denoTestJava")
+    dependsOn("denoTest")
 }

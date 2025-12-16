@@ -14,6 +14,8 @@ static inline RenderSurface make_render_surface(const SurfaceData* data, const S
     surf.argb[COLOR_BG] = ctx->argb[COLOR_BG];
     surf.transform = ctx->transform;
     surf.clip = ctx->clip;
+    surf.composite_mode = ctx->composite_mode;
+    surf.composite_alpha = ctx->composite_alpha;
     return surf;
 }
 

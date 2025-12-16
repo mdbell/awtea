@@ -1,0 +1,109 @@
+name: Verify Documentation Generation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'awtea-util/src/main/java/me/mdbell/awtea/util/ApiDiff.java'
+      - 'awtea-util/src/main/java/me/mdbell/awtea/util/coverage/**'
+      - 'awtea-classlib/**'
+      - 'build.gradle.kts'
+      - '.github/workflows/verify-docs.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'awtea-util/src/main/java/me/mdbell/awtea/util/ApiDiff.java'
+      - 'awtea-util/src/main/java/me/mdbell/awtea/util/coverage/**'
+      - 'awtea-classlib/**'
+      - 'build.gradle.kts'
+      - '.github/workflows/verify-docs.yml'
+
+jobs:
+  verify-docs-generation:
+    name: Verify Documentation Generation
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'gradle'
+      
+      - name: Generate documentation
+        run: ./gradlew generateDocs
+      
+      - name: Verify HTML report exists and is non-empty
+        run: |
+          if [ ! -f docs/coverage/report.html ]; then
+            echo "ERROR: docs/coverage/report.html not found"
+            exit 1
+          fi
+          
+          HTML_LINES=$(wc -l < docs/coverage/report.html)
+          if [ "$HTML_LINES" -lt 100 ]; then
+            echo "ERROR: HTML report has only $HTML_LINES lines (expected at least 100)"
+            exit 1
+          fi
+          
+          echo "✓ HTML report generated successfully ($HTML_LINES lines)"
+      
+      - name: Verify Markdown report exists and is non-empty
+        run: |
+          if [ ! -f docs/coverage/report.md ]; then
+            echo "ERROR: docs/coverage/report.md not found"
+            exit 1
+          fi
+          
+          MD_LINES=$(wc -l < docs/coverage/report.md)
+          if [ "$MD_LINES" -lt 30 ]; then
+            echo "ERROR: Markdown report has only $MD_LINES lines (expected at least 30)"
+            exit 1
+          fi
+          
+          echo "✓ Markdown report generated successfully ($MD_LINES lines)"
+      
+      - name: Verify Markdown directory structure
+        run: |
+          if [ ! -d docs/coverage/md ]; then
+            echo "ERROR: docs/coverage/md directory not found"
+            exit 1
+          fi
+          
+          MD_FILE_COUNT=$(find docs/coverage/md -name "*.md" -type f | wc -l)
+          if [ "$MD_FILE_COUNT" -lt 50 ]; then
+            echo "ERROR: Only $MD_FILE_COUNT markdown files found (expected at least 50)"
+            exit 1
+          fi
+          
+          echo "✓ Markdown directory structure verified ($MD_FILE_COUNT files)"
+      
+      - name: Check for minimum class coverage
+        run: |
+          # Extract the number of classes from report.md
+          CLASS_COUNT=$(grep -oP '\*\*Classes\*\*: \K[0-9]+' docs/coverage/report.md || echo "0")
+          
+          if [ "$CLASS_COUNT" -lt 50 ]; then
+            echo "ERROR: Only $CLASS_COUNT classes documented (expected at least 50)"
+            exit 1
+          fi
+          
+          echo "✓ Documentation covers $CLASS_COUNT classes"
+      
+      - name: Archive documentation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage-docs
+          path: |
+            docs/coverage/report.html
+            docs/coverage/report.md
+            docs/coverage/md/
+          retention-days: 30
