@@ -172,8 +172,9 @@ public class WasmRasterizer implements Rasterizer {
                 case SET_CLIP_RECT:
                     Shape shape = (Shape) cmd.obj;
                     if (shape == null) {
-                        // Clear clip - use sentinel value (negative width) to indicate no clipping
-                        commandBuffer.emitSetClipRect(0, 0, -1, 0);
+                        // Clear clip - use sentinel value (negative width/height) to indicate no
+                        // clipping
+                        commandBuffer.emitSetClipRect(0, 0, -1, -1);
                     } else {
                         Rectangle bounds = shape.getBounds();
                         commandBuffer.emitSetClipRect(bounds.x, bounds.y, bounds.width, bounds.height);
