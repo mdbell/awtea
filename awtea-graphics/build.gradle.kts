@@ -144,6 +144,7 @@ tasks.register("buildDenoJavaTests") {
         tool.setTargetFileName("classes.js")
         tool.mainClass = "me.mdbell.awtea.gfx.test.DenoJUnitRunner"
         tool.optimizationLevel = org.teavm.vm.TeaVMOptimizationLevel.SIMPLE
+        tool.setObfuscated(false)
         tool.isSourceMapsFileGenerated = true
         tool.isDebugInformationGenerated = true
         tool.targetType = org.teavm.tooling.TeaVMTargetType.JAVASCRIPT
@@ -208,7 +209,7 @@ tasks.register<Exec>("denoTestJava") {
     
     // Use absolute path to the test file and allow file reading
     val testFile = file("src/test/deno/java_tests.ts").absolutePath
-    commandLine("deno", "test", "--allow-read", "--allow-net", testFile)
+    commandLine("deno", "test", "-A", testFile)
     
     inputs.files(sourceSets["test"].allSource)
     inputs.file("${layout.buildDirectory.get()}/deno-tests/classes.js")
@@ -216,6 +217,7 @@ tasks.register<Exec>("denoTestJava") {
     
     // Set environment variable to help with file URL resolution
     environment("DENO_DIR", layout.buildDirectory.dir(".deno").get().asFile.absolutePath)
+    environment("DENO_JOBS", "1")
 }
 
 // Integrate Deno tests with the standard test task

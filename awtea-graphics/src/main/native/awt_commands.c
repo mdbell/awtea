@@ -190,8 +190,8 @@ static int handle_set_composite(SurfaceContext* ctx, RenderSurface* surface, Com
     }
     ctx->composite_mode = (CompositeMode) read_u32(reader);
     ctx->composite_alpha = read_float(reader);
-    surface.composite_mode = ctx->composite_mode;
-    surface.composite_alpha = ctx->composite_alpha;
+    surface->composite_mode = ctx->composite_mode;
+    surface->composite_alpha = ctx->composite_alpha;
     log_debug("Set composite mode=%d, alpha=%.2f", 
                 ctx->composite_mode, ctx->composite_alpha);
     return 0;
