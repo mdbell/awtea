@@ -33,7 +33,7 @@ dependencies {
 teavm {
     js {
         // Configure JavaScript generation
-        mainClass = "me.mdbell.awtea.examples.guidemo.GuiDemo"
+        mainClass = "me.mdbell.awtea.examples.guidemo.GuiDemoLauncher"
         outputDir = layout.buildDirectory.dir("dist").get().asFile
         moduleType = JSModuleType.ES2015
 

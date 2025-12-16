@@ -31,7 +31,7 @@ dependencies {
 teavm {
     js {
         // Configure JavaScript generation
-        mainClass = "me.mdbell.awtea.examples.helloworld.HelloWorld"
+        mainClass = "me.mdbell.awtea.examples.helloworld.HelloWorldLauncher"
         outputDir = layout.buildDirectory.dir("dist").get().asFile
         moduleType = JSModuleType.ES2015
 

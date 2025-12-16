@@ -5,15 +5,17 @@ This directory contains example applications demonstrating how to use awtea to r
 ## Available Examples
 
 ### 1. Hello World (`hello-world/`)
-A minimal AWT applet that displays "Hello, awtea!" in a window. This is the simplest possible example to get started.
+A minimal AWT applet that displays "Hello, awtea!" in a canvas. This demonstrates the new applet factory and launcher pattern.
 
 **Features demonstrated:**
-- Basic Frame usage
+- Applet lifecycle (init/start)
+- Applet factory registration pattern
+- Automatic applet discovery from HTML
 - Simple graphics rendering with drawString
-- Setting up a basic AWT application structure
+- ES2015 module integration
 
 ### 2. GUI Demo (`gui-demo/`)
-A more comprehensive example showcasing multiple AWT components, layouts, graphics primitives, and event handling.
+A more comprehensive example showcasing multiple AWT components, layouts, graphics primitives, and event handling using the applet launcher.
 
 **Features demonstrated:**
 - Multiple component types (containers, panels, canvas)
@@ -21,6 +23,7 @@ A more comprehensive example showcasing multiple AWT components, layouts, graphi
 - Graphics primitives (lines, rectangles, arcs, polygons, colors)
 - Text rendering with different fonts
 - User interaction
+- Complex applet structure
 
 ## Building and Running Examples
 
@@ -109,10 +112,15 @@ Examples use `project(":awtea-classlib")` dependencies to reference the parent a
 ## Tips for Creating Your Own Applications
 
 1. **Start Simple**: Begin with the hello-world example and gradually add features
-2. **Use Standard AWT Classes**: Use standard `java.awt.*` classes (Frame, Canvas, Graphics, etc.) - TeaVM will automatically alias them to awtea's implementations
-3. **Lightweight Components**: Most UI components should be lightweight (no peers)
-4. **Canvas for Custom Drawing**: Use `Canvas` for custom graphics
-5. **Check Documentation**: Review the main project docs for component mapping and available features
+2. **Use the Applet Pattern**: Extend `Applet` and use `init()` and `start()` lifecycle methods
+3. **Register Your Applet**: Use `AppletRegistry.register("name", YourApplet::new)` in a static block
+4. **Create a Launcher**: Make a launcher class that loads your applet and calls `AppletLauncher.main()`
+5. **Use Canvas Elements**: Add `<canvas>` elements with `data-awtea-applet="name"` in your HTML
+6. **Lightweight Components**: Most UI components should be lightweight (no peers)
+7. **Canvas for Custom Drawing**: Use `Canvas` for custom graphics
+8. **Check Documentation**: Review the [Applet Launcher Guide](../docs/APPLET_LAUNCHER.md) for detailed usage
+
+For a complete guide on the applet factory and launcher system, see [APPLET_LAUNCHER.md](../docs/APPLET_LAUNCHER.md).
 
 ## Contributing
 

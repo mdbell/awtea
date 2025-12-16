@@ -1,0 +1,100 @@
+package me.mdbell.awtea.examples.guidemo;
+
+import me.mdbell.awtea.classlib.java.applet.AppletRegistry;
+
+import java.applet.Applet;
+import java.awt.*;
+
+/**
+ * Comprehensive GUI demo applet showcasing awtea features including:
+ * - Multiple containers and components
+ * - Interactive drawing canvas
+ * - Graphics primitives
+ * - Event handling
+ * - Text rendering
+ */
+public class GuiDemoApplet extends Applet {
+    
+    // Register this applet with the registry at class load time
+    static {
+        AppletRegistry.register("gui-demo", GuiDemoApplet::new);
+    }
+    
+    @Override
+    public void init() {
+        // Create a container to hold everything
+        Container mainPanel = new Container();
+        
+        // Add title panel at the top
+        Container titlePanel = new Container() {
+            @Override
+            public void paint(Graphics g) {
+                g.setColor(new Color(70, 130, 180)); // Steel blue
+                g.fillRect(0, 0, getWidth(), getHeight());
+                
+                g.setColor(Color.WHITE);
+                g.setFont(new Font("SansSerif", Font.BOLD, 24));
+                g.drawString("awtea GUI Demo", 250, 35);
+                
+                g.setFont(new Font("SansSerif", Font.PLAIN, 14));
+                g.drawString("Interactive AWT components running in your browser", 200, 55);
+            }
+        };
+        titlePanel.setBounds(0, 0, 800, 70);
+        mainPanel.add(titlePanel);
+        
+        // Add interactive drawing canvas
+        DrawingCanvas canvas = new DrawingCanvas();
+        canvas.setBounds(10, 80, 500, 300);
+        mainPanel.add(canvas);
+        
+        // Add graphics demo panel
+        GraphicsDemoPanel demoPanel = new GraphicsDemoPanel();
+        demoPanel.setBounds(520, 80, 270, 240);
+        mainPanel.add(demoPanel);
+        
+        // Add alpha blending demo panel
+        AlphaBlendingDemoPanel alphaPanel = new AlphaBlendingDemoPanel();
+        alphaPanel.setBounds(520, 330, 270, 250);
+        mainPanel.add(alphaPanel);
+        
+        // Add info panel at the bottom
+        Container infoPanel = new Container() {
+            @Override
+            public void paint(Graphics g) {
+                g.setColor(new Color(245, 245, 245));
+                g.fillRect(0, 0, getWidth(), getHeight());
+                
+                // Draw border
+                g.setColor(new Color(200, 200, 200));
+                g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
+                
+                g.setColor(Color.BLACK);
+                g.setFont(new Font("SansSerif", Font.BOLD, 12));
+                g.drawString("Instructions:", 10, 20);
+                
+                g.setFont(new Font("SansSerif", Font.PLAIN, 11));
+                g.drawString("• Click on the left canvas to draw colored squares", 10, 40);
+                g.drawString("• Move your mouse to see real-time coordinates", 10, 55);
+                g.drawString("• View graphics primitives and alpha blending on right", 10, 70);
+                
+                g.setFont(new Font("SansSerif", Font.ITALIC, 10));
+                g.setColor(Color.GRAY);
+                g.drawString("Powered by awtea - Java AWT for the Web", 10, 95);
+            }
+        };
+        infoPanel.setBounds(10, 390, 500, 110);
+        mainPanel.add(infoPanel);
+        
+        mainPanel.setSize(800, 600);
+        
+        // Add the main panel to the applet
+        add(mainPanel);
+    }
+    
+    @Override
+    public void start() {
+        // Request repaint when applet starts
+        repaint();
+    }
+}
