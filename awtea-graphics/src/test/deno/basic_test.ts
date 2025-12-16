@@ -75,7 +75,7 @@ Deno.test("Fill rect with red", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
+  // Using variable-length commands directly
 
   // Set color to opaque red (0xFFFF0000)
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
@@ -111,7 +111,7 @@ Deno.test("Fill rect with partial area", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
+  // Using variable-length commands directly
 
   // Set color to opaque blue (0xFF0000FF)
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
@@ -154,7 +154,7 @@ Deno.test("Clear rect", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(3);
+  // Using variable-length commands directly
 
   // Fill entire surface with red
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
@@ -203,7 +203,7 @@ Deno.test("Draw line", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
+  // Using variable-length commands directly
 
   // Set color to white
   const white = WasmRasterizer.makeARGB(255, 255, 255, 255);
@@ -241,7 +241,7 @@ Deno.test("Draw rect outline", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
+  // Using variable-length commands directly
 
   // Set color to green
   const green = WasmRasterizer.makeARGB(255, 0, 255, 0);
@@ -281,7 +281,7 @@ Deno.test("Clipping rect", async () => {
   const context = rasterizer.createContext(surfaceId);
 
   // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(3);
+  // Using variable-length commands directly
 
   // Set clip rect to (5, 5, 10, 10)
   rasterizer.writeCommand(
