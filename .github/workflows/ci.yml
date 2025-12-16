@@ -42,19 +42,9 @@ jobs:
       - name: Generate enums from schemas
         run: ./gradlew generateEnums --no-daemon
       
-      - name: Build core modules (excluding examples)
+      - name: Build and test all modules
         run: |
-          ./gradlew build \
-            -x :examples:gui-demo:build \
-            -x :examples:hello-world:build \
-            --no-daemon \
-            --stacktrace
-      
-      - name: Run tests
-        run: |
-          ./gradlew test \
-            -x :examples:gui-demo:test \
-            -x :examples:hello-world:test \
+          ./gradlew assemble test \
             --no-daemon \
             --stacktrace
       

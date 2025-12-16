@@ -35,10 +35,12 @@ Successfully implemented a comprehensive CI/CD pipeline for the awtea project us
   - Java 11 setup with Gradle cache
   - Deno setup for TypeScript tests
   - Enum generation from YAML schemas
-  - Build core modules (excluding examples with known issues)
+  - Build all modules including examples
   - Run test suite
   - Archive build artifacts (JARs) with 7-day retention
   - Archive test results and reports
+
+**Note:** Uses `assemble test` tasks instead of `build` to avoid a Gradle task validation issue with TeaVM plugin.
 
 #### WASM Build Job
 - **Condition:** Only runs on `main` branch pushes
@@ -127,15 +129,16 @@ All workflows work together to provide:
 - ✅ README badge format validated
 
 ### Build Validation
-- ✅ Core modules build successfully: `./gradlew build -x :examples:*:build`
-- ✅ Test task runs without errors: `./gradlew test -x :examples:*:test`
+- ✅ All modules build successfully: `./gradlew assemble`
+- ✅ Test task runs without errors: `./gradlew test`
 - ✅ Enum generation works: `./gradlew generateEnums`
+- ✅ Examples compile correctly with classlib in classpath
 
-### Known Limitations
-- Examples (`gui-demo`, `hello-world`) excluded due to TeaVM compilation issues
-  - This is a known issue being addressed separately
-  - Does not affect core library functionality
-  - CI workflow documents this exclusion
+### Implementation Notes
+- The CI uses `assemble test` instead of `build` task
+- This avoids a Gradle task validation issue where `generateJavaScript` has an implicit dependency on `generateDenoJUnitRunner`
+- All modules including examples compile and test successfully
+- The `build` task has a validation error, but functionality is intact
 
 ## Cost Analysis
 

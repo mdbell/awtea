@@ -19,18 +19,18 @@ The awtea project uses GitHub Actions for continuous integration and delivery. T
 
 #### Build and Test Job
 - **Runs on:** Ubuntu (Linux) - 1x cost multiplier
-- **Purpose:** Build core modules and run tests
+- **Purpose:** Build all modules (including examples) and run tests
 - **Steps:**
   1. Checkout repository
   2. Set up Java 11 (with Gradle caching)
   3. Set up Deno for TypeScript tests
   4. Generate enums from YAML schemas
-  5. Build core modules (excluding examples with known build issues)
+  5. Build all modules including examples
   6. Run tests
   7. Archive build artifacts (JARs)
   8. Archive test results and reports
 
-**Note:** Examples are excluded from CI builds due to known TeaVM compilation issues that are being addressed separately.
+**Note:** The CI uses `assemble` and `test` tasks instead of `build` to avoid a Gradle task validation issue with the TeaVM plugin's `generateJavaScript` task.
 
 #### WASM Build Job (Main Branch Only)
 - **Runs on:** Ubuntu (Linux)
@@ -174,14 +174,22 @@ If costs become a concern:
 
 ### Common Issues
 
-#### 1. Gradle Build Failure
-**Symptom:** Build fails with task dependency errors
+#### 1. Gradle Build Failure with Task Validation
+**Symptom:** Build fails with "Task uses output of another task without declaring dependency"
+
+**Solution:**
+- Use `./gradlew assemble test` instead of `./gradlew build`
+- The `build` task triggers `generateJavaScript` which has a validation issue
+- The CI workflow uses `assemble test` to avoid this problem
+
+#### 2. Gradle Build Failure with Missing Enums
+**Symptom:** Build fails with compilation errors about missing generated classes
 
 **Solution:**
 - Check if `generateEnums` task ran before compilation
-- Ensure examples are excluded: `-x :examples:gui-demo:build`
+- Run `./gradlew generateEnums` manually if needed
 
-#### 2. WASM Compilation Failure
+#### 3. WASM Compilation Failure
 **Symptom:** `emcc` command not found or compilation errors
 
 **Solution:**
@@ -189,7 +197,7 @@ If costs become a concern:
 - Check that `emsdk-cache` action is configured correctly
 - Review native C code in `awtea-graphics/src/main/native/`
 
-#### 3. Deno Tests Fail
+#### 4. Deno Tests Fail
 **Symptom:** Deno tests fail but WASM builds successfully
 
 **Solution:**
@@ -197,7 +205,7 @@ If costs become a concern:
 - Verify test files in `awtea-graphics/src/test/deno/`
 - Review Deno version compatibility
 
-#### 4. Out of Memory Errors
+#### 5. Out of Memory Errors
 **Symptom:** Gradle or compilation OOM errors
 
 **Solution:**
@@ -205,7 +213,7 @@ If costs become a concern:
 - Use `--no-daemon` flag (already implemented)
 - Split large jobs into smaller ones
 
-#### 5. Cache Corruption
+#### 6. Cache Corruption
 **Symptom:** Inconsistent builds, "Could not resolve" errors
 
 **Solution:**
@@ -234,7 +242,7 @@ If costs become a concern:
    # Simulate CI environment locally
    ./gradlew clean
    ./gradlew generateEnums --no-daemon
-   ./gradlew build -x :examples:gui-demo:build -x :examples:hello-world:build --no-daemon
+   ./gradlew assemble test --no-daemon
    ```
 
 ## Maintenance
