@@ -56,6 +56,13 @@ tasks.register<Copy>("copyWebapp") {
 // Make sure HTML is copied before TeaVM runs
 tasks.named("generateJavaScript") {
     dependsOn("copyWebapp")
+    
+    // Fix implicit dependency: ensure generateJavaScript runs after
+    // generateDenoJUnitRunner in dependency projects (awtea-graphics)
+    // This prevents Gradle task validation errors when running full builds
+    project(":awtea-graphics").tasks.findByName("generateDenoJUnitRunner")?.let {
+        mustRunAfter(it)
+    }
 }
 
 tasks.named("build") {

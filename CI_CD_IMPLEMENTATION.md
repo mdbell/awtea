@@ -40,8 +40,6 @@ Successfully implemented a comprehensive CI/CD pipeline for the awtea project us
   - Archive build artifacts (JARs) with 7-day retention
   - Archive test results and reports
 
-**Note:** Uses `assemble test` tasks instead of `build` to avoid a Gradle task validation issue with TeaVM plugin.
-
 #### WASM Build Job
 - **Condition:** Only runs on `main` branch pushes
 - **Purpose:** Build expensive native WASM rasterizer
@@ -129,16 +127,17 @@ All workflows work together to provide:
 - ✅ README badge format validated
 
 ### Build Validation
-- ✅ All modules build successfully: `./gradlew assemble`
+- ✅ All modules build successfully: `./gradlew build`
 - ✅ Test task runs without errors: `./gradlew test`
 - ✅ Enum generation works: `./gradlew generateEnums`
 - ✅ Examples compile correctly with classlib in classpath
+- ✅ Full build including examples works without task validation errors
 
 ### Implementation Notes
-- The CI uses `assemble test` instead of `build` task
-- This avoids a Gradle task validation issue where `generateJavaScript` has an implicit dependency on `generateDenoJUnitRunner`
-- All modules including examples compile and test successfully
-- The `build` task has a validation error, but functionality is intact
+- Fixed Gradle task validation issue by adding `mustRunAfter` constraint
+- The `generateJavaScript` tasks in examples now properly run after `generateDenoJUnitRunner` from dependency projects
+- This resolves the implicit dependency error without using a workaround
+- All modules including examples build, test, and generate JavaScript successfully
 
 ## Cost Analysis
 

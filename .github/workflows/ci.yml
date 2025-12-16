@@ -44,7 +44,7 @@ jobs:
       
       - name: Build and test all modules
         run: |
-          ./gradlew assemble test \
+          ./gradlew build \
             --no-daemon \
             --stacktrace
       

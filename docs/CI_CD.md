@@ -30,8 +30,6 @@ The awtea project uses GitHub Actions for continuous integration and delivery. T
   7. Archive build artifacts (JARs)
   8. Archive test results and reports
 
-**Note:** The CI uses `assemble` and `test` tasks instead of `build` to avoid a Gradle task validation issue with the TeaVM plugin's `generateJavaScript` task.
-
 #### WASM Build Job (Main Branch Only)
 - **Runs on:** Ubuntu (Linux)
 - **Condition:** Only runs on pushes to `main` branch
@@ -174,22 +172,14 @@ If costs become a concern:
 
 ### Common Issues
 
-#### 1. Gradle Build Failure with Task Validation
-**Symptom:** Build fails with "Task uses output of another task without declaring dependency"
-
-**Solution:**
-- Use `./gradlew assemble test` instead of `./gradlew build`
-- The `build` task triggers `generateJavaScript` which has a validation issue
-- The CI workflow uses `assemble test` to avoid this problem
-
-#### 2. Gradle Build Failure with Missing Enums
+#### 1. Gradle Build Failure with Missing Enums
 **Symptom:** Build fails with compilation errors about missing generated classes
 
 **Solution:**
 - Check if `generateEnums` task ran before compilation
 - Run `./gradlew generateEnums` manually if needed
 
-#### 3. WASM Compilation Failure
+#### 2. WASM Compilation Failure
 **Symptom:** `emcc` command not found or compilation errors
 
 **Solution:**
@@ -197,7 +187,7 @@ If costs become a concern:
 - Check that `emsdk-cache` action is configured correctly
 - Review native C code in `awtea-graphics/src/main/native/`
 
-#### 4. Deno Tests Fail
+#### 3. Deno Tests Fail
 **Symptom:** Deno tests fail but WASM builds successfully
 
 **Solution:**
@@ -205,7 +195,7 @@ If costs become a concern:
 - Verify test files in `awtea-graphics/src/test/deno/`
 - Review Deno version compatibility
 
-#### 5. Out of Memory Errors
+#### 4. Out of Memory Errors
 **Symptom:** Gradle or compilation OOM errors
 
 **Solution:**
@@ -213,7 +203,7 @@ If costs become a concern:
 - Use `--no-daemon` flag (already implemented)
 - Split large jobs into smaller ones
 
-#### 6. Cache Corruption
+#### 5. Cache Corruption
 **Symptom:** Inconsistent builds, "Could not resolve" errors
 
 **Solution:**
@@ -242,7 +232,7 @@ If costs become a concern:
    # Simulate CI environment locally
    ./gradlew clean
    ./gradlew generateEnums --no-daemon
-   ./gradlew assemble test --no-daemon
+   ./gradlew build --no-daemon
    ```
 
 ## Maintenance
