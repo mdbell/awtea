@@ -343,26 +343,18 @@ Deno.test("Multiple surfaces", async () => {
   assertEquals(dims2.height, 20);
 
   // Fill surface1 with red
-  const cmdBuffer1 = rasterizer.createCommandBuffer(2);
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer1, 0, WasmRasterizer.setColorCommand(red));
-  rasterizer.writeCommand(
-    cmdBuffer1,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 10, 10),
-  );
-  rasterizer.renderCommands(contextId1, cmdBuffer1, 2);
+  rasterizer.renderVariableLengthCommands(contextId1, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 10, 10),
+  ]);
 
   // Fill surface2 with blue
-  const cmdBuffer2 = rasterizer.createCommandBuffer(2);
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
-  rasterizer.writeCommand(cmdBuffer2, 0, WasmRasterizer.setColorCommand(blue));
-  rasterizer.writeCommand(
-    cmdBuffer2,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 20, 20),
-  );
-  rasterizer.renderCommands(contextId2, cmdBuffer2, 2);
+  rasterizer.renderVariableLengthCommands(contextId2, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 20, 20),
+  ]);
 
   // Verify each surface has its own color
   const pixels1 = rasterizer.copySurfacePixels(surface1);
