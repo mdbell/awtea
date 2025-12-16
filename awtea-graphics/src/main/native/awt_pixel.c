@@ -143,7 +143,7 @@ void blend_pixel(SurfaceData* surface,
                          COMPOSITE_SRC_OVER, 1.0f);
 }
 
-void blend_pixel_composite(RenderSurface* surface,
+void blend_pixel_composite(SurfaceData* surface,
                            int x, int y,
                            PixelFormat srcFormat,
                            uint32_t srcPixel,

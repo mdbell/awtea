@@ -101,7 +101,4 @@ typedef struct {
     
     // Variable-length command buffer reader for this context
     CommandReader reader;
-<<<<<<< HEAD
-} SurfaceContext;
-=======
 } SurfaceContext;
