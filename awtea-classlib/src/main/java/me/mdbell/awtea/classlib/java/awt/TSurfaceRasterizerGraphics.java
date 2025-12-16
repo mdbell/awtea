@@ -272,8 +272,8 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             setClip(x, y, width, height);
         } else {
             clip = clip.intersection(new TRectangle(x, y, width, height));
-            // op gets pushed in setClip, so we only need to push it here
-            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, this.clip));
+            // Transform the clip to device coordinates before sending
+            pushTransformedClip();
         }
     }
 
@@ -285,7 +285,8 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             return;
         }
         this.clip = new TRectangle(x, y, width, height);
-        pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, this.clip));
+        // Transform the clip to device coordinates before sending
+        pushTransformedClip();
 
     }
 
@@ -299,7 +300,49 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             // non-rect clips not implemented
             throw new UnsupportedOperationException("Non-rect clip not supported yet");
         }
-        pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, this.clip));
+        // Transform the clip to device coordinates before sending
+        if (this.clip == null) {
+            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT));
+        } else {
+            pushTransformedClip();
+        }
+    }
+
+    /**
+     * Transform the current clip rectangle to device coordinates and push it to the command buffer.
+     * This is necessary because the clip is stored in user space but the rasterizer needs it in
+     * device coordinates.
+     */
+    private void pushTransformedClip() {
+        if (clip == null) {
+            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT));
+            return;
+        }
+        
+        // Transform the four corners of the clip rectangle
+        double[] pts = new double[]{
+            clip.x, clip.y,                          // top-left
+            clip.x + clip.width, clip.y,             // top-right
+            clip.x, clip.y + clip.height,            // bottom-left
+            clip.x + clip.width, clip.y + clip.height // bottom-right
+        };
+        transform.transform(pts, 0, pts, 0, 4);
+        
+        // Find the bounding box of the transformed corners
+        double minX = Math.min(Math.min(pts[0], pts[2]), Math.min(pts[4], pts[6]));
+        double minY = Math.min(Math.min(pts[1], pts[3]), Math.min(pts[5], pts[7]));
+        double maxX = Math.max(Math.max(pts[0], pts[2]), Math.max(pts[4], pts[6]));
+        double maxY = Math.max(Math.max(pts[1], pts[3]), Math.max(pts[5], pts[7]));
+        
+        // Convert to integer rectangle in device coordinates
+        int deviceX = (int) Math.floor(minX);
+        int deviceY = (int) Math.floor(minY);
+        int deviceWidth = (int) Math.ceil(maxX) - deviceX;
+        int deviceHeight = (int) Math.ceil(maxY) - deviceY;
+        
+        // Create a transformed clip rectangle and push it
+        TRectangle deviceClip = new TRectangle(deviceX, deviceY, deviceWidth, deviceHeight);
+        pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, deviceClip));
     }
 
     @Override
