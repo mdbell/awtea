@@ -213,6 +213,7 @@ canvas.destroy();
 - [System Properties](docs/SYSTEM_PROPERTIES.md) - Configuration via system properties
 - [CI/CD Pipeline](docs/CI_CD.md) - Continuous integration and deployment setup
 - [Self-Hosted Runners](docs/SELF_HOSTED_RUNNER.md) - Setup guide for GitHub Actions self-hosted runners
+- [Documentation Hosting](docs/DOCUMENTATION_HOSTING.md) - Guide for hosting project documentation
 
 ### Development Tools
 

@@ -72,6 +72,30 @@ Ensures that the setup steps documented for Copilot agents work correctly, inclu
 - Enum generation
 - Gradle dependency download
 
+### 4. Deploy Documentation (`deploy-docs.yml`)
+
+**Triggers:**
+- Push to `main` branch with changes to documentation
+- Manual workflow dispatch
+
+**Purpose:** Automatically deploy project documentation to GitHub Pages
+
+**Jobs:**
+
+#### Generate Documentation Job
+- Generates API coverage reports using `./gradlew generateDocs`
+- Copies all documentation from `docs/` directory
+- Creates an index page with navigation links
+- Uploads artifact for Pages deployment
+
+#### Deploy Job
+- Deploys generated documentation to GitHub Pages
+- Makes documentation accessible at `https://<username>.github.io/<repository>/`
+
+**Note:** Requires GitHub Pages to be enabled in repository settings with "GitHub Actions" as the source.
+
+For detailed hosting options, see the [Documentation Hosting Guide](DOCUMENTATION_HOSTING.md).
+
 ## Cost Optimization Strategies
 
 ### Current Optimizations
@@ -314,4 +338,6 @@ See the [Self-Hosted Runner Setup Guide](SELF_HOSTED_RUNNER.md) for detailed ins
 - [Building Java with Gradle](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle)
 - [Caching Dependencies](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows)
 - [GitHub Actions Billing](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions)
+- [GitHub Pages Deployment](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
 - [Self-Hosted Runners](SELF_HOSTED_RUNNER.md) - Setup guide for self-hosted runners
+- [Documentation Hosting](DOCUMENTATION_HOSTING.md) - Guide for hosting project documentation
