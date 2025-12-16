@@ -28,14 +28,41 @@ public class TAppletPeer {
      * @return The THeavyCanvas instance
      */
     @Getter
-    private final THeavyCanvas heavyCanvas;
+    private THeavyCanvas heavyCanvas;
+    
+    /**
+     * Creates a new applet peer without initialization.
+     * Must call {@link #initialize(HTMLDocument, TApplet, int, int)} before use.
+     */
+    public TAppletPeer() {
+        // Empty constructor for two-step initialization
+    }
+    
+    /**
+     * Initializes the peer with the specified document, applet, and size.
+     * This must be called after the peer is set on the applet to avoid NPE.
+     * 
+     * @param document The HTML document to create the canvas in
+     * @param applet The applet that this peer serves
+     * @param width Initial width in pixels
+     * @param height Initial height in pixels
+     */
+    public void initialize(HTMLDocument document, TApplet applet, int width, int height) {
+        // Create heavyweight canvas
+        heavyCanvas = new THeavyCanvas(document, applet, width, height);
+        
+        // Configure standard event handling
+        heavyCanvas.configureStandardEvents();
+    }
     
     /**
      * Creates a new applet peer with the specified document and applet.
      * 
      * @param document The HTML document to create the canvas in
      * @param applet The applet that this peer serves
+     * @deprecated Use {@link #TAppletPeer()} and {@link #initialize} instead for proper initialization order
      */
+    @Deprecated
     public TAppletPeer(HTMLDocument document, TApplet applet) {
         this(document, applet, 800, 600);
     }
@@ -47,13 +74,11 @@ public class TAppletPeer {
      * @param applet The applet that this peer serves
      * @param width Initial width in pixels
      * @param height Initial height in pixels
+     * @deprecated Use {@link #TAppletPeer()} and {@link #initialize} instead for proper initialization order
      */
+    @Deprecated
     public TAppletPeer(HTMLDocument document, TApplet applet, int width, int height) {
-        // Create heavyweight canvas
-        heavyCanvas = new THeavyCanvas(document, applet, width, height);
-        
-        // Configure standard event handling
-        heavyCanvas.configureStandardEvents();
+        initialize(document, applet, width, height);
     }
     
     /**

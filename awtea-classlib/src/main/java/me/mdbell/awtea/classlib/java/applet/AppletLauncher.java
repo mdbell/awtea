@@ -326,7 +326,18 @@ public final class AppletLauncher {
         // Cast to TApplet - this is safe at runtime due to TeaVM aliasing
         @SuppressWarnings("unchecked")
         TApplet tApplet = (TApplet) applet;
-        return new TAppletPeer(document, tApplet, width, height);
+        
+        // Create the peer but don't initialize the heavy canvas yet
+        TAppletPeer peer = new TAppletPeer();
+        
+        // Set the peer on the applet BEFORE creating the heavy canvas
+        // This prevents NPE if anything calls getGraphics() during construction
+        tApplet.setPeer(peer);
+        
+        // Now initialize the heavy canvas - the applet already has its peer set
+        peer.initialize(document, tApplet, width, height);
+        
+        return peer;
     }
 
     /**
