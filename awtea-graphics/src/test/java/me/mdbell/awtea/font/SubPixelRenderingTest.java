@@ -171,6 +171,45 @@ public class SubPixelRenderingTest {
 		Assert.assertTrue(nonWhitePixels > 0, "RasterFontRenderer with sub-pixel should produce output");
 	}
 
+	@Test
+	public void testAtlasBasedFontRendererWithSubPixel() {
+		// Test the AtlasBasedFontRenderer with sub-pixel rendering
+		me.mdbell.awtea.gfx.SurfaceBackend backend = me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
+		AtlasBasedFontRenderer renderer = new AtlasBasedFontRenderer(backend, 4, true);
+		Assert.assertNotNull(renderer, "Atlas renderer with sub-pixel should be created");
+
+		// Create a test surface
+		me.mdbell.awtea.gfx.Surface surface = backend.createCompatibleSurface(
+			100, 50, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+		Assert.assertNotNull(surface, "Test surface should be created");
+
+		// Clear to white
+		org.teavm.jso.typedarrays.Uint8ClampedArray pixels = surface.getPixelData();
+		if (pixels != null) {
+			for (int i = 0; i < pixels.getLength(); i++) {
+				pixels.set(i, (byte) 0xFF);
+			}
+		}
+
+		// Render some text
+		renderer.renderString(testFont, "Test", surface, 16.0f, 10, 30, 0xFF000000);
+
+		// Verify output was produced
+		boolean hasNonWhitePixels = false;
+		org.teavm.jso.typedarrays.Int32Array intPixels = new org.teavm.jso.typedarrays.Int32Array(
+			pixels.getBuffer(), pixels.getByteOffset(), pixels.getLength() / 4);
+		for (int i = 0; i < intPixels.getLength(); i++) {
+			if (intPixels.get(i) != 0xFFFFFFFF) {
+				hasNonWhitePixels = true;
+				break;
+			}
+		}
+		Assert.assertTrue(hasNonWhitePixels, "Atlas renderer with sub-pixel should produce output");
+
+		surface.destroy();
+		renderer.clearCache();
+	}
+
 	private GlyphRasterizer.RasterTarget createTarget(int width, int height, int[] pixels) {
 		return new GlyphRasterizer.RasterTarget() {
 			@Override

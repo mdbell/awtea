@@ -31,25 +31,37 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 	
 	private final GlyphAtlas atlas;
 	private final int supersample;
+	private final boolean subpixelRendering;
 	
 	private static final int DEFAULT_SUPERSAMPLE = 4;
 	
 	/**
-	 * Create a new AtlasBasedFontRenderer with default supersampling (4x).
+	 * Create a new AtlasBasedFontRenderer with default supersampling (4x) and no sub-pixel rendering.
 	 * 
 	 * @param backend the surface backend to use for atlas creation
 	 */
 	public AtlasBasedFontRenderer(SurfaceBackend backend) {
-		this(backend, DEFAULT_SUPERSAMPLE);
+		this(backend, DEFAULT_SUPERSAMPLE, false);
 	}
 	
 	/**
-	 * Create a new AtlasBasedFontRenderer with the specified supersampling factor.
+	 * Create a new AtlasBasedFontRenderer with the specified supersampling factor and no sub-pixel rendering.
 	 * 
 	 * @param backend the surface backend to use for atlas creation
 	 * @param supersample the supersampling factor (1 = no AA, 2-4 recommended)
 	 */
 	public AtlasBasedFontRenderer(SurfaceBackend backend, int supersample) {
+		this(backend, supersample, false);
+	}
+	
+	/**
+	 * Create a new AtlasBasedFontRenderer with the specified supersampling factor and sub-pixel rendering setting.
+	 * 
+	 * @param backend the surface backend to use for atlas creation
+	 * @param supersample the supersampling factor (1 = no AA, 2-4 recommended)
+	 * @param subpixelRendering whether to enable sub-pixel rendering (LCD/ClearType-style)
+	 */
+	public AtlasBasedFontRenderer(SurfaceBackend backend, int supersample, boolean subpixelRendering) {
 		if (backend == null) {
 			throw new IllegalArgumentException("backend must not be null");
 		}
@@ -59,6 +71,7 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 		
 		this.atlas = new GlyphAtlas(backend);
 		this.supersample = supersample;
+		this.subpixelRendering = subpixelRendering;
 	}
 	
 	/**
@@ -131,7 +144,7 @@ public class AtlasBasedFontRenderer implements FontRenderer {
 	public void renderGlyph(TrueTypeFont font, int glyphId, Surface target,
 	                       float sizePx, int x, int y, int argb) {
 		// Get or create the glyph in the atlas
-		GlyphAtlas.GlyphEntry entry = atlas.getOrCreateGlyph(font, glyphId, sizePx, argb, supersample);
+		GlyphAtlas.GlyphEntry entry = atlas.getOrCreateGlyph(font, glyphId, sizePx, argb, supersample, subpixelRendering);
 		if (entry == null) {
 			// Glyph could not be rendered (empty or missing)
 			return;
