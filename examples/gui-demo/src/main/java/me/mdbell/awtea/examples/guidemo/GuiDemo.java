@@ -19,7 +19,7 @@ public class GuiDemo {
 
         // LoggerFactory.setGlobalLevel(LogLevel.TRACE);
         System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
-        System.setProperty("me.mdbell.awtea.gfx.backend", "java");
+        // System.setProperty("me.mdbell.awtea.gfx.backend", "java");
         System.setProperty("me.mdbell.awtea.font.subpixel", "true");
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 
