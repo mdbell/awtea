@@ -342,11 +342,15 @@ public class TFont {
         if (style != null && !style.isEmpty()) {
             fontname = name + "-" + style;
         }
+        
+        // Check if this font has already failed to load - only log once
+        boolean isCachedFailure = FontLoader.isFailureCached(fontname);
+        
         try {
             return FontLoader.loadFont(fontname);
         } catch (IOException e) {
             // Only log warning on first failure - cached failures use DEBUG level
-            if (e.getMessage() != null && e.getMessage().contains("previously failed")) {
+            if (isCachedFailure) {
                 log.debug("Font '{}' previously failed to load, using fallback", fontname);
             } else {
                 log.warn("Missing font:{}", fontname + " - falling back");
