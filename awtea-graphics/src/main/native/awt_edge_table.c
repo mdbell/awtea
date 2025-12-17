@@ -14,11 +14,11 @@
 
 // Helper function to create an edge list
 static EdgeList* edge_list_create(int initial_capacity) {
-    EdgeList* list = (EdgeList*)malloc(sizeof(EdgeList));
+    EdgeList* list = (EdgeList*)tracked_malloc(sizeof(EdgeList));
     if (!list) {
         return NULL;
     }
-    list->edges = (EdgeNode*)malloc(sizeof(EdgeNode) * initial_capacity);
+    list->edges = (EdgeNode*)tracked_malloc(sizeof(EdgeNode) * initial_capacity);
     if (!list->edges) {
         tracked_free(list);
         return NULL;
@@ -445,15 +445,15 @@ EdgeTablePool* edge_table_pool_create(int initial_capacity) {
         initial_capacity = 4; // Default capacity
     }
     
-    EdgeTablePool* pool = (EdgeTablePool*)malloc(sizeof(EdgeTablePool));
+    EdgeTablePool* pool = (EdgeTablePool*)tracked_malloc(sizeof(EdgeTablePool));
     if (!pool) {
         log_error("Failed to allocate edge table pool");
         STACK_EXIT();
         return NULL;
     }
     
-    pool->tables = (EdgeTable**)malloc(sizeof(EdgeTable*) * initial_capacity);
-    pool->in_use = (int*)malloc(sizeof(int) * initial_capacity);
+    pool->tables = (EdgeTable**)tracked_malloc(sizeof(EdgeTable*) * initial_capacity);
+    pool->in_use = (int*)tracked_malloc(sizeof(int) * initial_capacity);
     
     if (!pool->tables || !pool->in_use) {
         log_error("Failed to allocate pool arrays");
