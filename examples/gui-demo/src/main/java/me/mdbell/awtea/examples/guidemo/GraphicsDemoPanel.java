@@ -68,9 +68,11 @@ public class GraphicsDemoPanel extends Container {
         g.setColor(Color.BLACK);
         g.drawString("Fonts:", 10, yPos);
         g.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        g.drawString("Plain", 100, yPos);
+        g.drawString("Plain", 75, yPos);
         g.setFont(new Font("SansSerif", Font.BOLD, 12));
-        g.drawString("Bold", 150, yPos);
+        g.drawString("Bold", 120, yPos);
+        g.setFont(new Font("SansSerif", Font.ITALIC, 12));
+        g.drawString("Italic", 160, yPos);
 
         // Color palette at the bottom
         yPos += spacing;
