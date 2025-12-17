@@ -1072,7 +1072,7 @@ void draw_oval(SurfaceData* surface, SurfaceContext* context,
     // Apply transform
     if (!is_identity_transform(&context->transform)) {
         float fx = cx, fy = cy;
-        transform_point(&context->transform, &fx, &fy);
+        transform_point(&context->transform, fx, fy, &fx, &fy);
         cx = (int)roundf(fx);
         cy = (int)roundf(fy);
     }
@@ -1108,7 +1108,7 @@ void draw_arc(SurfaceData* surface, SurfaceContext* context,
     // Apply transform
     if (!is_identity_transform(&context->transform)) {
         float fx = cx, fy = cy;
-        transform_point(&context->transform, &fx, &fy);
+        transform_point(&context->transform, fx, fy, &fx, &fy);
         cx = (int)roundf(fx);
         cy = (int)roundf(fy);
     }
@@ -1149,7 +1149,7 @@ void draw_round_rect(SurfaceData* surface, SurfaceContext* context,
     // Apply transform
     if (!is_identity_transform(&context->transform)) {
         float fx = x, fy = y;
-        transform_point(&context->transform, &fx, &fy);
+        transform_point(&context->transform, fx, fy, &fx, &fy);
         x = (int)roundf(fx);
         y = (int)roundf(fy);
     }
@@ -1216,7 +1216,7 @@ void copy_area(SurfaceData* surface, SurfaceContext* context,
     int src_y = y;
     if (!is_identity_transform(&context->transform)) {
         float fx = x, fy = y;
-        transform_point(&context->transform, &fx, &fy);
+        transform_point(&context->transform, fx, fy, &fx, &fy);
         src_x = (int)roundf(fx);
         src_y = (int)roundf(fy);
     }
