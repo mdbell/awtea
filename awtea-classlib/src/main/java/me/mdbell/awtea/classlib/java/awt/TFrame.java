@@ -66,7 +66,8 @@ public class TFrame extends TWindow {
     }
 
     /**
-     * If this frame is visible, brings this frame to the front and may make it the focused window.
+     * If this frame is visible, brings this frame to the front and may make it the
+     * focused window.
      */
     @Override
     public void toFront() {
@@ -74,7 +75,8 @@ public class TFrame extends TWindow {
     }
 
     /**
-     * Determines the insets of this frame, which indicate the size of the frame's border.
+     * Determines the insets of this frame, which indicate the size of the frame's
+     * border.
      * This includes the title bar and other decorations.
      *
      * @return the insets of this frame
@@ -103,6 +105,5 @@ public class TFrame extends TWindow {
         peer.setSize(width, height);
         invalidate();
         validate();
-        repaint();
     }
 }
