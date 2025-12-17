@@ -303,17 +303,20 @@ public final class GlyphRasterizer {
 			float yMinPx = baselineY - yMaxUnits * scalePx;
 
 			// If shear is applied, adjust bounding box
+			// Shear formula: x' = x + shearX * (y - baselineY)
+			// We need to check all four corners to find the true bounds after shearing
 			if (shearX != 0.0f) {
-				// For italic shear, the top of the glyph shifts horizontally
-				// Calculate additional width needed for shear
-				float shearOffset = Math.abs(shearX * (yMaxPx - yMinPx));
-				if (shearX < 0) {
-					// Negative shear (italic): top shifts left
-					xMinPx += shearX * (yMaxPx - baselineY);
-				} else {
-					// Positive shear: top shifts right
-					xMaxPx += shearX * (yMaxPx - baselineY);
-				}
+				// Calculate shear offset at top and bottom of glyph
+				float shearAtTop = shearX * (yMinPx - baselineY);
+				float shearAtBottom = shearX * (yMaxPx - baselineY);
+				
+				// Find the actual min/max x after applying shear at different y positions
+				float xMinSheared = Math.min(xMinPx + shearAtTop, xMinPx + shearAtBottom);
+				float xMaxSheared = Math.max(xMaxPx + shearAtTop, xMaxPx + shearAtBottom);
+				
+				// Expand the bounding box to include sheared extents
+				xMinPx = Math.min(xMinPx, xMinSheared);
+				xMaxPx = Math.max(xMaxPx, xMaxSheared);
 			}
 
 			// Supersampled bbox
