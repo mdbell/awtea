@@ -53,17 +53,17 @@ public class GuiDemo {
         canvas.setBounds(10, 80, 500, 300);
         mainPanel.add(canvas);
 
-        // Add graphics demo panel
+        // Add graphics demo panel (increased height to show all primitives)
         GraphicsDemoPanel demoPanel = new GraphicsDemoPanel();
-        demoPanel.setBounds(520, 80, 270, 420);
+        demoPanel.setBounds(520, 80, 270, 660);
         mainPanel.add(demoPanel);
 
         // Add alpha blending demo panel
         AlphaBlendingDemoPanel alphaPanel = new AlphaBlendingDemoPanel();
-        alphaPanel.setBounds(800, 80, 220, 420);
+        alphaPanel.setBounds(800, 80, 220, 660);
         mainPanel.add(alphaPanel);
 
-        // Add info panel at the bottom
+        // Add info panel at the bottom (moved down to accommodate taller panels)
         Container infoPanel = new Container() {
             @Override
             public void paint(Graphics g) {
@@ -88,10 +88,10 @@ public class GuiDemo {
                 g.drawString("Powered by awtea - Java AWT for the Web", 10, 95);
             }
         };
-        infoPanel.setBounds(10, 390, 500, 110);
+        infoPanel.setBounds(10, 630, 500, 110);
         mainPanel.add(infoPanel);
 
-        mainPanel.setSize(1030, 520);
+        mainPanel.setSize(1030, 760);
 
         // Add the main panel to the frame
         frame.add(mainPanel);

@@ -65,7 +65,7 @@ public class GraphicsDemoPanel extends Container {
         g.drawString("Arcs:", 10, yPos);
         g.setColor(new Color(255, 150, 0)); // Orange
         g.fillArc(100, yPos - 15, 50, 30, 0, 180);
-        g.setColor(new Color(150, 75, 0)); // Brown
+        g.setColor(new Color(200, 0, 0)); // Darker red for better visibility
         g.drawArc(180, yPos - 15, 50, 30, 45, 270);
         yPos += spacing;
 

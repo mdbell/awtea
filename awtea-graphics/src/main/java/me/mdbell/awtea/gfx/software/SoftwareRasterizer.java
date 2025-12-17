@@ -1217,8 +1217,9 @@ public class SoftwareRasterizer implements Rasterizer {
 
         // Convert angles from degrees to radians
         // Java AWT uses degrees with 0 at 3 o'clock, positive = counter-clockwise
-        double startRad = -Math.toRadians(startAngle);
-        double endRad = -Math.toRadians(startAngle + arcAngle);
+        // But screen coordinates have Y increasing downward, so we need to flip
+        double startRad = Math.toRadians(startAngle);
+        double endRad = Math.toRadians(startAngle + arcAngle);
 
         // Draw arc using parametric equations
         drawArcSegment(cx, cy, rx, ry, startRad, endRad);
@@ -1525,12 +1526,12 @@ public class SoftwareRasterizer implements Rasterizer {
 
         double angleStep = (endAngle - startAngle) / steps;
         int prevX = cx + (int) Math.round(rx * Math.cos(startAngle));
-        int prevY = cy + (int) Math.round(ry * Math.sin(startAngle));
+        int prevY = cy - (int) Math.round(ry * Math.sin(startAngle)); // Negate for screen coords
 
         for (int i = 1; i <= steps; i++) {
             double angle = startAngle + i * angleStep;
             int x = cx + (int) Math.round(rx * Math.cos(angle));
-            int y = cy + (int) Math.round(ry * Math.sin(angle));
+            int y = cy - (int) Math.round(ry * Math.sin(angle)); // Negate for screen coords
             drawLine(prevX, prevY, x, y);
             prevX = x;
             prevY = y;
