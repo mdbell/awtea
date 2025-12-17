@@ -92,10 +92,11 @@ public class TFont {
             if (isItalic() && !trueType.isItalic()) {
                 needsSyntheticItalic = true;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             // Styled font doesn't exist, fall back to plain with synthetic styling
             if (!styleStr.isEmpty()) {
-                log.debug("Styled font '{}{}' not found, using synthetic styling", name, styleStr);
+                log.debug("Styled font '{}{}' not found, using synthetic styling: {}", 
+                         name, styleStr, e.getMessage());
                 trueType = loadSafeFont(name, "");  // Load plain font
                 needsSyntheticBold = isBold();
                 needsSyntheticItalic = isItalic();

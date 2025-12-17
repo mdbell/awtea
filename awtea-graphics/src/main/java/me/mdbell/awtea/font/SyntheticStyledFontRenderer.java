@@ -102,6 +102,9 @@ public class SyntheticStyledFontRenderer implements FontRenderer {
                     if (syntheticBold) {
                         currentX += BOLD_OFFSET_PIXELS;
                     }
+                } else {
+                    // Missing glyph - log warning for debugging
+                    log.debug("Missing glyph for codePoint: {} (char: '{}')", codePoint, c);
                 }
             }
         } else {
