@@ -66,8 +66,6 @@ public class TFont {
     public static final String DIALOG_INPUT = "DialogInput";
 
     public TFont(String name, int style, int size) {
-        name = "NotoSans";
-        style = 0;
         this.name = name;
         this.style = style;
         this.size = size;
@@ -269,7 +267,7 @@ public class TFont {
     private static TrueTypeFont loadSafeFont(String name, String style) {
         String fontname = name;
         if (style != null && !style.isEmpty()) {
-            fontname = "-" + style;
+            fontname = name + "-" + style;
         }
         try {
             return FontLoader.loadFont(fontname);
