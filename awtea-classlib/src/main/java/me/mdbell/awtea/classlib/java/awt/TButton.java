@@ -245,9 +245,17 @@ public class TButton extends TComponent {
 			return new java.awt.Dimension(75, 25); // Default button size
 		}
 
-		TGraphics g = getGraphics();
+		// Try to get graphics for measurements, but handle null gracefully
+		TGraphics g = null;
+		try {
+			g = getGraphics();
+		} catch (Exception e) {
+			// Graphics not available yet, use fallback
+		}
+		
 		if (g == null) {
-			return new java.awt.Dimension(75, 25);
+			// Fallback: estimate based on character count
+			return new java.awt.Dimension(Math.max(75, label.length() * 8 + 20), 25);
 		}
 
 		TFont font = g.getFont();

@@ -93,4 +93,19 @@ public class DrawingCanvas extends Canvas {
         
         g.drawString("Shapes drawn: " + rects.size(), 10, 60);
     }
+    
+    /**
+     * Clears all drawn shapes from the canvas.
+     */
+    public void clear() {
+        rects.clear();
+        repaint();
+    }
+    
+    /**
+     * Randomizes the color used for the next shape.
+     */
+    public void randomizeColor() {
+        colorIndex = (int) (Math.random() * colors.length);
+    }
 }

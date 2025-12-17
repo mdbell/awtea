@@ -56,6 +56,47 @@ public class GuiDemo {
         
         DrawingCanvas canvas = new DrawingCanvas();
         canvas.setPreferredSize(new Dimension(500, 540));
+        
+        // Add button panel to demonstrate TButton and TLabel
+        Panel buttonPanel = new Panel();
+        buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(new Color(250, 250, 250));
+        
+        Label buttonDemoLabel = new Label("Button Demo:", Label.CENTER);
+        buttonDemoLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        buttonDemoLabel.setPreferredSize(new Dimension(500, 20));
+        buttonPanel.add(buttonDemoLabel);
+        
+        final Label statusLabel = new Label("Click a button to see action!", Label.CENTER);
+        statusLabel.setForeground(new Color(0, 100, 0));
+        statusLabel.setPreferredSize(new Dimension(300, 20));
+        
+        Button button1 = new Button("Hello World");
+        button1.addActionListener(e -> {
+            statusLabel.setText("Hello World button clicked!");
+            System.out.println("Hello World button action!");
+        });
+        buttonPanel.add(button1);
+        
+        Button button2 = new Button("Clear Canvas");
+        button2.addActionListener(e -> {
+            canvas.clear();
+            statusLabel.setText("Canvas cleared!");
+            System.out.println("Clear canvas action!");
+        });
+        buttonPanel.add(button2);
+        
+        Button button3 = new Button("Change Color");
+        button3.addActionListener(e -> {
+            canvas.randomizeColor();
+            statusLabel.setText("Color changed!");
+            System.out.println("Color changed action!");
+        });
+        buttonPanel.add(button3);
+        
+        buttonPanel.add(statusLabel);
+        
+        leftPanel.add(buttonPanel, BorderLayout.NORTH);
         leftPanel.add(canvas, BorderLayout.CENTER);
 
         Container infoPanel = new Container() {

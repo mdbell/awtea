@@ -166,10 +166,17 @@ public class TLabel extends TComponent {
 			return new java.awt.Dimension(0, 20); // Default height for empty label
 		}
 
-		TGraphics g = getGraphics();
+		// Try to get graphics for measurements, but handle null gracefully
+		TGraphics g = null;
+		try {
+			g = getGraphics();
+		} catch (Exception e) {
+			// Graphics not available yet, use fallback
+		}
+		
 		if (g == null) {
-			// Fallback dimensions
-			return new java.awt.Dimension(text.length() * 7, 20);
+			// Fallback dimensions based on character count
+			return new java.awt.Dimension(text.length() * 7 + 4, 20);
 		}
 
 		TFont font = g.getFont();

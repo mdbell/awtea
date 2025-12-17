@@ -53,6 +53,8 @@ public abstract class TComponent implements TImageObserver {
     private Color background;
 
     private Color foreground;
+    
+    private TFont font;
 
     protected List<TMouseListener> mouseListeners = new LinkedList<>();
     protected List<TMouseMotionListener> mouseMotionListeners = new LinkedList<>();
@@ -106,6 +108,23 @@ public abstract class TComponent implements TImageObserver {
         Color old = this.foreground;
         this.foreground = c;
         firePropertyChange("foreground", old, c);
+    }
+    
+    public TFont getFont() {
+        if (this.font != null) {
+            return this.font;
+        } else if (this.parent != null) {
+            return this.parent.getFont();
+        } else {
+            return null;
+        }
+    }
+    
+    public void setFont(TFont font) {
+        TFont old = this.font;
+        this.font = font;
+        firePropertyChange("font", old, font);
+        repaint();
     }
 
     public void dispatchEvent(TAWTEvent event) {
