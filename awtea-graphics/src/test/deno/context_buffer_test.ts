@@ -1,6 +1,6 @@
 /**
  * Test for context-owned command buffers
- * 
+ *
  * Verifies that:
  * - Each context has its own fixed-size command buffer
  * - Commands can be written to the context buffer
@@ -8,15 +8,18 @@
  * - Buffer size is queryable
  */
 
-import { assertEquals, assertNotEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { WasmRasterizer, PixelFormat } from "./wasm_rasterizer.ts";
+import {
+  assertEquals,
+  assertNotEquals,
+} from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { PixelFormat, WasmRasterizer } from "./wasm_rasterizer.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
 
 // Helper to compare Uint32 values (JavaScript bitwise operations are signed)
 function assertPixelEquals(actual: number, expected: number, message: string) {
-  const actualU32 = (actual >>> 0);
-  const expectedU32 = (expected >>> 0);
+  const actualU32 = actual >>> 0;
+  const expectedU32 = expected >>> 0;
   assertEquals(actualU32, expectedU32, message);
 }
 
@@ -30,7 +33,11 @@ Deno.test("Context buffer - basic allocation and usage", async () => {
   // Verify we can get the buffer size in words
   const bufferSizeWords = rasterizer.getContextBufferSizeWords();
   assertNotEquals(bufferSizeWords, 0, "Buffer size should be non-zero");
-  assertEquals(bufferSizeWords, 4096, "Buffer size should be 4096 words (16KB)");
+  assertEquals(
+    bufferSizeWords,
+    8192,
+    "Buffer size should be 8192 words (32KB)",
+  );
 
   // Verify we can get the buffer pointer
   const bufferPtr = rasterizer.getContextBufferPtr(contextId);
@@ -139,7 +146,11 @@ Deno.test("Context buffer - cloned context gets its own buffer", async () => {
   const buffer2 = rasterizer.getContextBufferPtr(context2);
 
   // Verify they are different buffers
-  assertNotEquals(buffer1, buffer2, "Cloned context should have its own buffer");
+  assertNotEquals(
+    buffer1,
+    buffer2,
+    "Cloned context should have its own buffer",
+  );
 
   // Clean up
   rasterizer.destroyContext(context1);
