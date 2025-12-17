@@ -13,7 +13,7 @@ import java.io.StringWriter;
  */
 public class ConsoleLogSink implements LogSink {
 
-	private LogLevel threshold = LogLevel.DEBUG;
+	private LogLevel threshold = LogLevel.TRACE;
 
 	public ConsoleLogSink() {
 	}
@@ -75,6 +75,7 @@ public class ConsoleLogSink implements LogSink {
 			case WARN:
 				consoleWarn(fullMessage);
 				break;
+			case TRACE:
 			case INFO:
 				consoleInfo(fullMessage);
 				break;

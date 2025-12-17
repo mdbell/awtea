@@ -6,7 +6,7 @@ import me.mdbell.awtea.instrument.NoDetours;
 import me.mdbell.awtea.monitor.ThreadMonitor;
 
 @NoDetours
-@DetourReceiver(target = Thread.class)
+// @DetourReceiver(target = Thread.class)
 public class ThreadDetour {
 
 	@DetourMethod(constructor = true)

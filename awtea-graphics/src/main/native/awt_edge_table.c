@@ -136,7 +136,7 @@ EdgeTable* edge_table_create(int min_y, int max_y, int width, int height) {
     et->active.count = 0;
     et->active.capacity = 16;
     
-    log_debug("Created edge table: min_y=%d, max_y=%d, width=%d, height=%d", 
+    log_trace("Created edge table: min_y=%d, max_y=%d, width=%d, height=%d", 
              min_y, max_y, width, height);
     
     STACK_EXIT();
@@ -330,7 +330,7 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
         return;
     }
     
-    log_debug("edge_table_fill: filling with color=0x%08X, fill_rule=%d", color, fill_rule);
+    log_trace("edge_table_fill: filling with color=0x%08X, fill_rule=%d", color, fill_rule);
     
     const PixelFormatInfo* dstInfo = &g_pixel_format_info[surface->format];
     int dstHasAlpha = (dstInfo->mask_a != 0);
@@ -460,7 +460,7 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
         }
     }
     
-    log_debug("edge_table_fill: completed");
+    log_trace("edge_table_fill: completed");
     STACK_EXIT();
 }
 
@@ -500,7 +500,7 @@ EdgeTablePool* edge_table_pool_create(int initial_capacity) {
         pool->in_use[i] = 0;
     }
     
-    log_debug("Created edge table pool with capacity=%d", initial_capacity);
+    log_trace("Created edge table pool with capacity=%d", initial_capacity);
     
     STACK_EXIT();
     return pool;
@@ -541,7 +541,7 @@ EdgeTable* edge_table_pool_acquire(EdgeTablePool* pool, int min_y, int max_y,
                 
                 pool->in_use[i] = 1;
                 
-                log_debug("Reused edge table from pool (index=%d)", i);
+                log_trace("Reused edge table from pool (index=%d)", i);
                 STACK_EXIT();
                 return et;
             }
@@ -556,7 +556,7 @@ EdgeTable* edge_table_pool_acquire(EdgeTablePool* pool, int min_y, int max_y,
         pool->in_use[pool->count] = 1;
         pool->count++;
         
-        log_debug("Created new edge table in pool (count=%d)", pool->count);
+        log_trace("Created new edge table in pool (count=%d)", pool->count);
     }
     
     STACK_EXIT();
@@ -573,13 +573,13 @@ void edge_table_pool_release(EdgeTablePool* pool, EdgeTable* et) {
     for (int i = 0; i < pool->count; i++) {
         if (pool->tables[i] == et) {
             pool->in_use[i] = 0;
-            log_debug("Released edge table back to pool (index=%d)", i);
+            log_trace("Released edge table back to pool (index=%d)", i);
             return;
         }
     }
     
     // Edge table not found in pool, destroy it
-    log_debug("Edge table not in pool, destroying it");
+    log_trace("Edge table not in pool, destroying it");
     edge_table_destroy(et);
 }
 
@@ -600,5 +600,5 @@ void edge_table_pool_destroy(EdgeTablePool* pool) {
     tracked_free(pool->in_use);
     tracked_free(pool);
     
-    log_debug("Destroyed edge table pool");
+    log_trace("Destroyed edge table pool");
 }
