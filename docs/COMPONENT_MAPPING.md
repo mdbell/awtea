@@ -67,6 +67,7 @@ between **heavyweight** components (with DOM elements and peers) and **lightweig
 | Class            | Weight          | DOM Mapping                    | Purpose                                                    |
 |------------------|-----------------|--------------------------------|------------------------------------------------------------|
 | `TSurface`       | **Heavyweight** | Abstract base + `TSurfacePeer` | Base class for components with their own rendering surface |
+| `THeavyCanvas`   | **Heavyweight** | `HTMLCanvasElement` + Surface  | Heavyweight canvas with own DOM element and rendering backend, used by peers |
 | `FloatingWindow` | N/A             | `<div>` positioned container   | Base UI class for windowing system (Issue #18)             |
 | `AppletWindow`   | N/A             | `<div>` with `<canvas>`        | Applet container window                                    |
 
@@ -416,6 +417,7 @@ For text input components, consider a hybrid approach:
 
 ## Related Documentation
 
+- [CANVAS_COMPONENTS.md](CANVAS_COMPONENTS.md) - Detailed guide on TCanvas vs THeavyCanvas with examples
 - [RENDERING_BACKENDS.md](RENDERING_BACKENDS.md) - Details on WebGL/WASM/Software rendering
 
 ## Key Source Files
