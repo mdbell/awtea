@@ -1,15 +1,15 @@
 # AWT API Coverage Report
 
-**Generated:** 2025-12-17 14:55:39
+**Generated:** 2025-12-17 15:03:20
 
 ## Summary
 
-- **Total Coverage**: 779 / 1605 (48.5%)
-- **Packages**: 13
-- **Classes**: 93
+- **Total Coverage**: 873 / 1664 (52.5%)
+- **Packages**: 14
+- **Classes**: 98
 
 ```
-[████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░] 48.5%
+[██████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░] 52.5%
 ```
 
 ## Packages
@@ -17,11 +17,12 @@
 | Package | Classes | Coverage | Percentage |
 |---------|---------|----------|------------|
 | [`java.applet`](md/java/applet/index.md) | 2 | 6 / 16 | 37.5% ![Coverage](https://img.shields.io/badge/coverage-37.5%25-orange) |
-| [`java.awt`](md/java/awt/index.md) | 17 | 173 / 435 | 39.8% ![Coverage](https://img.shields.io/badge/coverage-39.8%25-orange) |
+| [`java.awt`](md/java/awt/index.md) | 20 | 249 / 461 | 54.0% ![Coverage](https://img.shields.io/badge/coverage-54.0%25-yellow) |
 | [`java.awt.color`](md/java/awt/color/index.md) | 1 | 12 / 42 | 28.6% ![Coverage](https://img.shields.io/badge/coverage-28.6%25-orange) |
 | [`java.awt.event`](md/java/awt/event/index.md) | 15 | 82 / 137 | 59.9% ![Coverage](https://img.shields.io/badge/coverage-59.9%25-yellow) |
 | [`java.awt.geom`](md/java/awt/geom/index.md) | 12 | 141 / 153 | 92.2% ![Coverage](https://img.shields.io/badge/coverage-92.2%25-green) |
-| [`java.awt.image`](md/java/awt/image/index.md) | 16 | 220 / 380 | 57.9% ![Coverage](https://img.shields.io/badge/coverage-57.9%25-yellow) |
+| [`java.awt.image`](md/java/awt/image/index.md) | 17 | 229 / 401 | 57.1% ![Coverage](https://img.shields.io/badge/coverage-57.1%25-yellow) |
+| [`java.awt.image.renderable`](md/java/awt/image/renderable/index.md) | 1 | 9 / 12 | 75.0% ![Coverage](https://img.shields.io/badge/coverage-75.0%25-green) |
 | [`java.io`](md/java/io/index.md) | 1 | 2 / 35 | 5.7% ![Coverage](https://img.shields.io/badge/coverage-5.7%25-red) |
 | [`java.net`](md/java/net/index.md) | 4 | 7 / 31 | 22.6% ![Coverage](https://img.shields.io/badge/coverage-22.6%25-red) |
 | [`java.nio.file`](md/java/nio/file/index.md) | 2 | 2 / 71 | 2.8% ![Coverage](https://img.shields.io/badge/coverage-2.8%25-red) |
