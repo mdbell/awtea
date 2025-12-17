@@ -103,7 +103,7 @@ public class GuiDemo {
 
         frame.add(centerPanel, BorderLayout.CENTER);
 
-        frame.setSize(1050, 780);
+        frame.pack();
 
         // Show the window
         frame.setVisible(true);
