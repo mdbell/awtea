@@ -3,10 +3,31 @@ package me.mdbell.awtea.gfx.wasm;
 import lombok.Getter;
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
+/**
+ * WASM-backed surface implementation.
+ * 
+ * <h2>Thread Safety</h2>
+ * This class is NOT inherently thread-safe. If you need to access a surface from multiple threads,
+ * use {@code createReference()} to create independent references per thread. Each reference should
+ * be destroyed by the thread that created it.
+ * 
+ * <h2>Resource Management</h2>
+ * <ul>
+ *   <li>Always call {@link #destroy()} when done to free WASM memory</li>
+ *   <li>Destroy is idempotent - safe to call multiple times</li>
+ *   <li>Surfaces not explicitly destroyed will trigger leak warnings in debug mode</li>
+ * </ul>
+ */
 public final class WasmSurface implements Surface {
+	private static final Logger log = LoggerFactory.getLogger(WasmSurface.class);
+	
+	// Track if this surface has been explicitly destroyed to avoid leak warnings
+	private boolean explicitlyDestroyed = false;
 	private final WasmAwtRasterizerExports exports;
 	private int surfaceId;
 	private final ArrayBuffer memoryBuffer;
@@ -57,7 +78,16 @@ public final class WasmSurface implements Surface {
 		// Create a new context for this rasterizer
 		int contextId = exports.createContext(surfaceId);
 		if (contextId < 0) {
-			throw new IllegalStateException("Failed to create context for surface " + surfaceId);
+			// Failed to create context - provide helpful error message
+			WasmDiagnostics diag = backend.getDiagnostics();
+			log.error("Failed to create context for surface {}: no free context IDs available. " +
+					"Active: {} / {}, Utilization: {:.1f}%",
+					surfaceId, diag.getActiveContextCount(), diag.getMaxContexts(),
+					diag.getContextUtilization() * 100);
+			throw new IllegalStateException(String.format(
+					"Failed to create context for surface %d: no free context IDs available " +
+					"(%d / %d contexts active). Consider disposing unused rasterizers or increasing MAX_CONTEXTS.",
+					surfaceId, diag.getActiveContextCount(), diag.getMaxContexts()));
 		}
 		return new WasmRasterizer(this, contextId);
 	}
@@ -116,14 +146,19 @@ public final class WasmSurface implements Surface {
 
 	@Override
 	public void destroy() {
-		if (surfaceId != -1) {
-			if (poolable && backend != null) {
-				// Return to pool for reuse
-				backend.releaseSurface(this);
-			} else {
-				// Direct destroy
-				destroyInternal();
-			}
+		// Idempotent: safe to call multiple times
+		if (surfaceId == -1) {
+			return;
+		}
+		
+		explicitlyDestroyed = true;
+		
+		if (poolable && backend != null) {
+			// Return to pool for reuse
+			backend.releaseSurface(this);
+		} else {
+			// Direct destroy
+			destroyInternal();
 		}
 	}
 
@@ -137,11 +172,46 @@ public final class WasmSurface implements Surface {
 
 	/**
 	 * Internal method to actually destroy the surface.
+	 * Idempotent: safe to call multiple times.
 	 */
 	private void destroyInternal() {
-		if (surfaceId != -1) {
-			exports.resetSurface(this.surfaceId, 0, 0, 0, 0);
-			surfaceId = -1;
+		if (surfaceId == -1) {
+			return;
+		}
+		
+		explicitlyDestroyed = true;
+		int id = surfaceId;
+		surfaceId = -1;
+		
+		int result = exports.resetSurface(id, 0, 0, 0, 0);
+		if (result != 0) {
+			log.warn("destroyInternal: resetSurface returned error code {} for surface {}", result, id);
+		}
+	}
+	
+	/**
+	 * Finalizer to detect resource leaks.
+	 * Warns if surface was not explicitly destroyed.
+	 * 
+	 * NOTE: finalize() is deprecated in Java 9+ and should be replaced with Cleaner,
+	 * but TeaVM does not yet support java.lang.ref.Cleaner. This is a temporary solution
+	 * for leak detection until TeaVM adds Cleaner support.
+	 * 
+	 * @deprecated This method uses deprecated finalize() mechanism
+	 */
+	@Override
+	@Deprecated
+	protected void finalize() throws Throwable {
+		try {
+			if (surfaceId != -1 && !explicitlyDestroyed) {
+				log.warn("WasmSurface {} was finalized without explicit destroy() - possible resource leak. " +
+						"Always call destroy() when done with a surface. Size: {}x{}, Format: {}",
+						surfaceId, width, height, pixelFormat);
+				// Clean up even though we're in finalizer
+				destroyInternal();
+			}
+		} finally {
+			super.finalize();
 		}
 	}
 

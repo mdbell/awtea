@@ -3,6 +3,7 @@
 #include "awt_util.h"
 #include "awt_log.h"
 #include "awt_stack.h"
+#include "awt_imports.h"
 
 SurfaceData g_surfaces[NUM_SURFACES];
 SurfaceContext g_contexts[NUM_CONTEXTS];
@@ -63,12 +64,19 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
     }
 
     if(!surface) {
+        // This should never happen if ID range is valid, but check anyway
         log_error("Failed to get surface data for ID: %d", surface_id);
+        WASM_ASSERT(0 && "get_surface_data returned NULL for valid ID range");
         STACK_EXIT_ERR(-2);
         return -2;
     }
 
     if(surface->ptr) {
+        // Warn if surface has active references when being reset/freed
+        if (surface->ref_count > 0) {
+            log_warn("reset_surface: surface %d has %d active references, may cause issues",
+                    surface_id, surface->ref_count);
+        }
         free((void*)(uintptr_t)surface->ptr);
     }
 
@@ -192,6 +200,15 @@ int create_context(int surface_id) {
         STACK_EXIT_ERR(-1);
         return -1; // invalid surface
     }
+    
+    // Validate surface dimensions
+    if (!(surface->width > 0 && surface->height > 0)) {
+        log_error("create_context: surface %d has invalid dimensions: %dx%d", 
+                  surface_id, surface->width, surface->height);
+        WASM_ASSERT(0 && "Surface must have positive dimensions");
+        STACK_EXIT_ERR(-1);
+        return -1;
+    }
 
     int context_id = find_free_context();
     if (context_id == -1) {
@@ -201,8 +218,11 @@ int create_context(int surface_id) {
     }
 
     SurfaceContext* ctx = get_context_data(context_id);
+    
     if (!ctx) {
+        // This should never happen if context_id is valid, but check anyway
         log_error("create_context: failed to get context data for id %d", context_id);
+        WASM_ASSERT(0 && "get_context_data returned NULL for valid context ID");
         STACK_EXIT_ERR(-1);
         return -1; // should not happen
     }
@@ -398,4 +418,47 @@ uint32_t get_context_buffer_ptr(int context_id) {
         return 0;
     }
     return (uint32_t)(uintptr_t)ctx->reader.buffer;
+}
+
+// Diagnostics API
+
+__attribute__((export_name("get_active_surface_count")))
+int get_active_surface_count(void) {
+    int count = 0;
+    for (int i = 0; i < NUM_SURFACES; i++) {
+        if (g_surfaces[i].ptr != 0) {
+            count++;
+        }
+    }
+    return count;
+}
+
+__attribute__((export_name("get_active_context_count")))
+int get_active_context_count(void) {
+    int count = 0;
+    for (int i = 0; i < NUM_CONTEXTS; i++) {
+        if (g_contexts[i].surface_id != -1) {
+            count++;
+        }
+    }
+    return count;
+}
+
+__attribute__((export_name("get_surface_ref_count")))
+int get_surface_ref_count(int surface_id) {
+    SurfaceData* surface = get_surface_data(surface_id);
+    if (!surface) {
+        return -1;
+    }
+    return (int)surface->ref_count;
+}
+
+__attribute__((export_name("get_max_surfaces")))
+int get_max_surfaces(void) {
+    return NUM_SURFACES;
+}
+
+__attribute__((export_name("get_max_contexts")))
+int get_max_contexts(void) {
+    return NUM_CONTEXTS;
 }

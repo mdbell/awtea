@@ -24,6 +24,12 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     final SurfaceLRUCache surfaceCache;
 
     private final WasmSurfacePool surfacePool;
+    
+    private final WasmDiagnostics diagnostics;
+    
+    // Cache for capacity warning thresholds to avoid frequent checks
+    private long lastCapacityWarningTime = 0;
+    private static final long CAPACITY_WARNING_INTERVAL_MS = 5000; // Warn at most once per 5 seconds
 
     public WasmSurfaceBackend() {
 
@@ -42,6 +48,7 @@ public class WasmSurfaceBackend implements SurfaceBackend {
         this.exports.initSurfaceSystem();
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
         this.surfacePool = new WasmSurfacePool(this);
+        this.diagnostics = new WasmDiagnostics(this.exports);
     }
 
     private void handleAbort() {
@@ -80,6 +87,9 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     }
 
     private void reportMemoryUsage(int allocatedBytes, int allocatedCount, int peakBytes) {
+        // Update diagnostics with memory stats
+        diagnostics.updateMemoryStats(allocatedBytes, allocatedCount, peakBytes);
+        
         log.debug("WASM Memory Usage - Allocated: {} bytes in {} allocations, Peak: {} bytes",
                 allocatedBytes, allocatedCount, peakBytes);
     }
@@ -113,6 +123,18 @@ public class WasmSurfaceBackend implements SurfaceBackend {
         if (!Surface.isValidPixelFormat(pixelFormat)) {
             throw new IllegalArgumentException("Invalid pixel format: " + pixelFormat);
         }
+        
+        // Check if we're approaching surface capacity (throttled to avoid performance impact)
+        long now = System.currentTimeMillis();
+        if (now - lastCapacityWarningTime > CAPACITY_WARNING_INTERVAL_MS) {
+            if (diagnostics.isSurfaceCapacityWarning(0.9)) {
+                log.warn("Surface capacity at {:.1f}% ({} / {}), approaching limit",
+                        diagnostics.getSurfaceUtilization() * 100,
+                        diagnostics.getActiveSurfaceCount(),
+                        diagnostics.getMaxSurfaces());
+                lastCapacityWarningTime = now;
+            }
+        }
 
         // Use pool to acquire or create surface
         return surfacePool.acquire(width, height, pixelFormat);
@@ -136,6 +158,16 @@ public class WasmSurfaceBackend implements SurfaceBackend {
      */
     public WasmSurfacePool getSurfacePool() {
         return surfacePool;
+    }
+    
+    /**
+     * Get diagnostics information about the WASM surface/context system.
+     * Provides runtime statistics about active surfaces, contexts, and resource usage.
+     * 
+     * @return The WasmDiagnostics instance
+     */
+    public WasmDiagnostics getDiagnostics() {
+        return diagnostics;
     }
 
     @Override

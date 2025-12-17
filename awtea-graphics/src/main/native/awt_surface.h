@@ -56,5 +56,21 @@ int get_context_buffer_size_words(void);
 __attribute__((export_name("get_context_buffer_ptr")))
 uint32_t get_context_buffer_ptr(int context_id);
 
+// Diagnostics API
+__attribute__((export_name("get_active_surface_count")))
+int get_active_surface_count(void);
+
+__attribute__((export_name("get_active_context_count")))
+int get_active_context_count(void);
+
+__attribute__((export_name("get_surface_ref_count")))
+int get_surface_ref_count(int surface_id);
+
+__attribute__((export_name("get_max_surfaces")))
+int get_max_surfaces(void);
+
+__attribute__((export_name("get_max_contexts")))
+int get_max_contexts(void);
+
 int clip_x(int x, const SurfaceData* surf, SurfaceContext* context);
 int clip_y(int y, const SurfaceData* surf, SurfaceContext* context);
