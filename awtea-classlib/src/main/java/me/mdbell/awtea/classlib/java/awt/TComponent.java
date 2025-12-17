@@ -362,6 +362,8 @@ public abstract class TComponent implements TImageObserver {
         if (this.width != width || this.height != height) {
             this.width = width;
             this.height = height;
+            // Invalidate to trigger layout recalculation for children
+            invalidate();
             repaint();
         }
     }

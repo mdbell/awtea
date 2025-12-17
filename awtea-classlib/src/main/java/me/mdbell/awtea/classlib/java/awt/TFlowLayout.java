@@ -321,6 +321,9 @@ public class TFlowLayout implements TLayoutManager {
             TComponent m = components[i];
             TDimension d = getComponentSize(m);
             
+            // Set the component's size to match its preferred size
+            m.setSize(d.width, d.height);
+            
             if (ltr) {
                 m.setLocation(x, y + (height - d.height) / 2);
             } else {

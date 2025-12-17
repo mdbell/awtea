@@ -109,6 +109,9 @@ public class LayoutDemo {
             box.setPreferredSize(new Dimension(80, 40));
             panel.add(box);
         }
+        
+        // Set a preferred size for the panel itself so it has space
+        panel.setPreferredSize(new Dimension(200, 200));
 
         wrapper.add(panel, BorderLayout.CENTER);
         return wrapper;
@@ -166,6 +169,9 @@ public class LayoutDemo {
 
         // Show the first card
         cardLayout.first(panel);
+        
+        // Set a preferred size for the panel itself so it has space
+        panel.setPreferredSize(new Dimension(200, 200));
 
         wrapper.add(panel, BorderLayout.CENTER);
         return wrapper;
