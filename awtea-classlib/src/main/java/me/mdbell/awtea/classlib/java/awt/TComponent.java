@@ -329,13 +329,7 @@ public abstract class TComponent implements TImageObserver {
     }
 
     public TGraphics getGraphics() {
-        if (this.parent == null) {
-            return null;
-        }
         TGraphics parent = this.parent.getGraphics();
-        if (parent == null) {
-            return null;
-        }
         return parent.create(x, y, width, height);
     }
 
