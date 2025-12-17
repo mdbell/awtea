@@ -1,17 +1,18 @@
-# Class: `FontMetrics` ![Coverage](https://img.shields.io/badge/coverage-17.2%25-red)
+# Class: `FontMetrics` ![Coverage](https://img.shields.io/badge/coverage-20.7%25-red)
 
 **Full Name:** `java.awt.FontMetrics`
 
-**Coverage:** 5 / 29 (17.2%)
+**Coverage:** 6 / 29 (20.7%)
 
 ```
-[████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 17.2%
+[██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 20.7%
 ```
 
 ## ✓ Implemented Methods
 
 - `public int getAscent()`
 - `public int getDescent()`
+- `public int getHeight()`
 - `public int getLeading()`
 - `public int stringWidth(java.lang.String)`
 - `public java.awt.Font getFont()`
@@ -23,7 +24,6 @@
 - `public int charWidth(char)`
 - `public int charWidth(int)`
 - `public int charsWidth(char[], int, int)`
-- `public int getHeight()`
 - `public int getMaxAdvance()`
 - `public int getMaxAscent()`
 - `public int getMaxDecent()`

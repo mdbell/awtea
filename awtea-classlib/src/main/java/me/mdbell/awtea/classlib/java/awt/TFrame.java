@@ -17,6 +17,8 @@ public class TFrame extends TSurface {
         peer = new TFrameFloatingPeer(this);
         this.surfacePeer = new TOffscreenBufferPeer(this, 1, 1);
         this.setBackground(FRAME_BACKGROUND_COLOR);
+        // Frames use BorderLayout by default in AWT
+        setLayout(new TBorderLayout());
     }
 
     @Override
@@ -41,6 +43,7 @@ public class TFrame extends TSurface {
 
     // Set the frame visible
     public void setVisible(boolean b) {
+        super.setVisible(b);
         peer.setVisible(b);
     }
 
@@ -59,6 +62,8 @@ public class TFrame extends TSurface {
         }
         super.setSize(width, height);
         peer.setSize(width, height);
+        invalidate();
+        validate();
         repaint();
     }
 
@@ -74,10 +79,6 @@ public class TFrame extends TSurface {
 
         setSize(minWidth, minHeight);
         repaint();
-    }
-
-    public void setPreferredSize(Dimension dim) {
-        // No-op mock
     }
 
     public void setMinimumSize(Dimension dim) {

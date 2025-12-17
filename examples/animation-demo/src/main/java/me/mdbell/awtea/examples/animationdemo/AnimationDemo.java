@@ -26,7 +26,7 @@ import java.util.Random;
 public class AnimationDemo {
 
     public static void main(String[] args) {
-        LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
+        // LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
         // System.setProperty("me.mdbell.awtea.gfx.backend", "java");
         System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
 

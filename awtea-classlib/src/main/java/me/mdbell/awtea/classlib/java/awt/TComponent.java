@@ -34,11 +34,21 @@ public abstract class TComponent implements TImageObserver {
     @Getter
     private Dimension preferredSize;
 
+    /**
+     * Gets the preferred size value (for internal use).
+     */
+    protected Dimension getPreferredSizeValue() {
+        return preferredSize;
+    }
+
     @Getter
     private boolean focusable = true;
 
     @Getter
     private boolean valid = true;
+
+    @Getter
+    private boolean visible = true;
 
     private Color background;
 
@@ -337,7 +347,10 @@ public abstract class TComponent implements TImageObserver {
     }
 
     public void setVisible(boolean b) {
-        //stubbed
+        this.visible = b;
+        if (b) {
+            repaint();
+        }
     }
 
     public void setLocation(int x, int y) {
@@ -349,6 +362,8 @@ public abstract class TComponent implements TImageObserver {
         if (this.width != width || this.height != height) {
             this.width = width;
             this.height = height;
+            // Invalidate to trigger layout recalculation for children
+            invalidate();
             repaint();
         }
     }
