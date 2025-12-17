@@ -28,7 +28,13 @@ public enum Operation {
 	/** Draw line */
 	DRAW_LINE(9),
 	/** Draw a polygon */
-	DRAW_POLYGON(10);
+	DRAW_POLYGON(10),
+	/** Fills a polygon */
+	FILL_POLYGON(11),
+	/** Fills a rounded rectangle */
+	FILL_ROUND_RECT(12),
+	/** Fills an arc */
+	FILL_ARC(13);
 
 	private final int value;
 

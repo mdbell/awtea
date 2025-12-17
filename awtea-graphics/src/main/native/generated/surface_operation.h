@@ -32,6 +32,12 @@ typedef enum {
     CMD_DRAW_LINE,
     // Draw a polygon
     CMD_DRAW_POLYGON,
+    // Fills a polygon
+    CMD_FILL_POLYGON,
+    // Fills a rounded rectangle
+    CMD_FILL_ROUND_RECT,
+    // Fills an arc
+    CMD_FILL_ARC,
     // Number of standard commands
     CMD_COUNT,
 } SurfaceOperation;

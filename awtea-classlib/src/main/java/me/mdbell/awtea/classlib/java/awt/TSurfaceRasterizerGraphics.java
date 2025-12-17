@@ -369,6 +369,16 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     }
 
     @Override
+    public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
+
+        int[] xpts = Arrays.copyOf(xPoints, nPoints);
+        int[] ypts = Arrays.copyOf(yPoints, nPoints);
+
+        SurfaceCommand.PolygonPoints points = new SurfaceCommand.PolygonPoints(xpts, ypts);
+        pushOp(new SurfaceCommand(Operation.FILL_POLYGON, points));
+    }
+
+    @Override
     public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
 
     }
@@ -380,6 +390,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+
     }
 
     @Override
@@ -502,12 +513,6 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Override
     public void fillOval(int x, int y, int width, int height) {
 
-    }
-
-    @Override
-    public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
-        // just draw it for now, will implement scanline fill later
-        drawPolygon(xPoints, yPoints, nPoints);
     }
 
     @Override

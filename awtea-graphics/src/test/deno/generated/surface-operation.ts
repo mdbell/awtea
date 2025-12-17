@@ -28,4 +28,10 @@ export enum SurfaceOperation {
   CMD_DRAW_LINE = 9,
   /** Draw a polygon */
   CMD_DRAW_POLYGON = 10,
+  /** Fills a polygon */
+  CMD_FILL_POLYGON = 11,
+  /** Fills a rounded rectangle */
+  CMD_FILL_ROUND_RECT = 12,
+  /** Fills an arc */
+  CMD_FILL_ARC = 13,
 }
