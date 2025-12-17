@@ -31,8 +31,10 @@ public class SyntheticStyledFontRenderer implements FontRenderer {
     private final boolean syntheticBold;
     private final boolean syntheticItalic;
     
-    // Shear factor for synthetic italic (standard oblique angle ~11 degrees)
-    private static final float ITALIC_SHEAR = -0.2f;
+    // Shear factor for synthetic italic (approximately 7-8 degrees for better readability)
+    // A more conservative angle than the typical 11-12 degrees provides better readability
+    // in synthetic italic, especially at smaller sizes
+    private static final float ITALIC_SHEAR = -0.15f;
     
     // Offset for synthetic bold (render multiple times with slight offset)
     private static final int BOLD_OFFSET_PIXELS = 1;
