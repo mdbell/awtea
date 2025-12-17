@@ -197,6 +197,15 @@ public class SoftwareRasterizer implements Rasterizer {
                     fillPolygon(pts.xpoints, pts.ypoints, pts.xpoints.length);
                 }
                     break;
+                case FILL_OVAL:
+                    fillOval(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    break;
+                case FILL_ROUND_RECT:
+                    fillRoundRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4, cmd.arg5, cmd.arg6);
+                    break;
+                case FILL_ARC:
+                    fillArc(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4, cmd.arg5, cmd.arg6);
+                    break;
                 case NO_OP:
                     break;
                 default:

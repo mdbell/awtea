@@ -31,10 +31,12 @@ public enum Operation {
 	DRAW_POLYGON(10),
 	/** Fills a polygon */
 	FILL_POLYGON(11),
+	/** Fills an oval */
+	FILL_OVAL(12),
 	/** Fills a rounded rectangle */
-	FILL_ROUND_RECT(12),
+	FILL_ROUND_RECT(13),
 	/** Fills an arc */
-	FILL_ARC(13);
+	FILL_ARC(14);
 
 	private final int value;
 

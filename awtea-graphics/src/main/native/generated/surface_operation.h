@@ -34,6 +34,8 @@ typedef enum {
     CMD_DRAW_POLYGON,
     // Fills a polygon
     CMD_FILL_POLYGON,
+    // Fills an oval
+    CMD_FILL_OVAL,
     // Fills a rounded rectangle
     CMD_FILL_ROUND_RECT,
     // Fills an arc

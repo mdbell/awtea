@@ -28,6 +28,8 @@ values:
     description: Draw a polygon
   - name: FILL_POLYGON
     description: Fills a polygon
+  - name: FILL_OVAL
+    description: Fills an oval
   - name: FILL_ROUND_RECT
     description: Fills a rounded rectangle
   - name: FILL_ARC

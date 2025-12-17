@@ -390,7 +390,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-
+        pushOp(new SurfaceCommand(Operation.FILL_ROUND_RECT, x, y, width, height, arcWidth, arcHeight));
     }
 
     @Override
@@ -507,12 +507,12 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-
+        pushOp(new SurfaceCommand(Operation.FILL_ARC, x, y, width, height, startAngle, arcAngle));
     }
 
     @Override
     public void fillOval(int x, int y, int width, int height) {
-
+        pushOp(new SurfaceCommand(Operation.FILL_OVAL, x, y, width, height));
     }
 
     @Override

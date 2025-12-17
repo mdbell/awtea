@@ -21,6 +21,9 @@ static int handle_clear_rect(SurfaceContext* ctx, SurfaceData* surface, CommandR
 static int handle_draw_line(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 static int handle_draw_polygon(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 static int handle_fill_polygon(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_fill_oval(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_fill_round_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_fill_arc(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 
 // Command handler function table (indexed by SurfaceOperation enum)
 static const CommandHandler command_handlers[] = {
@@ -35,7 +38,10 @@ static const CommandHandler command_handlers[] = {
     [CMD_CLEAR_RECT] = handle_clear_rect,
     [CMD_DRAW_LINE] = handle_draw_line,
     [CMD_DRAW_POLYGON] = handle_draw_polygon,
-    [CMD_FILL_POLYGON] = handle_fill_polygon
+    [CMD_FILL_POLYGON] = handle_fill_polygon,
+    [CMD_FILL_OVAL] = handle_fill_oval,
+    [CMD_FILL_ROUND_RECT] = handle_fill_round_rect,
+    [CMD_FILL_ARC] = handle_fill_arc
 };
 
 // Number of command handlers
@@ -330,4 +336,94 @@ static int handle_fill_polygon(SurfaceContext* ctx, SurfaceData* surface, Comman
         reader_skip(reader, length * 4);
         return -1;
     }
+
+    int npoints = length / 2; // 2 words per point
+    
+    // Allocate arrays for x and y coordinates
+    int* x_points = (int*)malloc(sizeof(int) * npoints);
+    int* y_points = (int*)malloc(sizeof(int) * npoints);
+    
+    if (!x_points || !y_points) {
+        log_error("handle_fill_polygon: failed to allocate point arrays");
+        if (x_points) free(x_points);
+        if (y_points) free(y_points);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    
+    // Read all points
+    for(int i = 0; i < npoints; i++) {
+        x_points[i] = (int)read_u32(reader);
+        y_points[i] = (int)read_u32(reader);
+    }
+    
+    // Call fill_polygon
+    fill_polygon(surface, ctx, x_points, y_points, npoints, ctx->argb[COLOR_FG]);
+    
+    // Free allocated memory
+    free(x_points);
+    free(y_points);
+    
+    log_debug("Filled polygon with %d points", npoints);
+    return 0;
+}
+
+static int handle_fill_oval(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+    if(length != 4) {
+        log_error("handle_fill_oval: expected length of 4, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    
+    int x = (int)read_u32(reader);
+    int y = (int)read_u32(reader);
+    int width = (int)read_u32(reader);
+    int height = (int)read_u32(reader);
+    
+    fill_oval(surface, ctx, x, y, width, height, ctx->argb[COLOR_FG]);
+    
+    log_debug("Filled oval at (%d, %d) with size %dx%d", x, y, width, height);
+    return 0;
+}
+
+static int handle_fill_round_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+    if(length != 6) {
+        log_error("handle_fill_round_rect: expected length of 6, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    
+    int x = (int)read_u32(reader);
+    int y = (int)read_u32(reader);
+    int width = (int)read_u32(reader);
+    int height = (int)read_u32(reader);
+    int arc_width = (int)read_u32(reader);
+    int arc_height = (int)read_u32(reader);
+    
+    fill_round_rect(surface, ctx, x, y, width, height, arc_width, arc_height, ctx->argb[COLOR_FG]);
+    
+    log_debug("Filled rounded rect at (%d, %d) with size %dx%d, arcs %dx%d", 
+             x, y, width, height, arc_width, arc_height);
+    return 0;
+}
+
+static int handle_fill_arc(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+    if(length != 6) {
+        log_error("handle_fill_arc: expected length of 6, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    
+    int x = (int)read_u32(reader);
+    int y = (int)read_u32(reader);
+    int width = (int)read_u32(reader);
+    int height = (int)read_u32(reader);
+    int start_angle = (int)read_u32(reader);
+    int arc_angle = (int)read_u32(reader);
+    
+    fill_arc(surface, ctx, x, y, width, height, start_angle, arc_angle, ctx->argb[COLOR_FG]);
+    
+    log_debug("Filled arc at (%d, %d) with size %dx%d, angles %d-%d", 
+             x, y, width, height, start_angle, arc_angle);
+    return 0;
 }
