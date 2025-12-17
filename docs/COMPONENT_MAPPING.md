@@ -59,8 +59,8 @@ between **heavyweight** components (with DOM elements and peers) and **lightweig
 | `JComponent` | **Lightweight** | `TJComponent`         | ❌ None                | Base class for Swing components       |
 | `JPanel`     | **Lightweight** | `TJPanel`             | ❌ None                | Swing container with double buffering |
 | `JFrame`     | **Heavyweight** | _Not yet implemented_ | Would extend `TFrame` | Top-level Swing window                |
-| `JButton`    | **Lightweight** | _Not yet implemented_ | ❌ None                | Swing button with look and feel       |
-| `JLabel`     | **Lightweight** | _Not yet implemented_ | ❌ None                | Swing text/icon label                 |
+| `JButton`    | **Lightweight** | `TJButton`            | ❌ None                | Swing button extending TButton (stub) |
+| `JLabel`     | **Lightweight** | `TJLabel`             | ❌ None                | Swing label extending TLabel (stub)   |
 
 ### awtea Internal Classes
 
