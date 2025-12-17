@@ -3,8 +3,6 @@ package me.mdbell.awtea.classlib.java.awt.image.renderable;
 import me.mdbell.awtea.classlib.java.awt.TRenderingHints;
 import me.mdbell.awtea.classlib.java.awt.image.TRenderedImage;
 
-import java.util.Vector;
-
 /**
  * TeaVM implementation of java.awt.image.renderable.RenderableImage.
  * A RenderableImage is a common interface for rendering-independent images (a notion which subsumes

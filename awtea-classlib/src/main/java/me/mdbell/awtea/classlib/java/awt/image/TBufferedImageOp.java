@@ -1,6 +1,5 @@
 package me.mdbell.awtea.classlib.java.awt.image;
 
-import me.mdbell.awtea.classlib.java.awt.TRectangle;
 import me.mdbell.awtea.classlib.java.awt.geom.TPoint2D;
 import me.mdbell.awtea.classlib.java.awt.geom.TRectangle2D;
 

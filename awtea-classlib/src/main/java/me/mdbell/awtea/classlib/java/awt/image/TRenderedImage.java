@@ -1,8 +1,5 @@
 package me.mdbell.awtea.classlib.java.awt.image;
 
-import me.mdbell.awtea.classlib.java.awt.TGraphics;
-import me.mdbell.awtea.classlib.java.awt.geom.TRectangle2D;
-
 /**
  * TeaVM implementation of java.awt.image.RenderedImage.
  * RenderedImage is a common interface for objects which contain or can produce image data in the form of Rasters.
