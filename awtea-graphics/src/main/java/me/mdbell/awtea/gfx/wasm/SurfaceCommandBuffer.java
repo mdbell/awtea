@@ -287,4 +287,109 @@ public final class SurfaceCommandBuffer {
     public void emitDrawSurface(WasmSurface surface, int imgX, int imgY) {
         emitBlitImage(surface.getId(), imgX, imgY);
     }
+
+    public void emitFillOval(int x, int y, int w, int h) {
+        log.trace("SurfaceCommandBuffer.emitFillOval: x={}, y={}, w={}, h={}",
+                x, y, w, h);
+
+        beginCommand(Operation.FILL_OVAL, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
+    }
+
+    public void emitFillArc(int x, int y, int w, int h, int startAngle, int arcAngle) {
+        log.trace("SurfaceCommandBuffer.emitFillArc: x={}, y={}, w={}, h={}, start={}, arc={}",
+                x, y, w, h, startAngle, arcAngle);
+
+        beginCommand(Operation.FILL_ARC, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
+        writer.writeInt32(startAngle);
+        writer.writeInt32(arcAngle);
+    }
+
+    public void emitFillRoundRect(int x, int y, int w, int h, int arcWidth, int arcHeight) {
+        log.trace("SurfaceCommandBuffer.emitFillRoundRect: x={}, y={}, w={}, h={}, arcW={}, arcH={}",
+                x, y, w, h, arcWidth, arcHeight);
+
+        beginCommand(Operation.FILL_ROUND_RECT, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
+        writer.writeInt32(arcWidth);
+        writer.writeInt32(arcHeight);
+    }
+
+    public void emitDrawOval(int x, int y, int w, int h) {
+        log.trace("SurfaceCommandBuffer.emitDrawOval: x={}, y={}, w={}, h={}",
+                x, y, w, h);
+
+        beginCommand(Operation.DRAW_OVAL, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
+    }
+
+    public void emitDrawArc(int x, int y, int w, int h, int startAngle, int arcAngle) {
+        log.trace("SurfaceCommandBuffer.emitDrawArc: x={}, y={}, w={}, h={}, start={}, arc={}",
+                x, y, w, h, startAngle, arcAngle);
+
+        beginCommand(Operation.DRAW_ARC, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
+        writer.writeInt32(startAngle);
+        writer.writeInt32(arcAngle);
+    }
+
+    public void emitDrawRoundRect(int x, int y, int w, int h, int arcWidth, int arcHeight) {
+        log.trace("SurfaceCommandBuffer.emitDrawRoundRect: x={}, y={}, w={}, h={}, arcW={}, arcH={}",
+                x, y, w, h, arcWidth, arcHeight);
+
+        beginCommand(Operation.DRAW_ROUND_RECT, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
+        writer.writeInt32(arcWidth);
+        writer.writeInt32(arcHeight);
+    }
+
+    public void emitDrawPolyline(int[] xpoints, int[] ypoints, int npoints) {
+        log.trace("SurfaceCommandBuffer.emitDrawPolyline: xpoints={}, ypoints={}, npoints={}",
+                xpoints, ypoints, npoints);
+
+        if (shouldFlush()) {
+            flush();
+        }
+
+        beginCommand(Operation.DRAW_POLYLINE, 0);
+        writer.writeInt32(npoints);
+        for (int i = 0; i < npoints; i++) {
+            writer.writeInt32(xpoints[i]);
+        }
+        for (int i = 0; i < npoints; i++) {
+            writer.writeInt32(ypoints[i]);
+        }
+    }
+
+    public void emitCopyArea(int x, int y, int w, int h, int dx, int dy) {
+        log.trace("SurfaceCommandBuffer.emitCopyArea: x={}, y={}, w={}, h={}, dx={}, dy={}",
+                x, y, w, h, dx, dy);
+
+        beginCommand(Operation.COPY_AREA, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
+        writer.writeInt32(dx);
+        writer.writeInt32(dy);
+    }
 }

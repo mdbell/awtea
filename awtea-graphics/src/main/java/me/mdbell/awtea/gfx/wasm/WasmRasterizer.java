@@ -289,6 +289,37 @@ public class WasmRasterizer implements Rasterizer {
                         }
                     }
                     break;
+                case FILL_OVAL:
+                    commandBuffer.emitFillOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                    break;
+                case FILL_ARC:
+                    commandBuffer.emitFillArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], 
+                            cmd.args[4], cmd.args[5]);
+                    break;
+                case FILL_ROUND_RECT:
+                    commandBuffer.emitFillRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3],
+                            cmd.args[4], cmd.args[5]);
+                    break;
+                case DRAW_OVAL:
+                    commandBuffer.emitDrawOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                    break;
+                case DRAW_ARC:
+                    commandBuffer.emitDrawArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3],
+                            cmd.args[4], cmd.args[5]);
+                    break;
+                case DRAW_ROUND_RECT:
+                    commandBuffer.emitDrawRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3],
+                            cmd.args[4], cmd.args[5]);
+                    break;
+                case DRAW_POLYLINE: {
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    commandBuffer.emitDrawPolyline(polygon.xpoints, polygon.ypoints, polygon.npoints);
+                    break;
+                }
+                case COPY_AREA:
+                    commandBuffer.emitCopyArea(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3],
+                            cmd.args[4], cmd.args[5]);
+                    break;
                 case NO_OP:
                     break;
                 default:

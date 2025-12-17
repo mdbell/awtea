@@ -938,3 +938,399 @@ void fill_rect(SurfaceData* surface, SurfaceContext* context,
     log_debug("fill_rect: completed");
     STACK_EXIT();
 }
+
+// Helper function to plot a single pixel with clipping and blending
+static void plot_pixel(SurfaceData* surface, SurfaceContext* context,
+                      int x, int y, uint32_t color) {
+    // Clip to surface bounds
+    if (x < 0 || x >= (int)surface->width || y < 0 || y >= (int)surface->height) {
+        return;
+    }
+    
+    // Apply clip rectangle if set
+    if (context->clip.width >= 0 && context->clip.height >= 0) {
+        if (x < context->clip.x || x >= context->clip.x + context->clip.width ||
+            y < context->clip.y || y >= context->clip.y + context->clip.height) {
+            return;
+        }
+    }
+    
+    // Set pixel with appropriate blending
+    blend_pixel_composite(surface, x, y, PIXEL_FORMAT_ARGB, color,
+                         context->composite_mode, context->composite_alpha);
+}
+
+// Helper function to draw an ellipse outline using midpoint algorithm
+static void draw_ellipse(SurfaceData* surface, SurfaceContext* context,
+                        int cx, int cy, int rx, int ry, uint32_t color) {
+    if (rx <= 0 || ry <= 0) return;
+    
+    int x = 0;
+    int y = ry;
+    int rx2 = rx * rx;
+    int ry2 = ry * ry;
+    int twoRx2 = 2 * rx2;
+    int twoRy2 = 2 * ry2;
+    
+    // Region 1
+    int p1 = (int)(ry2 - rx2 * ry + 0.25 * rx2);
+    int px = 0;
+    int py = twoRx2 * y;
+    
+    while (px < py) {
+        // Plot 4 symmetric points
+        plot_pixel(surface, context, cx + x, cy + y, color);
+        plot_pixel(surface, context, cx - x, cy + y, color);
+        plot_pixel(surface, context, cx + x, cy - y, color);
+        plot_pixel(surface, context, cx - x, cy - y, color);
+        
+        x++;
+        px += twoRy2;
+        if (p1 < 0) {
+            p1 += ry2 + px;
+        } else {
+            y--;
+            py -= twoRx2;
+            p1 += ry2 + px - py;
+        }
+    }
+    
+    // Region 2
+    int p2 = (int)(ry2 * (x + 0.5) * (x + 0.5) + rx2 * (y - 1) * (y - 1) - rx2 * ry2);
+    while (y >= 0) {
+        // Plot 4 symmetric points
+        plot_pixel(surface, context, cx + x, cy + y, color);
+        plot_pixel(surface, context, cx - x, cy + y, color);
+        plot_pixel(surface, context, cx + x, cy - y, color);
+        plot_pixel(surface, context, cx - x, cy - y, color);
+        
+        y--;
+        py -= twoRx2;
+        if (p2 > 0) {
+            p2 += rx2 - py;
+        } else {
+            x++;
+            px += twoRy2;
+            p2 += rx2 - py + px;
+        }
+    }
+}
+
+// Helper function to draw an arc segment using parametric equations
+static void draw_arc_segment(SurfaceData* surface, SurfaceContext* context,
+                            int cx, int cy, int rx, int ry,
+                            double start_angle, double end_angle, uint32_t color) {
+    // Normalize angles
+    while (start_angle < 0) start_angle += 2 * M_PI;
+    while (end_angle < 0) end_angle += 2 * M_PI;
+    while (start_angle > 2 * M_PI) start_angle -= 2 * M_PI;
+    while (end_angle > 2 * M_PI) end_angle -= 2 * M_PI;
+    
+    // Handle wrapping
+    if (end_angle < start_angle) {
+        end_angle += 2 * M_PI;
+    }
+    
+    // Calculate step size based on arc length
+    double angle_diff = fabs(end_angle - start_angle);
+    double arc_length = angle_diff * (rx > ry ? rx : ry);
+    int steps = (int)fmax(10, ceil(arc_length / 2.0)); // At least 10 steps
+    
+    double angle_step = (end_angle - start_angle) / steps;
+    int prev_x = cx + (int)round(rx * cos(start_angle));
+    int prev_y = cy + (int)round(ry * sin(start_angle));
+    
+    for (int i = 1; i <= steps; i++) {
+        double angle = start_angle + i * angle_step;
+        int x = cx + (int)round(rx * cos(angle));
+        int y = cy + (int)round(ry * sin(angle));
+        draw_line(surface, context, prev_x, prev_y, x, y, color);
+        prev_x = x;
+        prev_y = y;
+    }
+}
+
+void draw_oval(SurfaceData* surface, SurfaceContext* context,
+              int x, int y, int width, int height,
+              uint32_t color) {
+    STACK_ENTER();
+    
+    if (width <= 0 || height <= 0) {
+        log_error("draw_oval: invalid dimensions");
+        STACK_EXIT();
+        return;
+    }
+    
+    log_debug("draw_oval: x=%d, y=%d, w=%d, h=%d", x, y, width, height);
+    
+    // Calculate center and radii
+    int cx = x + width / 2;
+    int cy = y + height / 2;
+    int rx = width / 2;
+    int ry = height / 2;
+    
+    // Apply transform
+    if (!is_identity_transform(&context->transform)) {
+        float fx = cx, fy = cy;
+        transform_point(&context->transform, &fx, &fy);
+        cx = (int)roundf(fx);
+        cy = (int)roundf(fy);
+    }
+    
+    // Draw ellipse outline
+    draw_ellipse(surface, context, cx, cy, rx, ry, color);
+    
+    log_debug("draw_oval: completed");
+    STACK_EXIT();
+}
+
+void draw_arc(SurfaceData* surface, SurfaceContext* context,
+             int x, int y, int width, int height,
+             int start_angle, int arc_angle,
+             uint32_t color) {
+    STACK_ENTER();
+    
+    if (width <= 0 || height <= 0) {
+        log_error("draw_arc: invalid dimensions");
+        STACK_EXIT();
+        return;
+    }
+    
+    log_debug("draw_arc: x=%d, y=%d, w=%d, h=%d, start=%d, arc=%d",
+             x, y, width, height, start_angle, arc_angle);
+    
+    // Calculate center and radii
+    int cx = x + width / 2;
+    int cy = y + height / 2;
+    int rx = width / 2;
+    int ry = height / 2;
+    
+    // Apply transform
+    if (!is_identity_transform(&context->transform)) {
+        float fx = cx, fy = cy;
+        transform_point(&context->transform, &fx, &fy);
+        cx = (int)roundf(fx);
+        cy = (int)roundf(fy);
+    }
+    
+    // Convert angles from degrees to radians
+    double start_rad = start_angle * M_PI / 180.0;
+    double end_rad = (start_angle + arc_angle) * M_PI / 180.0;
+    
+    // Draw arc segment
+    draw_arc_segment(surface, context, cx, cy, rx, ry, start_rad, end_rad, color);
+    
+    log_debug("draw_arc: completed");
+    STACK_EXIT();
+}
+
+void draw_round_rect(SurfaceData* surface, SurfaceContext* context,
+                    int x, int y, int width, int height,
+                    int arc_width, int arc_height,
+                    uint32_t color) {
+    STACK_ENTER();
+    
+    if (width <= 0 || height <= 0) {
+        log_error("draw_round_rect: invalid dimensions");
+        STACK_EXIT();
+        return;
+    }
+    
+    log_debug("draw_round_rect: x=%d, y=%d, w=%d, h=%d, arcW=%d, arcH=%d",
+             x, y, width, height, arc_width, arc_height);
+    
+    // Clamp arc dimensions
+    if (arc_width > width) arc_width = width;
+    if (arc_height > height) arc_height = height;
+    
+    int rx = arc_width / 2;
+    int ry = arc_height / 2;
+    
+    // Apply transform
+    if (!is_identity_transform(&context->transform)) {
+        float fx = x, fy = y;
+        transform_point(&context->transform, &fx, &fy);
+        x = (int)roundf(fx);
+        y = (int)roundf(fy);
+    }
+    
+    // Draw four edges
+    draw_line(surface, context, x + rx, y, x + width - rx, y, color); // Top
+    draw_line(surface, context, x + width, y + ry, x + width, y + height - ry, color); // Right
+    draw_line(surface, context, x + width - rx, y + height, x + rx, y + height, color); // Bottom
+    draw_line(surface, context, x, y + height - ry, x, y + ry, color); // Left
+    
+    // Draw four corner arcs
+    draw_arc_segment(surface, context, x + width - rx, y + ry, rx, ry, 
+                    -M_PI / 2.0, 0.0, color); // Top-right
+    draw_arc_segment(surface, context, x + width - rx, y + height - ry, rx, ry,
+                    0.0, M_PI / 2.0, color); // Bottom-right
+    draw_arc_segment(surface, context, x + rx, y + height - ry, rx, ry,
+                    M_PI / 2.0, M_PI, color); // Bottom-left
+    draw_arc_segment(surface, context, x + rx, y + ry, rx, ry,
+                    M_PI, 3.0 * M_PI / 2.0, color); // Top-left
+    
+    log_debug("draw_round_rect: completed");
+    STACK_EXIT();
+}
+
+void draw_polyline(SurfaceData* surface, SurfaceContext* context,
+                  int* x_points, int* y_points, int n_points,
+                  uint32_t color) {
+    STACK_ENTER();
+    
+    if (!x_points || !y_points || n_points < 2) {
+        log_error("draw_polyline: invalid parameters");
+        STACK_EXIT();
+        return;
+    }
+    
+    log_debug("draw_polyline: npoints=%d", n_points);
+    
+    // Draw lines connecting consecutive points (but don't close the polygon)
+    for (int i = 1; i < n_points; i++) {
+        draw_line(surface, context, x_points[i - 1], y_points[i - 1],
+                 x_points[i], y_points[i], color);
+    }
+    
+    log_debug("draw_polyline: completed");
+    STACK_EXIT();
+}
+
+void copy_area(SurfaceData* surface, SurfaceContext* context,
+              int x, int y, int width, int height,
+              int dx, int dy) {
+    STACK_ENTER();
+    
+    if (width <= 0 || height <= 0) {
+        log_error("copy_area: invalid dimensions");
+        STACK_EXIT();
+        return;
+    }
+    
+    log_debug("copy_area: x=%d, y=%d, w=%d, h=%d, dx=%d, dy=%d",
+             x, y, width, height, dx, dy);
+    
+    // Apply transform to source coordinates
+    int src_x = x;
+    int src_y = y;
+    if (!is_identity_transform(&context->transform)) {
+        float fx = x, fy = y;
+        transform_point(&context->transform, &fx, &fy);
+        src_x = (int)roundf(fx);
+        src_y = (int)roundf(fy);
+    }
+    
+    // Destination is source + delta (in device space)
+    int dst_x = src_x + dx;
+    int dst_y = src_y + dy;
+    
+    // Clip source and destination to surface bounds
+    int surf_width = surface->width;
+    int surf_height = surface->height;
+    
+    int copy_width = width;
+    int copy_height = height;
+    
+    // Clip source rectangle
+    if (src_x < 0) {
+        copy_width += src_x;
+        dst_x -= src_x;
+        src_x = 0;
+    }
+    if (src_y < 0) {
+        copy_height += src_y;
+        dst_y -= src_y;
+        src_y = 0;
+    }
+    if (src_x + copy_width > surf_width) {
+        copy_width = surf_width - src_x;
+    }
+    if (src_y + copy_height > surf_height) {
+        copy_height = surf_height - src_y;
+    }
+    
+    // Clip destination rectangle
+    if (dst_x < 0) {
+        copy_width += dst_x;
+        src_x -= dst_x;
+        dst_x = 0;
+    }
+    if (dst_y < 0) {
+        copy_height += dst_y;
+        src_y -= dst_y;
+        dst_y = 0;
+    }
+    if (dst_x + copy_width > surf_width) {
+        copy_width = surf_width - dst_x;
+    }
+    if (dst_y + copy_height > surf_height) {
+        copy_height = surf_height - dst_y;
+    }
+    
+    // Apply clip rectangle to destination
+    if (context->clip.width >= 0 && context->clip.height >= 0) {
+        int clip_right = context->clip.x + context->clip.width;
+        int clip_bottom = context->clip.y + context->clip.height;
+        
+        if (dst_x < context->clip.x) {
+            int diff = context->clip.x - dst_x;
+            src_x += diff;
+            copy_width -= diff;
+            dst_x = context->clip.x;
+        }
+        if (dst_y < context->clip.y) {
+            int diff = context->clip.y - dst_y;
+            src_y += diff;
+            copy_height -= diff;
+            dst_y = context->clip.y;
+        }
+        if (dst_x + copy_width > clip_right) {
+            copy_width = clip_right - dst_x;
+        }
+        if (dst_y + copy_height > clip_bottom) {
+            copy_height = clip_bottom - dst_y;
+        }
+    }
+    
+    if (copy_width <= 0 || copy_height <= 0) {
+        log_debug("copy_area: clipped out entirely");
+        STACK_EXIT();
+        return;
+    }
+    
+    // Get pixel data
+    uint32_t* pixels = (uint32_t*)(uintptr_t)surface->ptr;
+    if (!pixels) {
+        log_error("copy_area: null pixel data");
+        STACK_EXIT();
+        return;
+    }
+    
+    // Copy pixels - need to handle overlapping regions
+    int overlaps = !((dst_x + copy_width <= src_x) || (dst_x >= src_x + copy_width) ||
+                     (dst_y + copy_height <= src_y) || (dst_y >= src_y + copy_height));
+    
+    if (overlaps && (dy > 0 || (dy == 0 && dx > 0))) {
+        // Copy from bottom-right to top-left
+        for (int row = copy_height - 1; row >= 0; row--) {
+            for (int col = copy_width - 1; col >= 0; col--) {
+                int src_idx = (src_y + row) * surf_width + (src_x + col);
+                int dst_idx = (dst_y + row) * surf_width + (dst_x + col);
+                pixels[dst_idx] = pixels[src_idx];
+            }
+        }
+    } else {
+        // Copy from top-left to bottom-right (normal case)
+        for (int row = 0; row < copy_height; row++) {
+            for (int col = 0; col < copy_width; col++) {
+                int src_idx = (src_y + row) * surf_width + (src_x + col);
+                int dst_idx = (dst_y + row) * surf_width + (dst_x + col);
+                pixels[dst_idx] = pixels[src_idx];
+            }
+        }
+    }
+    
+    log_debug("copy_area: completed");
+    STACK_EXIT();
+}

@@ -48,3 +48,25 @@ void fill_round_rect(SurfaceData* surface, SurfaceContext* context,
 void fill_rect(SurfaceData* surface, SurfaceContext* context,
               int x, int y, int width, int height,
               uint32_t color);
+// Draw outline functions
+void draw_oval(SurfaceData* surface, SurfaceContext* context,
+              int x, int y, int width, int height,
+              uint32_t color);
+
+void draw_arc(SurfaceData* surface, SurfaceContext* context,
+             int x, int y, int width, int height,
+             int start_angle, int arc_angle,
+             uint32_t color);
+
+void draw_round_rect(SurfaceData* surface, SurfaceContext* context,
+                    int x, int y, int width, int height,
+                    int arc_width, int arc_height,
+                    uint32_t color);
+
+void draw_polyline(SurfaceData* surface, SurfaceContext* context,
+                  int* x_points, int* y_points, int n_points,
+                  uint32_t color);
+
+void copy_area(SurfaceData* surface, SurfaceContext* context,
+              int x, int y, int width, int height,
+              int dx, int dy);
