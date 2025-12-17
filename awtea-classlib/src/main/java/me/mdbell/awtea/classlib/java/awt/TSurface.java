@@ -13,10 +13,6 @@ abstract class TSurface extends TContainer {
 
 	}
 
-	final void superPaint(TGraphics g) {
-		super.paint(g);
-	}
-
 	/**
 	 * Gets the graphics context for the real surface.
 	 *
