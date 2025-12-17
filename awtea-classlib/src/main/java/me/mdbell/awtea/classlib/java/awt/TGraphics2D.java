@@ -1,9 +1,17 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext;
+import me.mdbell.awtea.classlib.java.awt.font.TGlyphVector;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
+import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
+import me.mdbell.awtea.classlib.java.awt.image.TBufferedImageOp;
+import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
+import me.mdbell.awtea.classlib.java.awt.image.TRenderedImage;
+import me.mdbell.awtea.classlib.java.awt.image.renderable.TRenderableImage;
 
 import java.awt.*;
 import java.text.AttributedCharacterIterator;
+import java.util.Map;
 
 /**
  * @see java.awt.Graphics2D
@@ -58,7 +66,18 @@ public abstract class TGraphics2D extends TGraphics {
 
 	public abstract void clearRect(int x, int y, int width, int height);
 
-	public abstract void clip(TRectangle r);
+	/**
+	 * Intersects the current clip with the specified rectangle.
+	 * 
+	 * @param r the rectangle to intersect the clip with
+	 * @see java.awt.Graphics2D#clip(java.awt.Rectangle)
+	 */
+	public void clip(TRectangle r) {
+		if (r == null) {
+			return;
+		}
+		clipRect(r.x, r.y, r.width, r.height);
+	}
 
 	public abstract void copyArea(int x, int y, int width, int height, int dx, int dy);
 
@@ -202,5 +221,219 @@ public abstract class TGraphics2D extends TGraphics {
 //	public void fillPolygon(TPolygon p) {
 //		fillPolygon(p.xpoints, p.ypoints, p.npoints);
 //	}
+
+	/**
+	 * Draws a polygon defined by a Polygon object.
+	 * 
+	 * @param p the polygon to draw
+	 * @see java.awt.Graphics2D#drawPolygon(java.awt.Polygon)
+	 */
+	public void drawPolygon(TPolygon p) {
+		drawPolygon(p.xpoints, p.ypoints, p.npoints);
+	}
+
+	/**
+	 * Fills a polygon defined by a Polygon object.
+	 * 
+	 * @param p the polygon to fill
+	 * @see java.awt.Graphics2D#fillPolygon(java.awt.Polygon)
+	 */
+	public void fillPolygon(TPolygon p) {
+		fillPolygon(p.xpoints, p.ypoints, p.npoints);
+	}
+
+	/**
+	 * Intersects the current Clip with the interior of the specified Shape.
+	 * 
+	 * @param s the Shape to be intersected with the current Clip
+	 * @see java.awt.Graphics2D#clip(java.awt.Shape)
+	 */
+	public void clip(TShape s) {
+		// TODO: Implement shape-based clipping
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#clip-java.awt.Shape-
+		throw new UnsupportedOperationException("TGraphics2D.clip(Shape) not yet implemented");
+	}
+
+	/**
+	 * Renders the text specified by the specified GlyphVector at the specified coordinates.
+	 * 
+	 * @param g the GlyphVector to be rendered
+	 * @param x the x position where the glyphs should be rendered
+	 * @param y the y position where the glyphs should be rendered
+	 * @see java.awt.Graphics2D#drawGlyphVector(java.awt.font.GlyphVector, float, float)
+	 */
+	public void drawGlyphVector(TGlyphVector g, float x, float y) {
+		// TODO: Implement glyph vector rendering
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#drawGlyphVector-java.awt.font.GlyphVector-float-float-
+		throw new UnsupportedOperationException("TGraphics2D.drawGlyphVector() not yet implemented");
+	}
+
+	/**
+	 * Renders a BufferedImage that is filtered with a BufferedImageOp.
+	 * 
+	 * @param img the specified BufferedImage to be rendered
+	 * @param op the filter to be applied to the image before rendering
+	 * @param x the x coordinate of the location in user space where the image is rendered
+	 * @param y the y coordinate of the location in user space where the image is rendered
+	 * @see java.awt.Graphics2D#drawImage(java.awt.image.BufferedImage, java.awt.image.BufferedImageOp, int, int)
+	 */
+	public void drawImage(TBufferedImage img, TBufferedImageOp op, int x, int y) {
+		// TODO: Implement BufferedImage with op rendering
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#drawImage-java.awt.image.BufferedImage-java.awt.image.BufferedImageOp-int-int-
+		throw new UnsupportedOperationException("TGraphics2D.drawImage(BufferedImage, BufferedImageOp) not yet implemented");
+	}
+
+	/**
+	 * Renders an image, applying a transform from image space into user space before drawing.
+	 * 
+	 * @param img the specified image to be rendered
+	 * @param xform the transformation from image space into user space
+	 * @param obs the ImageObserver to be notified as more of the Image is converted
+	 * @return true if the image is fully loaded and was completely rendered; false if the image is not fully loaded
+	 * @see java.awt.Graphics2D#drawImage(java.awt.Image, java.awt.geom.AffineTransform, java.awt.image.ImageObserver)
+	 */
+	public boolean drawImage(TImage img, TAffineTransform xform, TImageObserver obs) {
+		// TODO: Implement image with transform rendering
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#drawImage-java.awt.Image-java.awt.geom.AffineTransform-java.awt.image.ImageObserver-
+		throw new UnsupportedOperationException("TGraphics2D.drawImage(Image, AffineTransform) not yet implemented");
+	}
+
+	/**
+	 * Renders a RenderableImage, applying a transform from image space into user space before drawing.
+	 * 
+	 * @param img the image to be rendered
+	 * @param xform the transformation from image space into user space
+	 * @see java.awt.Graphics2D#drawRenderableImage(java.awt.image.renderable.RenderableImage, java.awt.geom.AffineTransform)
+	 */
+	public void drawRenderableImage(TRenderableImage img, TAffineTransform xform) {
+		// TODO: Implement RenderableImage rendering
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#drawRenderableImage-java.awt.image.renderable.RenderableImage-java.awt.geom.AffineTransform-
+		throw new UnsupportedOperationException("TGraphics2D.drawRenderableImage() not yet implemented");
+	}
+
+	/**
+	 * Renders a RenderedImage, applying a transform from image space into user space before drawing.
+	 * 
+	 * @param img the image to be rendered
+	 * @param xform the transformation from image space into user space
+	 * @see java.awt.Graphics2D#drawRenderedImage(java.awt.image.RenderedImage, java.awt.geom.AffineTransform)
+	 */
+	public void drawRenderedImage(TRenderedImage img, TAffineTransform xform) {
+		// TODO: Implement RenderedImage rendering
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#drawRenderedImage-java.awt.image.RenderedImage-java.awt.geom.AffineTransform-
+		throw new UnsupportedOperationException("TGraphics2D.drawRenderedImage() not yet implemented");
+	}
+
+	/**
+	 * Renders the text of the specified String, using the current text attribute state in the Graphics2D context.
+	 * 
+	 * @param str the String to be rendered
+	 * @param x the x coordinate of the location where the String should be rendered
+	 * @param y the y coordinate of the location where the String should be rendered
+	 * @see java.awt.Graphics2D#drawString(java.lang.String, float, float)
+	 */
+	public void drawString(String str, float x, float y) {
+		drawString(str, (int) x, (int) y);
+	}
+
+	/**
+	 * Returns the device configuration associated with this Graphics2D.
+	 * 
+	 * @return the device configuration of this Graphics2D
+	 * @see java.awt.Graphics2D#getDeviceConfiguration()
+	 */
+	public TGraphicsConfiguration getDeviceConfiguration() {
+		// TODO: Implement device configuration retrieval
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#getDeviceConfiguration--
+		throw new UnsupportedOperationException("TGraphics2D.getDeviceConfiguration() not yet implemented");
+	}
+
+	/**
+	 * Gets the font render context from the Graphics2D context.
+	 * 
+	 * @return the FontRenderContext of this Graphics2D
+	 * @see java.awt.Graphics2D#getFontRenderContext()
+	 */
+	public TFontRenderContext getFontRenderContext() {
+		// TODO: Implement font render context retrieval
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#getFontRenderContext--
+		throw new UnsupportedOperationException("TGraphics2D.getFontRenderContext() not yet implemented");
+	}
+
+	/**
+	 * Returns the value of a single preference for the rendering algorithms.
+	 * 
+	 * @param hintKey the key corresponding to the hint to get
+	 * @return an object representing the value for the specified hint key
+	 * @see java.awt.Graphics2D#getRenderingHint(java.awt.RenderingHints.Key)
+	 */
+	public Object getRenderingHint(TRenderingHints.Key hintKey) {
+		TRenderingHints hints = getRenderingHints();
+		if (hints == null) {
+			return null;
+		}
+		return hints.get(hintKey);
+	}
+
+	/**
+	 * Returns the current Stroke in the Graphics2D context.
+	 * 
+	 * @return the current Graphics2D Stroke
+	 * @see java.awt.Graphics2D#getStroke()
+	 */
+	public TStroke getStroke() {
+		// TODO: Implement stroke retrieval
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#getStroke--
+		throw new UnsupportedOperationException("TGraphics2D.getStroke() not yet implemented");
+	}
+
+	/**
+	 * Sets a rendering hint preference for the rendering algorithms.
+	 * 
+	 * @param hintKey the key of the hint to be set
+	 * @param hintValue the value indicating preferences for the specified hint category
+	 * @see java.awt.Graphics2D#setRenderingHint(java.awt.RenderingHints.Key, java.lang.Object)
+	 */
+	public void setRenderingHint(TRenderingHints.Key hintKey, Object hintValue) {
+		// TODO: Implement rendering hint setting
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#setRenderingHint-java.awt.RenderingHints.Key-java.lang.Object-
+		throw new UnsupportedOperationException("TGraphics2D.setRenderingHint() not yet implemented");
+	}
+
+	/**
+	 * Replaces the values of all preferences for the rendering algorithms with the specified hints.
+	 * 
+	 * @param hints the rendering hints to be set
+	 * @see java.awt.Graphics2D#setRenderingHints(java.util.Map)
+	 */
+	public void setRenderingHints(Map<?, ?> hints) {
+		// TODO: Implement rendering hints setting
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#setRenderingHints-java.util.Map-
+		throw new UnsupportedOperationException("TGraphics2D.setRenderingHints() not yet implemented");
+	}
+
+	/**
+	 * Adds a number of preferences for the rendering algorithms.
+	 * 
+	 * @param hints the rendering hints to be added
+	 * @see java.awt.Graphics2D#addRenderingHints(java.util.Map)
+	 */
+	public void addRenderingHints(Map<?, ?> hints) {
+		// TODO: Implement rendering hints addition
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#addRenderingHints-java.util.Map-
+		throw new UnsupportedOperationException("TGraphics2D.addRenderingHints() not yet implemented");
+	}
+
+	/**
+	 * Sets the Stroke for the Graphics2D context.
+	 * 
+	 * @param s the Stroke object to be used to stroke a Shape during the rendering process
+	 * @see java.awt.Graphics2D#setStroke(java.awt.Stroke)
+	 */
+	public void setStroke(TStroke s) {
+		// TODO: Implement stroke setting
+		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#setStroke-java.awt.Stroke-
+		throw new UnsupportedOperationException("TGraphics2D.setStroke() not yet implemented");
+	}
 
 }
