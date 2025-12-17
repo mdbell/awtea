@@ -188,28 +188,13 @@ public class SoftwareRasterizer implements Rasterizer {
                     drawLine(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case DRAW_POLYGON: {
-                    // TPolygon from awtea-classlib - we can't import it here, but we know it has xpoints/ypoints fields
-                    Object polygonObj = cmd.obj;
-                    try {
-                        int[] xpts = (int[]) polygonObj.getClass().getField("xpoints").get(polygonObj);
-                        int[] ypts = (int[]) polygonObj.getClass().getField("ypoints").get(polygonObj);
-                        drawPolygon(xpts, ypts);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to extract polygon points", e);
-                    }
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    drawPolygon(polygon.xpoints, polygon.ypoints);
                 }
                     break;
                 case FILL_POLYGON: {
-                    // TPolygon from awtea-classlib - we can't import it here, but we know it has xpoints/ypoints/npoints fields
-                    Object polygonObj = cmd.obj;
-                    try {
-                        int[] xpts = (int[]) polygonObj.getClass().getField("xpoints").get(polygonObj);
-                        int[] ypts = (int[]) polygonObj.getClass().getField("ypoints").get(polygonObj);
-                        int npts = (int) polygonObj.getClass().getField("npoints").get(polygonObj);
-                        fillPolygon(xpts, ypts, npts);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to extract polygon points", e);
-                    }
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    fillPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
                 }
                     break;
                 case FILL_OVAL:

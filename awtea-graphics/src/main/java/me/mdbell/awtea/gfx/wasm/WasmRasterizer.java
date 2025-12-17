@@ -210,27 +210,13 @@ public class WasmRasterizer implements Rasterizer {
                     commandBuffer.emitDrawLine(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case DRAW_POLYGON: {
-                    // TPolygon from awtea-classlib - we can't import it here, but we know it has xpoints/ypoints fields
-                    Object polygonObj = cmd.obj;
-                    try {
-                        int[] xpts = (int[]) polygonObj.getClass().getField("xpoints").get(polygonObj);
-                        int[] ypts = (int[]) polygonObj.getClass().getField("ypoints").get(polygonObj);
-                        commandBuffer.emitDrawPolygon(xpts, ypts);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to extract polygon points", e);
-                    }
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    commandBuffer.emitDrawPolygon(polygon.xpoints, polygon.ypoints);
                     break;
                 }
                 case FILL_POLYGON: {
-                    // TPolygon from awtea-classlib - we can't import it here, but we know it has xpoints/ypoints fields
-                    Object polygonObj = cmd.obj;
-                    try {
-                        int[] xpts = (int[]) polygonObj.getClass().getField("xpoints").get(polygonObj);
-                        int[] ypts = (int[]) polygonObj.getClass().getField("ypoints").get(polygonObj);
-                        commandBuffer.emitFillPolygon(xpts, ypts);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to extract polygon points", e);
-                    }
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    commandBuffer.emitFillPolygon(polygon.xpoints, polygon.ypoints);
                     break;
                 }
                 case SET_COMPOSITE:
