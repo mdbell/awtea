@@ -47,12 +47,12 @@
 <body>
     <div class="container">
         <h1>AWT API Coverage Report</h1>
-        <p class="timestamp">Generated: 2025-12-17 16:44:39</p>
+        <p class="timestamp">Generated: 2025-12-17 19:30:22</p>
         <div class="summary">
             <h2>Summary</h2>
-            <div class="summary-item"><strong>Total Coverage:</strong> 986 / 1782 (55.3%)</div>
+            <div class="summary-item"><strong>Total Coverage:</strong> 991 / 1782 (55.6%)</div>
                 <div class="progress-bar">
-                    <div class="progress-fill medium" style="width: 55.3%">55.3%</div>
+                    <div class="progress-fill medium" style="width: 55.6%">55.6%</div>
                 </div>
             <div class="summary-item"><strong>Packages:</strong> 14</div>
             <div class="summary-item"><strong>Classes:</strong> 105</div>
@@ -122,10 +122,10 @@
         </div>
         <div class="package">
             <div class="package-header" onclick="togglePackage('java_awt')">
-                <h2><span class="toggle-icon" id="icon-java_awt">▶</span>Package: java.awt <span class="coverage-badge partial">62.5%</span></h2>
-                <div>Coverage: 362 / 579 (62.5%)</div>
+                <h2><span class="toggle-icon" id="icon-java_awt">▶</span>Package: java.awt <span class="coverage-badge partial">63.4%</span></h2>
+                <div>Coverage: 367 / 579 (63.4%)</div>
                 <div class="progress-bar">
-                    <div class="progress-fill medium" style="width: 62.5%">62.5%</div>
+                    <div class="progress-fill medium" style="width: 63.4%">63.4%</div>
                 </div>
             </div>
             <div class="package-content" id="pkg-java_awt">
@@ -905,16 +905,16 @@
                 </div>
                 <div class="class partial">
                     <div class="class-header" onclick="toggleClass('rt_class_java_awt_Graphics')">
-                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Graphics">▶</span>Graphics <span class="coverage-badge partial">74.5%</span></h3>
-                        <div>Coverage: 38 / 51 (74.5%)</div>
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Graphics">▶</span>Graphics <span class="coverage-badge partial">84.3%</span></h3>
+                        <div>Coverage: 43 / 51 (84.3%)</div>
                 <div class="progress-bar">
-                    <div class="progress-fill medium" style="width: 74.5%">74.5%</div>
+                    <div class="progress-fill" style="width: 84.3%">84.3%</div>
                 </div>
                     </div>
                     <div class="class-content" id="cls-rt_class_java_awt_Graphics">
                         <div class="section">
                             <div class="section-title collapsible" onclick="toggleSection('java_awt_Graphics_impl_methods')">
-                                <span class="toggle-icon" id="icon-java_awt_Graphics_impl_methods">▶</span> ✓ Implemented Methods (37)
+                                <span class="toggle-icon" id="icon-java_awt_Graphics_impl_methods">▶</span> ✓ Implemented Methods (42)
                             </div>
                             <ul class="item-list implemented" id="java_awt_Graphics_impl_methods" style="display: none;">
                                 <li>public abstract boolean drawImage(java.awt.Image, int, int, int, int, java.awt.image.ImageObserver)</li>
@@ -927,11 +927,16 @@
                                 <li>public abstract java.awt.Shape getClip()</li>
                                 <li>public abstract void clearRect(int, int, int, int)</li>
                                 <li>public abstract void clipRect(int, int, int, int)</li>
+                                <li>public abstract void copyArea(int, int, int, int, int, int)</li>
                                 <li>public abstract void drawArc(int, int, int, int, int, int)</li>
                                 <li>public abstract void drawLine(int, int, int, int)</li>
+                                <li>public abstract void drawOval(int, int, int, int)</li>
                                 <li>public abstract void drawPolygon(int[], int[], int)</li>
+                                <li>public abstract void drawPolyline(int[], int[], int)</li>
                                 <li>public abstract void drawRoundRect(int, int, int, int, int, int)</li>
                                 <li>public abstract void drawString(java.lang.String, int, int)</li>
+                                <li>public abstract void fillArc(int, int, int, int, int, int)</li>
+                                <li>public abstract void fillOval(int, int, int, int)</li>
                                 <li>public abstract void fillPolygon(int[], int[], int)</li>
                                 <li>public abstract void fillRect(int, int, int, int)</li>
                                 <li>public abstract void fillRoundRect(int, int, int, int, int, int)</li>
@@ -958,20 +963,15 @@
                         </div>
                         <div class="section">
                             <div class="section-title collapsible" onclick="toggleSection('java_awt_Graphics_miss_methods')">
-                                <span class="toggle-icon" id="icon-java_awt_Graphics_miss_methods">▶</span> ✗ Missing Methods (13)
+                                <span class="toggle-icon" id="icon-java_awt_Graphics_miss_methods">▶</span> ✗ Missing Methods (8)
                             </div>
                             <ul class="item-list missing" id="java_awt_Graphics_miss_methods" style="display: none;">
                                 <li>public abstract boolean drawImage(java.awt.Image, int, int, int, int, int, int, int, int, java.awt.Color, java.awt.image.ImageObserver)</li>
                                 <li>public abstract boolean drawImage(java.awt.Image, int, int, int, int, int, int, int, int, java.awt.image.ImageObserver)</li>
                                 <li>public abstract boolean drawImage(java.awt.Image, int, int, int, int, java.awt.Color, java.awt.image.ImageObserver)</li>
                                 <li>public abstract boolean drawImage(java.awt.Image, int, int, java.awt.Color, java.awt.image.ImageObserver)</li>
-                                <li>public abstract void copyArea(int, int, int, int, int, int)</li>
                                 <li>public abstract void dispose()</li>
-                                <li>public abstract void drawOval(int, int, int, int)</li>
-                                <li>public abstract void drawPolyline(int[], int[], int)</li>
                                 <li>public abstract void drawString(java.text.AttributedCharacterIterator, int, int)</li>
-                                <li>public abstract void fillArc(int, int, int, int, int, int)</li>
-                                <li>public abstract void fillOval(int, int, int, int)</li>
                                 <li>public void drawRect(int, int, int, int)</li>
                                 <li>public void finalize()</li>
                             </ul>

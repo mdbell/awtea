@@ -1,11 +1,11 @@
-# Class: `Graphics` ![Coverage](https://img.shields.io/badge/coverage-74.5%25-yellow)
+# Class: `Graphics` ![Coverage](https://img.shields.io/badge/coverage-84.3%25-green)
 
 **Full Name:** `java.awt.Graphics`
 
-**Coverage:** 38 / 51 (74.5%)
+**Coverage:** 43 / 51 (84.3%)
 
 ```
-[█████████████████████████████████████░░░░░░░░░░░░░] 74.5%
+[██████████████████████████████████████████░░░░░░░░] 84.3%
 ```
 
 ## ✓ Implemented Methods
@@ -20,11 +20,16 @@
 - `public abstract java.awt.Shape getClip()`
 - `public abstract void clearRect(int, int, int, int)`
 - `public abstract void clipRect(int, int, int, int)`
+- `public abstract void copyArea(int, int, int, int, int, int)`
 - `public abstract void drawArc(int, int, int, int, int, int)`
 - `public abstract void drawLine(int, int, int, int)`
+- `public abstract void drawOval(int, int, int, int)`
 - `public abstract void drawPolygon(int[], int[], int)`
+- `public abstract void drawPolyline(int[], int[], int)`
 - `public abstract void drawRoundRect(int, int, int, int, int, int)`
 - `public abstract void drawString(java.lang.String, int, int)`
+- `public abstract void fillArc(int, int, int, int, int, int)`
+- `public abstract void fillOval(int, int, int, int)`
 - `public abstract void fillPolygon(int[], int[], int)`
 - `public abstract void fillRect(int, int, int, int)`
 - `public abstract void fillRoundRect(int, int, int, int, int, int)`
@@ -54,13 +59,8 @@
 - `public abstract boolean drawImage(java.awt.Image, int, int, int, int, int, int, int, int, java.awt.image.ImageObserver)`
 - `public abstract boolean drawImage(java.awt.Image, int, int, int, int, java.awt.Color, java.awt.image.ImageObserver)`
 - `public abstract boolean drawImage(java.awt.Image, int, int, java.awt.Color, java.awt.image.ImageObserver)`
-- `public abstract void copyArea(int, int, int, int, int, int)`
 - `public abstract void dispose()`
-- `public abstract void drawOval(int, int, int, int)`
-- `public abstract void drawPolyline(int[], int[], int)`
 - `public abstract void drawString(java.text.AttributedCharacterIterator, int, int)`
-- `public abstract void fillArc(int, int, int, int, int, int)`
-- `public abstract void fillOval(int, int, int, int)`
 - `public void drawRect(int, int, int, int)`
 - `public void finalize()`
 
