@@ -5,6 +5,7 @@ import lombok.Setter;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
+import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -151,9 +152,18 @@ public class TContainer extends TComponent {
      * @return the preferred size of this container
      */
     public TDimension getPreferredLayoutSize() {
+        // Check if an explicit preferred size was set
+        Dimension pref = getPreferredSizeValue();
+        if (pref != null) {
+            return TDimension.fromAWT(pref);
+        }
+        
+        // Otherwise ask the layout manager
         if (layoutMgr != null) {
             return layoutMgr.preferredLayoutSize(this);
         }
+        
+        // Fall back to current size
         return new TDimension(getWidth(), getHeight());
     }
 

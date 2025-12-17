@@ -62,6 +62,8 @@ public class TFrame extends TSurface {
         }
         super.setSize(width, height);
         peer.setSize(width, height);
+        invalidate();
+        validate();
         repaint();
     }
 
