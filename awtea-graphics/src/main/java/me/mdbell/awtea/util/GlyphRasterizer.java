@@ -72,16 +72,21 @@ public final class GlyphRasterizer {
 
 	public static void drawString(TrueTypeFont font, String str, RasterTarget dest, float sizePx, int x,
 								  int y, int argb) {
-		drawString(font, str, dest, sizePx, x, y, argb, SUPERSAMPLE);
+		drawString(font, str, dest, sizePx, x, y, argb, SUPERSAMPLE, false);
 	}
 
 	public static void drawString(TrueTypeFont font, String str, RasterTarget dest, float sizePx, int x,
 								  int y, int argb, int supersample) {
-		processString(font, str, dest, sizePx, x, y, argb, supersample, GlyphRasterizer::drawGlyphByGid);
+		drawString(font, str, dest, sizePx, x, y, argb, supersample, false);
+	}
+
+	public static void drawString(TrueTypeFont font, String str, RasterTarget dest, float sizePx, int x,
+								  int y, int argb, int supersample, boolean subpixelRendering) {
+		processString(font, str, dest, sizePx, x, y, argb, supersample, subpixelRendering, GlyphRasterizer::drawGlyphByGid);
 	}
 
 	private static int processString(TrueTypeFont font, String str, RasterTarget dest, float sizePx, int x,
-									 int y, int argb, int supersample, GlyphProcessor func) {
+									 int y, int argb, int supersample, boolean subpixelRendering, GlyphProcessor func) {
 		if (str == null || str.isEmpty()) {
 			return 0;
 		}
@@ -117,7 +122,7 @@ public final class GlyphRasterizer {
 			penX += kernPx;
 
 			int pxX = (int) Math.round(penX);
-			double advancePx = func.processGlyph(font, dest, gid, sizePx, pxX, y, argb, supersample) * scale;
+			double advancePx = func.processGlyph(font, dest, gid, sizePx, pxX, y, argb, supersample, subpixelRendering) * scale;
 			penX += advancePx;
 
 			prevGid = gid;
@@ -127,7 +132,7 @@ public final class GlyphRasterizer {
 	}
 
 	private static double drawGlyphByGid(TrueTypeFont font, RasterTarget img, int gid, float sizePx,
-										 int x, int y, int argb, int supersample) {
+										 int x, int y, int argb, int supersample, boolean subpixelRendering) {
 		drawGlyph(
 			font,
 			gid,
@@ -136,7 +141,8 @@ public final class GlyphRasterizer {
 			x,
 			y,
 			argb,
-			supersample
+			supersample,
+			subpixelRendering
 		);
 
 		return getAdvanceWidthUnits(font, gid);
@@ -157,7 +163,7 @@ public final class GlyphRasterizer {
 								 int baselineY,
 								 int argb) {
 
-		drawGlyph(font, glyphId, dest, sizePx, originX, baselineY, argb, SUPERSAMPLE);
+		drawGlyph(font, glyphId, dest, sizePx, originX, baselineY, argb, SUPERSAMPLE, false);
 	}
 
 	public static void drawGlyph(TrueTypeFont font,
@@ -168,6 +174,18 @@ public final class GlyphRasterizer {
 								  int baselineY,
 								  int argb,
 								  int supersample) {
+		drawGlyph(font, glyphId, dest, sizePx, originX, baselineY, argb, supersample, false);
+	}
+
+	public static void drawGlyph(TrueTypeFont font,
+								  int glyphId,
+								  RasterTarget dest,
+								  float sizePx,
+								  int originX,
+								  int baselineY,
+								  int argb,
+								  int supersample,
+								  boolean subpixelRendering) {
 
 		if (supersample <= 0) {
 			throw new IllegalArgumentException("supersample must be >= 1");
@@ -179,7 +197,7 @@ public final class GlyphRasterizer {
 		}
 
 		// 1) Get or build cached supersampled alpha mask for this glyph/size
-		CachedGlyph cached = getOrCreateCachedGlyph(font, glyphId, glyph, sizePx, supersample);
+		CachedGlyph cached = getOrCreateCachedGlyph(font, glyphId, glyph, sizePx, supersample, subpixelRendering);
 		if (cached == null) {
 			return;
 		}
@@ -189,23 +207,35 @@ public final class GlyphRasterizer {
 		int ssY0 = cached.ssY0 + baselineY * supersample;
 
 		// 3) Downsample & blend into dest
-		downsampleAndBlend(dest,
-			cached.alphaMask,
-			cached.ssWidth,
-			cached.ssHeight,
-			ssX0,
-			ssY0,
-			supersample,
-			argb);
+		if (subpixelRendering) {
+			downsampleAndBlendSubpixel(dest,
+				cached.alphaMask,
+				cached.ssWidth,
+				cached.ssHeight,
+				ssX0,
+				ssY0,
+				supersample,
+				argb);
+		} else {
+			downsampleAndBlend(dest,
+				cached.alphaMask,
+				cached.ssWidth,
+				cached.ssHeight,
+				ssX0,
+				ssY0,
+				supersample,
+				argb);
+		}
 	}
 
 	private static CachedGlyph getOrCreateCachedGlyph(TrueTypeFont font,
 													  int glyphId,
 													  Glyph glyph,
 													  float sizePx,
-													  int supersample) {
+													  int supersample,
+													  boolean subpixelRendering) {
 
-		GlyphKey key = new GlyphKey(font, glyphId, sizePx, supersample);
+		GlyphKey key = new GlyphKey(font, glyphId, sizePx, supersample, subpixelRendering);
 
 		synchronized (CACHE) {
 			CachedGlyph cached = CACHE.get(key);

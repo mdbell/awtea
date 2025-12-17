@@ -41,6 +41,13 @@ public class FontRendererFactory {
 	 */
 	private static final String SUPERSAMPLE_PROPERTY = "me.mdbell.awtea.font.supersample";
 	
+	/**
+	 * System property to enable sub-pixel font rendering (LCD/ClearType-style).
+	 * Valid values: "true" or "false" (default: false)
+	 * When enabled, uses horizontal RGB stripe sub-pixel rendering for improved clarity.
+	 */
+	private static final String SUBPIXEL_PROPERTY = "me.mdbell.awtea.font.subpixel";
+	
 	private FontRendererFactory() {
 		// Utility class
 	}
@@ -82,7 +89,19 @@ public class FontRendererFactory {
 	 * @return a new raster font renderer
 	 */
 	public static FontRenderer createRasterRenderer(int supersample) {
-		return new RasterFontRenderer(supersample);
+		boolean subpixel = getSubpixelFromProperty();
+		return new RasterFontRenderer(supersample, subpixel);
+	}
+	
+	/**
+	 * Create a raster-based font renderer with the specified configuration.
+	 * 
+	 * @param supersample the supersampling factor (1 = no AA, 2-4 recommended)
+	 * @param subpixel whether to enable sub-pixel rendering
+	 * @return a new raster font renderer
+	 */
+	public static FontRenderer createRasterRenderer(int supersample, boolean subpixel) {
+		return new RasterFontRenderer(supersample, subpixel);
 	}
 	
 	/**
@@ -143,5 +162,16 @@ public class FontRendererFactory {
 			}
 		}
 		return 4; // Default supersampling
+	}
+	
+	/**
+	 * Get the sub-pixel rendering setting from system properties.
+	 */
+	private static boolean getSubpixelFromProperty() {
+		String subpixelStr = System.getProperty(SUBPIXEL_PROPERTY);
+		if (subpixelStr != null) {
+			return Boolean.parseBoolean(subpixelStr);
+		}
+		return false; // Default: disabled for backward compatibility
 	}
 }
