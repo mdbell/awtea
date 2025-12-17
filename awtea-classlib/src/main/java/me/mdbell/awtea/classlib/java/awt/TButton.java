@@ -10,21 +10,26 @@ import java.awt.Color;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
  * A basic button component that displays a label and responds to clicks.
- * This is a lightweight component that renders itself using graphics primitives.
+ * This is a lightweight component that renders itself using graphics
+ * primitives.
  * 
- * <p>The button is rendered as a bordered rectangle with centered text.
+ * <p>
+ * The button is rendered as a bordered rectangle with centered text.
  * When clicked, it fires an {@link TActionEvent} to registered listeners.
  * 
- * <p><strong>TODO:</strong> Advanced features not yet implemented:
+ * <p>
+ * <strong>TODO:</strong> Advanced features not yet implemented:
  * <ul>
- *   <li>Keyboard activation (Enter/Space key)</li>
- *   <li>Disabled state rendering</li>
- *   <li>Focus visual indicator</li>
- *   <li>Pressed/hover state animation</li>
- *   <li>Icon support</li>
- *   <li>Mnemonics and keyboard shortcuts</li>
+ * <li>Keyboard activation (Enter/Space key)</li>
+ * <li>Disabled state rendering</li>
+ * <li>Focus visual indicator</li>
+ * <li>Pressed/hover state animation</li>
+ * <li>Icon support</li>
+ * <li>Mnemonics and keyboard shortcuts</li>
  * </ul>
  *
  * @see java.awt.Button
@@ -82,7 +87,7 @@ public class TButton extends TComponent {
 	public TButton(String label) {
 		this.label = label;
 		this.actionCommand = label;
-		
+
 		// Add mouse listener to handle button clicks
 		addMouseListener(new me.mdbell.awtea.classlib.java.awt.event.TMouseListener() {
 			@Override
@@ -155,12 +160,11 @@ public class TButton extends TComponent {
 	protected void fireActionPerformed(TMouseEvent trigger) {
 		String command = actionCommand != null ? actionCommand : label;
 		TActionEvent event = new TActionEvent(
-			this,
-			TActionEvent.ACTION_PERFORMED,
-			command,
-			trigger.getWhen(),
-			trigger.getModifiers()
-		);
+				this,
+				TActionEvent.ACTION_PERFORMED,
+				command,
+				trigger.getWhen(),
+				trigger.getModifiers());
 
 		for (TActionListener listener : actionListeners) {
 			listener.actionPerformed(event);
@@ -170,12 +174,13 @@ public class TButton extends TComponent {
 	/**
 	 * Paints the button as a bordered rectangle with centered text.
 	 * 
-	 * <p>Visual design (simplified):
+	 * <p>
+	 * Visual design (simplified):
 	 * <ul>
-	 *   <li>Light gray background</li>
-	 *   <li>Dark gray border</li>
-	 *   <li>Slightly darker background when pressed</li>
-	 *   <li>Black text, centered horizontally and vertically</li>
+	 * <li>Light gray background</li>
+	 * <li>Dark gray border</li>
+	 * <li>Slightly darker background when pressed</li>
+	 * <li>Black text, centered horizontally and vertically</li>
 	 * </ul>
 	 *
 	 * @param g the graphics context to paint on
@@ -195,7 +200,7 @@ public class TButton extends TComponent {
 		} else {
 			bgColor = new Color(240, 240, 240);
 		}
-		
+
 		g.setColor(bgColor);
 		g.fillRect(0, 0, w, h);
 
@@ -206,22 +211,22 @@ public class TButton extends TComponent {
 		// Draw label text (centered)
 		if (label != null && !label.isEmpty()) {
 			g.setColor(enabled ? Color.BLACK : Color.GRAY);
-			
+
 			TFont font = g.getFont();
 			if (font == null) {
 				// Use a default font if none is set
 				font = new TFont("SansSerif", TFont.PLAIN, 12);
 				g.setFont(font);
 			}
-			
+
 			TFontMetrics fm = g.getFontMetrics(font);
 			int textWidth = fm.stringWidth(label);
 			int textHeight = fm.getHeight();
-			
+
 			// Center the text
 			int x = (w - textWidth) / 2;
 			int y = (h - textHeight) / 2 + fm.getAscent();
-			
+
 			g.drawString(label, x, y);
 		}
 	}
@@ -233,16 +238,16 @@ public class TButton extends TComponent {
 	 *
 	 * @return the preferred dimensions of this button
 	 */
-	public java.awt.Dimension getPreferredSize() {
+	public TDimension getPreferredSize() {
 		// Check if explicitly set
-		java.awt.Dimension explicit = getPreferredSizeValue();
+		TDimension explicit = super.getPreferredSize();
 		if (explicit != null) {
 			return explicit;
 		}
 
 		// Calculate based on label
 		if (label == null || label.isEmpty()) {
-			return new java.awt.Dimension(75, 25); // Default button size
+			return new TDimension(75, 25); // Default button size
 		}
 
 		// Try to get graphics for measurements, but handle null gracefully
@@ -252,10 +257,9 @@ public class TButton extends TComponent {
 		} catch (Exception e) {
 			// Graphics not available yet, use fallback
 		}
-		
+
 		if (g == null) {
-			// Fallback: estimate based on character count
-			return new java.awt.Dimension(Math.max(75, label.length() * 8 + 20), 25);
+			return new TDimension(Math.max(75, label.length() * 8 + 20), 25);
 		}
 
 		TFont font = g.getFont();
@@ -266,8 +270,8 @@ public class TButton extends TComponent {
 		TFontMetrics fm = g.getFontMetrics(font);
 		int textWidth = fm.stringWidth(label);
 		int textHeight = fm.getHeight();
-		
+
 		// Add padding: 20px horizontal, 10px vertical
-		return new java.awt.Dimension(textWidth + 20, textHeight + 10);
+		return new TDimension(textWidth + 20, textHeight + 10);
 	}
 }

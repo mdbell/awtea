@@ -5,7 +5,6 @@ import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 
 import java.awt.*;
 
-
 public class TOffscreenBufferPeer implements TSurfacePeer {
 
     private TBufferedImage buffer;
@@ -26,7 +25,7 @@ public class TOffscreenBufferPeer implements TSurfacePeer {
         TGraphics g = buffer.getGraphics();
         TGraphics surface = root.getSurfaceGraphics();
 
-        root.superPaint(g);
+        root.paint(g);
         g.dispose();
 
         Color bg = root.getBackground();

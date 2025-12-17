@@ -243,6 +243,8 @@ public class TContainer extends TComponent {
 
     public TComponent getComponentAt(int x, int y) {
         log.trace("TContainer.getComponentAt({}, {}) called on {}", x, y, this.getClass().getName());
+        x -= this.getX();
+        y -= this.getY();
         for (TComponent child : children) {
             if (child.contains(x, y)) {
                 log.trace("Point ({}, {}) is within component {}", x, y, child.getClass().getName());

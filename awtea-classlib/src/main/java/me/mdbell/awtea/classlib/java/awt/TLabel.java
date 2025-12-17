@@ -5,20 +5,24 @@ import lombok.Setter;
 
 import java.awt.Color;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
  * A label component for displaying non-editable text.
  * This is a lightweight component that renders text using graphics primitives.
  * 
- * <p>Labels can display a single line of text with configurable alignment.
+ * <p>
+ * Labels can display a single line of text with configurable alignment.
  * 
- * <p><strong>TODO:</strong> Advanced features not yet implemented:
+ * <p>
+ * <strong>TODO:</strong> Advanced features not yet implemented:
  * <ul>
- *   <li>Icon support (text + icon or icon only)</li>
- *   <li>Multi-line text wrapping</li>
- *   <li>HTML text rendering</li>
- *   <li>Vertical alignment options</li>
- *   <li>Text with mnemonic underline</li>
- *   <li>Display disabled state</li>
+ * <li>Icon support (text + icon or icon only)</li>
+ * <li>Multi-line text wrapping</li>
+ * <li>HTML text rendering</li>
+ * <li>Vertical alignment options</li>
+ * <li>Text with mnemonic underline</li>
+ * <li>Display disabled state</li>
  * </ul>
  *
  * @see java.awt.Label
@@ -73,7 +77,7 @@ public class TLabel extends TComponent {
 	/**
 	 * Creates a label with the specified text and alignment.
 	 *
-	 * @param text the text to display
+	 * @param text      the text to display
 	 * @param alignment the alignment (LEFT, CENTER, or RIGHT)
 	 */
 	public TLabel(String text, int alignment) {
@@ -154,16 +158,16 @@ public class TLabel extends TComponent {
 	 *
 	 * @return the preferred dimensions of this label
 	 */
-	public java.awt.Dimension getPreferredSize() {
+	public TDimension getPreferredSize() {
 		// Check if explicitly set
-		java.awt.Dimension explicit = getPreferredSizeValue();
+		TDimension explicit = super.getPreferredSize();
 		if (explicit != null) {
 			return explicit;
 		}
 
 		// Calculate based on text
 		if (text == null || text.isEmpty()) {
-			return new java.awt.Dimension(0, 20); // Default height for empty label
+			return new TDimension(0, 20); // Default height for empty label
 		}
 
 		// Try to get graphics for measurements, but handle null gracefully
@@ -173,10 +177,10 @@ public class TLabel extends TComponent {
 		} catch (Exception e) {
 			// Graphics not available yet, use fallback
 		}
-		
+
 		if (g == null) {
 			// Fallback dimensions based on character count
-			return new java.awt.Dimension(text.length() * 7 + 4, 20);
+			return new TDimension(text.length() * 7 + 4, 20);
 		}
 
 		TFont font = g.getFont();
@@ -189,6 +193,6 @@ public class TLabel extends TComponent {
 		int textHeight = fm.getHeight();
 
 		// Add small padding
-		return new java.awt.Dimension(textWidth + 4, textHeight + 4);
+		return new TDimension(textWidth + 4, textHeight + 4);
 	}
 }
