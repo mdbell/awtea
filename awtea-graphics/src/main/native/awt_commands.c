@@ -24,6 +24,11 @@ static int handle_fill_polygon(SurfaceContext* ctx, SurfaceData* surface, Comman
 static int handle_fill_oval(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 static int handle_fill_round_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 static int handle_fill_arc(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_draw_oval(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_draw_arc(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_draw_round_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_draw_polyline(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
+static int handle_copy_area(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length);
 
 // Command handler function table (indexed by SurfaceOperation enum)
 static const CommandHandler command_handlers[] = {
@@ -41,7 +46,12 @@ static const CommandHandler command_handlers[] = {
     [CMD_FILL_POLYGON] = handle_fill_polygon,
     [CMD_FILL_OVAL] = handle_fill_oval,
     [CMD_FILL_ROUND_RECT] = handle_fill_round_rect,
-    [CMD_FILL_ARC] = handle_fill_arc
+    [CMD_FILL_ARC] = handle_fill_arc,
+    [CMD_DRAW_OVAL] = handle_draw_oval,
+    [CMD_DRAW_ARC] = handle_draw_arc,
+    [CMD_DRAW_ROUND_RECT] = handle_draw_round_rect,
+    [CMD_DRAW_POLYLINE] = handle_draw_polyline,
+    [CMD_COPY_AREA] = handle_copy_area
 };
 
 // Number of command handlers
@@ -477,5 +487,144 @@ static int handle_fill_arc(SurfaceContext* ctx, SurfaceData* surface, CommandRea
     
     log_debug("Filled arc at (%d, %d) with size %dx%d, angles %d-%d", 
              x, y, width, height, start_angle, arc_angle);
+    return 0;
+}
+static int handle_draw_oval(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+    if(length != 4) {
+        log_error("handle_draw_oval: expected length of 4, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    
+    int x = (int)read_u32(reader);
+    int y = (int)read_u32(reader);
+    int width = (int)read_u32(reader);
+    int height = (int)read_u32(reader);
+    
+    draw_oval(surface, ctx, x, y, width, height, ctx->argb[COLOR_FG]);
+    
+    log_debug("Drew oval at (%d, %d) with size %dx%d", x, y, width, height);
+    return 0;
+}
+
+static int handle_draw_arc(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+    if(length != 6) {
+        log_error("handle_draw_arc: expected length of 6, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    
+    int x = (int)read_u32(reader);
+    int y = (int)read_u32(reader);
+    int width = (int)read_u32(reader);
+    int height = (int)read_u32(reader);
+    int start_angle = (int)read_u32(reader);
+    int arc_angle = (int)read_u32(reader);
+    
+    draw_arc(surface, ctx, x, y, width, height, start_angle, arc_angle, ctx->argb[COLOR_FG]);
+    
+    log_debug("Drew arc at (%d, %d) with size %dx%d, angles %d-%d", 
+             x, y, width, height, start_angle, arc_angle);
+    return 0;
+}
+
+static int handle_draw_round_rect(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+    if(length != 6) {
+        log_error("handle_draw_round_rect: expected length of 6, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    
+    int x = (int)read_u32(reader);
+    int y = (int)read_u32(reader);
+    int width = (int)read_u32(reader);
+    int height = (int)read_u32(reader);
+    int arc_width = (int)read_u32(reader);
+    int arc_height = (int)read_u32(reader);
+    
+    draw_round_rect(surface, ctx, x, y, width, height, arc_width, arc_height, ctx->argb[COLOR_FG]);
+    
+    log_debug("Drew rounded rect at (%d, %d) with size %dx%d, arcs %dx%d", 
+             x, y, width, height, arc_width, arc_height);
+    return 0;
+}
+
+static int handle_draw_polyline(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+    if(length < 1) {
+        log_error("handle_draw_polyline: expected min length of 1 (for nPoints), got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+
+    // Read nPoints from command data
+    int npoints = (int)read_u32(reader);
+    
+    // Validate: length should be 1 (nPoints) + 2*npoints (coords)
+    int expected_length = 1 + (2 * npoints);
+    if (length != expected_length) {
+        log_error("handle_draw_polyline: length mismatch: expected %d (1 + 2*%d), got %d", 
+                  expected_length, npoints, length);
+        // Skip remaining data
+        reader_skip(reader, (length - 1) * 4);
+        return -1;
+    }
+    
+    if (npoints < 2) {
+        log_error("handle_draw_polyline: need at least 2 points, got %d", npoints);
+        reader_skip(reader, (length - 1) * 4);
+        return -1;
+    }
+    
+    // Allocate arrays for x and y coordinates
+    int* x_points = (int*)malloc(sizeof(int) * npoints);
+    int* y_points = (int*)malloc(sizeof(int) * npoints);
+    
+    if (!x_points || !y_points) {
+        log_error("handle_draw_polyline: failed to allocate point arrays");
+        if (x_points) free(x_points);
+        if (y_points) free(y_points);
+        reader_skip(reader, (length - 1) * 4);
+        return -1;
+    }
+    
+    // Read x coordinates
+    for(int i = 0; i < npoints; i++) {
+        x_points[i] = (int)read_u32(reader);
+    }
+    
+    // Read y coordinates
+    for(int i = 0; i < npoints; i++) {
+        y_points[i] = (int)read_u32(reader);
+    }
+    
+    // Call draw_polyline
+    draw_polyline(surface, ctx, x_points, y_points, npoints, ctx->argb[COLOR_FG]);
+    
+    // Free allocated memory
+    free(x_points);
+    free(y_points);
+    
+    log_debug("Drew polyline with %d points", npoints);
+    return 0;
+}
+
+static int handle_copy_area(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
+    if(length != 6) {
+        log_error("handle_copy_area: expected length of 6, got %d", length);
+        reader_skip(reader, length * 4);
+        return -1;
+    }
+    
+    int x = (int)read_u32(reader);
+    int y = (int)read_u32(reader);
+    int width = (int)read_u32(reader);
+    int height = (int)read_u32(reader);
+    int dx = (int)read_u32(reader);
+    int dy = (int)read_u32(reader);
+    
+    copy_area(surface, ctx, x, y, width, height, dx, dy);
+    
+    log_debug("Copied area at (%d, %d) with size %dx%d, offset (%d, %d)", 
+             x, y, width, height, dx, dy);
     return 0;
 }

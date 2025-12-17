@@ -6,6 +6,7 @@
  */
 
 import { assertEquals } from "@std/assert";
+import { WasmRasterizer } from "./wasm_rasterizer.ts";
 
 /**
  * Compare two pixel values as unsigned 32-bit integers
@@ -79,4 +80,80 @@ export function assertPixelApprox(
         `Max diff: ${maxDiff} (tolerance: ${tolerance})`,
     );
   }
+}
+
+/**
+ * Convert RGB to closest ANSI 256-color code
+ */
+export function rgbToAnsi256(r: number, g: number, b: number): number {
+  // For grayscale colors
+  if (r === g && g === b) {
+    if (r < 8) return 16;
+    if (r > 248) return 231;
+    return Math.round(((r - 8) / 247) * 24) + 232;
+  }
+  
+  // For color values, map to 6x6x6 color cube (colors 16-231)
+  const rIndex = Math.round(r / 255 * 5);
+  const gIndex = Math.round(g / 255 * 5);
+  const bIndex = Math.round(b / 255 * 5);
+  
+  return 16 + (36 * rIndex) + (6 * gIndex) + bIndex;
+}
+
+/**
+ * Helper to print a surface as colored ASCII art using ANSI escape sequences
+ */
+export function printSurface(
+  rasterizer: WasmRasterizer,
+  surfaceId: number,
+  title: string,
+  threshold = 0x80000000,
+) {
+  const dims = rasterizer.getSurfaceDimensions(surfaceId);
+  const pixels = rasterizer.copySurfacePixels(surfaceId);
+
+  console.log(`\n${title} (${dims.width}x${dims.height}):`);
+  for (let y = 0; y < dims.height; y++) {
+    let row = "";
+    for (let x = 0; x < dims.width; x++) {
+      const pixel = pixels[y * dims.width + x];
+      
+      if (pixel > threshold) {
+        // Extract color components
+        const { r, g, b } = WasmRasterizer.extractARGB(pixel);
+        
+        // Use ANSI 256-color background
+        const ansiColor = rgbToAnsi256(r, g, b);
+        row += `\x1b[48;5;${ansiColor}m  \x1b[0m`;
+      } else {
+        // Empty/transparent pixel - use dots
+        row += "··";
+      }
+    }
+    console.log(row);
+  }
+}
+
+/**
+ * Helper to save surface as a simple PPM image file
+ */
+export async function saveSurfaceAsPPM(
+  rasterizer: WasmRasterizer,
+  surfaceId: number,
+  filename: string,
+) {
+  const dims = rasterizer.getSurfaceDimensions(surfaceId);
+  const pixels = rasterizer.copySurfacePixels(surfaceId);
+
+  let ppm = `P3\n${dims.width} ${dims.height}\n255\n`;
+  
+  for (let i = 0; i < pixels.length; i++) {
+    const color = WasmRasterizer.extractARGB(pixels[i]);
+    ppm += `${color.r} ${color.g} ${color.b} `;
+    if ((i + 1) % dims.width === 0) ppm += "\n";
+  }
+
+  await Deno.writeTextFile(filename, ppm);
+  console.log(`Saved surface to ${filename}`);
 }

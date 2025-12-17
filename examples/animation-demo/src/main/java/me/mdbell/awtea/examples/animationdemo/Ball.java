@@ -19,9 +19,6 @@ public class Ball {
     private static final double DAMPING = 0.8;    // velocity multiplier on bounce
     private static final double MIN_BOUNCE_VELOCITY = 50.0; // minimum velocity to bounce
     
-    // Rendering constants
-    private static final int CIRCLE_SIDES = 20; // number of sides for circle approximation
-    
     /**
      * Creates a new ball at the specified position.
      * 
@@ -99,26 +96,23 @@ public class Ball {
     
     /**
      * Draws the ball on the provided Graphics context.
+     * Uses fillOval and drawOval for efficient rendering.
      * 
      * @param g Graphics context to draw on
      */
     public void draw(Graphics g) {
-        // Approximate a circle using a polygon
-        int[] xPoints = new int[CIRCLE_SIDES];
-        int[] yPoints = new int[CIRCLE_SIDES];
+        // Calculate bounding box for the oval
+        int diameter = radius * 2;
+        int topLeftX = (int)(x - radius);
+        int topLeftY = (int)(y - radius);
         
-        for (int i = 0; i < CIRCLE_SIDES; i++) {
-            double angle = 2 * Math.PI * i / CIRCLE_SIDES;
-            xPoints[i] = (int)(x + radius * Math.cos(angle));
-            yPoints[i] = (int)(y + radius * Math.sin(angle));
-        }
-        
+        // Fill the circle
         g.setColor(color);
-        g.fillPolygon(xPoints, yPoints, CIRCLE_SIDES);
+        g.fillOval(topLeftX, topLeftY, diameter, diameter);
         
         // Draw outline
         g.setColor(Color.BLACK);
-        g.drawPolygon(xPoints, yPoints, CIRCLE_SIDES);
+        g.drawOval(topLeftX, topLeftY, diameter, diameter);
     }
     
     /**

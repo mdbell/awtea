@@ -743,6 +743,109 @@ export class WasmRasterizer {
   }
 
   /**
+   * Helper: Write a drawOval command
+   */
+  static writeDrawOvalCommand(
+    w: ByteWriter,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_DRAW_OVAL);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.finishCommand();
+  }
+
+  /**
+   * Helper: Write a drawArc command
+   */
+  static writeDrawArcCommand(
+    w: ByteWriter,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    arcAngle: number,
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_DRAW_ARC);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.writeInt32(startAngle);
+    w.writeInt32(arcAngle);
+    w.finishCommand();
+  }
+
+  /**
+   * Helper: Write a drawRoundRect command
+   */
+  static writeDrawRoundRectCommand(
+    w: ByteWriter,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    arcWidth: number,
+    arcHeight: number,
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_DRAW_ROUND_RECT);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.writeInt32(arcWidth);
+    w.writeInt32(arcHeight);
+    w.finishCommand();
+  }
+
+  /**
+   * Helper: Write a drawPolyline command
+   */
+  static writeDrawPolylineCommand(
+    w: ByteWriter,
+    xPoints: number[],
+    yPoints: number[],
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_DRAW_POLYLINE);
+    w.writeInt32(xPoints.length);
+    for (const x of xPoints) {
+      w.writeInt32(x);
+    }
+    for (const y of yPoints) {
+      w.writeInt32(y);
+    }
+    w.finishCommand();
+  }
+
+  /**
+   * Helper: Write a copyArea command
+   */
+  static writeCopyAreaCommand(
+    w: ByteWriter,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    dx: number,
+    dy: number,
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_COPY_AREA);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.writeInt32(dx);
+    w.writeInt32(dy);
+    w.finishCommand();
+  }
+
+  /**
    * Helper: Convert ARGB color components to a single uint32
    */
   static makeARGB(a: number, r: number, g: number, b: number): number {
