@@ -110,21 +110,6 @@ This document provides comprehensive documentation for all system properties tha
 -Dme.mdbell.awtea.font.subpixel=false
 ```
 
-### Font Loading Failure Cache
-
-**Note:** As of v0.3.0, `FontLoader` automatically caches font loading failures to prevent repeated performance hits from retrying failed loads. When a font fails to load (e.g., network error, missing file), the failure is recorded and subsequent attempts to load the same font will fail immediately without retrying the network/resource operation.
-
-**Key behaviors:**
-- Failed font loads are cached permanently for the lifetime of the application
-- The failure cache is thread-safe and uses minimal memory (only stores font names)
-- Use `FontLoader.clearFailureCache()` programmatically to clear the failure cache for development/debugging
-- Use `FontLoader.clearCache()` to clear both success and failure caches
-- Use `FontLoader.isFailureCached(fontName)` to check if a font is in the failure cache
-
-**Performance Impact:** Eliminates CPU and network overhead from repeated failed font loads, resulting in faster UI initialization and painting, especially in font-intensive contexts like the GUI demo.
-
-**Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/font/FontLoader.java`
-
 ---
 
 ## WebAssembly (WASM)
