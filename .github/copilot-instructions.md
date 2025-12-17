@@ -46,6 +46,19 @@ Modular font rendering with `FontRenderer` interface and `FontPeer` bridge:
 ./gradlew :examples:gui-demo:generateJavaScript    # Compile Java → JS via TeaVM
 ```
 
+### TeaVM Build Requirements
+**IMPORTANT**: When building examples or any project using TeaVM's JavaScript generation, use the `--no-daemon` flag to avoid TeaVM plugin corruption:
+
+```bash
+./gradlew --no-daemon :examples:gui-demo:build
+./gradlew --no-daemon :examples:layout-demo:build
+./gradlew --no-daemon :examples:gui-demo:generateJavaScript
+```
+
+The Gradle daemon can cause TeaVM plugin state corruption, leading to build failures with errors like "Error loading plugins" or "ZipException: ZipFile invalid LOC header". Using `--no-daemon` ensures each build starts with a clean state.
+
+This requirement only applies to tasks that invoke TeaVM's JavaScript/WASM generation (typically example builds). Library modules (`awtea-classlib`, `awtea-graphics`, etc.) can be built normally without this flag.
+
 ### WASM Compilation (Native C → WASM)
 The `awtea-graphics` module compiles C rasterization code to WASM using Emscripten:
 ```bash
@@ -155,6 +168,12 @@ The `.devcontainer/` setup provides all tools pre-configured:
 - `docs/WasmSurfacePool.md`: WASM surface reuse pooling
 - `docs/WASM_IMPORTS.md`: WASM module import/export conventions
 - `buildSrc/src/main/java/me/mdbell/awtea/codegen/README.md`: Code generation system
+
+* Use the following guidelines for the content of your reply:
+    - Be concise and to the point. Avoid unnecessary details or explanations.
+    - Do not restate or summarize the comment. Focus on addressing the specific request or question.
+    - Use a friendly and professional tone. Do not thank the user or compliment their feedback or comments in your response.
+    - **ALWAYS** include a screenshot of any UI changes so the user can see the impact of the change.
 
 ## Common Patterns
 

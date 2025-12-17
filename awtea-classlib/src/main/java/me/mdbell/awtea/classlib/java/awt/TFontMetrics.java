@@ -33,4 +33,14 @@ public class TFontMetrics {
     public int stringWidth(String str) {
         return font.getFontPeer().measureString(str, font.getSize());
     }
+
+    /**
+     * Gets the standard height of a line of text in this font.
+     * This is the distance between the baseline of adjacent lines of text.
+     *
+     * @return the standard height of a line of text in this font
+     */
+    public int getHeight() {
+        return ascent + descent + leading;
+    }
 }
