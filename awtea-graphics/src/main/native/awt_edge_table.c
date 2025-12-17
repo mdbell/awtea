@@ -212,9 +212,7 @@ void edge_table_add_edge(EdgeTable* et, int y1, float x1, int y2, float x2) {
     // Create edge node
     EdgeNode edge;
     edge.y_max = y2;
-    // Initialize x at the center of the first scanline to avoid
-    // edges meeting at vertices being at the exact same x coordinate
-    edge.x = x1 + 0.5f * dx;
+    edge.x = x1;
     edge.dx = dx;
     edge.direction = direction;
     
