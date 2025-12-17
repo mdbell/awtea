@@ -272,14 +272,4 @@ public class TContainer extends TComponent {
         }
         super.validate();
     }
-
-    // @Override
-    // public void dispatchEvent(TAWTEvent event) {
-    // for (TComponent child : children) {
-    // if (event.isConsumed()) {
-    // break;
-    // }
-    // child.dispatchEvent(event);
-    // }
-    // }
 }
