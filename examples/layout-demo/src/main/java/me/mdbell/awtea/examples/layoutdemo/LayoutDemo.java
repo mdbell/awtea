@@ -151,7 +151,15 @@ public class LayoutDemo {
 
         // Create demo with CardLayout
         CardLayout cardLayout = new CardLayout();
-        Container panel = new Container();
+        Container panel = new Container() {
+            @Override
+            public void paint(Graphics g) {
+                // Paint a background to see if the panel has size
+                g.setColor(new Color(180, 180, 180));
+                g.fillRect(0, 0, getWidth(), getHeight());
+                super.paint(g);
+            }
+        };
         panel.setLayout(cardLayout);
 
         // Add several cards with preferred sizes

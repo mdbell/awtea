@@ -224,10 +224,13 @@ public class TCardLayout implements TLayoutManager2 {
                         parent.getWidth() - (hgap * 2 + insets.left + insets.right),
                         parent.getHeight() - (vgap * 2 + insets.top + insets.bottom)
                 );
-            }
-
-            if (currentCard != null) {
-                currentCard.setVisible(true);
+                
+                // Manage visibility: only the current card should be visible
+                // If no current card is set, all cards should be hidden
+                boolean shouldBeVisible = (currentCard != null && comp == currentCard);
+                if (comp.isVisible() != shouldBeVisible) {
+                    comp.setVisible(shouldBeVisible);
+                }
             }
         }
     }
