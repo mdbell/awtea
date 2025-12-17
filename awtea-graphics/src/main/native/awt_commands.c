@@ -302,31 +302,68 @@ static int handle_draw_line(SurfaceContext* ctx, SurfaceData* surface, CommandRe
 }
 
 static int handle_draw_polygon(SurfaceContext* ctx, SurfaceData* surface, CommandReader* reader, uint8_t flags, uint16_t length) {
-    if(length < 4) {
-        log_error("handle_draw_polygon: expected min length of 4, got %d", length);
+    if(length < 1) {
+        log_error("handle_draw_polygon: expected min length of 1 (for nPoints), got %d", length);
         reader_skip(reader, length * 4);
         return -1;
     }
 
-    int npoints = length / 2; // 2 words per point
-    int firstX = (int)read_u32(reader);
-    int firstY = (int)read_u32(reader);
-    int lastX = firstX;
-    int lastY = firstY;
-    int currX, currY;
-
-    for(int point = 1; point < npoints; point++){
-        currX = (int)read_u32(reader);
-        currY = (int)read_u32(reader);
-        draw_line(surface, ctx, lastX, lastY, currX, currY, ctx->argb[COLOR_FG]);
-
-        lastX = currX;
-        lastY = currY;
+    // Read nPoints from command data
+    int npoints = (int)read_u32(reader);
+    
+    // Validate: length should be 1 (nPoints) + 2*npoints (coords)
+    int expected_length = 1 + (2 * npoints);
+    if (length != expected_length) {
+        log_error("handle_draw_polygon: length mismatch: expected %d (1 + 2*%d), got %d", 
+                  expected_length, npoints, length);
+        // Skip remaining data
+        reader_skip(reader, (length - 1) * 4);
+        return -1;
     }
-
-    //connect the last point to the first one
-    draw_line(surface, ctx, firstX, firstY, currX, currY, ctx->argb[COLOR_FG]);
-
+    
+    if (npoints < 2) {
+        log_error("handle_draw_polygon: need at least 2 points, got %d", npoints);
+        reader_skip(reader, (length - 1) * 4);
+        return -1;
+    }
+    
+    // Allocate arrays for x and y coordinates
+    int* x_points = (int*)malloc(sizeof(int) * npoints);
+    int* y_points = (int*)malloc(sizeof(int) * npoints);
+    
+    if (!x_points || !y_points) {
+        log_error("handle_draw_polygon: failed to allocate point arrays");
+        if (x_points) free(x_points);
+        if (y_points) free(y_points);
+        reader_skip(reader, (length - 1) * 4);
+        return -1;
+    }
+    
+    // Read x coordinates
+    for(int i = 0; i < npoints; i++) {
+        x_points[i] = (int)read_u32(reader);
+    }
+    
+    // Read y coordinates
+    for(int i = 0; i < npoints; i++) {
+        y_points[i] = (int)read_u32(reader);
+    }
+    
+    // Draw lines connecting all points
+    for(int i = 0; i < npoints - 1; i++) {
+        draw_line(surface, ctx, x_points[i], y_points[i], 
+                  x_points[i + 1], y_points[i + 1], ctx->argb[COLOR_FG]);
+    }
+    
+    // Connect last point to first point to close the polygon
+    draw_line(surface, ctx, x_points[npoints - 1], y_points[npoints - 1],
+              x_points[0], y_points[0], ctx->argb[COLOR_FG]);
+    
+    // Free allocated memory
+    free(x_points);
+    free(y_points);
+    
+    log_debug("Drew polygon with %d points", npoints);
     return 0;
 }
 

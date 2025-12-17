@@ -262,8 +262,11 @@ public final class SurfaceCommandBuffer {
         }
 
         beginCommand(Operation.DRAW_POLYGON, 0);
+        writer.writeInt32(xpoints.length); // Write nPoints first
         for (int i = 0; i < xpoints.length; i++) {
             writer.writeInt32(xpoints[i]);
+        }
+        for (int i = 0; i < ypoints.length; i++) {
             writer.writeInt32(ypoints[i]);
         }
     }
