@@ -210,13 +210,13 @@ public class WasmRasterizer implements Rasterizer {
                     commandBuffer.emitDrawLine(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case DRAW_POLYGON: {
-                    SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
-                    commandBuffer.emitDrawPolygon(pts.xpoints, pts.ypoints);
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    commandBuffer.emitDrawPolygon(polygon.xpoints, polygon.ypoints);
                     break;
                 }
                 case FILL_POLYGON: {
-                    SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
-                    commandBuffer.emitFillPolygon(pts.xpoints, pts.ypoints);
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    commandBuffer.emitFillPolygon(polygon.xpoints, polygon.ypoints);
                     break;
                 }
                 case SET_COMPOSITE:

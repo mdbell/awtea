@@ -1,11 +1,11 @@
-# Class: `Graphics` ![Coverage](https://img.shields.io/badge/coverage-56.9%25-yellow)
+# Class: `Graphics` ![Coverage](https://img.shields.io/badge/coverage-74.5%25-yellow)
 
 **Full Name:** `java.awt.Graphics`
 
-**Coverage:** 29 / 51 (56.9%)
+**Coverage:** 38 / 51 (74.5%)
 
 ```
-[████████████████████████████░░░░░░░░░░░░░░░░░░░░░░] 56.9%
+[█████████████████████████████████████░░░░░░░░░░░░░] 74.5%
 ```
 
 ## ✓ Implemented Methods
@@ -35,9 +35,18 @@
 - `public abstract void setPaintMode()`
 - `public abstract void setXORMode(java.awt.Color)`
 - `public abstract void translate(int, int)`
+- `public boolean hitClip(int, int, int, int)`
 - `public java.awt.FontMetrics getFontMetrics()`
 - `public java.awt.Graphics create(int, int, int, int)`
+- `public java.awt.Rectangle getClipBounds(java.awt.Rectangle)`
+- `public java.awt.Rectangle getClipRect()`
 - `public java.lang.String toString()`
+- `public void draw3DRect(int, int, int, int, boolean)`
+- `public void drawBytes(byte[], int, int, int, int)`
+- `public void drawChars(char[], int, int, int, int)`
+- `public void drawPolygon(java.awt.Polygon)`
+- `public void fill3DRect(int, int, int, int, boolean)`
+- `public void fillPolygon(java.awt.Polygon)`
 
 ## ✗ Missing Methods
 
@@ -52,16 +61,7 @@
 - `public abstract void drawString(java.text.AttributedCharacterIterator, int, int)`
 - `public abstract void fillArc(int, int, int, int, int, int)`
 - `public abstract void fillOval(int, int, int, int)`
-- `public boolean hitClip(int, int, int, int)`
-- `public java.awt.Rectangle getClipBounds(java.awt.Rectangle)`
-- `public java.awt.Rectangle getClipRect()`
-- `public void draw3DRect(int, int, int, int, boolean)`
-- `public void drawBytes(byte[], int, int, int, int)`
-- `public void drawChars(char[], int, int, int, int)`
-- `public void drawPolygon(java.awt.Polygon)`
 - `public void drawRect(int, int, int, int)`
-- `public void fill3DRect(int, int, int, int, boolean)`
-- `public void fillPolygon(java.awt.Polygon)`
 - `public void finalize()`
 
 ## ✓ Implemented Constructors

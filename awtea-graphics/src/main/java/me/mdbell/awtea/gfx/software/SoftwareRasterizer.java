@@ -188,13 +188,13 @@ public class SoftwareRasterizer implements Rasterizer {
                     drawLine(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case DRAW_POLYGON: {
-                    SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
-                    drawPolygon(pts.xpoints, pts.ypoints);
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    drawPolygon(polygon.xpoints, polygon.ypoints);
                 }
                     break;
                 case FILL_POLYGON: {
-                    SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
-                    fillPolygon(pts.xpoints, pts.ypoints, pts.xpoints.length);
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    fillPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
                 }
                     break;
                 case FILL_OVAL:
