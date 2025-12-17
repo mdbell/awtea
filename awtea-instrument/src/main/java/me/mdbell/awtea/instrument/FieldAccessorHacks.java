@@ -3,6 +3,8 @@ package me.mdbell.awtea.instrument;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.model.*;
+import org.teavm.model.emit.ProgramEmitter;
+import org.teavm.model.emit.ValueEmitter;
 import org.teavm.model.instructions.*;
 
 import java.lang.reflect.Method;
@@ -171,30 +173,43 @@ public class FieldAccessorHacks implements ClassHolderTransformer {
 	public void transformClass(ClassHolder classHolder, ClassHolderTransformerContext context) {
 		String className = classHolder.getName();
 		
-		// Step 1: Inject getter/setter methods into target classes
-		List<FieldAccessorInfo> accessors = accessorsToInject.get(className);
-		if (accessors != null) {
-			for (FieldAccessorInfo info : accessors) {
-				injectAccessorMethod(classHolder, info);
+		try {
+			// Step 1: Inject getter/setter methods into target classes
+			List<FieldAccessorInfo> accessors = accessorsToInject.get(className);
+			if (accessors != null) {
+				for (FieldAccessorInfo info : accessors) {
+					injectAccessorMethod(classHolder, info, context.getHierarchy());
+				}
 			}
-		}
-		
-		// Step 2: Replace calls to native accessor methods with calls to injected methods
-		for (MethodHolder method : classHolder.getMethods()) {
-			if (method.hasProgram()) {
-				replaceAccessorCalls(method);
+			
+			// Step 2: Replace calls to native accessor methods with calls to injected methods
+			for (MethodHolder method : classHolder.getMethods()) {
+				if (method.hasProgram()) {
+					replaceAccessorCalls(method);
+				}
 			}
+		} catch (Exception e) {
+			log.error("Error transforming class {}: {}", className, e.getMessage(), e);
+			throw new RuntimeException("FieldAccessorHacks failed for " + className, e);
 		}
 	}
 	
 	/**
 	 * Injects a public getter or setter method into the target class.
 	 */
-	private void injectAccessorMethod(ClassHolder classHolder, FieldAccessorInfo info) {
+	private void injectAccessorMethod(ClassHolder classHolder, FieldAccessorInfo info, ClassHierarchy hierarchy) {
 		// Check if method already exists
 		if (classHolder.getMethod(new MethodDescriptor(info.injectedMethodName, 
 				buildInjectedMethodSignature(info))) != null) {
 			return; // Already injected
+		}
+		
+		// Check if the field exists in this class
+		FieldHolder fieldHolder = classHolder.getField(info.fieldName);
+		if (fieldHolder == null) {
+			log.warn("Field {} not found in class {}, skipping accessor injection", 
+				info.fieldName, classHolder.getName());
+			return;
 		}
 		
 		MethodHolder injectedMethod;
@@ -206,28 +221,23 @@ public class FieldAccessorHacks implements ClassHolderTransformer {
 			injectedMethod.setLevel(AccessLevel.PUBLIC);
 			
 			Program program = new Program();
-			BasicBlock block = program.createBasicBlock();
+			injectedMethod.setProgram(program);
 			
+			// Pre-create variable 0 for 'this' (instance methods automatically have this)
 			Variable thisVar = program.createVariable();
-			Variable resultVar = program.createVariable();
-			
-			// Load 'this'
 			thisVar.setDebugName("this");
 			
-			// Load field: resultVar = this.fieldName
-			GetFieldInstruction getField = new GetFieldInstruction();
-			getField.setInstance(thisVar);
-			getField.setField(new FieldReference(classHolder.getName(), info.fieldName));
-			getField.setFieldType(info.fieldType);
-			getField.setReceiver(resultVar);
-			block.add(getField);
+			ProgramEmitter pe = ProgramEmitter.create(program, hierarchy);
+			BasicBlock block = program.createBasicBlock();
+			pe.enter(block);
 			
-			// Return resultVar
-			ExitInstruction exit = new ExitInstruction();
-			exit.setValueToReturn(resultVar);
-			block.add(exit);
+			// Get field reference
+			FieldReference fieldRef = new FieldReference(classHolder.getName(), info.fieldName);
 			
-			injectedMethod.setProgram(program);
+			// Load this.fieldName and return it
+			ValueEmitter fieldValue = pe.getField(fieldRef, info.fieldType);
+			fieldValue.returnValue();
+			
 		} else {
 			// Create: public void $awtea$set$fieldName(FieldType value) { this.fieldName = value; }
 			ValueType[] signature = new ValueType[] { info.fieldType, ValueType.VOID };
@@ -235,27 +245,28 @@ public class FieldAccessorHacks implements ClassHolderTransformer {
 			injectedMethod.setLevel(AccessLevel.PUBLIC);
 			
 			Program program = new Program();
-			BasicBlock block = program.createBasicBlock();
+			injectedMethod.setProgram(program);
 			
+			// Pre-create variable 0 for 'this' (instance methods automatically have this)
 			Variable thisVar = program.createVariable();
-			Variable valueVar = program.createVariable();
-			
 			thisVar.setDebugName("this");
+			
+			// Pre-create variable 1 for the value parameter
+			Variable valueVar = program.createVariable();
 			valueVar.setDebugName("value");
 			
-			// Set field: this.fieldName = valueVar
-			PutFieldInstruction putField = new PutFieldInstruction();
-			putField.setInstance(thisVar);
-			putField.setField(new FieldReference(classHolder.getName(), info.fieldName));
-			putField.setFieldType(info.fieldType);
-			putField.setValue(valueVar);
-			block.add(putField);
+			ProgramEmitter pe = ProgramEmitter.create(program, hierarchy);
+			BasicBlock block = program.createBasicBlock();
+			pe.enter(block);
+			
+			// Wrap variable 1 as a ValueEmitter
+			ValueEmitter valueParam = pe.var(valueVar, info.fieldType);
+			
+			// Set this.fieldName = value
+			pe.setField(classHolder.getName(), info.fieldName, valueParam);
 			
 			// Return void
-			ExitInstruction exit = new ExitInstruction();
-			block.add(exit);
-			
-			injectedMethod.setProgram(program);
+			pe.exit();
 		}
 		
 		classHolder.addMethod(injectedMethod);
