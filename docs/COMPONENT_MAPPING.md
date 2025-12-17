@@ -38,12 +38,12 @@ between **heavyweight** components (with DOM elements and peers) and **lightweig
 | `Window`     | **Heavyweight** | _Not yet implemented_     | Planned: `TAWTWindowPeer` → `FloatingWindow` (undecorated) | Top-level window without decorations (Issue #18)       |
 | `Dialog`     | **Heavyweight** | _Not yet implemented_     | Planned: `TDialogFloatingPeer` → `FloatingWindow`          | Modal/non-modal dialog window (Issue #18)              |
 | `Applet`     | **Heavyweight** | `TApplet`                 | `AppletWindow` → `FloatingWindow` + `<canvas>`             | Browser-embedded application window                    |
-| `Panel`      | **Lightweight** | _Implicit via TContainer_ | ❌ None                                                     | Pure Java container, renders to parent                 |
+| `Panel`      | **Lightweight** | `TPanel`                  | ❌ None                                                     | Pure Java container with default FlowLayout            |
 | `Container`  | **Lightweight** | `TContainer`              | ❌ None                                                     | Base container class for organizing components         |
 | `Component`  | **Lightweight** | `TComponent`              | ❌ None                                                     | Base class for all UI components                       |
 | `Canvas`     | **Lightweight** | `TCanvas`                 | ❌ None                                                     | Drawable area, renders to parent's surface             |
-| `Button`     | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Clickable button drawn via graphics primitives         |
-| `Label`      | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Static text rendered via `drawString()`                |
+| `Button`     | **Lightweight** | `TButton`                 | ❌ None                                                     | Clickable button drawn via graphics primitives         |
+| `Label`      | **Lightweight** | `TLabel`                  | ❌ None                                                     | Static text rendered via `drawString()`                |
 | `TextField`  | **Hybrid**      | _Not yet implemented_     | ⚠️ Possible `<input>` overlay                              | May use DOM overlay for native keyboard/accessibility  |
 | `TextArea`   | **Hybrid**      | _Not yet implemented_     | ⚠️ Possible `<textarea>` overlay                           | May use DOM overlay for native text editing            |
 | `Checkbox`   | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Checkbox drawn via graphics primitives                 |
@@ -95,14 +95,17 @@ Menu components in AWT/Swing are **not** part of the `Component` hierarchy. They
 java.awt.Component (AWT API)
 ├─ TComponent (awtea base implementation)
    ├─ TCanvas (lightweight drawable area)
+   ├─ TButton (lightweight button with action events)
+   ├─ TLabel (lightweight text label)
    ├─ TContainer (lightweight container)
-   │  ├─ TApplet (actually lightweight in implementation)
+   │  ├─ TPanel (lightweight panel with default FlowLayout)
+   │  │  └─ TApplet (extends TPanel for proper layout management)
    │  ├─ TSurface (heavyweight base with peer)
    │  │  └─ TFrame (heavyweight window)
    │  ├─ TJComponent (Swing base)
    │  │  └─ TJPanel (Swing panel)
-   │  └─ (future: Panel, ScrollPane, etc.)
-   └─ (future: Button, Label, TextField, etc.)
+   │  └─ (future: ScrollPane, etc.)
+   └─ (future: TextField, TextArea, Checkbox, List, Choice, Scrollbar, etc.)
 
 MenuComponent (separate AWT hierarchy)
 ├─ MenuBar
