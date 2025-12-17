@@ -490,34 +490,38 @@ EdgeTable* edge_table_pool_acquire(EdgeTablePool* pool, int min_y, int max_y,
         return edge_table_create(min_y, max_y, width, height);
     }
     
-    // Try to find an unused edge table
+    int required_scanlines = max_y - min_y + 1;
+    
+    // Try to find an unused edge table with matching dimensions
     for (int i = 0; i < pool->count; i++) {
         if (!pool->in_use[i] && pool->tables[i]) {
-            // Reuse this edge table
             EdgeTable* et = pool->tables[i];
+            int existing_scanlines = et->max_y - et->min_y + 1;
             
-            // Reset the edge table
-            et->min_y = min_y;
-            et->max_y = max_y;
-            et->width = width;
-            et->height = height;
-            
-            // Clear all scanlines
-            int num_scanlines = et->max_y - et->min_y + 1;
-            for (int j = 0; j < num_scanlines; j++) {
-                edge_list_clear(&et->scanlines[j]);
+            // Only reuse if dimensions match to avoid out-of-bounds access
+            if (existing_scanlines == required_scanlines && 
+                et->width == width && et->height == height) {
+                
+                // Reset the edge table with new bounds
+                et->min_y = min_y;
+                et->max_y = max_y;
+                
+                // Clear all scanlines
+                for (int j = 0; j < existing_scanlines; j++) {
+                    edge_list_clear(&et->scanlines[j]);
+                }
+                edge_list_clear(&et->active);
+                
+                pool->in_use[i] = 1;
+                
+                log_debug("Reused edge table from pool (index=%d)", i);
+                STACK_EXIT();
+                return et;
             }
-            edge_list_clear(&et->active);
-            
-            pool->in_use[i] = 1;
-            
-            log_debug("Reused edge table from pool (index=%d)", i);
-            STACK_EXIT();
-            return et;
         }
     }
     
-    // No unused table found, create a new one
+    // No matching table found, create a new one
     EdgeTable* et = edge_table_create(min_y, max_y, width, height);
     
     if (et && pool->count < pool->capacity) {
