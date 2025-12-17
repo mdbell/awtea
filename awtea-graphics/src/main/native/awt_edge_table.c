@@ -3,6 +3,7 @@
 #include "awt_log.h"
 #include "awt_stack.h"
 #include "awt_util.h"
+#include "awt_memory.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -42,7 +43,7 @@ static void edge_list_add(EdgeList* list, EdgeNode edge) {
     if (list->count >= list->capacity) {
         // Double the capacity
         int new_capacity = list->capacity * 2;
-        EdgeNode* new_edges = (EdgeNode*)realloc(list->edges, sizeof(EdgeNode) * new_capacity);
+        EdgeNode* new_edges = (EdgeNode*)tracked_realloc(list->edges, sizeof(EdgeNode) * new_capacity);
         if (!new_edges) {
             log_error("Failed to grow edge list");
             return;
