@@ -87,7 +87,7 @@ static void edge_list_remove_inactive(EdgeList* list, int y) {
 EdgeTable* edge_table_create(int min_y, int max_y, int width, int height) {
     STACK_ENTER();
     
-    EdgeTable* et = (EdgeTable*)malloc(sizeof(EdgeTable));
+    EdgeTable* et = (EdgeTable*)tracked_malloc(sizeof(EdgeTable));
     if (!et) {
         log_error("Failed to allocate edge table");
         STACK_EXIT();
@@ -107,7 +107,7 @@ EdgeTable* edge_table_create(int min_y, int max_y, int width, int height) {
         return NULL;
     }
     
-    et->scanlines = (EdgeList*)malloc(sizeof(EdgeList) * num_scanlines);
+    et->scanlines = (EdgeList*)tracked_malloc(sizeof(EdgeList) * num_scanlines);
     if (!et->scanlines) {
         log_error("Failed to allocate scanline array");
         free(et);
@@ -123,7 +123,7 @@ EdgeTable* edge_table_create(int min_y, int max_y, int width, int height) {
     }
     
     // Initialize active edge list
-    et->active.edges = (EdgeNode*)malloc(sizeof(EdgeNode) * 16);
+    et->active.edges = (EdgeNode*)tracked_malloc(sizeof(EdgeNode) * 16);
     if (!et->active.edges) {
         log_error("Failed to allocate active edge list");
         free(et->scanlines);
@@ -221,7 +221,7 @@ void edge_table_add_edge(EdgeTable* et, int y1, float x1, int y2, float x2) {
         
         // Allocate edge array if needed
         if (list->edges == NULL) {
-            list->edges = (EdgeNode*)malloc(sizeof(EdgeNode) * 4);
+            list->edges = (EdgeNode*)tracked_malloc(sizeof(EdgeNode) * 4);
             if (!list->edges) {
                 log_error("Failed to allocate edge list for scanline %d", y1);
                 return;
