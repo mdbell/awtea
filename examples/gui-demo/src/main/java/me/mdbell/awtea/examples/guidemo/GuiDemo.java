@@ -26,9 +26,7 @@ public class GuiDemo {
         // Create the main window
         Frame frame = new Frame();
         frame.setTitle("GUI Demo - awtea Example");
-
-        // Create a container to hold everything
-        Container mainPanel = new Container();
+        frame.setLayout(new BorderLayout(10, 10));
 
         // Add title panel at the top
         Container titlePanel = new Container() {
@@ -45,20 +43,20 @@ public class GuiDemo {
                 g.drawString("Interactive AWT components running in your browser", 350, 55);
             }
         };
-        titlePanel.setBounds(0, 0, 1050, 70);
-        mainPanel.add(titlePanel);
+        titlePanel.setPreferredSize(new Dimension(1050, 70));
+        frame.add(titlePanel, BorderLayout.NORTH);
 
+        // Create center container with left and right sections
+        Container centerPanel = new Container();
+        centerPanel.setLayout(new BorderLayout(10, 10));
+
+        // Left side: canvas and info panel
+        Container leftPanel = new Container();
+        leftPanel.setLayout(new BorderLayout(0, 10));
+        
         DrawingCanvas canvas = new DrawingCanvas();
-        canvas.setBounds(10, 80, 500, 540);
-        mainPanel.add(canvas);
-
-        GraphicsDemoPanel demoPanel = new GraphicsDemoPanel();
-        demoPanel.setBounds(520, 80, 270, 660);
-        mainPanel.add(demoPanel);
-
-        AlphaBlendingDemoPanel alphaPanel = new AlphaBlendingDemoPanel();
-        alphaPanel.setBounds(800, 80, 220, 660);
-        mainPanel.add(alphaPanel);
+        canvas.setPreferredSize(new Dimension(500, 540));
+        leftPanel.add(canvas, BorderLayout.CENTER);
 
         Container infoPanel = new Container() {
             @Override
@@ -84,15 +82,29 @@ public class GuiDemo {
                 g.drawString("Powered by awtea - Java AWT for the Web", 10, 95);
             }
         };
-        infoPanel.setBounds(10, 630, 500, 110);
-        mainPanel.add(infoPanel);
+        infoPanel.setPreferredSize(new Dimension(500, 110));
+        leftPanel.add(infoPanel, BorderLayout.SOUTH);
 
-        mainPanel.setSize(1030, 760);
+        centerPanel.add(leftPanel, BorderLayout.WEST);
 
-        // Add the main panel to the frame
-        frame.add(mainPanel);
+        // Right side: demo panels
+        Container rightPanel = new Container();
+        rightPanel.setLayout(new GridLayout(1, 2, 10, 0));
 
-        frame.pack();
+        GraphicsDemoPanel demoPanel = new GraphicsDemoPanel();
+        demoPanel.setPreferredSize(new Dimension(270, 660));
+        rightPanel.add(demoPanel);
+
+        AlphaBlendingDemoPanel alphaPanel = new AlphaBlendingDemoPanel();
+        alphaPanel.setPreferredSize(new Dimension(220, 660));
+        rightPanel.add(alphaPanel);
+
+        centerPanel.add(rightPanel, BorderLayout.CENTER);
+
+        frame.add(centerPanel, BorderLayout.CENTER);
+
+        // Set size before making window visible
+        frame.setSize(1050, 780);
 
         // Show the window
         frame.setVisible(true);
