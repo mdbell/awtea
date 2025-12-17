@@ -1,5 +1,6 @@
 package me.mdbell.awtea.examples.animationdemo;
 
+import me.mdbell.awtea.Helper;
 import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
 import me.mdbell.awtea.gfx.wasm.WasmDiagnostics;
 import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
@@ -53,6 +54,11 @@ public class AnimationDemo {
      * @return true if WASM diagnostics are available
      */
     private static boolean isWasmBackendAvailable() {
+        // First check if running under TeaVM
+        if (!Helper.isTeaVM()) {
+            return false;
+        }
+        
         try {
             DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
             return defaultBackend.getWasmBackend() != null;
@@ -66,6 +72,11 @@ public class AnimationDemo {
      * @return WasmDiagnostics instance, or null if not available
      */
     private static WasmDiagnostics getWasmDiagnostics() {
+        // First check if running under TeaVM
+        if (!Helper.isTeaVM()) {
+            return null;
+        }
+        
         try {
             DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
             WasmSurfaceBackend wasmBackend = defaultBackend.getWasmBackend();
