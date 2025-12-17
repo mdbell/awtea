@@ -88,18 +88,18 @@ async function demo1_FilledRectangles() {
   const surfaceId = rasterizer.allocateSurface(20, 20);
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Draw three overlapping colored rectangles using the new context buffer API
+  // Draw three overlapping colored rectangles
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
   const green = WasmRasterizer.makeARGB(255, 0, 255, 0);
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
 
-  rasterizer.renderCommandsToContext(contextId, [
-    WasmRasterizer.setColorCommand(red),
-    WasmRasterizer.fillRectCommand(2, 2, 8, 8),
-    WasmRasterizer.setColorCommand(green),
-    WasmRasterizer.fillRectCommand(6, 6, 8, 8),
-    WasmRasterizer.setColorCommand(blue),
-    WasmRasterizer.fillRectCommand(10, 10, 8, 8),
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 2, 2, 8, 8),
+    (w) => WasmRasterizer.writeSetColorCommand(w, green),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 6, 6, 8, 8),
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 10, 10, 8, 8),
   ]);
 
   printSurface(rasterizer, surfaceId);
@@ -123,13 +123,13 @@ async function demo2_Clipping() {
   // Set clip rect to center 10x10 area
   const yellow = WasmRasterizer.makeARGB(255, 255, 255, 0);
 
-  rasterizer.renderCommandsToContext(contextId, [
-    WasmRasterizer.setClipRectCommand(5, 5, 10, 10),
-    WasmRasterizer.setColorCommand(yellow),
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetClipRectCommand(w, 5, 5, 10, 10),
+    (w) => WasmRasterizer.writeSetColorCommand(w, yellow),
     // Try to fill entire surface (should be clipped to center)
-    WasmRasterizer.fillRectCommand(0, 0, 20, 20),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 20, 20),
     // Draw a line that extends beyond clip (should be clipped)
-    WasmRasterizer.drawLineCommand(0, 10, 19, 10),
+    (w) => WasmRasterizer.writeDrawLineCommand(w, 0, 10, 19, 10),
   ]);
 
   printSurface(rasterizer, surfaceId);
@@ -163,12 +163,12 @@ async function demo3_Checkerboard() {
   for (let row = 0; row < numCellsY; row++) {
     for (let col = 0; col < numCellsX; col++) {
       const color = ((row + col) % 2 === 0) ? black : white;
-      commands.push(WasmRasterizer.setColorCommand(color));
-      commands.push(WasmRasterizer.fillRectCommand(col * cellSize, row * cellSize, cellSize, cellSize));
+      commands.push((w: any) => WasmRasterizer.writeSetColorCommand(w, color));
+      commands.push((w: any) => WasmRasterizer.writeFillRectCommand(w, col * cellSize, row * cellSize, cellSize, cellSize));
     }
   }
 
-  rasterizer.renderCommandsToContext(contextId, commands);
+  rasterizer.renderVariableLengthCommands(contextId, commands);
   printSurface(rasterizer, surfaceId, 0x80);
 
   rasterizer.destroyContext(contextId);
@@ -191,12 +191,12 @@ async function demo4_SurfaceBlitting() {
   const magenta = WasmRasterizer.makeARGB(255, 255, 0, 255);
   
   // Draw a cross pattern on the stamp surface
-  rasterizer.renderCommandsToContext(stampContextId, [
+  rasterizer.renderVariableLengthCommands(stampContextId, [
     // Draw magenta cross
-    WasmRasterizer.setColorCommand(magenta),
-    WasmRasterizer.fillRectCommand(1, 0, 2, 1), // top
-    WasmRasterizer.fillRectCommand(0, 1, 4, 2), // middle
-    WasmRasterizer.fillRectCommand(1, 3, 2, 1), // bottom
+    (w) => WasmRasterizer.writeSetColorCommand(w, magenta),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 1, 0, 2, 1), // top
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 1, 4, 2), // middle
+    (w) => WasmRasterizer.writeFillRectCommand(w, 1, 3, 2, 1), // bottom
   ]);
 
   // Create destination surface
@@ -205,11 +205,11 @@ async function demo4_SurfaceBlitting() {
 
   // Use CMD_BLIT_IMAGE to blit the stamp surface to multiple positions
   // This is the proper way to copy one surface onto another
-  rasterizer.renderCommandsToContext(destContextId, [
-    WasmRasterizer.blitImageCommand(stampSurfaceId, 0, 0),
-    WasmRasterizer.blitImageCommand(stampSurfaceId, 6, 0),
-    WasmRasterizer.blitImageCommand(stampSurfaceId, 0, 6),
-    WasmRasterizer.blitImageCommand(stampSurfaceId, 6, 6),
+  rasterizer.renderVariableLengthCommands(destContextId, [
+    (w) => WasmRasterizer.writeBlitImageCommand(w, stampSurfaceId, 0, 0),
+    (w) => WasmRasterizer.writeBlitImageCommand(w, stampSurfaceId, 6, 0),
+    (w) => WasmRasterizer.writeBlitImageCommand(w, stampSurfaceId, 0, 6),
+    (w) => WasmRasterizer.writeBlitImageCommand(w, stampSurfaceId, 6, 6),
   ]);
 
   printSurface(rasterizer, destSurfaceId);
@@ -234,14 +234,14 @@ async function demo5_Transforms() {
 
   const cyan = WasmRasterizer.makeARGB(255, 0, 255, 255);
 
-  rasterizer.renderCommandsToContext(contextId, [
+  rasterizer.renderVariableLengthCommands(contextId, [
     // Set a translation transform (shift by 5, 5)
-    WasmRasterizer.setTransformCommand(1, 0, 5, 0, 1, 5),
-    WasmRasterizer.setColorCommand(cyan),
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 5, 0, 1, 5),
+    (w) => WasmRasterizer.writeSetColorCommand(w, cyan),
     // Draw at (0, 0) but should appear at (5, 5) due to transform
-    WasmRasterizer.fillRectCommand(0, 0, 6, 6),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 6, 6),
     // Reset transform to identity
-    WasmRasterizer.setTransformCommand(1, 0, 0, 0, 1, 0),
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 0, 0, 1, 0),
   ]);
 
   printSurface(rasterizer, surfaceId);
@@ -271,29 +271,28 @@ async function demo6_ComplexScene() {
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
   const yellow = WasmRasterizer.makeARGB(255, 255, 255, 0);
 
-  const commands = [
+  rasterizer.renderVariableLengthCommands(contextId, [
     // Background fill (light gray)
-    WasmRasterizer.setColorCommand(lightGray),
-    WasmRasterizer.fillRectCommand(0, 0, width, height),
+    (w) => WasmRasterizer.writeSetColorCommand(w, lightGray),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, width, height),
     // Draw a border (dark gray)
-    WasmRasterizer.setColorCommand(darkGray),
-    WasmRasterizer.drawRectCommand(0, 0, width, height),
+    (w) => WasmRasterizer.writeSetColorCommand(w, darkGray),
+    (w) => WasmRasterizer.writeDrawRectCommand(w, 0, 0, width, height),
     // Draw colored squares
-    WasmRasterizer.setColorCommand(red),
-    WasmRasterizer.fillRectCommand(5, 5, 6, 6),
-    WasmRasterizer.setColorCommand(green),
-    WasmRasterizer.fillRectCommand(13, 5, 6, 6),
-    WasmRasterizer.setColorCommand(blue),
-    WasmRasterizer.fillRectCommand(21, 5, 6, 6),
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 5, 5, 6, 6),
+    (w) => WasmRasterizer.writeSetColorCommand(w, green),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 13, 5, 6, 6),
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 21, 5, 6, 6),
     // Draw diagonal lines
-    WasmRasterizer.setColorCommand(yellow),
-    WasmRasterizer.drawLineCommand(0, 0, width - 1, height - 1),
-    WasmRasterizer.drawLineCommand(width - 1, 0, 0, height - 1),
+    (w) => WasmRasterizer.writeSetColorCommand(w, yellow),
+    (w) => WasmRasterizer.writeDrawLineCommand(w, 0, 0, width - 1, height - 1),
+    (w) => WasmRasterizer.writeDrawLineCommand(w, width - 1, 0, 0, height - 1),
     // Clear a small area in the center
-    WasmRasterizer.clearRectCommand(12, 12, 6, 6),
-  ];
+    (w) => WasmRasterizer.writeClearRectCommand(w, 12, 12, 6, 6),
+  ]);
 
-  rasterizer.renderCommandsToContext(contextId, commands);
   printSurface(rasterizer, surfaceId, 0x20);
 
   rasterizer.destroyContext(contextId);
@@ -412,6 +411,216 @@ async function demo8_TransformedFillOperations() {
 }
 
 /**
+ * Demo 9: Fill operation verification tests
+ */
+async function demo9_FillOperationTests() {
+  console.log("\n=== Demo 9: Fill Operation Verification ===");
+  
+  const rasterizer = new WasmRasterizer();
+  await rasterizer.load(WASM_PATH);
+
+  let passed = 0;
+  let failed = 0;
+
+  // Helper to count non-black pixels
+  function countFilledPixels(pixels: Uint32Array): number {
+    let count = 0;
+    for (let i = 0; i < pixels.length; i++) {
+      const alpha = (pixels[i] >>> 24) & 0xFF;
+      if (alpha > 0) count++;
+    }
+    return count;
+  }
+
+  // Test 1: fillPolygon - simple triangle
+  try {
+    const surfaceId = rasterizer.allocateSurface(100, 100);
+    const contextId = rasterizer.createContext(surfaceId);
+    const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
+    
+    rasterizer.renderVariableLengthCommands(contextId, [
+      (w) => WasmRasterizer.writeSetColorCommand(w, red),
+      (w) => WasmRasterizer.writeFillPolygonCommand(w, [25, 75, 50], [25, 25, 75]),
+    ]);
+    
+    const pixels = rasterizer.copySurfacePixels(surfaceId);
+    const centerIdx = 42 * 100 + 50;
+    const centerPixel = pixels[centerIdx] >>> 0;
+    const expectedRed = red >>> 0;
+    
+    if (centerPixel === expectedRed) {
+      console.log("  ✓ Test 1: fillPolygon triangle - PASSED");
+      passed++;
+    } else {
+      console.log(`  ✗ Test 1: fillPolygon triangle - FAILED (expected ${expectedRed.toString(16)}, got ${centerPixel.toString(16)})`);
+      failed++;
+    }
+    
+    rasterizer.destroyContext(contextId);
+    rasterizer.freeSurface(surfaceId);
+  } catch (e) {
+    console.log(`  ✗ Test 1: fillPolygon triangle - ERROR: ${e}`);
+    failed++;
+  }
+
+  // Test 2: fillPolygon - rectangle
+  try {
+    const surfaceId = rasterizer.allocateSurface(100, 100);
+    const contextId = rasterizer.createContext(surfaceId);
+    const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
+    
+    rasterizer.renderVariableLengthCommands(contextId, [
+      (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+      (w) => WasmRasterizer.writeFillPolygonCommand(w, [20, 80, 80, 20], [20, 20, 80, 80]),
+    ]);
+    
+    const pixels = rasterizer.copySurfacePixels(surfaceId);
+    const filled = countFilledPixels(pixels);
+    
+    if (filled > 3000) {  // Rectangle should fill ~3600 pixels
+      console.log(`  ✓ Test 2: fillPolygon rectangle - PASSED (${filled} pixels)`);
+      passed++;
+    } else {
+      console.log(`  ✗ Test 2: fillPolygon rectangle - FAILED (only ${filled} pixels)`);
+      failed++;
+    }
+    
+    rasterizer.destroyContext(contextId);
+    rasterizer.freeSurface(surfaceId);
+  } catch (e) {
+    console.log(`  ✗ Test 2: fillPolygon rectangle - ERROR: ${e}`);
+    failed++;
+  }
+
+  // Test 3: fillOval
+  try {
+    const surfaceId = rasterizer.allocateSurface(100, 100);
+    const contextId = rasterizer.createContext(surfaceId);
+    const green = WasmRasterizer.makeARGB(255, 0, 255, 0);
+    
+    rasterizer.renderVariableLengthCommands(contextId, [
+      (w) => WasmRasterizer.writeSetColorCommand(w, green),
+      (w) => WasmRasterizer.writeFillOvalCommand(w, 20, 20, 60, 60),
+    ]);
+    
+    const pixels = rasterizer.copySurfacePixels(surfaceId);
+    const centerIdx = 50 * 100 + 50;
+    const centerPixel = pixels[centerIdx] >>> 0;
+    const expectedGreen = green >>> 0;
+    
+    if (centerPixel === expectedGreen) {
+      console.log("  ✓ Test 3: fillOval - PASSED");
+      passed++;
+    } else {
+      console.log(`  ✗ Test 3: fillOval - FAILED`);
+      failed++;
+    }
+    
+    rasterizer.destroyContext(contextId);
+    rasterizer.freeSurface(surfaceId);
+  } catch (e) {
+    console.log(`  ✗ Test 3: fillOval - ERROR: ${e}`);
+    failed++;
+  }
+
+  // Test 4: fillArc
+  try {
+    const surfaceId = rasterizer.allocateSurface(100, 100);
+    const contextId = rasterizer.createContext(surfaceId);
+    const yellow = WasmRasterizer.makeARGB(255, 255, 255, 0);
+    
+    rasterizer.renderVariableLengthCommands(contextId, [
+      (w) => WasmRasterizer.writeSetColorCommand(w, yellow),
+      (w) => WasmRasterizer.writeFillArcCommand(w, 20, 20, 60, 60, 0, 90),
+    ]);
+    
+    const pixels = rasterizer.copySurfacePixels(surfaceId);
+    const filled = countFilledPixels(pixels);
+    
+    if (filled > 500) {  // Quarter circle should fill ~700 pixels
+      console.log(`  ✓ Test 4: fillArc - PASSED (${filled} pixels)`);
+      passed++;
+    } else {
+      console.log(`  ✗ Test 4: fillArc - FAILED (only ${filled} pixels)`);
+      failed++;
+    }
+    
+    rasterizer.destroyContext(contextId);
+    rasterizer.freeSurface(surfaceId);
+  } catch (e) {
+    console.log(`  ✗ Test 4: fillArc - ERROR: ${e}`);
+    failed++;
+  }
+
+  // Test 5: fillRoundRect
+  try {
+    const surfaceId = rasterizer.allocateSurface(100, 100);
+    const contextId = rasterizer.createContext(surfaceId);
+    const cyan = WasmRasterizer.makeARGB(255, 0, 255, 255);
+    
+    rasterizer.renderVariableLengthCommands(contextId, [
+      (w) => WasmRasterizer.writeSetColorCommand(w, cyan),
+      (w) => WasmRasterizer.writeFillRoundRectCommand(w, 20, 20, 60, 60, 20, 20),
+    ]);
+    
+    const pixels = rasterizer.copySurfacePixels(surfaceId);
+    const filled = countFilledPixels(pixels);
+    
+    if (filled > 3000) {  // Rounded rect should fill most of the area
+      console.log(`  ✓ Test 5: fillRoundRect - PASSED (${filled} pixels)`);
+      passed++;
+    } else {
+      console.log(`  ✗ Test 5: fillRoundRect - FAILED (only ${filled} pixels)`);
+      failed++;
+    }
+    
+    rasterizer.destroyContext(contextId);
+    rasterizer.freeSurface(surfaceId);
+  } catch (e) {
+    console.log(`  ✗ Test 5: fillRoundRect - ERROR: ${e}`);
+    failed++;
+  }
+
+  // Test 6: fillPolygon with transform
+  try {
+    const surfaceId = rasterizer.allocateSurface(100, 100);
+    const contextId = rasterizer.createContext(surfaceId);
+    const orange = WasmRasterizer.makeARGB(255, 255, 165, 0);
+    
+    rasterizer.renderVariableLengthCommands(contextId, [
+      (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 30, 0, 1, 30),
+      (w) => WasmRasterizer.writeSetColorCommand(w, orange),
+      (w) => WasmRasterizer.writeFillPolygonCommand(w, [0, 20, 10], [0, 0, 20]),
+    ]);
+    
+    const pixels = rasterizer.copySurfacePixels(surfaceId);
+    const centerIdx = 36 * 100 + 36;
+    const centerPixel = pixels[centerIdx] >>> 0;
+    const expectedOrange = orange >>> 0;
+    
+    if (centerPixel === expectedOrange) {
+      console.log("  ✓ Test 6: fillPolygon with transform - PASSED");
+      passed++;
+    } else {
+      console.log(`  ✗ Test 6: fillPolygon with transform - FAILED`);
+      failed++;
+    }
+    
+    rasterizer.destroyContext(contextId);
+    rasterizer.freeSurface(surfaceId);
+  } catch (e) {
+    console.log(`  ✗ Test 6: fillPolygon with transform - ERROR: ${e}`);
+    failed++;
+  }
+
+  console.log(`\nResults: ${passed} passed, ${failed} failed`);
+  
+  if (failed > 0) {
+    throw new Error(`${failed} test(s) failed`);
+  }
+}
+
+/**
  * Main demo runner
  */
 async function main() {
@@ -428,12 +637,13 @@ async function main() {
     await demo6_ComplexScene();
     await demo7_FillOperations();
     await demo8_TransformedFillOperations();
+    await demo9_FillOperationTests();
 
-    console.log("\n✅ All demos completed successfully!");
+    console.log("\n✅ All demos and tests completed successfully!");
     console.log("\nNote: This demo shows ASCII visualization of rendered surfaces.");
     console.log("For actual image output, implement PNG encoding or use the PPM helper.");
   } catch (error) {
-    console.error("\n❌ Demo failed:", error);
+    console.error("\n❌ Demo/test failed:", error);
     Deno.exit(1);
   }
 }
