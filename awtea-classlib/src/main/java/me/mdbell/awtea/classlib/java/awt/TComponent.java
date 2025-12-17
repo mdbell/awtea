@@ -34,6 +34,13 @@ public abstract class TComponent implements TImageObserver {
     @Getter
     private Dimension preferredSize;
 
+    /**
+     * Gets the preferred size value (for internal use).
+     */
+    protected Dimension getPreferredSizeValue() {
+        return preferredSize;
+    }
+
     @Getter
     private boolean focusable = true;
 
