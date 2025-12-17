@@ -348,6 +348,14 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
         
         // Fill pixels between edge pairs
         if (fill_rule == FILL_RULE_EVENODD) {
+            // Check if this scanline is within clip bounds
+            if (context->clip.width > 0 && context->clip.height > 0) {
+                if (y < context->clip.y || y >= context->clip.y + context->clip.height) {
+                    // Skip this entire scanline
+                    goto update_edges;
+                }
+            }
+            
             // Even-odd fill rule: toggle on/off at each edge crossing
             for (int i = 0; i + 1 < et->active.count; i += 2) {
                 EdgeNode* e1 = &et->active.edges[i];
@@ -361,10 +369,6 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
                 x_end = clamp_int(x_end, 0, (int)surface->width - 1);
                 
                 if (context->clip.width > 0 && context->clip.height > 0) {
-                    // Check if y is outside clip bounds
-                    if (y < context->clip.y || y >= context->clip.y + context->clip.height) {
-                        continue;
-                    }
                     x_start = clamp_int(x_start, context->clip.x, 
                                        context->clip.x + context->clip.width - 1);
                     x_end = clamp_int(x_end, context->clip.x, 
@@ -382,6 +386,14 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
                 }
             }
         } else {
+            // Check if this scanline is within clip bounds
+            if (context->clip.width > 0 && context->clip.height > 0) {
+                if (y < context->clip.y || y >= context->clip.y + context->clip.height) {
+                    // Skip this entire scanline
+                    goto update_edges;
+                }
+            }
+            
             // Non-zero winding fill rule: count crossings with direction
             int winding = 0;
             int span_start = -1;
@@ -409,11 +421,6 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
                         x_end = clamp_int(x_end, 0, (int)surface->width - 1);
                         
                         if (context->clip.width > 0 && context->clip.height > 0) {
-                            // Check if y is outside clip bounds
-                            if (y < context->clip.y || y >= context->clip.y + context->clip.height) {
-                                span_start = -1;
-                                continue;
-                            }
                             x_start = clamp_int(x_start, context->clip.x, 
                                                context->clip.x + context->clip.width - 1);
                             x_end = clamp_int(x_end, context->clip.x, 
@@ -436,6 +443,7 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
             }
         }
         
+    update_edges:
         // Update x coordinates for next scanline
         for (int i = 0; i < et->active.count; i++) {
             et->active.edges[i].x += et->active.edges[i].dx;
