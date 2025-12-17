@@ -5,14 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
  * A {@code TCardLayout} object is a layout manager for a container.
  * It treats each component in the container as a card.
- * Only one card is visible at a time, and the container acts as a stack of cards.
- * The first component added to a {@code TCardLayout} object is the visible component
+ * Only one card is visible at a time, and the container acts as a stack of
+ * cards.
+ * The first component added to a {@code TCardLayout} object is the visible
+ * component
  * when the container is first displayed.
  * <p>
- * The ordering of cards is determined by the container's own internal ordering of
+ * The ordering of cards is determined by the container's own internal ordering
+ * of
  * its component objects. {@code TCardLayout} defines a set of methods
  * that allow an application to flip through these cards sequentially,
  * or to show a specified card. The {@link #addLayoutComponent}
@@ -122,7 +127,7 @@ public class TCardLayout implements TLayoutManager2 {
     public void removeLayoutComponent(TComponent comp) {
         synchronized (comp.getParent().getTreeLock()) {
             vector.remove(comp);
-            
+
             // Remove from name map
             String key = null;
             for (Map.Entry<String, TComponent> entry : tab.entrySet()) {
@@ -161,8 +166,7 @@ public class TCardLayout implements TLayoutManager2 {
 
             return new TDimension(
                     insets.left + insets.right + w + hgap * 2,
-                    insets.top + insets.bottom + h + vgap * 2
-            );
+                    insets.top + insets.bottom + h + vgap * 2);
         }
     }
 
@@ -185,8 +189,7 @@ public class TCardLayout implements TLayoutManager2 {
 
             return new TDimension(
                     insets.left + insets.right + w + hgap * 2,
-                    insets.top + insets.bottom + h + vgap * 2
-            );
+                    insets.top + insets.bottom + h + vgap * 2);
         }
     }
 
@@ -215,16 +218,15 @@ public class TCardLayout implements TLayoutManager2 {
         synchronized (parent.getTreeLock()) {
             TInsets insets = parent.getInsets();
             int ncomponents = parent.getComponents().length;
-            
+
             for (int i = 0; i < ncomponents; i++) {
                 TComponent comp = parent.getComponents()[i];
                 comp.setBounds(
                         hgap + insets.left,
                         vgap + insets.top,
                         parent.getWidth() - (hgap * 2 + insets.left + insets.right),
-                        parent.getHeight() - (vgap * 2 + insets.top + insets.bottom)
-                );
-                
+                        parent.getHeight() - (vgap * 2 + insets.top + insets.bottom));
+
                 // Manage visibility: only the current card should be visible
                 // If no current card is set, all cards should be hidden
                 boolean shouldBeVisible = (currentCard != null && comp == currentCard);
@@ -250,7 +252,8 @@ public class TCardLayout implements TLayoutManager2 {
 
     /**
      * Flips to the next card of the specified container. If the currently
-     * visible card is the last one, this method flips to the first card in the layout.
+     * visible card is the last one, this method flips to the first card in the
+     * layout.
      *
      * @param parent the parent container in which to do the layout
      */
@@ -265,7 +268,8 @@ public class TCardLayout implements TLayoutManager2 {
 
     /**
      * Flips to the previous card of the specified container. If the currently
-     * visible card is the first one, this method flips to the last card in the layout.
+     * visible card is the first one, this method flips to the last card in the
+     * layout.
      *
      * @param parent the parent container in which to do the layout
      */
@@ -334,7 +338,7 @@ public class TCardLayout implements TLayoutManager2 {
         currentCard = vector.get(index);
         currentCardIndex = index;
         currentCard.setVisible(true);
-        
+
         parent.validate();
     }
 

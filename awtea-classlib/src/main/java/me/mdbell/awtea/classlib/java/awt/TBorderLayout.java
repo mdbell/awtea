@@ -3,6 +3,8 @@ package me.mdbell.awtea.classlib.java.awt;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
  * A border layout lays out a container, arranging and resizing
  * its components to fit in five regions:
@@ -14,11 +16,13 @@ import java.util.Map;
  * <p>
  * When adding a component to a container with a border layout, use one of these
  * five constants, for example:
+ * 
  * <pre>
- *    Panel p = new Panel();
- *    p.setLayout(new BorderLayout());
- *    p.add(new Button("Okay"), BorderLayout.SOUTH);
+ * Panel p = new Panel();
+ * p.setLayout(new BorderLayout());
+ * p.add(new Button("Okay"), BorderLayout.SOUTH);
  * </pre>
+ * 
  * This is the awtea implementation of java.awt.BorderLayout.
  *
  * @see java.awt.BorderLayout
@@ -72,25 +76,29 @@ public class TBorderLayout implements TLayoutManager2 {
 
     /**
      * The component comes before the first line of the layout's content.
-     * For Western, left-to-right and top-to-bottom orientations, this is equivalent to NORTH.
+     * For Western, left-to-right and top-to-bottom orientations, this is equivalent
+     * to NORTH.
      */
     public static final String PAGE_START = BEFORE_FIRST_LINE;
 
     /**
      * The component comes after the last line of the layout's content.
-     * For Western, left-to-right and top-to-bottom orientations, this is equivalent to SOUTH.
+     * For Western, left-to-right and top-to-bottom orientations, this is equivalent
+     * to SOUTH.
      */
     public static final String PAGE_END = AFTER_LAST_LINE;
 
     /**
      * The component goes at the beginning of the line direction for the layout.
-     * For Western, left-to-right and top-to-bottom orientations, this is equivalent to WEST.
+     * For Western, left-to-right and top-to-bottom orientations, this is equivalent
+     * to WEST.
      */
     public static final String LINE_START = BEFORE_LINE_BEGINS;
 
     /**
      * The component goes at the end of the line direction for the layout.
-     * For Western, left-to-right and top-to-bottom orientations, this is equivalent to EAST.
+     * For Western, left-to-right and top-to-bottom orientations, this is equivalent
+     * to EAST.
      */
     public static final String LINE_END = AFTER_LINE_ENDS;
 
@@ -238,7 +246,8 @@ public class TBorderLayout implements TLayoutManager2 {
             return north;
         } else if (SOUTH.equals(constraints) || PAGE_END.equals(constraints) || AFTER_LAST_LINE.equals(constraints)) {
             return south;
-        } else if (WEST.equals(constraints) || LINE_START.equals(constraints) || BEFORE_LINE_BEGINS.equals(constraints)) {
+        } else if (WEST.equals(constraints) || LINE_START.equals(constraints)
+                || BEFORE_LINE_BEGINS.equals(constraints)) {
             return west;
         } else if (EAST.equals(constraints) || LINE_END.equals(constraints) || AFTER_LINE_ENDS.equals(constraints)) {
             return east;
@@ -252,7 +261,8 @@ public class TBorderLayout implements TLayoutManager2 {
      * Gets the component that corresponds to the given constraint location.
      *
      * @param target      the container
-     * @param constraints the desired absolute position, one of the border layout constants
+     * @param constraints the desired absolute position, one of the border layout
+     *                    constants
      * @return the component at the given location, or null
      */
     public TComponent getLayoutComponent(TContainer target, Object constraints) {
@@ -418,16 +428,17 @@ public class TBorderLayout implements TLayoutManager2 {
     }
 
     /**
-     * Gets the size of a component, preferring preferred layout size if available,
-     * otherwise using current width/height.
+     * Gets the preferred size of a component for layout calculations.
+     * For containers, asks for their preferred layout size which will recursively
+     * query child components and layout managers.
+     * For leaf components, uses their explicitly set preferred size or current
+     * dimensions.
      */
     private TDimension getComponentSize(TComponent comp) {
         if (comp instanceof TContainer) {
-            TDimension pref = ((TContainer) comp).getPreferredLayoutSize();
-            if (pref != null) {
-                return pref;
-            }
+            return ((TContainer) comp).getPreferredLayoutSize();
         }
+        // For non-container components, use current dimensions
         return new TDimension(comp.getWidth(), comp.getHeight());
     }
 

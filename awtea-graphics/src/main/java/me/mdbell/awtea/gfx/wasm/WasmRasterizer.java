@@ -15,21 +15,27 @@ import java.util.List;
  * WASM-backed rasterizer implementation.
  * 
  * <h2>Thread Safety</h2>
- * This class is NOT inherently thread-safe. Each thread should create its own rasterizer
- * using {@link #create()} which clones the context. The cloned rasterizer maintains independent
+ * This class is NOT inherently thread-safe. Each thread should create its own
+ * rasterizer
+ * using {@link #create()} which clones the context. The cloned rasterizer
+ * maintains independent
  * rendering state and should be disposed by the thread that created it.
  * 
  * <h2>Resource Management</h2>
  * <ul>
- *   <li>Always call {@link #dispose()} when done to free WASM context</li>
- *   <li>Dispose is idempotent - safe to call multiple times</li>
- *   <li>Rasterizers not explicitly disposed will trigger leak warnings in debug mode</li>
+ * <li>Always call {@link #dispose()} when done to free WASM context</li>
+ * <li>Dispose is idempotent - safe to call multiple times</li>
+ * <li>Rasterizers not explicitly disposed will trigger leak warnings in debug
+ * mode</li>
  * </ul>
  */
 public class WasmRasterizer implements Rasterizer {
 
+    private static final int AUTO_FLUSH_CHECK_INTERVAL = 16; // Check every 16 commands
+    private int commandsSinceFlushCheck = 0;
+
     private static final Logger log = LoggerFactory.getLogger(WasmRasterizer.class);
-    
+
     // Track if this rasterizer has been explicitly disposed to avoid leak warnings
     private boolean explicitlyDisposed = false;
 
@@ -82,10 +88,10 @@ public class WasmRasterizer implements Rasterizer {
         if (disposed) {
             return;
         }
-        
+
         explicitlyDisposed = true;
         disposed = true;
-        
+
         if (contextId >= 0) {
             // Flush any pending commands before destroying context
             flushAndReleaseReferences();
@@ -97,13 +103,15 @@ public class WasmRasterizer implements Rasterizer {
             // Command buffer is owned by context and freed automatically
         }
     }
-    
+
     /**
      * Finalizer to detect resource leaks.
      * Warns if rasterizer was not explicitly disposed.
      * 
-     * NOTE: finalize() is deprecated in Java 9+ and should be replaced with Cleaner,
-     * but TeaVM does not yet support java.lang.ref.Cleaner. This is a temporary solution
+     * NOTE: finalize() is deprecated in Java 9+ and should be replaced with
+     * Cleaner,
+     * but TeaVM does not yet support java.lang.ref.Cleaner. This is a temporary
+     * solution
      * for leak detection until TeaVM adds Cleaner support.
      * 
      * @deprecated This method uses deprecated finalize() mechanism
@@ -113,8 +121,11 @@ public class WasmRasterizer implements Rasterizer {
     protected void finalize() throws Throwable {
         try {
             if (!explicitlyDisposed && contextId >= 0) {
-                log.warn("WasmRasterizer with context {} was finalized without explicit dispose() - possible resource leak. " +
-                        "Always call dispose() when done with a rasterizer.", contextId);
+                log.warn(
+                        "WasmRasterizer with context {} was finalized without explicit dispose() - possible resource leak. "
+                                +
+                                "Always call dispose() when done with a rasterizer.",
+                        contextId);
                 // Clean up even though we're in finalizer
                 dispose();
             }
@@ -210,7 +221,10 @@ public class WasmRasterizer implements Rasterizer {
 
         for (SurfaceCommand cmd : cmds) {
 
-            checkAndAutoFlush();
+            if (++commandsSinceFlushCheck >= AUTO_FLUSH_CHECK_INTERVAL) {
+                checkAndAutoFlush();
+                commandsSinceFlushCheck = 0;
+            }
 
             switch (cmd.type) {
                 case DRAW_RECT:

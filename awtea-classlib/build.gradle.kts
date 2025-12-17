@@ -34,4 +34,6 @@ dependencies {
     implementation(project(":awtea-net"))
     implementation(project(":awtea-ui"))
     implementation(project(":awtea-instrument"))
+    
+    testImplementation(project(":awtea-test-util"))
 }

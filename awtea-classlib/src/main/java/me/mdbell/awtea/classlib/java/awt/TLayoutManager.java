@@ -1,7 +1,10 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
- * Defines the interface for classes that know how to lay out {@code Container}s.
+ * Defines the interface for classes that know how to lay out
+ * {@code Container}s.
  * This is the awtea implementation of java.awt.LayoutManager.
  *
  * @see TContainer

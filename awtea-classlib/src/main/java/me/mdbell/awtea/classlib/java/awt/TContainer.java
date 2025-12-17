@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
  * @see java.awt.Container
  */
@@ -153,16 +155,16 @@ public class TContainer extends TComponent {
      */
     public TDimension getPreferredLayoutSize() {
         // Check if an explicit preferred size was set
-        Dimension pref = getPreferredSizeValue();
+        TDimension pref = getPreferredSize();
         if (pref != null) {
-            return TDimension.fromAWT(pref);
+            return pref;
         }
-        
+
         // Otherwise ask the layout manager
         if (layoutMgr != null) {
             return layoutMgr.preferredLayoutSize(this);
         }
-        
+
         // Fall back to current size
         return new TDimension(getWidth(), getHeight());
     }
@@ -270,14 +272,4 @@ public class TContainer extends TComponent {
         }
         super.validate();
     }
-
-//	@Override
-//	public void dispatchEvent(TAWTEvent event) {
-//		for (TComponent child : children) {
-//			if (event.isConsumed()) {
-//				break;
-//			}
-//			child.dispatchEvent(event);
-//		}
-//	}
 }

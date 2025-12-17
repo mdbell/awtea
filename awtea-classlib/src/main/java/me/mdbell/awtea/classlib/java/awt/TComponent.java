@@ -15,6 +15,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
  * @see java.awt.Component
  */
@@ -32,14 +34,7 @@ public abstract class TComponent implements TImageObserver {
 
     @Setter
     @Getter
-    private Dimension preferredSize;
-
-    /**
-     * Gets the preferred size value (for internal use).
-     */
-    protected Dimension getPreferredSizeValue() {
-        return preferredSize;
-    }
+    private TDimension preferredSize;
 
     @Getter
     private boolean focusable = true;
@@ -66,7 +61,6 @@ public abstract class TComponent implements TImageObserver {
     // we shouldn't touch this directly, and leave it to TEventQueue
     TEventQueue.EventQueueItem[] eventCache;
 
-
     public TFontMetrics getFontMetrics(TFont font) {
         return getGraphics().measureText(font);
     }
@@ -86,7 +80,6 @@ public abstract class TComponent implements TImageObserver {
         this.focusable = focusable;
         firePropertyChange("focusable", oldFocusable, focusable);
     }
-
 
     public void setBackground(Color c) {
         Color old = this.background;
@@ -152,7 +145,8 @@ public abstract class TComponent implements TImageObserver {
     }
 
     protected void dispatchPaintEvent(TPaintEvent event) {
-        // paint events are dispatched to the parent container for clipping and double-buffering
+        // paint events are dispatched to the parent container for clipping and
+        // double-buffering
         // so we just forward it up the chain
         if (parent != null) {
             parent.dispatchPaintEvent(event);
@@ -160,7 +154,7 @@ public abstract class TComponent implements TImageObserver {
         }
         TGraphics graphics = this.getGraphics();
         if (event.getID() == TPaintEvent.PAINT) {
-            //TODO: clip rect
+            // TODO: clip rect
             paint(graphics);
         } else if (event.getID() == TPaintEvent.UPDATE) {
             update(graphics);
@@ -334,11 +328,11 @@ public abstract class TComponent implements TImageObserver {
     }
 
     public void paint(TGraphics g) {
-        
+
     }
 
     public void update(TGraphics g) {
-//		g.clearRect(0, 0, width, height);
+        // g.clearRect(0, 0, width, height);
         paint(g);
     }
 
@@ -368,7 +362,7 @@ public abstract class TComponent implements TImageObserver {
     public void setVisible(boolean b) {
         this.visible = b;
         if (b) {
-            repaint();
+            validate();
         }
     }
 
@@ -428,7 +422,7 @@ public abstract class TComponent implements TImageObserver {
         if ((infoflags & (FRAMEBITS | ALLBITS)) != 0) {
             rate = 0;
         } else if ((infoflags & SOMEBITS) != 0) {
-            rate = 100; // semi-arbitrary value, the JVM hides this behind a flag +  system property
+            rate = 100; // semi-arbitrary value, the JVM hides this behind a flag + system property
         }
         if (rate >= 0) {
             repaint(rate, 0, 0, width, height);
@@ -441,7 +435,8 @@ public abstract class TComponent implements TImageObserver {
     }
 
     public TImage createImage(int width, int height) {
-        // normally a peer would be involved here, but we just create a buffered image directly
+        // normally a peer would be involved here, but we just create a buffered image
+        // directly
         return new TBufferedImage(width, height);
     }
 
@@ -449,7 +444,7 @@ public abstract class TComponent implements TImageObserver {
         return checkImage(image, -1, -1, observer);
     }
 
-    //TODO: we already load images kinda sync, so we just stub these for now.
+    // TODO: we already load images kinda sync, so we just stub these for now.
     public int checkImage(TImage image, int width, int height, TImageObserver o) {
         return TImageObserver.ALLBITS;
     }
@@ -463,8 +458,8 @@ public abstract class TComponent implements TImageObserver {
     }
 
     protected void firePropertyChange(String propertyName,
-                                      Object oldValue, Object newValue) {
-        //TODO: implement property change listeners
+            Object oldValue, Object newValue) {
+        // TODO: implement property change listeners
     }
 
     public Point getLocationOnScreen() {
