@@ -11,6 +11,8 @@ import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import me.mdbell.awtea.gfx.generated.Operation;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.browser.Window;
 
 import java.awt.*;
@@ -21,6 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TSurfaceRasterizerGraphics extends TGraphics2D {
+
+    private static final Logger log = LoggerFactory.getLogger(TSurfaceRasterizerGraphics.class);
 
     /**
      * Padding around text glyphs when rendering to a temporary surface.
@@ -161,12 +165,44 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void draw(TShape s) {
-
+        // TODO: Implement full Shape drawing support
+        // Currently unsupported - would require proper path stroking logic
+        // For now, specific shape types (Rectangle, Polygon, etc.) should use their specific draw methods
+        // @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#draw-java.awt.Shape-
+        
+        // Partial support: If the shape is a known type, delegate to appropriate method
+        if (s instanceof TRectangle) {
+            TRectangle r = (TRectangle) s;
+            drawRect(r.x, r.y, r.width, r.height);
+        } else if (s instanceof TPolygon) {
+            TPolygon p = (TPolygon) s;
+            drawPolygon(p.xpoints, p.ypoints, p.npoints);
+        } else {
+            // Generic shape drawing not yet implemented
+            // Would require converting shape to path and stroking it
+            log.debug("draw(Shape): Unsupported shape type: {}", s.getClass().getName());
+        }
     }
 
     @Override
     public void fill(TShape s) {
-
+        // TODO: Implement full Shape filling support
+        // Currently unsupported - would require proper path filling logic
+        // For now, specific shape types (Rectangle, Polygon, etc.) should use their specific fill methods
+        // @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#fill-java.awt.Shape-
+        
+        // Partial support: If the shape is a known type, delegate to appropriate method
+        if (s instanceof TRectangle) {
+            TRectangle r = (TRectangle) s;
+            fillRect(r.x, r.y, r.width, r.height);
+        } else if (s instanceof TPolygon) {
+            TPolygon p = (TPolygon) s;
+            fillPolygon(p.xpoints, p.ypoints, p.npoints);
+        } else {
+            // Generic shape filling not yet implemented
+            // Would require converting shape to path and filling it
+            log.debug("fill(Shape): Unsupported shape type: {}", s.getClass().getName());
+        }
     }
 
     @Override
@@ -262,7 +298,12 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void copyArea(int x, int y, int width, int height, int dx, int dy) {
-
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.COPY_AREA, null, x, y, width, height, dx, dy);
+        pushOp(cmd);
     }
 
     @Override
@@ -277,7 +318,12 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_ARC, null, x, y, width, height, startAngle, arcAngle);
+        pushOp(cmd);
     }
 
     @Override
@@ -417,7 +463,12 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void drawOval(int x, int y, int width, int height) {
-
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_OVAL, null, x, y, width, height);
+        pushOp(cmd);
     }
 
     @Override
@@ -446,12 +497,26 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
+        if (xPoints == null || yPoints == null || nPoints < 2) {
+            return;
+        }
+        int[] xpts = Arrays.copyOf(xPoints, nPoints);
+        int[] ypts = Arrays.copyOf(yPoints, nPoints);
 
+        TPolygon polygon = new TPolygon(xpts, ypts, nPoints);
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_POLYLINE, polygon);
+        pushOp(cmd);
     }
 
     @Override
     public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_ROUND_RECT, null, x, y, width, height, arcWidth, arcHeight);
+        pushOp(cmd);
     }
 
     @Override

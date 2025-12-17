@@ -103,11 +103,7 @@ public abstract class TGraphics {
      * @param dy the vertical distance to copy the pixels
      * @see java.awt.Graphics#copyArea(int, int, int, int, int, int)
      */
-    public void copyArea(int x, int y, int width, int height, int dx, int dy) {
-        // TODO: Implement copyArea functionality
-        // @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics.html#copyArea-int-int-int-int-int-int-
-        throw new UnsupportedOperationException("TGraphics.copyArea() not yet implemented");
-    }
+    public abstract void copyArea(int x, int y, int width, int height, int dx, int dy);
 
     /**
      * Draws a 3-D highlighted outline of the specified rectangle.
@@ -236,11 +232,7 @@ public abstract class TGraphics {
      * @param height the height of the oval
      * @see java.awt.Graphics#drawOval(int, int, int, int)
      */
-    public void drawOval(int x, int y, int width, int height) {
-        // TODO: Implement oval drawing
-        // @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics.html#drawOval-int-int-int-int-
-        throw new UnsupportedOperationException("TGraphics.drawOval() not yet implemented");
-    }
+    public abstract void drawOval(int x, int y, int width, int height);
 
     /**
      * Draws a closed polygon defined by arrays of x and y coordinates.
@@ -260,11 +252,7 @@ public abstract class TGraphics {
      * @param nPoints the total number of points
      * @see java.awt.Graphics#drawPolyline(int[], int[], int)
      */
-    public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
-        // TODO: Implement polyline drawing
-        // @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics.html#drawPolyline-int:A-int:A-int-
-        throw new UnsupportedOperationException("TGraphics.drawPolyline() not yet implemented");
-    }
+    public abstract void drawPolyline(int[] xPoints, int[] yPoints, int nPoints);
 
     /**
      * Draws the text given by the specified byte array.
@@ -342,11 +330,7 @@ public abstract class TGraphics {
      * @param arcAngle the angular extent of the arc
      * @see java.awt.Graphics#fillArc(int, int, int, int, int, int)
      */
-    public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        // TODO: Implement arc filling
-        // @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics.html#fillArc-int-int-int-int-int-int-
-        throw new UnsupportedOperationException("TGraphics.fillArc() not yet implemented");
-    }
+    public abstract void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle);
 
     /**
      * Fills an oval bounded by the specified rectangle.
@@ -357,11 +341,7 @@ public abstract class TGraphics {
      * @param height the height of the oval
      * @see java.awt.Graphics#fillOval(int, int, int, int)
      */
-    public void fillOval(int x, int y, int width, int height) {
-        // TODO: Implement oval filling
-        // @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics.html#fillOval-int-int-int-int-
-        throw new UnsupportedOperationException("TGraphics.fillOval() not yet implemented");
-    }
+    public abstract void fillOval(int x, int y, int width, int height);
 
     /**
      * Fills a closed polygon defined by a Polygon object.

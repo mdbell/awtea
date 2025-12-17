@@ -206,6 +206,23 @@ public class SoftwareRasterizer implements Rasterizer {
                 case FILL_ARC:
                     fillArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
                     break;
+                case DRAW_OVAL:
+                    drawOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                    break;
+                case DRAW_ARC:
+                    drawArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                    break;
+                case DRAW_ROUND_RECT:
+                    drawRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                    break;
+                case DRAW_POLYLINE: {
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    drawPolyline(polygon.xpoints, polygon.ypoints, polygon.npoints);
+                }
+                    break;
+                case COPY_AREA:
+                    copyArea(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                    break;
                 case NO_OP:
                     break;
                 default:
@@ -344,6 +361,15 @@ public class SoftwareRasterizer implements Rasterizer {
         y1 = Math.round((float) p1.getY());
         x2 = Math.round((float) p2.getX());
         y2 = Math.round((float) p2.getY());
+
+        drawLineDeviceSpace(x1, y1, x2, y2);
+    }
+
+    /**
+     * Draw a line in device space (coordinates already transformed).
+     * Used internally by helper methods that work in device space.
+     */
+    private void drawLineDeviceSpace(int x1, int y1, int x2, int y2) {
 
         // Fast path: both points are outside clip (in device space)
         if (clip != null) {
@@ -1137,5 +1163,413 @@ public class SoftwareRasterizer implements Rasterizer {
         edgeTablePool.release(et);
 
         log.debug("fillRoundRect: completed");
+    }
+
+    /**
+     * Draw oval outline using midpoint ellipse algorithm.
+     * This draws the perimeter of an ellipse bounded by the specified rectangle.
+     */
+    public void drawOval(int x, int y, int width, int height) {
+        if (width <= 0 || height <= 0) {
+            log.error("drawOval: invalid dimensions");
+            return;
+        }
+
+        log.debug("drawOval: x={}, y={}, w={}, h={}", x, y, width, height);
+
+        // Calculate center and radii
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        int rx = width / 2;
+        int ry = height / 2;
+
+        // Apply transform
+        if (!transform.isIdentity()) {
+            Point2D.Float center = new Point2D.Float(cx, cy);
+            transform.transform(center, center);
+            cx = Math.round(center.x);
+            cy = Math.round(center.y);
+        }
+
+        // Use midpoint ellipse algorithm to draw the outline
+        drawEllipse(cx, cy, rx, ry);
+
+        log.debug("drawOval: completed");
+    }
+
+    /**
+     * Draw arc outline.
+     * This draws the arc segment bounded by the specified rectangle.
+     */
+    public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        if (width <= 0 || height <= 0) {
+            log.error("drawArc: invalid dimensions");
+            return;
+        }
+
+        log.debug("drawArc: x={}, y={}, w={}, h={}, start={}, arc={}",
+                x, y, width, height, startAngle, arcAngle);
+
+        // Calculate center and radii
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        int rx = width / 2;
+        int ry = height / 2;
+
+        // Apply transform
+        if (!transform.isIdentity()) {
+            Point2D.Float center = new Point2D.Float(cx, cy);
+            transform.transform(center, center);
+            cx = Math.round(center.x);
+            cy = Math.round(center.y);
+        }
+
+        // Convert angles from degrees to radians
+        // Java AWT uses degrees with 0 at 3 o'clock, positive = counter-clockwise
+        // But screen coordinates have Y increasing downward, so we need to flip
+        double startRad = Math.toRadians(startAngle);
+        double endRad = Math.toRadians(startAngle + arcAngle);
+
+        // Draw arc using parametric equations
+        drawArcSegment(cx, cy, rx, ry, startRad, endRad);
+
+        log.debug("drawArc: completed");
+    }
+
+    /**
+     * Draw rounded rectangle outline.
+     */
+    public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        if (width <= 0 || height <= 0) {
+            log.error("drawRoundRect: invalid dimensions");
+            return;
+        }
+
+        log.debug("drawRoundRect: x={}, y={}, w={}, h={}, arcW={}, arcH={}",
+                x, y, width, height, arcWidth, arcHeight);
+
+        // Clamp arc dimensions
+        if (arcWidth > width)
+            arcWidth = width;
+        if (arcHeight > height)
+            arcHeight = height;
+
+        int rx = arcWidth / 2;
+        int ry = arcHeight / 2;
+
+        // Apply transform
+        if (!transform.isIdentity()) {
+            Point2D.Float topLeft = new Point2D.Float(x, y);
+            transform.transform(topLeft, topLeft);
+            x = Math.round(topLeft.x);
+            y = Math.round(topLeft.y);
+        }
+
+        // Draw four corner arcs and four straight edges
+        // Top edge
+        drawLineDeviceSpace(x + rx, y, x + width - rx, y);
+
+        // Top-right corner arc (0 to 90 degrees)
+        drawArcSegment(x + width - rx, y + ry, rx, ry, -Math.PI / 2.0, 0.0);
+
+        // Right edge
+        drawLineDeviceSpace(x + width, y + ry, x + width, y + height - ry);
+
+        // Bottom-right corner arc (90 to 180 degrees)
+        drawArcSegment(x + width - rx, y + height - ry, rx, ry, 0.0, Math.PI / 2.0);
+
+        // Bottom edge
+        drawLineDeviceSpace(x + width - rx, y + height, x + rx, y + height);
+
+        // Bottom-left corner arc (180 to 270 degrees)
+        drawArcSegment(x + rx, y + height - ry, rx, ry, Math.PI / 2.0, Math.PI);
+
+        // Left edge
+        drawLineDeviceSpace(x, y + height - ry, x, y + ry);
+
+        // Top-left corner arc (270 to 360 degrees)
+        drawArcSegment(x + rx, y + ry, rx, ry, Math.PI, 3.0 * Math.PI / 2.0);
+
+        log.debug("drawRoundRect: completed");
+    }
+
+    /**
+     * Draw polyline - a sequence of connected line segments.
+     */
+    public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
+        if (xPoints == null || yPoints == null || nPoints < 2) {
+            log.error("drawPolyline: invalid parameters");
+            return;
+        }
+
+        log.debug("drawPolyline: nPoints={}", nPoints);
+
+        // Draw lines connecting consecutive points (but don't close the polygon)
+        for (int i = 1; i < nPoints; i++) {
+            drawLine(xPoints[i - 1], yPoints[i - 1], xPoints[i], yPoints[i]);
+        }
+
+        log.debug("drawPolyline: completed");
+    }
+
+    /**
+     * Copy an area of the surface to another location.
+     */
+    public void copyArea(int x, int y, int width, int height, int dx, int dy) {
+        if (width <= 0 || height <= 0) {
+            log.error("copyArea: invalid dimensions");
+            return;
+        }
+
+        log.debug("copyArea: x={}, y={}, w={}, h={}, dx={}, dy={}", x, y, width, height, dx, dy);
+
+        // Apply transform to source coordinates
+        Point2D.Float srcTopLeft = new Point2D.Float(x, y);
+        if (!transform.isIdentity()) {
+            transform.transform(srcTopLeft, srcTopLeft);
+        }
+        int srcX = Math.round(srcTopLeft.x);
+        int srcY = Math.round(srcTopLeft.y);
+
+        // Destination is source + delta (in device space)
+        int dstX = srcX + dx;
+        int dstY = srcY + dy;
+
+        // Clip source and destination to surface bounds
+        int surfaceWidth = surface.getWidth();
+        int surfaceHeight = surface.getHeight();
+
+        int copyWidth = width;
+        int copyHeight = height;
+
+        // Clip source rectangle
+        if (srcX < 0) {
+            copyWidth += srcX;
+            dstX -= srcX;
+            srcX = 0;
+        }
+        if (srcY < 0) {
+            copyHeight += srcY;
+            dstY -= srcY;
+            srcY = 0;
+        }
+        if (srcX + copyWidth > surfaceWidth) {
+            copyWidth = surfaceWidth - srcX;
+        }
+        if (srcY + copyHeight > surfaceHeight) {
+            copyHeight = surfaceHeight - srcY;
+        }
+
+        // Clip destination rectangle to surface bounds
+        if (dstX < 0) {
+            copyWidth += dstX;
+            srcX -= dstX;
+            dstX = 0;
+        }
+        if (dstY < 0) {
+            copyHeight += dstY;
+            srcY -= dstY;
+            dstY = 0;
+        }
+        if (dstX + copyWidth > surfaceWidth) {
+            copyWidth = surfaceWidth - dstX;
+        }
+        if (dstY + copyHeight > surfaceHeight) {
+            copyHeight = surfaceHeight - dstY;
+        }
+
+        // Apply clip rectangle to destination
+        if (clip != null) {
+            // Clip destination to clip rectangle
+            int clipRight = clip.x + clip.width;
+            int clipBottom = clip.y + clip.height;
+            
+            if (dstX < clip.x) {
+                int diff = clip.x - dstX;
+                srcX += diff;
+                copyWidth -= diff;
+                dstX = clip.x;
+            }
+            if (dstY < clip.y) {
+                int diff = clip.y - dstY;
+                srcY += diff;
+                copyHeight -= diff;
+                dstY = clip.y;
+            }
+            if (dstX + copyWidth > clipRight) {
+                copyWidth = clipRight - dstX;
+            }
+            if (dstY + copyHeight > clipBottom) {
+                copyHeight = clipBottom - dstY;
+            }
+        }
+
+        if (copyWidth <= 0 || copyHeight <= 0) {
+            log.debug("copyArea: clipped out entirely");
+            return;
+        }
+
+        // Get pixel data
+        int[] pixelData = surface.getPixelDataAsInt32Array();
+        if (pixelData == null) {
+            return;
+        }
+
+        // Copy pixels - need to handle overlapping regions
+        // If the regions overlap and we're copying down or right, copy from bottom-right to top-left
+        boolean overlaps = !(dstX + copyWidth <= srcX || dstX >= srcX + copyWidth ||
+                dstY + copyHeight <= srcY || dstY >= srcY + copyHeight);
+
+        if (overlaps && (dy > 0 || (dy == 0 && dx > 0))) {
+            // Copy from bottom-right to top-left
+            for (int row = copyHeight - 1; row >= 0; row--) {
+                for (int col = copyWidth - 1; col >= 0; col--) {
+                    int srcIdx = (srcY + row) * surfaceWidth + (srcX + col);
+                    int dstIdx = (dstY + row) * surfaceWidth + (dstX + col);
+                    pixelData[dstIdx] = pixelData[srcIdx];
+                }
+            }
+        } else {
+            // Copy from top-left to bottom-right (normal case)
+            for (int row = 0; row < copyHeight; row++) {
+                for (int col = 0; col < copyWidth; col++) {
+                    int srcIdx = (srcY + row) * surfaceWidth + (srcX + col);
+                    int dstIdx = (dstY + row) * surfaceWidth + (dstX + col);
+                    pixelData[dstIdx] = pixelData[srcIdx];
+                }
+            }
+        }
+
+        log.debug("copyArea: completed");
+    }
+
+    /**
+     * Helper method to draw an ellipse outline using midpoint algorithm.
+     */
+    private void drawEllipse(int cx, int cy, int rx, int ry) {
+        int[] pixelData = surface.getPixelDataAsInt32Array();
+        if (pixelData == null) {
+            return;
+        }
+
+        int surfaceWidth = surface.getWidth();
+        int surfaceHeight = surface.getHeight();
+        boolean blend = needsBlending();
+
+        // Midpoint ellipse algorithm
+        int x = 0;
+        int y = ry;
+        int rx2 = rx * rx;
+        int ry2 = ry * ry;
+        int twoRx2 = 2 * rx2;
+        int twoRy2 = 2 * ry2;
+
+        // Region 1
+        int p1 = (int) (ry2 - rx2 * ry + 0.25 * rx2);
+        int px = 0;
+        int py = twoRx2 * y;
+
+        while (px < py) {
+            plotEllipsePoints(pixelData, surfaceWidth, surfaceHeight, cx, cy, x, y, blend);
+            x++;
+            px += twoRy2;
+            if (p1 < 0) {
+                p1 += ry2 + px;
+            } else {
+                y--;
+                py -= twoRx2;
+                p1 += ry2 + px - py;
+            }
+        }
+
+        // Region 2
+        int p2 = (int) (ry2 * (x + 0.5) * (x + 0.5) + rx2 * (y - 1) * (y - 1) - rx2 * ry2);
+        while (y >= 0) {
+            plotEllipsePoints(pixelData, surfaceWidth, surfaceHeight, cx, cy, x, y, blend);
+            y--;
+            py -= twoRx2;
+            if (p2 > 0) {
+                p2 += rx2 - py;
+            } else {
+                x++;
+                px += twoRy2;
+                p2 += rx2 - py + px;
+            }
+        }
+    }
+
+    /**
+     * Helper to plot the 4 symmetric points of an ellipse.
+     */
+    private void plotEllipsePoints(int[] pixelData, int width, int height, int cx, int cy, int x, int y,
+            boolean blend) {
+        plotPixel(pixelData, width, height, cx + x, cy + y, blend);
+        plotPixel(pixelData, width, height, cx - x, cy + y, blend);
+        plotPixel(pixelData, width, height, cx + x, cy - y, blend);
+        plotPixel(pixelData, width, height, cx - x, cy - y, blend);
+    }
+
+    /**
+     * Helper to plot a single pixel with clipping and optional blending.
+     */
+    private void plotPixel(int[] pixelData, int width, int height, int x, int y, boolean blend) {
+        // Clip to surface bounds
+        if (x < 0 || x >= width || y < 0 || y >= height) {
+            return;
+        }
+
+        // Apply clip rectangle if set
+        if (clip != null) {
+            if (x < clip.x || x >= clip.x + clip.width || y < clip.y || y >= clip.y + clip.height) {
+                return;
+            }
+        }
+
+        int idx = y * width + x;
+        if (blend) {
+            int dstColor = pixelData[idx];
+            pixelData[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()),
+                    convertColorToARGB(dstColor, surface.getFormat()), composite);
+        } else {
+            pixelData[idx] = encodedForeground;
+        }
+    }
+
+    /**
+     * Helper to draw an arc segment using parametric equations.
+     */
+    private void drawArcSegment(int cx, int cy, int rx, int ry, double startAngle, double endAngle) {
+        // Normalize angles
+        while (startAngle < 0)
+            startAngle += 2 * Math.PI;
+        while (endAngle < 0)
+            endAngle += 2 * Math.PI;
+        while (startAngle > 2 * Math.PI)
+            startAngle -= 2 * Math.PI;
+        while (endAngle > 2 * Math.PI)
+            endAngle -= 2 * Math.PI;
+
+        // Handle wrapping
+        if (endAngle < startAngle) {
+            endAngle += 2 * Math.PI;
+        }
+
+        // Calculate step size based on arc length
+        double angleDiff = Math.abs(endAngle - startAngle);
+        double arcLength = angleDiff * Math.max(rx, ry);
+        int steps = Math.max(10, (int) Math.ceil(arcLength / 2.0)); // At least 10 steps, or 2 pixels per step
+
+        double angleStep = (endAngle - startAngle) / steps;
+        int prevX = cx + (int) Math.round(rx * Math.cos(startAngle));
+        int prevY = cy + (int) Math.round(ry * Math.sin(startAngle));
+
+        for (int i = 1; i <= steps; i++) {
+            double angle = startAngle + i * angleStep;
+            int x = cx + (int) Math.round(rx * Math.cos(angle));
+            int y = cy + (int) Math.round(ry * Math.sin(angle));
+            drawLineDeviceSpace(prevX, prevY, x, y); // Use device space version
+            prevX = x;
+            prevY = y;
+        }
     }
 }
