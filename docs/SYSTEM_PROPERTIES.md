@@ -90,6 +90,26 @@ This document provides comprehensive documentation for all system properties tha
 -Dme.mdbell.awtea.font.base_url=assets/fonts/
 ```
 
+### `me.mdbell.awtea.font.subpixel`
+
+- **Type**: Boolean
+- **Default**: `false`
+- **Valid Values**: `true`, `false`
+- **Description**: Enables sub-pixel font rendering (LCD/ClearType-style) for improved text clarity on LCD displays with horizontal RGB stripe layout. When enabled, each color channel (R, G, B) is sampled independently at slightly offset horizontal positions, taking advantage of the physical sub-pixel arrangement to increase apparent horizontal resolution. This significantly improves sharpness and readability, especially for smaller font sizes. Defaults to `false` for full backward compatibility.
+- **Performance Impact**: Minimal performance impact. Sub-pixel rendering uses the same supersampling approach but applies independent sampling per color channel during the downsample phase.
+- **Display Requirements**: Works best on LCD displays with horizontal RGB stripe layout (R-G-B from left to right). May appear colored on other display types or pixel layouts (BGR, vertical stripes, PenTile, etc.).
+- **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/font/FontRendererFactory.java:49`
+- **Since**: v0.2.0
+
+**Example:**
+```bash
+# Enable sub-pixel rendering for sharper text on LCD displays
+-Dme.mdbell.awtea.font.subpixel=true
+
+# Disable sub-pixel rendering (default)
+-Dme.mdbell.awtea.font.subpixel=false
+```
+
 ---
 
 ## WebAssembly (WASM)

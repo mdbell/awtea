@@ -81,6 +81,121 @@ public class RasterFontRenderer implements FontRenderer {
 }
 ```
 
+### 5. SyntheticStyledFontRenderer
+
+A decorator renderer that applies synthetic bold and italic styling when actual font variant files are missing.
+
+```java
+public class SyntheticStyledFontRenderer implements FontRenderer {
+    // Wraps another renderer and applies synthetic styling effects
+    // Used automatically when font variants are not available
+}
+```
+
+**Synthetic Bold:**
+- Renders each glyph multiple times with 1-pixel horizontal offset
+- Creates heavier text appearance
+- Not as uniform as real bold fonts, especially at small sizes
+
+**Synthetic Italic:**
+- Applies -0.2 radian shear transformation (approximately 11 degrees)
+- Simulates oblique text slant
+- Lacks the design refinements of true italic fonts
+
+**Automatic Fallback:**
+When you create a bold or italic font and the variant file is missing, awtea automatically:
+1. Loads the plain font variant
+2. Wraps it with `SyntheticStyledFontRenderer`
+3. Applies synthetic styling at render time
+
+```java
+// If NotoSans-Bold.ttf is missing:
+TFont bold = new TFont("NotoSans", TFont.BOLD, 12);
+// Automatically uses NotoSans.ttf with synthetic bold styling
+```
+
+## Synthetic Font Styling
+
+When a bold or italic font variant file is not available, awtea automatically applies synthetic styling to provide visually distinct text while maintaining functionality.
+
+### Quality Comparison
+
+| Aspect | Real Font Variants | Synthetic Styling |
+|--------|-------------------|-------------------|
+| Quality | Professional design, optimized hinting | Approximation of style |
+| Consistency | Uniform weight/angle across all glyphs | May vary slightly |
+| File Size | Requires separate font files | Uses existing font |
+| Performance | Same as plain fonts | Slightly slower (extra passes) |
+| Recommendation | **Preferred** for production | Acceptable fallback |
+
+### When Synthetic Styling is Used
+
+Synthetic styling is automatically applied when:
+1. A bold or italic font is requested
+2. The corresponding font variant file (e.g., `FontName-Bold.ttf`) is not found
+3. The plain font file (e.g., `FontName.ttf`) is available
+
+### Example Behavior
+
+```java
+// Scenario 1: Real font variants deployed
+// Files: NotoSans.ttf, NotoSans-Bold.ttf, NotoSans-Italic.ttf, NotoSans-BoldItalic.ttf
+TFont bold = new TFont("NotoSans", TFont.BOLD, 12);
+// → Loads NotoSans-Bold.ttf (real bold font) ✓
+
+// Scenario 2: Only plain font deployed
+// Files: Helvetica.ttf
+TFont bold = new TFont("Helvetica", TFont.BOLD, 12);
+// → Loads Helvetica.ttf + applies synthetic bold styling
+
+// Scenario 3: Mixed deployment
+// Files: Roboto.ttf, Roboto-Bold.ttf (no italic variants)
+TFont italic = new TFont("Roboto", TFont.ITALIC, 12);
+// → Loads Roboto.ttf + applies synthetic italic styling
+```
+
+### Configuration
+
+Synthetic styling is enabled automatically and requires no configuration. To disable it and require real font files only:
+
+1. Deploy all required font variants
+2. Font loading will fail if variants are missing (falls back to default font)
+
+### Implementation Details
+
+**Synthetic Bold Algorithm:**
+```java
+// Render glyph at position
+renderGlyph(font, glyphId, target, x, y, color);
+// Render again 1 pixel to the right
+renderGlyph(font, glyphId, target, x + 1, y, color);
+```
+
+**Synthetic Italic Algorithm:**
+```java
+// Apply shear transformation: x' = x + (y * ITALIC_SHEAR)
+int offsetX = x + (int)(y * -0.2f);
+renderGlyph(font, glyphId, target, offsetX, y, color);
+```
+
+### Best Practices
+
+1. **For Production**: Deploy all font variants (Plain, Bold, Italic, BoldItalic) for best quality
+2. **For Development**: Rely on synthetic styling for quick prototyping
+3. **For Fallback Fonts**: Synthetic styling ensures bold/italic work even with limited font files
+4. **Performance**: Synthetic bold is ~2x slower per string (two render passes)
+
+### Font Deployment Checklist
+
+For optimal text rendering quality, deploy these variants for each font family:
+
+- [ ] `FontName.ttf` (Plain/Regular)
+- [ ] `FontName-Bold.ttf` (Bold)
+- [ ] `FontName-Italic.ttf` (Italic)
+- [ ] `FontName-BoldItalic.ttf` (Bold Italic)
+
+If any variant is missing, synthetic styling will automatically be applied for that style.
+
 ## Component Relationships
 
 ```
@@ -88,7 +203,10 @@ TFont
   └─> FontPeer
         ├─> TrueTypeFont (font data)
         └─> FontRenderer (rendering strategy)
-              └─> RasterFontRenderer (default impl)
+              ├─> RasterFontRenderer (default impl)
+              ├─> AtlasBasedFontRenderer (optimized caching)
+              └─> SyntheticStyledFontRenderer (decorator for synthetic bold/italic)
+                    └─> delegates to another FontRenderer
 ```
 
 ## Usage Examples
@@ -212,6 +330,7 @@ The `RasterFontRenderer` caches rendered glyphs using a composite key:
 - Glyph ID
 - Size in pixels
 - Supersampling factor
+- Sub-pixel rendering mode
 
 Cache size is configurable via `GlyphRasterizer.setMaxGlyphCacheEntries()`.
 
@@ -227,6 +346,39 @@ Configure via system property:
 ```bash
 -Dme.mdbell.awtea.font.supersample=2
 ```
+
+### Sub-Pixel Rendering
+
+Sub-pixel rendering (LCD/ClearType-style) is an optional enhancement that significantly improves text sharpness on LCD displays:
+
+**How it Works:**
+- Takes advantage of the physical RGB sub-pixel arrangement on LCD displays
+- Each color channel (R, G, B) is sampled independently at slightly offset horizontal positions
+- Increases apparent horizontal resolution by ~3x for text
+- Best suited for horizontal RGB stripe layouts (R-G-B from left to right)
+
+**Trade-offs:**
+
+| Mode | Sharpness | Color Fringing | Display Compatibility |
+|------|-----------|----------------|----------------------|
+| Disabled (default) | Good | None | Universal |
+| Enabled | Excellent | Minimal (on LCD) | Best on RGB LCD |
+
+**Configuration:**
+```bash
+# Enable sub-pixel rendering
+-Dme.mdbell.awtea.font.subpixel=true
+```
+
+**Display Considerations:**
+- **RGB LCD (Horizontal):** Optimal - sharp text with minimal color fringing
+- **BGR LCD:** May show reversed color fringing (BGR subpixel order detection could be added in future iterations)
+- **Vertical RGB/BGR:** Not optimal for this horizontal implementation
+- **OLED/PenTile:** May show color artifacts
+- **Retina/Hi-DPI:** Less benefit due to already high pixel density
+
+**Performance Impact:**
+Minimal - uses the same supersampling approach but applies independent per-channel sampling during downsampling.
 
 ## Future Rendering Strategies
 

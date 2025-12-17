@@ -2,10 +2,11 @@ package me.mdbell.awtea.test;
 
 /**
  * Simple assertion utilities for tests.
- * Throws AssertionError when assertions fail, which Deno's test framework will catch.
+ * Throws AssertionError when assertions fail, which Deno's test framework will
+ * catch.
  */
 public class Assert {
-    
+
     /**
      * Make an assertion that actual and expected are equal.
      */
@@ -14,7 +15,16 @@ public class Assert {
             throw new AssertionError(msg + " - expected: " + expected + " but was: " + actual);
         }
     }
-    
+
+    /**
+     * Make an assertion that actual and expected are equal.
+     */
+    public static void assertEquals(long actual, long expected, String msg) {
+        if (actual != expected) {
+            throw new AssertionError(msg + " - expected: " + expected + " but was: " + actual);
+        }
+    }
+
     /**
      * Make an assertion that actual and expected are equal (objects).
      */
@@ -26,7 +36,7 @@ public class Assert {
             throw new AssertionError(msg + " - expected: " + expected + " but was: " + actual);
         }
     }
-    
+
     /**
      * Make an assertion that expr is true.
      */
@@ -35,7 +45,7 @@ public class Assert {
             throw new AssertionError(msg);
         }
     }
-    
+
     /**
      * Make an assertion that expr is false.
      */
@@ -44,7 +54,7 @@ public class Assert {
             throw new AssertionError(msg);
         }
     }
-    
+
     /**
      * Make an assertion that obj is not null.
      */
@@ -53,7 +63,7 @@ public class Assert {
             throw new AssertionError(msg);
         }
     }
-    
+
     /**
      * Make an assertion that obj is null.
      */

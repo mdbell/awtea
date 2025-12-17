@@ -10,15 +10,9 @@
 
 import { assertEquals, assertNotEquals } from "@std/assert";
 import { PixelFormat, WasmRasterizer } from "./wasm_rasterizer.ts";
+import { assertPixelEquals } from "./test_helpers.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
-
-// Helper to compare Uint32 values (JavaScript bitwise operations are signed)
-function assertPixelEquals(actual: number, expected: number, message: string) {
-  const actualU32 = actual >>> 0;
-  const expectedU32 = expected >>> 0;
-  assertEquals(actualU32, expectedU32, message);
-}
 
 Deno.test("Context creation and destruction", async () => {
   const rasterizer = new WasmRasterizer();
@@ -53,15 +47,11 @@ Deno.test("Context cloning creates independent state", async () => {
   const context1 = rasterizer.createContext(surfaceId);
 
   // Set context1 to render in red
-  const cmdBuffer1 = rasterizer.createCommandBuffer(2);
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer1, 0, WasmRasterizer.setColorCommand(red));
-  rasterizer.writeCommand(
-    cmdBuffer1,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 10, 10),
-  );
-  rasterizer.renderCommands(context1, cmdBuffer1, 2);
+  rasterizer.renderVariableLengthCommands(context1, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 10, 10),
+  ]);
 
   // Clone the context
   const context2 = rasterizer.cloneContext(context1);
@@ -75,15 +65,11 @@ Deno.test("Context cloning creates independent state", async () => {
   assertEquals(rasterizer.getContextSurfaceId(context2), surfaceId);
 
   // Change context2 state to render in blue
-  const cmdBuffer2 = rasterizer.createCommandBuffer(2);
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
-  rasterizer.writeCommand(cmdBuffer2, 0, WasmRasterizer.setColorCommand(blue));
-  rasterizer.writeCommand(
-    cmdBuffer2,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 10, 10),
-  );
-  rasterizer.renderCommands(context2, cmdBuffer2, 2);
+  rasterizer.renderVariableLengthCommands(context2, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 10, 10),
+  ]);
 
   // Surface should be blue (last render wins)
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -94,13 +80,9 @@ Deno.test("Context cloning creates independent state", async () => {
   );
 
   // Render with context1 again - should still use red (independent state)
-  const cmdBuffer3 = rasterizer.createCommandBuffer(1);
-  rasterizer.writeCommand(
-    cmdBuffer3,
-    0,
-    WasmRasterizer.fillRectCommand(0, 0, 10, 10),
-  );
-  rasterizer.renderCommands(context1, cmdBuffer3, 1);
+  rasterizer.renderVariableLengthCommands(context1, [
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 10, 10),
+  ]);
 
   // Surface should now be red (context1's color state is still red)
   const pixelsAfter = rasterizer.copySurfacePixels(surfaceId);
@@ -125,20 +107,12 @@ Deno.test("Independent clip rectangles per context", async () => {
   const context2 = rasterizer.cloneContext(context1);
 
   // Set context1 clip to left half (0, 0, 10, 20)
-  const cmdBuffer1 = rasterizer.createCommandBuffer(3);
-  rasterizer.writeCommand(
-    cmdBuffer1,
-    0,
-    WasmRasterizer.setClipRectCommand(0, 0, 10, 20),
-  );
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer1, 1, WasmRasterizer.setColorCommand(red));
-  rasterizer.writeCommand(
-    cmdBuffer1,
-    2,
-    WasmRasterizer.fillRectCommand(0, 0, 20, 20),
-  );
-  rasterizer.renderCommands(context1, cmdBuffer1, 3);
+  rasterizer.renderVariableLengthCommands(context1, [
+    (w) => WasmRasterizer.writeSetClipRectCommand(w, 0, 0, 10, 20),
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 20, 20),
+  ]);
 
   // Verify only left half is red
   const pixelsAfterCtx1 = rasterizer.copySurfacePixels(surfaceId);
@@ -146,20 +120,12 @@ Deno.test("Independent clip rectangles per context", async () => {
   assertEquals(pixelsAfterCtx1[15], 0, "Right side should still be black");
 
   // Set context2 clip to right half (10, 0, 10, 20)
-  const cmdBuffer2 = rasterizer.createCommandBuffer(3);
-  rasterizer.writeCommand(
-    cmdBuffer2,
-    0,
-    WasmRasterizer.setClipRectCommand(10, 0, 10, 20),
-  );
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
-  rasterizer.writeCommand(cmdBuffer2, 1, WasmRasterizer.setColorCommand(blue));
-  rasterizer.writeCommand(
-    cmdBuffer2,
-    2,
-    WasmRasterizer.fillRectCommand(0, 0, 20, 20),
-  );
-  rasterizer.renderCommands(context2, cmdBuffer2, 3);
+  rasterizer.renderVariableLengthCommands(context2, [
+    (w) => WasmRasterizer.writeSetClipRectCommand(w, 10, 0, 10, 20),
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 20, 20),
+  ]);
 
   // Verify left is still red, right is now blue
   const pixelsFinal = rasterizer.copySurfacePixels(surfaceId);
@@ -188,15 +154,11 @@ Deno.test("Reference counting: surface survives until all contexts destroyed", a
   rasterizer.destroyContext(context2);
 
   // Surface should still be accessible through context3
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
   const green = WasmRasterizer.makeARGB(255, 0, 255, 0);
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.setColorCommand(green));
-  rasterizer.writeCommand(
-    cmdBuffer,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 10, 10),
-  );
-  rasterizer.renderCommands(context3, cmdBuffer, 2);
+  rasterizer.renderVariableLengthCommands(context3, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, green),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 10, 10),
+  ]);
 
   const pixels = rasterizer.copySurfacePixels(surfaceId);
   assertPixelEquals(
@@ -219,31 +181,19 @@ Deno.test("Multiple contexts with independent transforms", async () => {
   const context2 = rasterizer.cloneContext(context1);
 
   // Context1: Identity transform, render at (0, 0)
-  const cmdBuffer1 = rasterizer.createCommandBuffer(2);
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer1, 0, WasmRasterizer.setColorCommand(red));
-  rasterizer.writeCommand(
-    cmdBuffer1,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 5, 5),
-  );
-  rasterizer.renderCommands(context1, cmdBuffer1, 2);
+  rasterizer.renderVariableLengthCommands(context1, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 5, 5),
+  ]);
 
   // Context2: Translate by (10, 10), render at (0, 0) which becomes (10, 10)
-  const cmdBuffer2 = rasterizer.createCommandBuffer(3);
-  rasterizer.writeCommand(
-    cmdBuffer2,
-    0,
-    WasmRasterizer.setTransformCommand(1, 0, 10, 0, 1, 10),
-  );
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
-  rasterizer.writeCommand(cmdBuffer2, 1, WasmRasterizer.setColorCommand(blue));
-  rasterizer.writeCommand(
-    cmdBuffer2,
-    2,
-    WasmRasterizer.fillRectCommand(0, 0, 5, 5),
-  );
-  rasterizer.renderCommands(context2, cmdBuffer2, 3);
+  rasterizer.renderVariableLengthCommands(context2, [
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 10, 0, 1, 10),
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 5, 5),
+  ]);
 
   // Verify rendering positions
   const pixels = rasterizer.copySurfacePixels(surfaceId);

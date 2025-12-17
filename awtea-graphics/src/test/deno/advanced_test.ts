@@ -9,15 +9,9 @@
 
 import { assertEquals, assertThrows } from "@std/assert";
 import { PixelFormat, WasmRasterizer } from "./wasm_rasterizer.ts";
+import { assertPixelEquals } from "./test_helpers.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
-
-// Helper to compare Uint32 values (JavaScript bitwise operations are signed)
-function assertPixelEquals(actual: number, expected: number, message: string) {
-  const actualU32 = actual >>> 0;
-  const expectedU32 = expected >>> 0;
-  assertEquals(actualU32, expectedU32, message);
-}
 
 Deno.test("Identity transform", async () => {
   const rasterizer = new WasmRasterizer();
@@ -27,27 +21,13 @@ Deno.test("Identity transform", async () => {
 
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer with identity transform
-  const cmdBuffer = rasterizer.createCommandBuffer(3);
-
-  // Set identity transform (m00=1, m11=1, rest=0)
-  rasterizer.writeCommand(
-    cmdBuffer,
-    0,
-    WasmRasterizer.setTransformCommand(1, 0, 0, 0, 1, 0),
-  );
-
-  // Set color and fill rect
+  // Create command with identity transform
   const cyan = WasmRasterizer.makeARGB(255, 0, 255, 255);
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.setColorCommand(cyan));
-  rasterizer.writeCommand(
-    cmdBuffer,
-    2,
-    WasmRasterizer.fillRectCommand(5, 5, 10, 10),
-  );
-
-  // Execute
-  rasterizer.renderCommands(contextId, cmdBuffer, 3);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 0, 0, 1, 0),
+    (w) => WasmRasterizer.writeSetColorCommand(w, cyan),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 5, 5, 10, 10),
+  ]);
 
   // With identity transform, rect should be at (5, 5)
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -58,6 +38,7 @@ Deno.test("Identity transform", async () => {
     "Pixel (5,5) should be cyan with identity transform",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -68,28 +49,13 @@ Deno.test("Translation transform", async () => {
   const surfaceId = rasterizer.allocateSurface(30, 30);
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer with translation
-  const cmdBuffer = rasterizer.createCommandBuffer(3);
-
-  // Set translation transform (move by +5, +5)
-  // m00=1, m01=0, m02=5, m10=0, m11=1, m12=5
-  rasterizer.writeCommand(
-    cmdBuffer,
-    0,
-    WasmRasterizer.setTransformCommand(1, 0, 5, 0, 1, 5),
-  );
-
-  // Set color and fill rect at (0, 0)
+  // Create command with translation transform
   const orange = WasmRasterizer.makeARGB(255, 255, 165, 0);
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.setColorCommand(orange));
-  rasterizer.writeCommand(
-    cmdBuffer,
-    2,
-    WasmRasterizer.fillRectCommand(0, 0, 5, 5),
-  );
-
-  // Execute
-  rasterizer.renderCommands(contextId, cmdBuffer, 3);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 5, 0, 1, 5),
+    (w) => WasmRasterizer.writeSetColorCommand(w, orange),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 5, 5),
+  ]);
 
   // With translation, rect at (0,0) should appear at (5, 5)
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -105,6 +71,7 @@ Deno.test("Translation transform", async () => {
     "Pixel (5,5) should be orange (translated)",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -122,32 +89,18 @@ Deno.test("Complex drawing pattern - checkerboard", async () => {
   const white = WasmRasterizer.makeARGB(255, 255, 255, 255);
 
   // Create checkerboard pattern (4x4 cells)
-  const numCells = (width / cellSize) * (height / cellSize);
-  const cmdBuffer = rasterizer.createCommandBuffer(numCells * 2); // 2 commands per cell (set color + fill)
-
-  let cmdIdx = 0;
+  const commands = [];
   for (let row = 0; row < height / cellSize; row++) {
     for (let col = 0; col < width / cellSize; col++) {
       const color = ((row + col) % 2 === 0) ? black : white;
-      rasterizer.writeCommand(
-        cmdBuffer,
-        cmdIdx++,
-        WasmRasterizer.setColorCommand(color),
-      );
-      rasterizer.writeCommand(
-        cmdBuffer,
-        cmdIdx++,
-        WasmRasterizer.fillRectCommand(
-          col * cellSize,
-          row * cellSize,
-          cellSize,
-          cellSize,
-        ),
-      );
+      const x = col * cellSize;
+      const y = row * cellSize;
+      commands.push((w: any) => WasmRasterizer.writeSetColorCommand(w, color));
+      commands.push((w: any) => WasmRasterizer.writeFillRectCommand(w, x, y, cellSize, cellSize));
     }
   }
 
-  rasterizer.renderCommands(contextId, cmdBuffer, cmdIdx);
+  rasterizer.renderVariableLengthCommands(contextId, commands);
 
   // Verify checkerboard pattern
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -163,6 +116,7 @@ Deno.test("Complex drawing pattern - checkerboard", async () => {
   const idx2 = 5 * width;
   assertPixelEquals(pixels[idx2], white, "Pixel (0,5) should be white");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -173,36 +127,17 @@ Deno.test("Drawing with background color", async () => {
   const surfaceId = rasterizer.allocateSurface(10, 10);
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(4);
-
   // Set background color to gray
   const gray = WasmRasterizer.makeARGB(255, 128, 128, 128);
-  rasterizer.writeCommand(
-    cmdBuffer,
-    0,
-    WasmRasterizer.setColorCommand(gray, 1),
-  ); // which=1 for BG
-
   // Set foreground color to red
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.setColorCommand(red, 0)); // which=0 for FG
 
-  // Fill with foreground
-  rasterizer.writeCommand(
-    cmdBuffer,
-    2,
-    WasmRasterizer.fillRectCommand(0, 0, 10, 10),
-  );
-
-  // Clear a small area (which should use background color or transparency)
-  rasterizer.writeCommand(
-    cmdBuffer,
-    3,
-    WasmRasterizer.clearRectCommand(3, 3, 4, 4),
-  );
-
-  rasterizer.renderCommands(contextId, cmdBuffer, 4);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w: any) => WasmRasterizer.writeSetColorCommand(w, gray, 1), // which=1 for BG
+    (w: any) => WasmRasterizer.writeSetColorCommand(w, red, 0), // which=0 for FG
+    (w: any) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 10, 10),
+    (w: any) => WasmRasterizer.writeClearRectCommand(w, 3, 3, 4, 4),
+  ]);
 
   const pixels = rasterizer.copySurfacePixels(surfaceId);
 
@@ -217,6 +152,7 @@ Deno.test("Drawing with background color", async () => {
     "Pixel (3,3) should be gray (background color)",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -234,18 +170,10 @@ Deno.test("Large surface allocation", async () => {
 
   // Just fill the whole surface with mid-gray to test large allocation works
   const midGray = WasmRasterizer.makeARGB(255, 128, 128, 128);
-  const testBuffer = rasterizer.createCommandBuffer(2);
-  rasterizer.writeCommand(
-    testBuffer,
-    0,
-    WasmRasterizer.setColorCommand(midGray),
-  );
-  rasterizer.writeCommand(
-    testBuffer,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 256, 256),
-  );
-  rasterizer.renderCommands(contextId, testBuffer, 2);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, midGray),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 256, 256),
+  ]);
 
   const pixels = rasterizer.copySurfacePixels(surfaceId);
   assertEquals(pixels.length, 256 * 256, "Should have 65536 pixels");
@@ -256,6 +184,7 @@ Deno.test("Large surface allocation", async () => {
     "Last pixel should be mid-gray",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -267,37 +196,25 @@ Deno.test("Multiple command batches", async () => {
   const contextId = rasterizer.createContext(surfaceId);
 
   // First batch: fill with red
-  const cmdBuffer1 = rasterizer.createCommandBuffer(2);
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer1, 0, WasmRasterizer.setColorCommand(red));
-  rasterizer.writeCommand(
-    cmdBuffer1,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 30, 30),
-  );
-  rasterizer.renderCommands(contextId, cmdBuffer1, 2);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w: any) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w: any) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 30, 30),
+  ]);
 
   // Second batch: draw blue square on top
-  const cmdBuffer2 = rasterizer.createCommandBuffer(2);
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
-  rasterizer.writeCommand(cmdBuffer2, 0, WasmRasterizer.setColorCommand(blue));
-  rasterizer.writeCommand(
-    cmdBuffer2,
-    1,
-    WasmRasterizer.fillRectCommand(10, 10, 10, 10),
-  );
-  rasterizer.renderCommands(contextId, cmdBuffer2, 2);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w: any) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w: any) => WasmRasterizer.writeFillRectCommand(w, 10, 10, 10, 10),
+  ]);
 
   // Third batch: draw green line
-  const cmdBuffer3 = rasterizer.createCommandBuffer(2);
   const green = WasmRasterizer.makeARGB(255, 0, 255, 0);
-  rasterizer.writeCommand(cmdBuffer3, 0, WasmRasterizer.setColorCommand(green));
-  rasterizer.writeCommand(
-    cmdBuffer3,
-    1,
-    WasmRasterizer.drawLineCommand(0, 15, 29, 15),
-  );
-  rasterizer.renderCommands(contextId, cmdBuffer3, 2);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w: any) => WasmRasterizer.writeSetColorCommand(w, green),
+    (w: any) => WasmRasterizer.writeDrawLineCommand(w, 0, 15, 29, 15),
+  ]);
 
   // Verify results
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -317,6 +234,7 @@ Deno.test("Multiple command batches", async () => {
     "Pixel (5,15) should be green from line",
   );
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -348,18 +266,10 @@ Deno.test("Pixel format ARGB consistency", async () => {
 
   // Fill with a specific opaque color (alpha=255 to avoid blending)
   const testColor = WasmRasterizer.makeARGB(255, 100, 150, 75);
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
-  rasterizer.writeCommand(
-    cmdBuffer,
-    0,
-    WasmRasterizer.setColorCommand(testColor),
-  );
-  rasterizer.writeCommand(
-    cmdBuffer,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 10, 10),
-  );
-  rasterizer.renderCommands(contextId, cmdBuffer, 2);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, testColor),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 10, 10),
+  ]);
 
   // Read back and verify
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -370,5 +280,6 @@ Deno.test("Pixel format ARGB consistency", async () => {
   assertEquals(extracted.g, 150, "Green should be 150");
   assertEquals(extracted.b, 75, "Blue should be 75");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });

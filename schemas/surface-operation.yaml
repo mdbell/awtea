@@ -13,7 +13,7 @@ values:
   - name: SET_CLIP_RECT
     description: Set clipping rectangle
   - name: SET_COMPOSITE
-    description: Set compositing mode (unimplemented in WASM)
+    description: Set compositing mode (Porter-Duff alpha blending)
   - name: BLIT_IMAGE
     description: Copy image to surface
   - name: DRAW_RECT
@@ -24,6 +24,16 @@ values:
     description: Clear rectangle
   - name: DRAW_LINE
     description: Draw line
+  - name: DRAW_POLYGON
+    description: Draw a polygon
+  - name: FILL_POLYGON
+    description: Fills a polygon
+  - name: FILL_OVAL
+    description: Fills an oval
+  - name: FILL_ROUND_RECT
+    description: Fills a rounded rectangle
+  - name: FILL_ARC
+    description: Fills an arc
   - name: COUNT
     c_only: true
     description: Number of standard commands

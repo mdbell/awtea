@@ -197,6 +197,16 @@ public class WasmSurfacePool {
         log.info("Cleared {} surfaces from pool", cleared);
     }
 
+    public void reset() {
+        log.info("Resetting surface pool");
+        clear();
+        acquireRequests.set(0);
+        poolHits.set(0);
+        poolMisses.set(0);
+        releaseCount.set(0);
+        destroyCount.set(0);
+    }
+
     /**
      * Evict the least recently used surface from the pool (across all keys).
      * Called when total pool size exceeds maximum.

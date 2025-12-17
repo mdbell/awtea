@@ -97,11 +97,12 @@ public class GlyphAtlas {
 	 * @param sizePx      the font size in pixels
 	 * @param argb        the color in ARGB format (used as part of cache key)
 	 * @param supersample the supersampling factor
+	 * @param subpixelRendering whether to use sub-pixel rendering
 	 * @return the glyph entry, or null if the glyph cannot be rendered
 	 */
 	public GlyphEntry getOrCreateGlyph(TrueTypeFont font, int glyphId, float sizePx,
-			int argb, int supersample) {
-		GlyphKey key = new GlyphKey(font, glyphId, sizePx, argb, supersample);
+			int argb, int supersample, boolean subpixelRendering) {
+		GlyphKey key = new GlyphKey(font, glyphId, sizePx, argb, supersample, subpixelRendering);
 
 		synchronized (glyphCache) {
 			GlyphEntry entry = glyphCache.get(key);
@@ -110,7 +111,7 @@ public class GlyphAtlas {
 			}
 
 			// Need to rasterize this glyph into the atlas
-			entry = rasterizeToAtlas(font, glyphId, sizePx, argb, supersample);
+			entry = rasterizeToAtlas(font, glyphId, sizePx, argb, supersample, subpixelRendering);
 			if (entry != null) {
 				glyphCache.put(key, entry);
 			}
@@ -127,10 +128,11 @@ public class GlyphAtlas {
 	 * @param sizePx      the font size in pixels
 	 * @param argb        the color in ARGB format
 	 * @param supersample the supersampling factor
+	 * @param subpixelRendering whether to use sub-pixel rendering
 	 * @return the glyph entry, or null if the glyph cannot be rendered
 	 */
 	private GlyphEntry rasterizeToAtlas(TrueTypeFont font, int glyphId, float sizePx,
-			int argb, int supersample) {
+			int argb, int supersample, boolean subpixelRendering) {
 		// First, get the glyph metrics to determine size
 		me.mdbell.awtea.font.Glyph glyph = font.loadGlyph(glyphId);
 		if (glyph == null || glyph.isEmpty()) {
@@ -204,7 +206,7 @@ public class GlyphAtlas {
 			int renderX = -xMinPixel;
 			int renderY = -yMinPixel;
 
-			renderGlyphToSurface(font, glyphId, tempSurface, sizePx, renderX, renderY, argb, supersample);
+			renderGlyphToSurface(font, glyphId, tempSurface, sizePx, renderX, renderY, argb, supersample, subpixelRendering);
 
 			// Copy the rendered glyph from temp surface to atlas
 			copyToAtlas(tempSurface, currentX, currentY, glyphWidth, glyphHeight);
@@ -242,13 +244,14 @@ public class GlyphAtlas {
 	 * @param y           the y-coordinate (baseline)
 	 * @param argb        the color in ARGB format
 	 * @param supersample the supersampling factor
+	 * @param subpixelRendering whether to use sub-pixel rendering
 	 */
 	private void renderGlyphToSurface(TrueTypeFont font, int glyphId, Surface surface,
-			float sizePx, int x, int y, int argb, int supersample) {
+			float sizePx, int x, int y, int argb, int supersample, boolean subpixelRendering) {
 		// Use GlyphRasterizer with a surface adapter
 		SurfaceRasterTarget target = new SurfaceRasterTarget(surface);
 		me.mdbell.awtea.util.GlyphRasterizer.drawGlyph(
-				font, glyphId, target, sizePx, x, y, argb, supersample);
+				font, glyphId, target, sizePx, x, y, argb, supersample, subpixelRendering);
 	}
 
 	/**
@@ -367,20 +370,23 @@ public class GlyphAtlas {
 		final float sizePx;
 		final int argb;
 		final int supersample;
+		final boolean subpixelRendering;
 		private final int hash;
 
-		GlyphKey(TrueTypeFont font, int glyphId, float sizePx, int argb, int supersample) {
+		GlyphKey(TrueTypeFont font, int glyphId, float sizePx, int argb, int supersample, boolean subpixelRendering) {
 			this.font = font;
 			this.glyphId = glyphId;
 			this.sizePx = sizePx;
 			this.argb = argb;
 			this.supersample = supersample;
+			this.subpixelRendering = subpixelRendering;
 
 			int h = System.identityHashCode(font);
 			h = 31 * h + glyphId;
 			h = 31 * h + Float.floatToIntBits(sizePx);
 			h = 31 * h + argb;
 			h = 31 * h + supersample;
+			h = 31 * h + (subpixelRendering ? 1 : 0);
 			this.hash = h;
 		}
 
@@ -395,7 +401,8 @@ public class GlyphAtlas {
 					&& this.glyphId == other.glyphId
 					&& Float.floatToIntBits(this.sizePx) == Float.floatToIntBits(other.sizePx)
 					&& this.argb == other.argb
-					&& this.supersample == other.supersample;
+					&& this.supersample == other.supersample
+					&& this.subpixelRendering == other.subpixelRendering;
 		}
 
 		@Override

@@ -13,16 +13,9 @@ import {
   SurfaceOperation,
   WasmRasterizer,
 } from "./wasm_rasterizer.ts";
+import { assertPixelEquals } from "./test_helpers.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
-
-// Helper to compare Uint32 values (JavaScript bitwise operations are signed)
-function assertPixelEquals(actual: number, expected: number, message: string) {
-  // Convert to unsigned for comparison
-  const actualU32 = actual >>> 0;
-  const expectedU32 = expected >>> 0;
-  assertEquals(actualU32, expectedU32, message);
-}
 
 Deno.test("WASM module loads successfully", async () => {
   const rasterizer = new WasmRasterizer();
@@ -74,22 +67,14 @@ Deno.test("Fill rect with red", async () => {
   const surfaceId = rasterizer.allocateSurface(width, height);
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
-
   // Set color to opaque red (0xFFFF0000)
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.setColorCommand(red));
 
-  // Fill the entire surface
-  rasterizer.writeCommand(
-    cmdBuffer,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, width, height),
-  );
-
-  // Execute commands
-  rasterizer.renderCommands(contextId, cmdBuffer, 2);
+  // Write commands using variable-length format
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, width, height),
+  ]);
 
   // Check that all pixels are red
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -110,22 +95,14 @@ Deno.test("Fill rect with partial area", async () => {
   const surfaceId = rasterizer.allocateSurface(width, height);
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
-
   // Set color to opaque blue (0xFF0000FF)
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.setColorCommand(blue));
 
-  // Fill a 5x5 rect starting at (2, 2)
-  rasterizer.writeCommand(
-    cmdBuffer,
-    1,
-    WasmRasterizer.fillRectCommand(2, 2, 5, 5),
-  );
-
-  // Execute commands
-  rasterizer.renderCommands(contextId, cmdBuffer, 2);
+  // Write commands using variable-length format
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 2, 2, 5, 5),
+  ]);
 
   // Check pixels
   const pixels = rasterizer.copySurfacePixels(surfaceId);
@@ -141,6 +118,7 @@ Deno.test("Fill rect with partial area", async () => {
   const insideIdx2 = 6 * width + 6; // (6, 6)
   assertPixelEquals(pixels[insideIdx2], blue, "Pixel (6,6) should be blue");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -153,43 +131,20 @@ Deno.test("Clear rect", async () => {
   const surfaceId = rasterizer.allocateSurface(width, height);
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(3);
-
-  // Fill entire surface with red
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.setColorCommand(red));
-  rasterizer.writeCommand(
-    cmdBuffer,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, width, height),
-  );
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, width, height),
+    (w) => WasmRasterizer.writeClearRectCommand(w, 3, 3, 3, 3),
+  ]);
 
-  // Clear a 3x3 area at (3, 3)
-  rasterizer.writeCommand(
-    cmdBuffer,
-    2,
-    WasmRasterizer.clearRectCommand(3, 3, 3, 3),
-  );
-
-  // Execute commands
-  rasterizer.renderCommands(contextId, cmdBuffer, 3);
-
-  // Check pixels
   const pixels = rasterizer.copySurfacePixels(surfaceId);
-
-  // Pixels outside cleared area should be red
   assertPixelEquals(pixels[0], red, "Pixel (0,0) should be red");
+  const clearedIdx = 3 * width + 3;
+  const defaultBgColor = WasmRasterizer.makeARGB(255, 255, 255, 255);
+  assertPixelEquals(pixels[clearedIdx], defaultBgColor, "Pixel (3,3) should be cleared");
 
-  // Pixels inside cleared area should be background color (white by default)
-  const clearedIdx = 3 * width + 3; // (3, 3)
-  const defaultBgColor = WasmRasterizer.makeARGB(255, 255, 255, 255); // white
-  assertPixelEquals(
-    pixels[clearedIdx],
-    defaultBgColor,
-    "Pixel (3,3) should be cleared (background color)",
-  );
-
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -202,32 +157,23 @@ Deno.test("Draw line", async () => {
   const surfaceId = rasterizer.allocateSurface(width, height);
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
-
-  // Set color to white
   const white = WasmRasterizer.makeARGB(255, 255, 255, 255);
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.setColorCommand(white));
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, white),
+    (w) => WasmRasterizer.writeDrawLineCommand(w, 5, 10, 15, 10),
+  ]);
 
-  // Draw a horizontal line from (5, 10) to (15, 10)
-  rasterizer.writeCommand(
-    cmdBuffer,
-    1,
-    WasmRasterizer.drawLineCommand(5, 10, 15, 10),
-  );
-
-  // Execute commands
-  rasterizer.renderCommands(contextId, cmdBuffer, 2);
-
-  // Check that some pixels on the line are white
   const pixels = rasterizer.copySurfacePixels(surfaceId);
-  const lineIdx = 10 * width + 10; // Middle of line at (10, 10)
-  assertPixelEquals(
-    pixels[lineIdx],
-    white,
-    "Pixel (10,10) should be white (on the line)",
-  );
+  const beforeIdx = 10 * width + 4;
+  assertEquals(pixels[beforeIdx], 0, "Pixel (4,10) should be 0");
+  for (let x = 5; x <= 15; x++) {
+    const idx = 10 * width + x;
+    assertPixelEquals(pixels[idx], white, `Pixel (,10) should be white`);
+  }
+  const afterIdx = 10 * width + 16;
+  assertEquals(pixels[afterIdx], 0, "Pixel (16,10) should be 0");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -240,34 +186,19 @@ Deno.test("Draw rect outline", async () => {
   const surfaceId = rasterizer.allocateSurface(width, height);
   const contextId = rasterizer.createContext(surfaceId);
 
-  // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(2);
-
-  // Set color to green
   const green = WasmRasterizer.makeARGB(255, 0, 255, 0);
-  rasterizer.writeCommand(cmdBuffer, 0, WasmRasterizer.setColorCommand(green));
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, green),
+    (w) => WasmRasterizer.writeDrawRectCommand(w, 5, 5, 10, 10),
+  ]);
 
-  // Draw rect outline from (5, 5) with size 10x10
-  rasterizer.writeCommand(
-    cmdBuffer,
-    1,
-    WasmRasterizer.drawRectCommand(5, 5, 10, 10),
-  );
-
-  // Execute commands
-  rasterizer.renderCommands(contextId, cmdBuffer, 2);
-
-  // Check pixels
   const pixels = rasterizer.copySurfacePixels(surfaceId);
-
-  // Top-left corner should be green
   const topLeftIdx = 5 * width + 5;
   assertPixelEquals(pixels[topLeftIdx], green, "Pixel (5,5) should be green");
-
-  // Inside the rect should be black (not filled)
   const insideIdx = 10 * width + 10;
   assertEquals(pixels[insideIdx], 0, "Pixel (10,10) should be 0 (not filled)");
 
+  rasterizer.destroyContext(contextId);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -280,45 +211,19 @@ Deno.test("Clipping rect", async () => {
   const surfaceId = rasterizer.allocateSurface(width, height);
   const context = rasterizer.createContext(surfaceId);
 
-  // Create command buffer
-  const cmdBuffer = rasterizer.createCommandBuffer(3);
-
-  // Set clip rect to (5, 5, 10, 10)
-  rasterizer.writeCommand(
-    cmdBuffer,
-    0,
-    WasmRasterizer.setClipRectCommand(5, 5, 10, 10),
-  );
-
-  // Set color to yellow
   const yellow = WasmRasterizer.makeARGB(255, 255, 255, 0);
-  rasterizer.writeCommand(cmdBuffer, 1, WasmRasterizer.setColorCommand(yellow));
+  rasterizer.renderVariableLengthCommands(context, [
+    (w) => WasmRasterizer.writeSetClipRectCommand(w, 5, 5, 10, 10),
+    (w) => WasmRasterizer.writeSetColorCommand(w, yellow),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, width, height),
+  ]);
 
-  // Try to fill entire surface (but should be clipped)
-  rasterizer.writeCommand(
-    cmdBuffer,
-    2,
-    WasmRasterizer.fillRectCommand(0, 0, width, height),
-  );
-
-  // Execute commands
-  rasterizer.renderCommands(context, cmdBuffer, 3);
-
-  // Check pixels
   const pixels = rasterizer.copySurfacePixels(surfaceId);
-
-  // Pixels outside clip rect should be 0
   assertEquals(pixels[0], 0, "Pixel (0,0) should be 0 (outside clip)");
-  assertEquals(pixels[width - 1], 0, "Pixel (19,0) should be 0 (outside clip)");
+  const insideIdx = 10 * width + 10;
+  assertPixelEquals(pixels[insideIdx], yellow, "Pixel (10,10) should be yellow");
 
-  // Pixels inside clip rect should be yellow
-  const insideIdx = 7 * width + 7;
-  assertPixelEquals(
-    pixels[insideIdx],
-    yellow,
-    "Pixel (7,7) should be yellow (inside clip)",
-  );
-
+  rasterizer.destroyContext(context);
   rasterizer.freeSurface(surfaceId);
 });
 
@@ -343,26 +248,18 @@ Deno.test("Multiple surfaces", async () => {
   assertEquals(dims2.height, 20);
 
   // Fill surface1 with red
-  const cmdBuffer1 = rasterizer.createCommandBuffer(2);
   const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
-  rasterizer.writeCommand(cmdBuffer1, 0, WasmRasterizer.setColorCommand(red));
-  rasterizer.writeCommand(
-    cmdBuffer1,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 10, 10),
-  );
-  rasterizer.renderCommands(contextId1, cmdBuffer1, 2);
+  rasterizer.renderVariableLengthCommands(contextId1, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 10, 10),
+  ]);
 
   // Fill surface2 with blue
-  const cmdBuffer2 = rasterizer.createCommandBuffer(2);
   const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
-  rasterizer.writeCommand(cmdBuffer2, 0, WasmRasterizer.setColorCommand(blue));
-  rasterizer.writeCommand(
-    cmdBuffer2,
-    1,
-    WasmRasterizer.fillRectCommand(0, 0, 20, 20),
-  );
-  rasterizer.renderCommands(contextId2, cmdBuffer2, 2);
+  rasterizer.renderVariableLengthCommands(contextId2, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, 20, 20),
+  ]);
 
   // Verify each surface has its own color
   const pixels1 = rasterizer.copySurfacePixels(surface1);
@@ -371,6 +268,8 @@ Deno.test("Multiple surfaces", async () => {
   const pixels2 = rasterizer.copySurfacePixels(surface2);
   assertPixelEquals(pixels2[0], blue, "Surface 2 should be blue");
 
+  rasterizer.destroyContext(contextId1);
+  rasterizer.destroyContext(contextId2);
   rasterizer.freeSurface(surface1);
   rasterizer.freeSurface(surface2);
 });

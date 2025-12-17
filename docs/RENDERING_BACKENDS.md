@@ -165,6 +165,7 @@ All backends support the following rendering operations through the command patt
 
 ### WASM Backend
 - **Best**: Complex rendering operations, offscreen buffers
+- **Optimizations**: Includes fast-path optimizations for common blitting scenarios (see [BLIT_OPTIMIZATIONS.md](BLIT_OPTIMIZATIONS.md))
 - **Limitations**: WASM module load time, limited surface pool
 
 ### Software Backend

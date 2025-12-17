@@ -1,5 +1,7 @@
 # awtea
 
+[![CI](https://github.com/mdbell/awtea/actions/workflows/ci.yml/badge.svg)](https://github.com/mdbell/awtea/actions/workflows/ci.yml)
+
 **Bringing Java back to the browser**
 
 awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime using [TeaVM](https://teavm.org/) and WebAssembly, enabling legacy and modern Java graphical applications to run natively in the browser.
@@ -169,12 +171,13 @@ awtea can be configured using system properties to control rendering backends, f
 
 ### Canvas Components
 
-AWTea provides two canvas implementations for different use cases:
+AWTea provides two canvas implementations for different use cases. See [Canvas Components Guide](docs/CANVAS_COMPONENTS.md) for detailed comparison, examples, and migration guide.
 
 #### TCanvas (Lightweight)
 - For embedding within AWT containers (panels, frames' content panes, etc.)
 - Participates in AWT's component hierarchy and layout management
 - Suitable for custom drawing components within an application
+- Minimal memory overhead, shares parent's rendering resources
 
 #### THeavyCanvas (Heavyweight)
 - For top-level heavyweight windows (Frame, Dialog, Applet windows)
@@ -183,7 +186,7 @@ AWTea provides two canvas implementations for different use cases:
 - Used internally by heavyweight peers like `TFrameFloatingPeer`
 - Can be used for advanced use cases requiring direct canvas control (games, visualization, etc.)
 
-**Example usage of THeavyCanvas:**
+**Quick example of THeavyCanvas:**
 ```java
 // Create a heavyweight canvas for a container
 THeavyCanvas canvas = new THeavyCanvas(document, container);
@@ -202,15 +205,22 @@ TGraphics graphics = canvas.getGraphics();
 canvas.destroy();
 ```
 
+For complete examples, use cases, and migration guidance, see the **[Canvas Components Guide](docs/CANVAS_COMPONENTS.md)**.
+
 ### Architecture Documentation
+- [Canvas Components Guide](docs/CANVAS_COMPONENTS.md) - TCanvas vs THeavyCanvas comparison with examples and migration guide
 - [Component Mapping Strategy](docs/COMPONENT_MAPPING.md) - How AWT components map to web technologies
 - [Rendering Backends](docs/RENDERING_BACKENDS.md) - WebGL, WASM, and Software rendering systems
+- [Blit Optimizations](docs/BLIT_OPTIMIZATIONS.md) - WASM renderer performance optimizations for image blitting
 - [Alpha Blending](docs/ALPHA_BLENDING.md) - Transparency and alpha compositing support
 - [Font Rendering Architecture](docs/FONT_RENDERING_ARCHITECTURE.md) - Modular font rendering with pluggable strategies
 - [Font Loading Strategy](docs/FONT_LOADING.md) - Runtime font loading with browser HTTP caching
 - [CSS Embedding](docs/CSS_EMBEDDING.md) - Embedding CSS files with CSS custom properties for theming
 - [System Properties](docs/SYSTEM_PROPERTIES.md) - Configuration via system properties
 - [Field Accessor Mechanism](docs/FIELD_ACCESSOR_MECHANISM.md) - Zero-copy optimizations via compile-time field accessors
+- [CI/CD Pipeline](docs/CI_CD.md) - Continuous integration and deployment setup
+- [Self-Hosted Runners](docs/SELF_HOSTED_RUNNER.md) - Setup guide for GitHub Actions self-hosted runners
+- [Documentation Hosting](docs/DOCUMENTATION_HOSTING.md) - Guide for hosting project documentation
 
 ### Development Tools
 
