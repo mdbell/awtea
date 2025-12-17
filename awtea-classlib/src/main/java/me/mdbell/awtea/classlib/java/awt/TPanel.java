@@ -1,5 +1,7 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import java.awt.Color;
+
 /**
  * {@code TPanel} is the simplest container class. A panel
  * provides space in which an application can attach any other
@@ -29,5 +31,27 @@ public class TPanel extends TContainer {
      */
     public TPanel(TLayoutManager layout) {
         setLayout(layout);
+    }
+
+    /**
+     * Paints the panel. First paints the background if set, then paints children.
+     *
+     * @param g the graphics context
+     */
+    @Override
+    public void paint(TGraphics g) {
+        if (g == null) {
+            return;
+        }
+        
+        // Paint background if set
+        Color bg = getBackground();
+        if (bg != null) {
+            g.setColor(bg);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+        
+        // Paint children
+        super.paint(g);
     }
 }
