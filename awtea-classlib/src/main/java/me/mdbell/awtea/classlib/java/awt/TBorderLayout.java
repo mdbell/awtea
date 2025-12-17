@@ -429,16 +429,27 @@ public class TBorderLayout implements TLayoutManager2 {
 
     /**
      * Gets the preferred size of a component for layout calculations.
-     * For containers, asks for their preferred layout size which will recursively
+     * First tries getPreferredSize() which all components should implement.
+     * For containers, also asks for their preferred layout size which will recursively
      * query child components and layout managers.
-     * For leaf components, uses their explicitly set preferred size or current
-     * dimensions.
+     * Falls back to current dimensions if nothing else is available.
      */
     private TDimension getComponentSize(TComponent comp) {
-        if (comp instanceof TContainer) {
-            return ((TContainer) comp).getPreferredLayoutSize();
+        // First try getPreferredSize() which all components should implement
+        TDimension pref = comp.getPreferredSize();
+        if (pref != null && (pref.width > 0 || pref.height > 0)) {
+            return pref;
         }
-        // For non-container components, use current dimensions
+        
+        // For containers, also try getPreferredLayoutSize()
+        if (comp instanceof TContainer) {
+            TDimension layoutPref = ((TContainer) comp).getPreferredLayoutSize();
+            if (layoutPref != null) {
+                return layoutPref;
+            }
+        }
+        
+        // Fall back to current dimensions
         return new TDimension(comp.getWidth(), comp.getHeight());
     }
 

@@ -278,16 +278,25 @@ public class TGridLayout implements TLayoutManager {
     }
 
     /**
-     * Gets the size of a component, preferring preferred layout size if available,
-     * otherwise using current width/height.
+     * Gets the size of a component. First tries getPreferredSize() which all components
+     * should implement, then falls back to current width/height if needed.
      */
     private TDimension getComponentSize(TComponent comp) {
+        // First try getPreferredSize() which all components should implement
+        TDimension pref = comp.getPreferredSize();
+        if (pref != null && (pref.width > 0 || pref.height > 0)) {
+            return pref;
+        }
+        
+        // For containers, also try getPreferredLayoutSize()
         if (comp instanceof TContainer) {
-            TDimension pref = ((TContainer) comp).getPreferredLayoutSize();
-            if (pref != null) {
-                return pref;
+            TDimension layoutPref = ((TContainer) comp).getPreferredLayoutSize();
+            if (layoutPref != null) {
+                return layoutPref;
             }
         }
+        
+        // Fall back to current dimensions
         return new TDimension(comp.getWidth(), comp.getHeight());
     }
 
