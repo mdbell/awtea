@@ -11,6 +11,7 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
+import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLImageElement;
 import org.teavm.jso.typedarrays.Uint8Array;
@@ -73,18 +74,72 @@ public class TAWTeaToolkit extends TToolkit {
 
 	@Override
 	public String[] getFontList() {
-		return new String[0];
+		// Return the logical font names as per AWT specification, plus available physical fonts
+		return new String[] {
+			// Standard AWT logical fonts
+			"Dialog",
+			"DialogInput", 
+			"Serif",
+			"SansSerif",
+			"Monospaced",
+			// Physical fonts available in awtea
+			"NotoSans",
+			"Helvetica"
+		};
 	}
 
 	@Override
 	public void beep() {
-
+		playBeepSound();
 	}
+
+	/**
+	 * Plays a system beep sound using the Web Audio API.
+	 * Creates a short 440Hz tone (standard beep frequency).
+	 */
+	@JSBody(script = 
+		"try {" +
+		"  var ctx = new (window.AudioContext || window.webkitAudioContext)();" +
+		"  var osc = ctx.createOscillator();" +
+		"  var gain = ctx.createGain();" +
+		"  osc.connect(gain);" +
+		"  gain.connect(ctx.destination);" +
+		"  osc.frequency.value = 440;" + // Standard A4 note
+		"  gain.gain.value = 0.3;" +      // 30% volume to avoid being too loud
+		"  osc.start(ctx.currentTime);" +
+		"  osc.stop(ctx.currentTime + 0.1);" + // 100ms beep
+		"} catch(e) {" +
+		"  console.warn('Unable to play beep sound:', e);" +
+		"}"
+	)
+	private static native void playBeepSound();
 
 	@Override
 	public void sync() {
-
+		// In browser context, ensure all pending rendering operations are flushed.
+		// We use requestAnimationFrame to wait for the browser to process all pending
+		// paint operations. Unlike the previous async implementation, this blocks
+		// until the animation frame callback is executed.
+		syncRendering().await();
 	}
+
+	/**
+	 * Synchronizes rendering by waiting for the next animation frame.
+	 * This ensures all pending DOM and canvas operations are flushed.
+	 * Returns a promise that resolves when the next animation frame is processed.
+	 * 
+	 * @return a promise that resolves after the next animation frame
+	 */
+	@JSBody(script = 
+		"return new Promise(function(resolve) {" +
+		"  if (typeof requestAnimationFrame !== 'undefined') {" +
+		"    requestAnimationFrame(function() { resolve(null); });" +
+		"  } else {" +
+		"    resolve(null);" +
+		"  }" +
+		"});"
+	)
+	private static native JSPromise<Void> syncRendering();
 
 	@Override
 	protected TEventQueue getSystemEventQueueImpl() {
@@ -93,12 +148,37 @@ public class TAWTeaToolkit extends TToolkit {
 
 	@Override
 	public boolean prepareImage(TImage img, int w, int h, TImageObserver obs) {
-		return false;
+		// In awtea, images are loaded synchronously, so they're always ready
+		// Return true to indicate the image is fully prepared
+		if (img == null) {
+			return true;
+		}
+		
+		// Get the actual dimensions if requested dimensions are -1
+		int imgWidth = (w < 0) ? img.getWidth(null) : w;
+		int imgHeight = (h < 0) ? img.getHeight(null) : h;
+		
+		// Image is always ready in our implementation
+		// Notify observer if provided
+		if (obs != null) {
+			obs.imageUpdate(img, 
+				TImageObserver.ALLBITS | TImageObserver.WIDTH | TImageObserver.HEIGHT,
+				0, 0, imgWidth, imgHeight);
+		}
+		
+		return true;
 	}
 
 	@Override
 	public int checkImage(TImage img, int w, int h, TImageObserver obs) {
-		return 0;
+		// In awtea, images are loaded synchronously, so return all bits available
+		if (img == null) {
+			return 0;
+		}
+		
+		// Return flags indicating the image is fully loaded
+		return TImageObserver.ALLBITS | TImageObserver.WIDTH | 
+		       TImageObserver.HEIGHT | TImageObserver.PROPERTIES;
 	}
 
 	@Override

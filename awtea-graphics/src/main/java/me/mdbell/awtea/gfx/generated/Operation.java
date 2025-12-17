@@ -15,7 +15,7 @@ public enum Operation {
 	SET_TRANSFORM(2),
 	/** Set clipping rectangle */
 	SET_CLIP_RECT(3),
-	/** Set compositing mode (unimplemented in WASM) */
+	/** Set compositing mode (Porter-Duff alpha blending) */
 	SET_COMPOSITE(4),
 	/** Copy image to surface */
 	BLIT_IMAGE(5),
@@ -26,7 +26,17 @@ public enum Operation {
 	/** Clear rectangle */
 	CLEAR_RECT(8),
 	/** Draw line */
-	DRAW_LINE(9);
+	DRAW_LINE(9),
+	/** Draw a polygon */
+	DRAW_POLYGON(10),
+	/** Fills a polygon */
+	FILL_POLYGON(11),
+	/** Fills an oval */
+	FILL_OVAL(12),
+	/** Fills a rounded rectangle */
+	FILL_ROUND_RECT(13),
+	/** Fills an arc */
+	FILL_ARC(14);
 
 	private final int value;
 

@@ -19,13 +19,12 @@ public class GuiDemo {
 
         LoggerFactory.setGlobalLevel(LogLevel.TRACE);
         System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
+        System.setProperty("me.mdbell.awtea.font.subpixel", "true");
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
-
 
         // Create the main window
         Frame frame = new Frame();
         frame.setTitle("GUI Demo - awtea Example");
-        frame.setSize(800, 600);
 
         // Create a container to hold everything
         Container mainPanel = new Container();
@@ -39,13 +38,13 @@ public class GuiDemo {
 
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("SansSerif", Font.BOLD, 24));
-                g.drawString("awtea GUI Demo", 250, 35);
+                g.drawString("awtea GUI Demo", 400, 35);
 
                 g.setFont(new Font("SansSerif", Font.PLAIN, 14));
-                g.drawString("Interactive AWT components running in your browser", 200, 55);
+                g.drawString("Interactive AWT components running in your browser", 350, 55);
             }
         };
-        titlePanel.setBounds(0, 0, 800, 70);
+        titlePanel.setBounds(0, 0, 1050, 70);
         mainPanel.add(titlePanel);
 
         // Add interactive drawing canvas
@@ -55,12 +54,12 @@ public class GuiDemo {
 
         // Add graphics demo panel
         GraphicsDemoPanel demoPanel = new GraphicsDemoPanel();
-        demoPanel.setBounds(520, 80, 270, 240);
+        demoPanel.setBounds(520, 80, 270, 420);
         mainPanel.add(demoPanel);
 
         // Add alpha blending demo panel
         AlphaBlendingDemoPanel alphaPanel = new AlphaBlendingDemoPanel();
-        alphaPanel.setBounds(520, 330, 270, 250);
+        alphaPanel.setBounds(800, 80, 220, 420);
         mainPanel.add(alphaPanel);
 
         // Add info panel at the bottom
@@ -91,10 +90,12 @@ public class GuiDemo {
         infoPanel.setBounds(10, 390, 500, 110);
         mainPanel.add(infoPanel);
 
-        mainPanel.setSize(800, 600);
+        mainPanel.setSize(1030, 520);
 
         // Add the main panel to the frame
         frame.add(mainPanel);
+
+        frame.pack();
 
         // Show the window
         frame.setVisible(true);

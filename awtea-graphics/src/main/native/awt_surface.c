@@ -2,17 +2,26 @@
 #include "awt_surface.h"
 #include "awt_util.h"
 #include "awt_log.h"
+#include "awt_stack.h"
 
 SurfaceData g_surfaces[NUM_SURFACES];
 SurfaceContext g_contexts[NUM_CONTEXTS];
 
 void init_surface_system(void) {
+    STACK_ENTER();
+    
     // Initialize all contexts to mark them as free
     for (int i = 0; i < NUM_CONTEXTS; i++) {
         g_contexts[i].surface_id = -1;
     }
+    
+    // Initialize stack tracking system
+    init_stack_tracking();
+    
     log_info("Initialized surface system: %d surfaces, %d contexts", 
              NUM_SURFACES, NUM_CONTEXTS);
+    
+    STACK_EXIT();
 }
 
 SurfaceData* get_surface_data(int id) {
@@ -36,6 +45,12 @@ int find_free_surface() {
 }
 
 int reset_surface(int surface_id, int layer, int width, int height, PixelFormat format) {
+    SurfaceData* surface = get_surface_data(surface_id);
+    uint16_t ref_count = (surface && surface->ptr) ? (uint16_t)surface->ref_count : 0;
+    
+    STACK_ENTER_EXT(stack_format_surface_context(surface_id, width, height), 
+                    surface_id, -1, 0, 0, ref_count);
+    
     log_debug("reset_surface: id=%d, layer=%d, size=%dx%d, format=%d", 
               surface_id, layer, width, height, format);
 
@@ -43,13 +58,13 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
     {
         log_error("Invalid surface ID: %d (range: %d-%d)", 
                   surface_id, START_SURFACE_ID, END_SURFACE_ID - 1);
+        STACK_EXIT_ERR(-3);
         return -3;
     }
 
-    SurfaceData* surface = get_surface_data(surface_id);
-
     if(!surface) {
         log_error("Failed to get surface data for ID: %d", surface_id);
+        STACK_EXIT_ERR(-2);
         return -2;
     }
 
@@ -60,6 +75,7 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
     memset(surface, 0, sizeof(SurfaceData));
 
     if(width == 0 || height == 0 || layer < 0) {
+        STACK_EXIT();
         return 0; // zero-sized surface (freeing the surface)
     }
 
@@ -78,12 +94,14 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
         surface->ptr = 0;
         surface->width = 0;
         surface->height = 0;
+        STACK_EXIT_ERR(-1);
         return -1;
     }
     surface->ptr = (uint32_t)(uintptr_t)p;
 
     log_info("Created surface %d: %dx%d, %zu bytes", surface_id, width, height, bytes);
 
+    STACK_EXIT();
     return 0;
 }
 
@@ -119,14 +137,15 @@ int get_surface_stride(int surface_id) {
     return surface->stride;
 }
 
-int clip_x(int x, const RenderSurface* surf) {
+int clip_x(int x, const SurfaceData* surf, SurfaceContext* context) {
     int min_x = 0;
     int max_x = surf->width;
     
-    // If clip rectangle is set, intersect with clip bounds
-    if (surf->clip.width > 0) {
-        min_x = surf->clip.x > 0 ? surf->clip.x : 0;
-        max_x = surf->clip.x + surf->clip.width;
+    // If clip rectangle is set (width >= 0), intersect with clip bounds
+    // Negative width is a sentinel value meaning "no clip"
+    if (context->clip.width >= 0) {
+        min_x = context->clip.x < 0 ? 0 : context->clip.x;
+        max_x = context->clip.x + context->clip.width;
         if (max_x > surf->width) {
             max_x = surf->width;
         }
@@ -135,14 +154,15 @@ int clip_x(int x, const RenderSurface* surf) {
     return clamp_int(x, min_x, max_x);
 }
 
-int clip_y(int y, const RenderSurface* surf) {
+int clip_y(int y, const SurfaceData* surf, SurfaceContext* context) {
     int min_y = 0;
     int max_y = surf->height;
     
-    // If clip rectangle is set, intersect with clip bounds
-    if (surf->clip.height > 0) {
-        min_y = surf->clip.y > 0 ? surf->clip.y : 0;
-        max_y = surf->clip.y + surf->clip.height;
+    // If clip rectangle is set (height >= 0), intersect with clip bounds
+    // Negative height is a sentinel value meaning "no clip"
+    if (context->clip.height >= 0) {
+        min_y = context->clip.y < 0 ? 0 : context->clip.y;
+        max_y = context->clip.y + context->clip.height;
         if (max_y > surf->height) {
             max_y = surf->height;
         }
@@ -162,23 +182,28 @@ int find_free_context() {
 }
 
 int create_context(int surface_id) {
+    STACK_ENTER_EXT(NULL, surface_id, -1, 0, 0, 0);
+    
     log_debug("create_context: surface_id=%d", surface_id);
     
     SurfaceData* surface = get_surface_data(surface_id);
     if (!surface || !surface->ptr) {
         log_error("create_context: invalid surface %d", surface_id);
+        STACK_EXIT_ERR(-1);
         return -1; // invalid surface
     }
 
     int context_id = find_free_context();
     if (context_id == -1) {
         log_error("create_context: no free context for surface %d", surface_id);
+        STACK_EXIT_ERR(-1);
         return -1; // no free context
     }
 
     SurfaceContext* ctx = get_context_data(context_id);
     if (!ctx) {
         log_error("create_context: failed to get context data for id %d", context_id);
+        STACK_EXIT_ERR(-1);
         return -1; // should not happen
     }
 
@@ -195,22 +220,29 @@ int create_context(int surface_id) {
     ctx->transform.m11 = 1.0f;
     ctx->transform.m12 = 0.0f;
 
-    // clip_rect to full surface
+    // Initialize with no clip (sentinel value: negative width)
     ctx->clip.x = 0;
     ctx->clip.y = 0;
-    ctx->clip.width = surface->width;
-    ctx->clip.height = surface->height;
+    ctx->clip.width = -1;
+    ctx->clip.height = -1;
+    
+    // Initialize composite mode to SRC_OVER with full alpha (default)
+    ctx->composite_mode = COMPOSITE_SRC_OVER;
+    ctx->composite_alpha = 1.0f;
 
-    // Allocate fixed command buffer
-    ctx->max_commands = MAX_CONTEXT_COMMANDS;
-    size_t bytes = ctx->max_commands * sizeof(SurfaceCommand);
-    ctx->command_buffer = (SurfaceCommand*)tracked_malloc(bytes);
-    if (!ctx->command_buffer) {
+    // Allocate command buffer for the reader
+    size_t bytes = COMMAND_BUFFER_SIZE_WORDS * sizeof(uint32_t);
+    ctx->reader.buffer = (uint32_t*)tracked_malloc(bytes);
+    if (!ctx->reader.buffer) {
         log_error("create_context: failed to allocate command buffer (%zu bytes)", bytes);
         ctx->surface_id = -1; // mark context as free again
+        STACK_EXIT_ERR(-1);
         return -1;
     }
-    memset(ctx->command_buffer, 0, bytes);
+    ctx->reader.size_words = COMMAND_BUFFER_SIZE_WORDS;
+    ctx->reader.pos = 0;
+    ctx->reader.limit = 0;
+    memset(ctx->reader.buffer, 0, bytes);
 
     // Increment surface reference count
     surface->ref_count++;
@@ -218,6 +250,7 @@ int create_context(int surface_id) {
     log_info("Created context %d for surface %d (ref_count=%d)", 
              context_id, surface_id, surface->ref_count);
 
+    STACK_EXIT();
     return context_id;
 }
 
@@ -248,17 +281,21 @@ int clone_context(int context_id) {
     new_ctx->argb[COLOR_BG] = src_ctx->argb[COLOR_BG];
     new_ctx->transform = src_ctx->transform;
     new_ctx->clip = src_ctx->clip;
+    new_ctx->composite_mode = src_ctx->composite_mode;
+    new_ctx->composite_alpha = src_ctx->composite_alpha;
 
     // Allocate new command buffer for the cloned context
-    new_ctx->max_commands = MAX_CONTEXT_COMMANDS;
-    size_t bytes = new_ctx->max_commands * sizeof(SurfaceCommand);
-    new_ctx->command_buffer = (SurfaceCommand*)tracked_malloc(bytes);
-    if (!new_ctx->command_buffer) {
+    size_t bytes = COMMAND_BUFFER_SIZE_WORDS * sizeof(uint32_t);
+    new_ctx->reader.buffer = (uint32_t*)tracked_malloc(bytes);
+    if (!new_ctx->reader.buffer) {
         log_error("clone_context: failed to allocate command buffer (%zu bytes)", bytes);
         new_ctx->surface_id = -1; // mark context as free again
         return -1;
     }
-    memset(new_ctx->command_buffer, 0, bytes);
+    new_ctx->reader.size_words = COMMAND_BUFFER_SIZE_WORDS;
+    new_ctx->reader.pos = 0;
+    new_ctx->reader.limit = 0;
+    memset(new_ctx->reader.buffer, 0, bytes);
 
     // Increment surface reference count
     SurfaceData* surface = get_surface_data(src_ctx->surface_id);
@@ -284,10 +321,10 @@ int destroy_context(int context_id) {
     SurfaceData* surface = get_surface_data(surface_id);
     
     // Free the command buffer
-    if (ctx->command_buffer) {
-        tracked_free(ctx->command_buffer);
-        ctx->command_buffer = NULL;
-        ctx->max_commands = 0;
+    if (ctx->reader.buffer) {
+        tracked_free(ctx->reader.buffer);
+        ctx->reader.buffer = NULL;
+        ctx->reader.size_words = 0;
     }
     
     // Mark context as free
@@ -350,15 +387,15 @@ int get_context_surface_id(int context_id) {
     return ctx->surface_id;
 }
 
-int get_max_context_commands(void) {
-    return MAX_CONTEXT_COMMANDS;
+int get_context_buffer_size_words(void) {
+    return COMMAND_BUFFER_SIZE_WORDS;
 }
 
-uint32_t get_context_command_buffer_ptr(int context_id) {
+uint32_t get_context_buffer_ptr(int context_id) {
     SurfaceContext* ctx = get_context_data(context_id);
-    if (!ctx || !ctx->command_buffer) {
-        log_error("get_context_command_buffer_ptr: invalid context %d or no buffer", context_id);
+    if (!ctx || !ctx->reader.buffer) {
+        log_error("get_context_buffer_ptr: invalid context %d or no buffer", context_id);
         return 0;
     }
-    return (uint32_t)(uintptr_t)ctx->command_buffer;
+    return (uint32_t)(uintptr_t)ctx->reader.buffer;
 }

@@ -1,0 +1,20 @@
+# Package: `java.awt.color`
+
+**Coverage:** 12 / 42 (28.6%)
+
+```
+[██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 28.6%
+```
+
+## Classes
+
+### [`ColorSpace`](ColorSpace.md) ![Coverage](https://img.shields.io/badge/coverage-28.6%25-orange)
+
+**Coverage:** 12 / 42 (28.6%)
+
+```
+[██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 28.6%
+```
+
+
+[← Back to Index](../../../../../report.md)

@@ -19,24 +19,36 @@ public class RasterFontRenderer implements FontRenderer {
 	
 	private static final int DEFAULT_SUPERSAMPLE = 4;
 	private final int supersample;
+	private final boolean subpixelRendering;
 	
 	/**
-	 * Create a new RasterFontRenderer with default supersampling (4x).
+	 * Create a new RasterFontRenderer with default supersampling (4x) and no sub-pixel rendering.
 	 */
 	public RasterFontRenderer() {
-		this(DEFAULT_SUPERSAMPLE);
+		this(DEFAULT_SUPERSAMPLE, false);
 	}
 	
 	/**
-	 * Create a new RasterFontRenderer with the specified supersampling factor.
+	 * Create a new RasterFontRenderer with the specified supersampling factor and no sub-pixel rendering.
 	 * 
 	 * @param supersample the supersampling factor (1 = no AA, 2-4 recommended)
 	 */
 	public RasterFontRenderer(int supersample) {
+		this(supersample, false);
+	}
+	
+	/**
+	 * Create a new RasterFontRenderer with the specified supersampling factor and sub-pixel rendering setting.
+	 * 
+	 * @param supersample the supersampling factor (1 = no AA, 2-4 recommended)
+	 * @param subpixelRendering whether to enable sub-pixel rendering (LCD/ClearType-style)
+	 */
+	public RasterFontRenderer(int supersample, boolean subpixelRendering) {
 		if (supersample < 1) {
 			throw new IllegalArgumentException("supersample must be >= 1");
 		}
 		this.supersample = supersample;
+		this.subpixelRendering = subpixelRendering;
 	}
 	
 	@Override
@@ -44,7 +56,7 @@ public class RasterFontRenderer implements FontRenderer {
 	                       float sizePx, int x, int y, int argb) {
 		// Delegate to GlyphRasterizer - it already has the implementation
 		GlyphRasterizer.RasterTarget adaptedTarget = adaptTarget(target);
-		GlyphRasterizer.drawGlyph(font, glyphId, adaptedTarget, sizePx, x, y, argb, supersample);
+		GlyphRasterizer.drawGlyph(font, glyphId, adaptedTarget, sizePx, x, y, argb, supersample, subpixelRendering);
 	}
 	
 	@Override
@@ -52,7 +64,7 @@ public class RasterFontRenderer implements FontRenderer {
 	                        float sizePx, int x, int y, int argb) {
 		// Delegate to GlyphRasterizer - it already has the implementation
 		GlyphRasterizer.RasterTarget adaptedTarget = adaptTarget(target);
-		GlyphRasterizer.drawString(font, text, adaptedTarget, sizePx, x, y, argb, supersample);
+		GlyphRasterizer.drawString(font, text, adaptedTarget, sizePx, x, y, argb, supersample, subpixelRendering);
 	}
 	
 	@Override

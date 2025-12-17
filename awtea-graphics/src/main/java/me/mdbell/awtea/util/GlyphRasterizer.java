@@ -66,22 +66,27 @@ public final class GlyphRasterizer {
 	}
 
 	public static int measureString(TrueTypeFont font, String str, float sizePx) {
-		return processString(font, str, null, sizePx, 0, 0, 0, 1,
-				(font1, img, gid, size, x, y, argb, ss) -> getAdvanceWidthUnits(font1, gid));
+		return processString(font, str, null, sizePx, 0, 0, 0, 1, false,
+				(font1, img, gid, size, x, y, argb, ss, subpixel) -> getAdvanceWidthUnits(font1, gid));
 	}
 
 	public static void drawString(TrueTypeFont font, String str, RasterTarget dest, float sizePx, int x,
 								  int y, int argb) {
-		drawString(font, str, dest, sizePx, x, y, argb, SUPERSAMPLE);
+		drawString(font, str, dest, sizePx, x, y, argb, SUPERSAMPLE, false);
 	}
 
 	public static void drawString(TrueTypeFont font, String str, RasterTarget dest, float sizePx, int x,
 								  int y, int argb, int supersample) {
-		processString(font, str, dest, sizePx, x, y, argb, supersample, GlyphRasterizer::drawGlyphByGid);
+		drawString(font, str, dest, sizePx, x, y, argb, supersample, false);
+	}
+
+	public static void drawString(TrueTypeFont font, String str, RasterTarget dest, float sizePx, int x,
+								  int y, int argb, int supersample, boolean subpixelRendering) {
+		processString(font, str, dest, sizePx, x, y, argb, supersample, subpixelRendering, GlyphRasterizer::drawGlyphByGid);
 	}
 
 	private static int processString(TrueTypeFont font, String str, RasterTarget dest, float sizePx, int x,
-									 int y, int argb, int supersample, GlyphProcessor func) {
+									 int y, int argb, int supersample, boolean subpixelRendering, GlyphProcessor func) {
 		if (str == null || str.isEmpty()) {
 			return 0;
 		}
@@ -117,7 +122,7 @@ public final class GlyphRasterizer {
 			penX += kernPx;
 
 			int pxX = (int) Math.round(penX);
-			double advancePx = func.processGlyph(font, dest, gid, sizePx, pxX, y, argb, supersample) * scale;
+			double advancePx = func.processGlyph(font, dest, gid, sizePx, pxX, y, argb, supersample, subpixelRendering) * scale;
 			penX += advancePx;
 
 			prevGid = gid;
@@ -127,7 +132,7 @@ public final class GlyphRasterizer {
 	}
 
 	private static double drawGlyphByGid(TrueTypeFont font, RasterTarget img, int gid, float sizePx,
-										 int x, int y, int argb, int supersample) {
+										 int x, int y, int argb, int supersample, boolean subpixelRendering) {
 		drawGlyph(
 			font,
 			gid,
@@ -136,7 +141,8 @@ public final class GlyphRasterizer {
 			x,
 			y,
 			argb,
-			supersample
+			supersample,
+			subpixelRendering
 		);
 
 		return getAdvanceWidthUnits(font, gid);
@@ -157,7 +163,7 @@ public final class GlyphRasterizer {
 								 int baselineY,
 								 int argb) {
 
-		drawGlyph(font, glyphId, dest, sizePx, originX, baselineY, argb, SUPERSAMPLE);
+		drawGlyph(font, glyphId, dest, sizePx, originX, baselineY, argb, SUPERSAMPLE, false);
 	}
 
 	public static void drawGlyph(TrueTypeFont font,
@@ -168,6 +174,45 @@ public final class GlyphRasterizer {
 								  int baselineY,
 								  int argb,
 								  int supersample) {
+		drawGlyph(font, glyphId, dest, sizePx, originX, baselineY, argb, supersample, false);
+	}
+
+	public static void drawGlyph(TrueTypeFont font,
+								  int glyphId,
+								  RasterTarget dest,
+								  float sizePx,
+								  int originX,
+								  int baselineY,
+								  int argb,
+								  int supersample,
+								  boolean subpixelRendering) {
+		drawGlyph(font, glyphId, dest, sizePx, originX, baselineY, argb, supersample, subpixelRendering, 0.0f);
+	}
+
+	/**
+	 * Draw a glyph with optional shear transformation (for synthetic italic).
+	 * 
+	 * @param font the font containing the glyph
+	 * @param glyphId the glyph ID to render
+	 * @param dest the target surface
+	 * @param sizePx the font size in pixels
+	 * @param originX the x-coordinate (baseline origin)
+	 * @param baselineY the y-coordinate (baseline)
+	 * @param argb the color in ARGB format
+	 * @param supersample the supersampling factor
+	 * @param subpixelRendering whether to enable sub-pixel rendering
+	 * @param shearX the horizontal shear factor (for italic, typically -0.2)
+	 */
+	public static void drawGlyph(TrueTypeFont font,
+								  int glyphId,
+								  RasterTarget dest,
+								  float sizePx,
+								  int originX,
+								  int baselineY,
+								  int argb,
+								  int supersample,
+								  boolean subpixelRendering,
+								  float shearX) {
 
 		if (supersample <= 0) {
 			throw new IllegalArgumentException("supersample must be >= 1");
@@ -178,8 +223,8 @@ public final class GlyphRasterizer {
 			return;
 		}
 
-		// 1) Get or build cached supersampled alpha mask for this glyph/size
-		CachedGlyph cached = getOrCreateCachedGlyph(font, glyphId, glyph, sizePx, supersample);
+		// 1) Get or build cached supersampled alpha mask for this glyph/size/shear
+		CachedGlyph cached = getOrCreateCachedGlyph(font, glyphId, glyph, sizePx, supersample, subpixelRendering, shearX);
 		if (cached == null) {
 			return;
 		}
@@ -189,23 +234,45 @@ public final class GlyphRasterizer {
 		int ssY0 = cached.ssY0 + baselineY * supersample;
 
 		// 3) Downsample & blend into dest
-		downsampleAndBlend(dest,
-			cached.alphaMask,
-			cached.ssWidth,
-			cached.ssHeight,
-			ssX0,
-			ssY0,
-			supersample,
-			argb);
+		if (subpixelRendering) {
+			downsampleAndBlendSubpixel(dest,
+				cached.alphaMask,
+				cached.ssWidth,
+				cached.ssHeight,
+				ssX0,
+				ssY0,
+				supersample,
+				argb);
+		} else {
+			downsampleAndBlend(dest,
+				cached.alphaMask,
+				cached.ssWidth,
+				cached.ssHeight,
+				ssX0,
+				ssY0,
+				supersample,
+				argb);
+		}
 	}
 
 	private static CachedGlyph getOrCreateCachedGlyph(TrueTypeFont font,
 													  int glyphId,
 													  Glyph glyph,
 													  float sizePx,
-													  int supersample) {
+													  int supersample,
+													  boolean subpixelRendering) {
+		return getOrCreateCachedGlyph(font, glyphId, glyph, sizePx, supersample, subpixelRendering, 0.0f);
+	}
 
-		GlyphKey key = new GlyphKey(font, glyphId, sizePx, supersample);
+	private static CachedGlyph getOrCreateCachedGlyph(TrueTypeFont font,
+													  int glyphId,
+													  Glyph glyph,
+													  float sizePx,
+													  int supersample,
+													  boolean subpixelRendering,
+													  float shearX) {
+
+		GlyphKey key = new GlyphKey(font, glyphId, sizePx, supersample, subpixelRendering, shearX);
 
 		synchronized (CACHE) {
 			CachedGlyph cached = CACHE.get(key);
@@ -234,6 +301,23 @@ public final class GlyphRasterizer {
 			// baselineY = 0, y up in font → y down in pixels
 			float yMaxPx = baselineY - yMinUnits * scalePx;
 			float yMinPx = baselineY - yMaxUnits * scalePx;
+
+			// If shear is applied, adjust bounding box
+			// Shear formula: x' = x + shearX * (y - baselineY)
+			// We need to check all four corners to find the true bounds after shearing
+			if (shearX != 0.0f) {
+				// Calculate shear offset at top and bottom of glyph
+				float shearAtTop = shearX * (yMinPx - baselineY);
+				float shearAtBottom = shearX * (yMaxPx - baselineY);
+				
+				// Find the actual min/max x after applying shear at different y positions
+				float xMinSheared = Math.min(xMinPx + shearAtTop, xMinPx + shearAtBottom);
+				float xMaxSheared = Math.max(xMaxPx + shearAtTop, xMaxPx + shearAtBottom);
+				
+				// Expand the bounding box to include sheared extents
+				xMinPx = Math.min(xMinPx, xMinSheared);
+				xMaxPx = Math.max(xMaxPx, xMaxSheared);
+			}
 
 			// Supersampled bbox
 			int ssX0 = (int) Math.floor(xMinPx * supersample);
@@ -266,7 +350,8 @@ public final class GlyphRasterizer {
 				ssY0,
 				alphaMask,
 				ssWidth,
-				ssHeight
+				ssHeight,
+				shearX
 			);
 
 			cached = new CachedGlyph(ssX0, ssY0, ssWidth, ssHeight, alphaMask);
@@ -282,6 +367,17 @@ public final class GlyphRasterizer {
 											  int ssX0, int ssY0,
 											  byte[] alphaMask,
 											  int ssWidth, int ssHeight) {
+		rasterizeGlyphToAlpha(glyph, ssScale, supersample, originX, baselineY, ssX0, ssY0, alphaMask, ssWidth, ssHeight, 0.0f);
+	}
+
+	private static void rasterizeGlyphToAlpha(Glyph glyph,
+											  float ssScale,
+											  int supersample,
+											  int originX, int baselineY,
+											  int ssX0, int ssY0,
+											  byte[] alphaMask,
+											  int ssWidth, int ssHeight,
+											  float shearX) {
 
 		if (glyph == null || glyph.numberOfContours <= 0) {
 			return;
@@ -290,10 +386,19 @@ public final class GlyphRasterizer {
 		// Build path in font units
 		GlyphPath path = GlyphPathBuilder.buildPath(glyph);
 
-		// Build edges in *supersampled* coordinate space
+		// Build edges in *supersampled* coordinate space with optional shear
 		List<Edge> edges = buildEdges(path, (x, y, out) -> {
-			out[0] = originX * supersample + x * ssScale;
-			out[1] = baselineY * supersample - y * ssScale;
+			float pixelX = originX * supersample + x * ssScale;
+			float pixelY = baselineY * supersample - y * ssScale;
+			
+			// Apply shear transformation if specified (for italic)
+			// Shear formula: x' = x + shearX * (y - baselineY)
+			if (shearX != 0.0f) {
+				pixelX += shearX * (pixelY - baselineY * supersample);
+			}
+			
+			out[0] = pixelX;
+			out[1] = pixelY;
 		});
 
 		if (edges.isEmpty()) {
@@ -398,6 +503,148 @@ public final class GlyphRasterizer {
 				int outR = (glyphR * a + srcR * (255 - a)) / 255;
 				int outG = (glyphG * a + srcG * (255 - a)) / 255;
 				int outB = (glyphB * a + srcB * (255 - a)) / 255;
+
+				int outARGB = (outA << 24) | (outR << 16) | (outG << 8) | outB;
+				dest.setRGB(dx, dy, outARGB);
+			}
+		}
+	}
+
+	/**
+	 * Downsample and blend with sub-pixel rendering for horizontal RGB LCD displays.
+	 * 
+	 * <p>Sub-pixel rendering takes advantage of the physical arrangement of RGB sub-pixels
+	 * on LCD displays to increase apparent horizontal resolution. Each color channel is
+	 * sampled independently at slightly offset horizontal positions.
+	 * 
+	 * <p>This implementation assumes horizontal RGB stripe layout (R-G-B left-to-right).
+	 * For BGR displays, the color channels would need to be reversed.
+	 * 
+	 * @param dest destination raster target
+	 * @param alphaMask supersampled alpha mask
+	 * @param ssWidth supersampled width
+	 * @param ssHeight supersampled height
+	 * @param ssX0 supersampled X origin
+	 * @param ssY0 supersampled Y origin
+	 * @param supersample supersampling factor
+	 * @param glyphARGB glyph color in ARGB format
+	 */
+	private static void downsampleAndBlendSubpixel(RasterTarget dest,
+												   byte[] alphaMask,
+												   int ssWidth,
+												   int ssHeight,
+												   int ssX0,
+												   int ssY0,
+												   int supersample,
+												   int glyphARGB) {
+
+		int destWidth  = dest.getWidth();
+		int destHeight = dest.getHeight();
+
+		int samplesPerPixel = supersample * supersample;
+
+		int destX0 = ssX0 / supersample;
+		int destY0 = ssY0 / supersample;
+		int destX1 = (ssX0 + ssWidth  + supersample - 1) / supersample;
+		int destY1 = (ssY0 + ssHeight + supersample - 1) / supersample;
+
+		destX0 = Math.max(destX0, 0);
+		destY0 = Math.max(destY0, 0);
+		destX1 = Math.min(destX1, destWidth);
+		destY1 = Math.min(destY1, destHeight);
+
+		int glyphA = (glyphARGB >>> 24) & 0xFF;
+		int glyphR = (glyphARGB >>> 16) & 0xFF;
+		int glyphG = (glyphARGB >>>  8) & 0xFF;
+		int glyphB = (glyphARGB       ) & 0xFF;
+
+		// Sub-pixel rendering: sample R, G, B at horizontally offset positions
+		// Assumes RGB stripe layout (R-G-B from left to right)
+		// Each color channel is shifted by 1/3 of a pixel horizontally
+		for (int dy = destY0; dy < destY1; dy++) {
+			for (int dx = destX0; dx < destX1; dx++) {
+
+				int ssStartX = dx * supersample;
+				int ssStartY = dy * supersample;
+
+				// Sample each color channel at slightly different horizontal positions
+				// R channel: -1/3 pixel shift (left)
+				// G channel: no shift (center)
+				// B channel: +1/3 pixel shift (right)
+				int subpixelShift = supersample / 3; // 1/3 pixel in supersampled space
+
+				int sumAlphaR = 0, sumAlphaG = 0, sumAlphaB = 0;
+
+				for (int sy = 0; sy < supersample; sy++) {
+					int ssY = ssStartY + sy;
+					int relY = ssY - ssY0;
+					if (relY < 0 || relY >= ssHeight) continue;
+
+					int rowOffset = relY * ssWidth;
+
+					// Red channel: shifted left
+					for (int sx = 0; sx < supersample; sx++) {
+						int ssX = ssStartX + sx - subpixelShift;
+						int relX = ssX - ssX0;
+						if (relX >= 0 && relX < ssWidth) {
+							int idx = rowOffset + relX;
+							sumAlphaR += (alphaMask[idx] & 0xFF);
+						}
+					}
+
+					// Green channel: no shift
+					for (int sx = 0; sx < supersample; sx++) {
+						int ssX = ssStartX + sx;
+						int relX = ssX - ssX0;
+						if (relX >= 0 && relX < ssWidth) {
+							int idx = rowOffset + relX;
+							sumAlphaG += (alphaMask[idx] & 0xFF);
+						}
+					}
+
+					// Blue channel: shifted right
+					for (int sx = 0; sx < supersample; sx++) {
+						int ssX = ssStartX + sx + subpixelShift;
+						int relX = ssX - ssX0;
+						if (relX >= 0 && relX < ssWidth) {
+							int idx = rowOffset + relX;
+							sumAlphaB += (alphaMask[idx] & 0xFF);
+						}
+					}
+				}
+
+				// Calculate coverage for each color channel
+				int coverageR = sumAlphaR / samplesPerPixel;
+				int coverageG = sumAlphaG / samplesPerPixel;
+				int coverageB = sumAlphaB / samplesPerPixel;
+
+				// Skip if all channels have zero coverage
+				if (coverageR == 0 && coverageG == 0 && coverageB == 0) {
+					continue;
+				}
+
+				// Get existing pixel
+				int src = dest.getRGB(dx, dy);
+
+				int srcA = (src >>> 24) & 0xFF;
+				int srcR = (src >>> 16) & 0xFF;
+				int srcG = (src >>>  8) & 0xFF;
+				int srcB = (src       ) & 0xFF;
+
+				// Blend each color channel independently with its own coverage
+				// Combined alpha for each channel = glyph alpha * channel coverage / 255
+				int aR = (glyphA * coverageR) / 255;
+				int aG = (glyphA * coverageG) / 255;
+				int aB = (glyphA * coverageB) / 255;
+
+				// Use maximum alpha for the output alpha channel
+				int outA = Math.max(Math.max(aR, aG), aB);
+				outA = outA + ((srcA * (255 - outA)) / 255);
+
+				// Blend each color channel
+				int outR = aR > 0 ? (glyphR * aR + srcR * (255 - aR)) / 255 : srcR;
+				int outG = aG > 0 ? (glyphG * aG + srcG * (255 - aG)) / 255 : srcG;
+				int outB = aB > 0 ? (glyphB * aB + srcB * (255 - aB)) / 255 : srcB;
 
 				int outARGB = (outA << 24) | (outR << 16) | (outG << 8) | outB;
 				dest.setRGB(dx, dy, outARGB);
@@ -702,10 +949,11 @@ public final class GlyphRasterizer {
 		 * @param y Where to draw (baselineY)
 		 * @param argb color to draw with
 		 * @param supersample supersampling factor
+		 * @param subpixelRendering whether to use sub-pixel rendering
 		 * @return advance width in font units
 		 */
 		double processGlyph(TrueTypeFont font, RasterTarget img, int gid, float sizePx,
-							int x, int y, int argb, int supersample);
+							int x, int y, int argb, int supersample, boolean subpixelRendering);
 	}
 
 	/**
@@ -744,18 +992,28 @@ public final class GlyphRasterizer {
 		final int glyphId;
 		final float sizePx;
 		final int supersample;
+		final boolean subpixelRendering;
+		final float shearX;
 		private final int hash;
 
-		GlyphKey(TrueTypeFont font, int glyphId, float sizePx, int supersample) {
+		GlyphKey(TrueTypeFont font, int glyphId, float sizePx, int supersample, boolean subpixelRendering) {
+			this(font, glyphId, sizePx, supersample, subpixelRendering, 0.0f);
+		}
+
+		GlyphKey(TrueTypeFont font, int glyphId, float sizePx, int supersample, boolean subpixelRendering, float shearX) {
 			this.font = font;
 			this.glyphId = glyphId;
 			this.sizePx = sizePx;
 			this.supersample = supersample;
+			this.subpixelRendering = subpixelRendering;
+			this.shearX = shearX;
 
 			int h = System.identityHashCode(font);
 			h = 31 * h + glyphId;
 			h = 31 * h + Float.floatToIntBits(sizePx);
 			h = 31 * h + supersample;
+			h = 31 * h + (subpixelRendering ? 1 : 0);
+			h = 31 * h + Float.floatToIntBits(shearX);
 			this.hash = h;
 		}
 
@@ -767,7 +1025,9 @@ public final class GlyphRasterizer {
 			return this.font == other.font
 				&& this.glyphId == other.glyphId
 				&& Float.floatToIntBits(this.sizePx) == Float.floatToIntBits(other.sizePx)
-				&& this.supersample == other.supersample;
+				&& this.supersample == other.supersample
+				&& this.subpixelRendering == other.subpixelRendering
+				&& Float.floatToIntBits(this.shearX) == Float.floatToIntBits(other.shearX);
 		}
 
 		@Override

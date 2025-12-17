@@ -79,7 +79,7 @@ public class ConsoleLogSink implements LogSink {
 				consoleInfo(fullMessage);
 				break;
 			case DEBUG:
-				consoleLog(fullMessage);
+				consoleDebug(fullMessage);
 				break;
 		}
 	}
@@ -106,4 +106,7 @@ public class ConsoleLogSink implements LogSink {
 
 	@JSBody(params = "message", script = "console.log(message);")
 	private static native void consoleLog(String message);
+
+	@JSBody(params = "message", script = "console.debug(message);")
+	private static native void consoleDebug(String message);
 }

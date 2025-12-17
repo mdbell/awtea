@@ -1,5 +1,7 @@
 # awtea
 
+[![CI](https://github.com/mdbell/awtea/actions/workflows/ci.yml/badge.svg)](https://github.com/mdbell/awtea/actions/workflows/ci.yml)
+
 **Bringing Java back to the browser**
 
 awtea is a project that implements a Java AWT (Abstract Window Toolkit) runtime using [TeaVM](https://teavm.org/) and WebAssembly, enabling legacy and modern Java graphical applications to run natively in the browser.
@@ -208,11 +210,15 @@ For complete examples, use cases, and migration guidance, see the **[Canvas Comp
 - [Canvas Components Guide](docs/CANVAS_COMPONENTS.md) - TCanvas vs THeavyCanvas comparison with examples and migration guide
 - [Component Mapping Strategy](docs/COMPONENT_MAPPING.md) - How AWT components map to web technologies
 - [Rendering Backends](docs/RENDERING_BACKENDS.md) - WebGL, WASM, and Software rendering systems
+- [Blit Optimizations](docs/BLIT_OPTIMIZATIONS.md) - WASM renderer performance optimizations for image blitting
 - [Alpha Blending](docs/ALPHA_BLENDING.md) - Transparency and alpha compositing support
 - [Font Rendering Architecture](docs/FONT_RENDERING_ARCHITECTURE.md) - Modular font rendering with pluggable strategies
 - [Font Loading Strategy](docs/FONT_LOADING.md) - Runtime font loading with browser HTTP caching
 - [CSS Embedding](docs/CSS_EMBEDDING.md) - Embedding CSS files with CSS custom properties for theming
 - [System Properties](docs/SYSTEM_PROPERTIES.md) - Configuration via system properties
+- [CI/CD Pipeline](docs/CI_CD.md) - Continuous integration and deployment setup
+- [Self-Hosted Runners](docs/SELF_HOSTED_RUNNER.md) - Setup guide for GitHub Actions self-hosted runners
+- [Documentation Hosting](docs/DOCUMENTATION_HOSTING.md) - Guide for hosting project documentation
 
 ### Development Tools
 

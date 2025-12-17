@@ -18,7 +18,7 @@ typedef enum {
     CMD_SET_TRANSFORM,
     // Set clipping rectangle
     CMD_SET_CLIP_RECT,
-    // Set compositing mode (unimplemented in WASM)
+    // Set compositing mode (Porter-Duff alpha blending)
     CMD_SET_COMPOSITE,
     // Copy image to surface
     CMD_BLIT_IMAGE,
@@ -30,6 +30,16 @@ typedef enum {
     CMD_CLEAR_RECT,
     // Draw line
     CMD_DRAW_LINE,
+    // Draw a polygon
+    CMD_DRAW_POLYGON,
+    // Fills a polygon
+    CMD_FILL_POLYGON,
+    // Fills an oval
+    CMD_FILL_OVAL,
+    // Fills a rounded rectangle
+    CMD_FILL_ROUND_RECT,
+    // Fills an arc
+    CMD_FILL_ARC,
     // Number of standard commands
     CMD_COUNT,
 } SurfaceOperation;
