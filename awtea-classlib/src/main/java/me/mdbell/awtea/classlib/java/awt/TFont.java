@@ -101,8 +101,9 @@ public class TFont {
                 needsSyntheticBold = isBold();
                 needsSyntheticItalic = isItalic();
             } else {
-                // Even plain font failed, propagate error
-                throw e;
+                // Plain font doesn't exist, use safe fallback (won't throw)
+                log.debug("Font '{}' not found, using fallback font: {}", name, e.getMessage());
+                trueType = loadSafeFont(name, "");  // This will fallback to FALLBACK_FONT_NAME
             }
         }
         
