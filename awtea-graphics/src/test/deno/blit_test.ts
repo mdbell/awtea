@@ -15,54 +15,13 @@ import {
   PixelFormat,
   WasmRasterizer,
 } from "./wasm_rasterizer.ts";
+import {
+  assertPixelApprox,
+  assertPixelEquals,
+  unpackARGB,
+} from "./test_helpers.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
-
-// Helper to compare Uint32 values (JavaScript bitwise operations are signed)
-function assertPixelEquals(actual: number, expected: number, message: string) {
-  const actualU32 = actual >>> 0;
-  const expectedU32 = expected >>> 0;
-  assertEquals(actualU32, expectedU32, message);
-}
-
-// Helper to unpack ARGB color
-function unpackARGB(
-  argb: number,
-): { a: number; r: number; g: number; b: number } {
-  const argbU32 = argb >>> 0;
-  return {
-    a: (argbU32 >>> 24) & 0xFF,
-    r: (argbU32 >>> 16) & 0xFF,
-    g: (argbU32 >>> 8) & 0xFF,
-    b: argbU32 & 0xFF,
-  };
-}
-
-// Helper to check if two colors are approximately equal (within tolerance for floating point rounding)
-function assertPixelApprox(
-  actual: number,
-  expected: number,
-  tolerance: number,
-  message: string,
-) {
-  const a1 = unpackARGB(actual);
-  const a2 = unpackARGB(expected);
-
-  const diffA = Math.abs(a1.a - a2.a);
-  const diffR = Math.abs(a1.r - a2.r);
-  const diffG = Math.abs(a1.g - a2.g);
-  const diffB = Math.abs(a1.b - a2.b);
-
-  const maxDiff = Math.max(diffA, diffR, diffG, diffB);
-
-  if (maxDiff > tolerance) {
-    throw new Error(
-      `${message}\nExpected: A=${a2.a} R=${a2.r} G=${a2.g} B=${a2.b}\n` +
-        `Actual:   A=${a1.a} R=${a1.r} G=${a1.g} B=${a1.b}\n` +
-        `Max diff: ${maxDiff} (tolerance: ${tolerance})`,
-    );
-  }
-}
 
 Deno.test("Blit: Basic same-format opaque blit", async () => {
   const rasterizer = new WasmRasterizer();
