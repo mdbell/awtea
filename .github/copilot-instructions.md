@@ -169,6 +169,12 @@ The `.devcontainer/` setup provides all tools pre-configured:
 - `docs/WASM_IMPORTS.md`: WASM module import/export conventions
 - `buildSrc/src/main/java/me/mdbell/awtea/codegen/README.md`: Code generation system
 
+* Use the following guidelines for the content of your reply:
+    - Be concise and to the point. Avoid unnecessary details or explanations.
+    - Do not restate or summarize the comment. Focus on addressing the specific request or question.
+    - Use a friendly and professional tone. Do not thank the user or compliment their feedback or comments in your response.
+    - **ALWAYS** include a screenshot of any UI changes so the user can see the impact of the change.
+
 ## Common Patterns
 
 ### Creating New AWT Components

@@ -143,7 +143,7 @@ public class LayoutDemo {
 
         // Add title
         Container title = createColoredPanel("CardLayout", new Color(100, 100, 100));
-        title.setPreferredSize(new Dimension(0, 25));
+        title.setPreferredSize(new Dimension(100, 25));
         wrapper.add(title, BorderLayout.NORTH);
 
         // Create demo with CardLayout
@@ -151,10 +151,18 @@ public class LayoutDemo {
         Container panel = new Container();
         panel.setLayout(cardLayout);
 
-        // Add several cards
-        panel.add(createColoredPanel("Card 1", new Color(255, 200, 200)), "card1");
-        panel.add(createColoredPanel("Card 2", new Color(200, 255, 200)), "card2");
-        panel.add(createColoredPanel("Card 3", new Color(200, 200, 255)), "card3");
+        // Add several cards with preferred sizes
+        Container card1 = createColoredPanel("Card 1", new Color(255, 200, 200));
+        card1.setPreferredSize(new Dimension(100, 100));
+        panel.add(card1, "card1");
+        
+        Container card2 = createColoredPanel("Card 2", new Color(200, 255, 200));
+        card2.setPreferredSize(new Dimension(100, 100));
+        panel.add(card2, "card2");
+        
+        Container card3 = createColoredPanel("Card 3", new Color(200, 200, 255));
+        card3.setPreferredSize(new Dimension(100, 100));
+        panel.add(card3, "card3");
 
         // Show the first card
         cardLayout.first(panel);
