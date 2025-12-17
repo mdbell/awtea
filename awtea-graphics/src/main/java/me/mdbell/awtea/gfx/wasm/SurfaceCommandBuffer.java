@@ -145,6 +145,11 @@ public final class SurfaceCommandBuffer {
      * @param flags     Command flags (0-255). Bit 0 reserved for CMD_FLAG_EXTENDED.
      */
     private void beginCommand(Operation operation, int flags) {
+
+        if (shouldFlush()) {
+            flush();
+        }
+
         writer.beginCommand(operation.ordinal(), flags);
     }
 
@@ -252,9 +257,29 @@ public final class SurfaceCommandBuffer {
     public void emitDrawPolygon(int[] xpoints, int[] ypoints) {
         log.trace("SurfaceCommandBuffer.emitDrawPolygon: xpoints={}, ypoints={}", xpoints, ypoints);
 
+        if (shouldFlush()) {
+            flush();
+        }
+
         beginCommand(Operation.DRAW_POLYGON, 0);
+        writer.writeInt32(xpoints.length); // Write nPoints first
         for (int i = 0; i < xpoints.length; i++) {
             writer.writeInt32(xpoints[i]);
+        }
+        for (int i = 0; i < ypoints.length; i++) {
+            writer.writeInt32(ypoints[i]);
+        }
+    }
+
+    public void emitFillPolygon(int[] xpoints, int[] ypoints) {
+        log.trace("SurfaceCommandBuffer.emitFillPolygon: xpoints={}, ypoints={}", xpoints, ypoints);
+
+        beginCommand(Operation.FILL_POLYGON, 0);
+        writer.writeInt32(xpoints.length); // Write nPoints first
+        for (int i = 0; i < xpoints.length; i++) {
+            writer.writeInt32(xpoints[i]);
+        }
+        for (int i = 0; i < ypoints.length; i++) {
             writer.writeInt32(ypoints[i]);
         }
     }

@@ -657,6 +657,92 @@ export class WasmRasterizer {
   }
 
   /**
+   * Helper: Write a FILL_POLYGON command
+   */
+  static writeFillPolygonCommand(
+    w: ByteWriter,
+    xPoints: number[],
+    yPoints: number[],
+  ): void {
+    if (xPoints.length !== yPoints.length) {
+      throw new Error("xPoints and yPoints must have the same length");
+    }
+    const nPoints = xPoints.length;
+    
+    w.beginCommand(SurfaceOperation.CMD_FILL_POLYGON);
+    w.writeInt32(nPoints);
+    for (let i = 0; i < nPoints; i++) {
+      w.writeInt32(xPoints[i]);
+    }
+    for (let i = 0; i < nPoints; i++) {
+      w.writeInt32(yPoints[i]);
+    }
+    w.finishCommand();
+  }
+
+  /**
+   * Helper: Write a FILL_OVAL command
+   */
+  static writeFillOvalCommand(
+    w: ByteWriter,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_FILL_OVAL);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.finishCommand();
+  }
+
+  /**
+   * Helper: Write a FILL_ARC command
+   */
+  static writeFillArcCommand(
+    w: ByteWriter,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    startAngle: number,
+    arcAngle: number,
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_FILL_ARC);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.writeInt32(startAngle);
+    w.writeInt32(arcAngle);
+    w.finishCommand();
+  }
+
+  /**
+   * Helper: Write a FILL_ROUND_RECT command
+   */
+  static writeFillRoundRectCommand(
+    w: ByteWriter,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    arcWidth: number,
+    arcHeight: number,
+  ): void {
+    w.beginCommand(SurfaceOperation.CMD_FILL_ROUND_RECT);
+    w.writeInt32(x);
+    w.writeInt32(y);
+    w.writeInt32(width);
+    w.writeInt32(height);
+    w.writeInt32(arcWidth);
+    w.writeInt32(arcHeight);
+    w.finishCommand();
+  }
+
+  /**
    * Helper: Convert ARGB color components to a single uint32
    */
   static makeARGB(a: number, r: number, g: number, b: number): number {

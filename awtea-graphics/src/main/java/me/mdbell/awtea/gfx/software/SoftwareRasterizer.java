@@ -67,6 +67,9 @@ public class SoftwareRasterizer implements Rasterizer {
     private Composite composite = AlphaComposite.SrcOver;
     private boolean needsBlending = false; // Cached result to avoid repeated instanceof checks
 
+    // Edge table pool for polygon filling
+    private static final EdgeTablePool edgeTablePool = new EdgeTablePool();
+
     SoftwareRasterizer(SoftwareSurface surface) {
         this.surface = surface;
         this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
@@ -184,9 +187,24 @@ public class SoftwareRasterizer implements Rasterizer {
                 case DRAW_LINE:
                     drawLine(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
                     break;
-                case DRAW_POLYGON:
+                case DRAW_POLYGON: {
                     SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
                     drawPolygon(pts.xpoints, pts.ypoints);
+                }
+                    break;
+                case FILL_POLYGON: {
+                    SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
+                    fillPolygon(pts.xpoints, pts.ypoints, pts.xpoints.length);
+                }
+                    break;
+                case FILL_OVAL:
+                    fillOval(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    break;
+                case FILL_ROUND_RECT:
+                    fillRoundRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4, cmd.arg5, cmd.arg6);
+                    break;
+                case FILL_ARC:
+                    fillArc(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4, cmd.arg5, cmd.arg6);
                     break;
                 case NO_OP:
                     break;
@@ -830,5 +848,294 @@ public class SoftwareRasterizer implements Rasterizer {
      */
     private boolean needsBlending() {
         return needsBlending;
+    }
+
+    /**
+     * Fill polygon using edge table algorithm
+     */
+    public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
+        if (xPoints == null || yPoints == null || nPoints < 3) {
+            log.error("fillPolygon: invalid parameters");
+            return;
+        }
+
+        log.debug("fillPolygon: nPoints={}", nPoints);
+
+        // Calculate bounding box
+        int minX = xPoints[0];
+        int maxX = xPoints[0];
+        int minY = yPoints[0];
+        int maxY = yPoints[0];
+
+        for (int i = 1; i < nPoints; i++) {
+            if (xPoints[i] < minX)
+                minX = xPoints[i];
+            if (xPoints[i] > maxX)
+                maxX = xPoints[i];
+            if (yPoints[i] < minY)
+                minY = yPoints[i];
+            if (yPoints[i] > maxY)
+                maxY = yPoints[i];
+        }
+
+        // Apply transform to bounding box
+        if (!transform.isIdentity()) {
+            Point2D.Float p1 = new Point2D.Float(minX, minY);
+            Point2D.Float p2 = new Point2D.Float(maxX, maxY);
+            transform.transform(p1, p1);
+            transform.transform(p2, p2);
+            minX = Math.round(p1.x);
+            minY = Math.round(p1.y);
+            maxX = Math.round(p2.x);
+            maxY = Math.round(p2.y);
+        }
+
+        // Clip bounding box to surface
+        minY = clamp(minY, 0, surface.getHeight() - 1);
+        maxY = clamp(maxY, 0, surface.getHeight() - 1);
+
+        if (minY >= maxY) {
+            log.debug("fillPolygon: clipped out entirely");
+            return;
+        }
+
+        // Get edge table from pool
+        EdgeTable et = edgeTablePool.acquire(minY, maxY, surface.getWidth(), surface.getHeight());
+
+        // Transform points and add edges
+        int[] transformedX = new int[nPoints];
+        int[] transformedY = new int[nPoints];
+
+        for (int i = 0; i < nPoints; i++) {
+            if (!transform.isIdentity()) {
+                Point2D.Float p = new Point2D.Float(xPoints[i], yPoints[i]);
+                transform.transform(p, p);
+                transformedX[i] = Math.round(p.x);
+                transformedY[i] = Math.round(p.y);
+            } else {
+                transformedX[i] = xPoints[i];
+                transformedY[i] = yPoints[i];
+            }
+        }
+
+        // Add all edges of the polygon
+        for (int i = 0; i < nPoints; i++) {
+            int next = (i + 1) % nPoints;
+            et.addLine(transformedX[i], transformedY[i],
+                    transformedX[next], transformedY[next]);
+        }
+
+        // Fill using edge table with even-odd rule
+        int[] pixelData = surface.getPixelDataAsInt32Array();
+        et.fill(pixelData, surface.getWidth(), surface.getHeight(),
+                encodedForeground, surface.getFormat(), EdgeTable.FILL_RULE_EVENODD,
+                composite, clip);
+
+        // Return edge table to pool
+        edgeTablePool.release(et);
+
+        log.debug("fillPolygon: completed");
+    }
+
+    /**
+     * Fill oval using edge table algorithm
+     */
+    public void fillOval(int x, int y, int width, int height) {
+        if (width <= 0 || height <= 0) {
+            log.error("fillOval: invalid dimensions");
+            return;
+        }
+
+        log.debug("fillOval: x={}, y={}, w={}, h={}", x, y, width, height);
+
+        // Calculate center and radii
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        int rx = width / 2;
+        int ry = height / 2;
+
+        // Apply transform
+        if (!transform.isIdentity()) {
+            Point2D.Float center = new Point2D.Float(cx, cy);
+            transform.transform(center, center);
+            cx = Math.round(center.x);
+            cy = Math.round(center.y);
+            // Note: Transform can affect radii, but for translation-only this is fine
+        }
+
+        // Calculate bounding box
+        int minY = clamp(cy - ry, 0, surface.getHeight() - 1);
+        int maxY = clamp(cy + ry, 0, surface.getHeight() - 1);
+
+        if (minY >= maxY) {
+            log.debug("fillOval: clipped out entirely");
+            return;
+        }
+
+        // Get edge table from pool
+        EdgeTable et = edgeTablePool.acquire(minY, maxY, surface.getWidth(), surface.getHeight());
+
+        // Add arc for full ellipse (0 to 2*PI)
+        et.addArc(cx, cy, rx, ry, 0.0, 2.0 * Math.PI);
+
+        // Fill using edge table
+        int[] pixelData = surface.getPixelDataAsInt32Array();
+        et.fill(pixelData, surface.getWidth(), surface.getHeight(),
+                encodedForeground, surface.getFormat(), EdgeTable.FILL_RULE_EVENODD,
+                composite, clip);
+
+        // Return edge table to pool
+        edgeTablePool.release(et);
+
+        log.debug("fillOval: completed");
+    }
+
+    /**
+     * Fill arc using edge table algorithm
+     */
+    public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        if (width <= 0 || height <= 0) {
+            log.error("fillArc: invalid dimensions");
+            return;
+        }
+
+        log.debug("fillArc: x={}, y={}, w={}, h={}, start={}, arc={}",
+                x, y, width, height, startAngle, arcAngle);
+
+        // Calculate center and radii
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        int rx = width / 2;
+        int ry = height / 2;
+
+        // Apply transform
+        if (!transform.isIdentity()) {
+            Point2D.Float center = new Point2D.Float(cx, cy);
+            transform.transform(center, center);
+            cx = Math.round(center.x);
+            cy = Math.round(center.y);
+        }
+
+        // Convert angles from degrees to radians
+        // Java AWT uses degrees with 0 at 3 o'clock, positive = counter-clockwise
+        double startRad = -startAngle * Math.PI / 180.0;
+        double endRad = -(startAngle + arcAngle) * Math.PI / 180.0;
+
+        // Normalize to standard angles
+        startRad = -startRad;
+        endRad = -endRad;
+
+        // Calculate bounding box
+        int minY = clamp(cy - ry, 0, surface.getHeight() - 1);
+        int maxY = clamp(cy + ry, 0, surface.getHeight() - 1);
+
+        if (minY >= maxY) {
+            log.debug("fillArc: clipped out entirely");
+            return;
+        }
+
+        // Get edge table from pool
+        EdgeTable et = edgeTablePool.acquire(minY, maxY, surface.getWidth(), surface.getHeight());
+
+        // Add arc
+        et.addArc(cx, cy, rx, ry, startRad, endRad);
+
+        // Close the arc by adding lines from endpoints to center (pie slice)
+        int startX = cx + (int) (rx * Math.cos(startRad));
+        int startY = cy + (int) (ry * Math.sin(startRad));
+        int endX = cx + (int) (rx * Math.cos(endRad));
+        int endY = cy + (int) (ry * Math.sin(endRad));
+
+        et.addLine(endX, endY, cx, cy);
+        et.addLine(cx, cy, startX, startY);
+
+        // Fill using edge table
+        int[] pixelData = surface.getPixelDataAsInt32Array();
+        et.fill(pixelData, surface.getWidth(), surface.getHeight(),
+                encodedForeground, surface.getFormat(), EdgeTable.FILL_RULE_EVENODD,
+                composite, clip);
+
+        // Return edge table to pool
+        edgeTablePool.release(et);
+
+        log.debug("fillArc: completed");
+    }
+
+    /**
+     * Fill rounded rectangle using edge table algorithm
+     */
+    public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        if (width <= 0 || height <= 0) {
+            log.error("fillRoundRect: invalid dimensions");
+            return;
+        }
+
+        log.debug("fillRoundRect: x={}, y={}, w={}, h={}, arcW={}, arcH={}",
+                x, y, width, height, arcWidth, arcHeight);
+
+        // Clamp arc dimensions
+        if (arcWidth > width)
+            arcWidth = width;
+        if (arcHeight > height)
+            arcHeight = height;
+
+        int rx = arcWidth / 2;
+        int ry = arcHeight / 2;
+
+        // Apply transform
+        if (!transform.isIdentity()) {
+            Point2D.Float topLeft = new Point2D.Float(x, y);
+            transform.transform(topLeft, topLeft);
+            x = Math.round(topLeft.x);
+            y = Math.round(topLeft.y);
+        }
+
+        // Calculate bounding box
+        int minY = clamp(y, 0, surface.getHeight() - 1);
+        int maxY = clamp(y + height, 0, surface.getHeight() - 1);
+
+        if (minY >= maxY) {
+            log.debug("fillRoundRect: clipped out entirely");
+            return;
+        }
+
+        // Get edge table from pool
+        EdgeTable et = edgeTablePool.acquire(minY, maxY, surface.getWidth(), surface.getHeight());
+
+        // Add four corner arcs and four straight edges
+        // Top edge
+        et.addLine(x + rx, y, x + width - rx, y);
+
+        // Top-right corner arc (0 to 90 degrees, or 0 to PI/2 radians)
+        et.addArc(x + width - rx, y + ry, rx, ry, -Math.PI / 2.0, 0.0);
+
+        // Right edge
+        et.addLine(x + width, y + ry, x + width, y + height - ry);
+
+        // Bottom-right corner arc (90 to 180 degrees, or PI/2 to PI radians)
+        et.addArc(x + width - rx, y + height - ry, rx, ry, 0.0, Math.PI / 2.0);
+
+        // Bottom edge
+        et.addLine(x + width - rx, y + height, x + rx, y + height);
+
+        // Bottom-left corner arc (180 to 270 degrees, or PI to 3*PI/2 radians)
+        et.addArc(x + rx, y + height - ry, rx, ry, Math.PI / 2.0, Math.PI);
+
+        // Left edge
+        et.addLine(x, y + height - ry, x, y + ry);
+
+        // Top-left corner arc (270 to 360 degrees, or 3*PI/2 to 2*PI radians)
+        et.addArc(x + rx, y + ry, rx, ry, Math.PI, 3.0 * Math.PI / 2.0);
+
+        // Fill using edge table
+        int[] pixelData = surface.getPixelDataAsInt32Array();
+        et.fill(pixelData, surface.getWidth(), surface.getHeight(),
+                encodedForeground, surface.getFormat(), EdgeTable.FILL_RULE_EVENODD,
+                composite, clip);
+
+        // Return edge table to pool
+        edgeTablePool.release(et);
+
+        log.debug("fillRoundRect: completed");
     }
 }

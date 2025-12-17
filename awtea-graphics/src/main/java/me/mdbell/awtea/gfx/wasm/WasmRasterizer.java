@@ -209,10 +209,16 @@ public class WasmRasterizer implements Rasterizer {
                 case DRAW_LINE:
                     commandBuffer.emitDrawLine(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
                     break;
-                case DRAW_POLYGON:
+                case DRAW_POLYGON: {
                     SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
                     commandBuffer.emitDrawPolygon(pts.xpoints, pts.ypoints);
                     break;
+                }
+                case FILL_POLYGON: {
+                    SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
+                    commandBuffer.emitFillPolygon(pts.xpoints, pts.ypoints);
+                    break;
+                }
                 case SET_COMPOSITE:
                     if (!(cmd.obj instanceof java.awt.Composite)) {
                         log.error("WasmRasterizer: SET_COMPOSITE command missing Composite object");
