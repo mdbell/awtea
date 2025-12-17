@@ -345,7 +345,12 @@ public class TFont {
         try {
             return FontLoader.loadFont(fontname);
         } catch (IOException e) {
-            log.warn("Missing font:{}", fontname + " - falling back");
+            // Only log warning on first failure - cached failures use DEBUG level
+            if (e.getMessage() != null && e.getMessage().contains("previously failed")) {
+                log.debug("Font '{}' previously failed to load, using fallback", fontname);
+            } else {
+                log.warn("Missing font:{}", fontname + " - falling back");
+            }
             try {
                 return FontLoader.loadFont(FALLBACK_FONT_NAME);
             } catch (IOException fallbackError) {
