@@ -87,6 +87,9 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     }
 
     private void reportMemoryUsage(int allocatedBytes, int allocatedCount, int peakBytes) {
+        // Update diagnostics with memory stats
+        diagnostics.updateMemoryStats(allocatedBytes, allocatedCount, peakBytes);
+        
         log.debug("WASM Memory Usage - Allocated: {} bytes in {} allocations, Peak: {} bytes",
                 allocatedBytes, allocatedCount, peakBytes);
     }

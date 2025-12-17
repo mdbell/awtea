@@ -1,5 +1,8 @@
 package me.mdbell.awtea.examples.animationdemo;
 
+import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.wasm.WasmDiagnostics;
+import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
 import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
@@ -17,6 +20,7 @@ import java.util.Random;
  * - Mouse and keyboard interaction
  * - Double buffering
  * - FPS monitoring
+ * - WASM diagnostics (when running under TeaVM with WASM backend)
  */
 public class AnimationDemo {
 
@@ -42,6 +46,36 @@ public class AnimationDemo {
 
         // Start animation loop
         canvas.startAnimation();
+    }
+    
+    /**
+     * Check if we're running under TeaVM with WASM backend loaded.
+     * @return true if WASM diagnostics are available
+     */
+    private static boolean isWasmBackendAvailable() {
+        try {
+            DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
+            return defaultBackend.getWasmBackend() != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Get WASM diagnostics if available.
+     * @return WasmDiagnostics instance, or null if not available
+     */
+    private static WasmDiagnostics getWasmDiagnostics() {
+        try {
+            DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
+            WasmSurfaceBackend wasmBackend = defaultBackend.getWasmBackend();
+            if (wasmBackend != null) {
+                return wasmBackend.getDiagnostics();
+            }
+        } catch (Exception e) {
+            // Ignore - not running with WASM
+        }
+        return null;
     }
 
     /**
@@ -341,6 +375,9 @@ public class AnimationDemo {
 
             // Draw FPS counter
             drawFPSCounter(drawGraphics);
+            
+            // Draw WASM diagnostics (if available)
+            drawWasmDiagnostics(drawGraphics);
 
             // Draw controls
             drawControls(drawGraphics);
@@ -376,6 +413,34 @@ public class AnimationDemo {
             // Text
             g.setFont(new Font("SansSerif", Font.BOLD, 14));
             g.drawString(String.format("FPS: %.1f", fps), 10, 22);
+        }
+        
+        /**
+         * Draws WASM diagnostics below the FPS counter (if available).
+         */
+        private void drawWasmDiagnostics(Graphics g) {
+            WasmDiagnostics diag = AnimationDemo.getWasmDiagnostics();
+            if (diag == null) {
+                return; // Not running with WASM backend
+            }
+            
+            int y = 65; // Position below ball count
+            
+            // Background
+            g.setColor(Color.WHITE);
+            g.fillRect(5, y, 150, 55);
+            
+            // Border
+            g.setColor(Color.BLACK);
+            g.drawRect(5, y, 150, 55);
+            
+            // Text
+            g.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            g.drawString(String.format("Surf: %d/%d", 
+                    diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + 15);
+            g.drawString(String.format("Ctx: %d/%d", 
+                    diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + 30);
+            g.drawString(String.format("Mem: %.1f KB", diag.getAllocatedKB()), 10, y + 45);
         }
 
         /**

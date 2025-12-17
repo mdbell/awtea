@@ -89,6 +89,20 @@ public class DefaultSurfaceBackend implements SurfaceBackend {
     public static void setDefault(DefaultSurfaceBackend backend) {
         instance = backend;
     }
+    
+    /**
+     * Get the active WasmSurfaceBackend if one is loaded, or null otherwise.
+     * Useful for accessing diagnostics when running with WASM renderer.
+     * @return WasmSurfaceBackend instance, or null if not using WASM backend
+     */
+    public WasmSurfaceBackend getWasmBackend() {
+        for (SurfaceBackend backend : backends) {
+            if (backend instanceof WasmSurfaceBackend) {
+                return (WasmSurfaceBackend) backend;
+            }
+        }
+        return null;
+    }
 
     @Override
     public Surface createCompatibleSurface(int width, int height, int bufferedImageType) {
