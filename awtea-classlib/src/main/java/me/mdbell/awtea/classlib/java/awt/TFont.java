@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.text.AttributedCharacterIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @see java.awt.Font
@@ -31,6 +32,9 @@ public class TFont {
     private static final String TTF_DIR = "/fonts/";
 
     private static final String FALLBACK_FONT_NAME = "NotoSans";
+    
+    // Cache for FontPeer instances to avoid recreating them for the same font specification
+    private static final Map<FontPeerKey, FontPeer> fontPeerCache = new ConcurrentHashMap<>();
 
     public static final int TRUETYPE_FONT = 0;
 
@@ -65,6 +69,37 @@ public class TFont {
     public static final String MONOSPACED = "Monospaced";
     public static final String DIALOG = "Dialog";
     public static final String DIALOG_INPUT = "DialogInput";
+    
+    /**
+     * Cache key for FontPeer instances.
+     * A FontPeer is uniquely identified by the TrueTypeFont instance and styling requirements.
+     */
+    private static class FontPeerKey {
+        private final TrueTypeFont trueType;
+        private final boolean needsSyntheticBold;
+        private final boolean needsSyntheticItalic;
+        
+        FontPeerKey(TrueTypeFont trueType, boolean needsSyntheticBold, boolean needsSyntheticItalic) {
+            this.trueType = trueType;
+            this.needsSyntheticBold = needsSyntheticBold;
+            this.needsSyntheticItalic = needsSyntheticItalic;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof FontPeerKey)) return false;
+            FontPeerKey that = (FontPeerKey) o;
+            return needsSyntheticBold == that.needsSyntheticBold &&
+                   needsSyntheticItalic == that.needsSyntheticItalic &&
+                   trueType == that.trueType; // Identity comparison for TrueTypeFont
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(System.identityHashCode(trueType), needsSyntheticBold, needsSyntheticItalic);
+        }
+    }
 
     public TFont(String name, int style, int size) {
         this.name = name;
@@ -107,18 +142,29 @@ public class TFont {
             }
         }
         
-        FontRenderer renderer = FontRendererFactory.getDefaultRenderer();
+        // Create cache key and check if FontPeer already exists
+        FontPeerKey cacheKey = new FontPeerKey(trueType, needsSyntheticBold, needsSyntheticItalic);
+        FontPeer cachedPeer = fontPeerCache.get(cacheKey);
         
-        // Wrap with synthetic styling if needed
-        if (needsSyntheticBold || needsSyntheticItalic) {
-            renderer = new me.mdbell.awtea.font.SyntheticStyledFontRenderer(
-                renderer, 
-                needsSyntheticBold, 
-                needsSyntheticItalic
-            );
+        if (cachedPeer != null) {
+            this.fontPeer = cachedPeer;
+        } else {
+            // Create new FontPeer and cache it
+            FontRenderer renderer = FontRendererFactory.getDefaultRenderer();
+            
+            // Wrap with synthetic styling if needed
+            if (needsSyntheticBold || needsSyntheticItalic) {
+                renderer = new me.mdbell.awtea.font.SyntheticStyledFontRenderer(
+                    renderer, 
+                    needsSyntheticBold, 
+                    needsSyntheticItalic
+                );
+            }
+            
+            FontPeer newPeer = new FontPeer(trueType, renderer);
+            fontPeerCache.put(cacheKey, newPeer);
+            this.fontPeer = newPeer;
         }
-        
-        this.fontPeer = new FontPeer(trueType, renderer);
     }
 
     public TFont(Map<? extends AttributedCharacterIterator.Attribute, ?> attributes) {
@@ -138,11 +184,31 @@ public class TFont {
         }
 
         this.style = style;
-        this.fontPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
+        
+        // Use FontPeer cache - no synthetic styling needed as font has intrinsic style
+        FontPeerKey cacheKey = new FontPeerKey(trueType, false, false);
+        FontPeer cachedPeer = fontPeerCache.get(cacheKey);
+        
+        if (cachedPeer != null) {
+            this.fontPeer = cachedPeer;
+        } else {
+            FontPeer newPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
+            fontPeerCache.put(cacheKey, newPeer);
+            this.fontPeer = newPeer;
+        }
     }
 
     public static TFont getDefaultFont() {
         return new TFont("Helvetica", PLAIN, 12);
+    }
+    
+    /**
+     * Clear the FontPeer cache.
+     * This method is useful for testing and development when you want to force
+     * recreation of FontPeer instances.
+     */
+    public static void clearFontPeerCache() {
+        fontPeerCache.clear();
     }
 
     public String getFamily() {
