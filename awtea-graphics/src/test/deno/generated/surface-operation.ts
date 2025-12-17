@@ -36,4 +36,14 @@ export enum SurfaceOperation {
   CMD_FILL_ROUND_RECT = 13,
   /** Fills an arc */
   CMD_FILL_ARC = 14,
+  /** Draw oval outline */
+  CMD_DRAW_OVAL = 15,
+  /** Draw arc outline */
+  CMD_DRAW_ARC = 16,
+  /** Draw rounded rectangle outline */
+  CMD_DRAW_ROUND_RECT = 17,
+  /** Draw connected line segments */
+  CMD_DRAW_POLYLINE = 18,
+  /** Copy area of surface with offset */
+  CMD_COPY_AREA = 19,
 }

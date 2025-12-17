@@ -34,6 +34,16 @@ values:
     description: Fills a rounded rectangle
   - name: FILL_ARC
     description: Fills an arc
+  - name: DRAW_OVAL
+    description: Draw oval outline
+  - name: DRAW_ARC
+    description: Draw arc outline
+  - name: DRAW_ROUND_RECT
+    description: Draw rounded rectangle outline
+  - name: DRAW_POLYLINE
+    description: Draw connected line segments
+  - name: COPY_AREA
+    description: Copy area of surface with offset
   - name: COUNT
     c_only: true
     description: Number of standard commands

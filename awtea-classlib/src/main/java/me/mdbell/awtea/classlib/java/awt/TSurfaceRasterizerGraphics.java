@@ -262,7 +262,12 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void copyArea(int x, int y, int width, int height, int dx, int dy) {
-
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.COPY_AREA, null, x, y, width, height, dx, dy);
+        pushOp(cmd);
     }
 
     @Override
@@ -277,7 +282,12 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_ARC, null, x, y, width, height, startAngle, arcAngle);
+        pushOp(cmd);
     }
 
     @Override
@@ -417,7 +427,12 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void drawOval(int x, int y, int width, int height) {
-
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_OVAL, null, x, y, width, height);
+        pushOp(cmd);
     }
 
     @Override
@@ -446,12 +461,26 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
+        if (xPoints == null || yPoints == null || nPoints < 2) {
+            return;
+        }
+        int[] xpts = Arrays.copyOf(xPoints, nPoints);
+        int[] ypts = Arrays.copyOf(yPoints, nPoints);
 
+        TPolygon polygon = new TPolygon(xpts, ypts, nPoints);
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_POLYLINE, polygon);
+        pushOp(cmd);
     }
 
     @Override
     public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_ROUND_RECT, null, x, y, width, height, arcWidth, arcHeight);
+        pushOp(cmd);
     }
 
     @Override

@@ -40,6 +40,16 @@ typedef enum {
     CMD_FILL_ROUND_RECT,
     // Fills an arc
     CMD_FILL_ARC,
+    // Draw oval outline
+    CMD_DRAW_OVAL,
+    // Draw arc outline
+    CMD_DRAW_ARC,
+    // Draw rounded rectangle outline
+    CMD_DRAW_ROUND_RECT,
+    // Draw connected line segments
+    CMD_DRAW_POLYLINE,
+    // Copy area of surface with offset
+    CMD_COPY_AREA,
     // Number of standard commands
     CMD_COUNT,
 } SurfaceOperation;
