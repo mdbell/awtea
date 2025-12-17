@@ -47,6 +47,9 @@ public abstract class TComponent implements TImageObserver {
     @Getter
     private boolean valid = true;
 
+    @Getter
+    private boolean visible = true;
+
     private Color background;
 
     private Color foreground;
@@ -344,7 +347,10 @@ public abstract class TComponent implements TImageObserver {
     }
 
     public void setVisible(boolean b) {
-        //stubbed
+        this.visible = b;
+        if (b) {
+            repaint();
+        }
     }
 
     public void setLocation(int x, int y) {

@@ -15,4 +15,5 @@ include("awtea-test-util")
 include("examples:hello-world")
 include("examples:gui-demo")
 include("examples:animation-demo")
+include("examples:layout-demo")
 

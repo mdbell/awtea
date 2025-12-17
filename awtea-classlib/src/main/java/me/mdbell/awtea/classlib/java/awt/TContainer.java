@@ -194,6 +194,11 @@ public class TContainer extends TComponent {
     @Override
     public void paint(TGraphics g) {
         for (TComponent component : children) {
+            // Skip invisible components
+            if (!component.isVisible()) {
+                continue;
+            }
+
             int x = component.getX();
             int y = component.getY();
             int width = component.getWidth();

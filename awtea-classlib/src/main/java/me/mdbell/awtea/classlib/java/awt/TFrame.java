@@ -17,6 +17,8 @@ public class TFrame extends TSurface {
         peer = new TFrameFloatingPeer(this);
         this.surfacePeer = new TOffscreenBufferPeer(this, 1, 1);
         this.setBackground(FRAME_BACKGROUND_COLOR);
+        // Frames use BorderLayout by default in AWT
+        setLayout(new TBorderLayout());
     }
 
     @Override
