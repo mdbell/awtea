@@ -105,6 +105,10 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
         STACK_EXIT_ERR(-1);
         return -1;
     }
+    
+    // Clear the pixel buffer to avoid garbage data
+    memset(p, 0, bytes);
+    
     surface->ptr = (uint32_t)(uintptr_t)p;
 
     log_trace("Created surface %d: %dx%d, %zu bytes", surface_id, width, height, bytes);
