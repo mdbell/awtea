@@ -16,9 +16,9 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
  * offset. This creates a heavier appearance similar to bold text.</p>
  * 
  * <h3>Synthetic Italic</h3>
- * <p>Implemented by applying a shear transformation that slants the text.
- * This approximates oblique styling but lacks the design refinements of
- * true italic fonts.</p>
+ * <p>Implemented by intercepting pixel rendering and applying a shear transformation
+ * that slants the text. This approximates oblique styling but lacks the design 
+ * refinements of true italic fonts.</p>
  * 
  * @see FontRenderer
  */
@@ -58,22 +58,16 @@ public class SyntheticStyledFontRenderer implements FontRenderer {
     @Override
     public void renderGlyph(TrueTypeFont font, int glyphId, RasterTarget target,
                            float sizePx, int x, int y, int argb) {
-        int offsetX = x;
-        
-        // Apply italic shear - shift x based on y position
-        if (syntheticItalic) {
-            // Calculate offset based on distance from baseline
-            // For italic, shift increases as we go up from baseline
-            int italicOffsetX = (int)(y * ITALIC_SHEAR);
-            offsetX += italicOffsetX;
-        }
+        // Wrap target with shearing target if italic is needed
+        RasterTarget renderTarget = syntheticItalic ? 
+            new ShearingRasterTarget(target, x, y, ITALIC_SHEAR) : target;
         
         if (syntheticBold) {
             // Render glyph multiple times with slight offsets for bold effect
-            delegate.renderGlyph(font, glyphId, target, sizePx, offsetX, y, argb);
-            delegate.renderGlyph(font, glyphId, target, sizePx, offsetX + BOLD_OFFSET_PIXELS, y, argb);
+            delegate.renderGlyph(font, glyphId, renderTarget, sizePx, x, y, argb);
+            delegate.renderGlyph(font, glyphId, renderTarget, sizePx, x + BOLD_OFFSET_PIXELS, y, argb);
         } else {
-            delegate.renderGlyph(font, glyphId, target, sizePx, offsetX, y, argb);
+            delegate.renderGlyph(font, glyphId, renderTarget, sizePx, x, y, argb);
         }
     }
     
@@ -128,5 +122,51 @@ public class SyntheticStyledFontRenderer implements FontRenderer {
     @Override
     public void clearCache() {
         delegate.clearCache();
+    }
+    
+    /**
+     * A RasterTarget wrapper that applies shear transformation to incoming pixels.
+     * This creates the italic slant effect by shifting pixels horizontally based on
+     * their vertical position.
+     */
+    private static class ShearingRasterTarget implements RasterTarget {
+        private final RasterTarget delegate;
+        private final int baseX;
+        private final int baseY;
+        private final float shearFactor;
+        
+        public ShearingRasterTarget(RasterTarget delegate, int baseX, int baseY, float shearFactor) {
+            this.delegate = delegate;
+            this.baseX = baseX;
+            this.baseY = baseY;
+            this.shearFactor = shearFactor;
+        }
+        
+        @Override
+        public int getWidth() {
+            return delegate.getWidth();
+        }
+        
+        @Override
+        public int getHeight() {
+            return delegate.getHeight();
+        }
+        
+        @Override
+        public void setRGB(int x, int y, int argb) {
+            // Apply shear: shift x based on distance from baseline
+            // The shear increases as we move up from the baseline
+            int dy = y - baseY;
+            int shearOffsetX = (int)(dy * shearFactor);
+            int transformedX = x + shearOffsetX;
+            
+            delegate.setRGB(transformedX, y, argb);
+        }
+        
+        @Override
+        public int getRGB(int x, int y) {
+            // For getRGB, we don't apply the transform (rarely used in rendering)
+            return delegate.getRGB(x, y);
+        }
     }
 }
