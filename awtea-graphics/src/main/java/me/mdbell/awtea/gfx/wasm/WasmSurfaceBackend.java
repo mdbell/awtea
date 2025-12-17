@@ -24,6 +24,8 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     final SurfaceLRUCache surfaceCache;
 
     private final WasmSurfacePool surfacePool;
+    
+    private final WasmDiagnostics diagnostics;
 
     public WasmSurfaceBackend() {
 
@@ -42,6 +44,7 @@ public class WasmSurfaceBackend implements SurfaceBackend {
         this.exports.initSurfaceSystem();
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
         this.surfacePool = new WasmSurfacePool(this);
+        this.diagnostics = new WasmDiagnostics(this.exports);
     }
 
     private void handleAbort() {
@@ -113,6 +116,14 @@ public class WasmSurfaceBackend implements SurfaceBackend {
         if (!Surface.isValidPixelFormat(pixelFormat)) {
             throw new IllegalArgumentException("Invalid pixel format: " + pixelFormat);
         }
+        
+        // Check if we're approaching surface capacity
+        if (diagnostics.isSurfaceCapacityWarning(0.9)) {
+            log.warn("Surface capacity at {:.1f}% ({} / {}), approaching limit",
+                    diagnostics.getSurfaceUtilization() * 100,
+                    diagnostics.getActiveSurfaceCount(),
+                    diagnostics.getMaxSurfaces());
+        }
 
         // Use pool to acquire or create surface
         return surfacePool.acquire(width, height, pixelFormat);
@@ -136,6 +147,16 @@ public class WasmSurfaceBackend implements SurfaceBackend {
      */
     public WasmSurfacePool getSurfacePool() {
         return surfacePool;
+    }
+    
+    /**
+     * Get diagnostics information about the WASM surface/context system.
+     * Provides runtime statistics about active surfaces, contexts, and resource usage.
+     * 
+     * @return The WasmDiagnostics instance
+     */
+    public WasmDiagnostics getDiagnostics() {
+        return diagnostics;
     }
 
     @Override

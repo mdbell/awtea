@@ -359,7 +359,16 @@ public class WasmSurfacePool {
     private WasmSurface createNewSurface(int width, int height, int pixelFormat) {
         int surfaceId = backend.exports.findFreeSurfaceId();
         if (surfaceId < 0) {
-            throw new IllegalStateException("createSurface failed: no free surface ID");
+            // No free surface available - log diagnostics
+            WasmDiagnostics diag = backend.getDiagnostics();
+            log.error("Failed to create surface: no free surface IDs available. " +
+                    "Active: {} / {}, Utilization: {:.1f}%",
+                    diag.getActiveSurfaceCount(), diag.getMaxSurfaces(),
+                    diag.getSurfaceUtilization() * 100);
+            throw new IllegalStateException(String.format(
+                    "No free surface IDs available (%d / %d surfaces active). " +
+                    "Consider destroying unused surfaces or increasing MAX_SURFACES.",
+                    diag.getActiveSurfaceCount(), diag.getMaxSurfaces()));
         }
         return new WasmSurface(backend, surfaceId, width, height, pixelFormat);
     }

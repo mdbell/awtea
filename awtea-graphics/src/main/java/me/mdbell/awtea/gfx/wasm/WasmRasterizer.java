@@ -11,9 +11,27 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * WASM-backed rasterizer implementation.
+ * 
+ * <h2>Thread Safety</h2>
+ * This class is NOT inherently thread-safe. Each thread should create its own rasterizer
+ * using {@link #create()} which clones the context. The cloned rasterizer maintains independent
+ * rendering state and should be disposed by the thread that created it.
+ * 
+ * <h2>Resource Management</h2>
+ * <ul>
+ *   <li>Always call {@link #dispose()} when done to free WASM context</li>
+ *   <li>Dispose is idempotent - safe to call multiple times</li>
+ *   <li>Rasterizers not explicitly disposed will trigger leak warnings in debug mode</li>
+ * </ul>
+ */
 public class WasmRasterizer implements Rasterizer {
 
     private static final Logger log = LoggerFactory.getLogger(WasmRasterizer.class);
+    
+    // Track if this rasterizer has been explicitly disposed to avoid leak warnings
+    private boolean explicitlyDisposed = false;
 
     private static final double AUTO_FLUSH_THRESHOLD = 0.8; // Flush at 80% capacity
 
@@ -55,8 +73,20 @@ public class WasmRasterizer implements Rasterizer {
     public void reset() {
     }
 
+    /**
+     * Dispose of this rasterizer and free its WASM context.
+     * This method is idempotent - safe to call multiple times.
+     */
     public void dispose() {
-        if (!disposed && contextId >= 0) {
+        // Idempotent: safe to call multiple times
+        if (disposed) {
+            return;
+        }
+        
+        explicitlyDisposed = true;
+        disposed = true;
+        
+        if (contextId >= 0) {
             // Flush any pending commands before destroying context
             flushAndReleaseReferences();
             // Destroy the context (decrements surface ref count)
@@ -65,7 +95,24 @@ public class WasmRasterizer implements Rasterizer {
                 log.error("WasmRasterizer: Failed to destroy context {}", contextId);
             }
             // Command buffer is owned by context and freed automatically
-            disposed = true;
+        }
+    }
+    
+    /**
+     * Finalizer to detect resource leaks.
+     * Warns if rasterizer was not explicitly disposed.
+     */
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            if (!explicitlyDisposed && contextId >= 0) {
+                log.warn("WasmRasterizer with context {} was finalized without explicit dispose() - possible resource leak. " +
+                        "Always call dispose() when done with a rasterizer.", contextId);
+                // Clean up even though we're in finalizer
+                dispose();
+            }
+        } finally {
+            super.finalize();
         }
     }
 

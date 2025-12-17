@@ -84,4 +84,20 @@ interface WasmAwtRasterizerExports extends JSObject {
 
 	@JSMethod("get_max_stack_depth")
 	int getMaxStackDepth();
+	
+	// Diagnostics API
+	@JSMethod("get_active_surface_count")
+	int getActiveSurfaceCount();
+	
+	@JSMethod("get_active_context_count")
+	int getActiveContextCount();
+	
+	@JSMethod("get_surface_ref_count")
+	int getSurfaceRefCount(int surfaceId);
+	
+	@JSMethod("get_max_surfaces")
+	int getMaxSurfaces();
+	
+	@JSMethod("get_max_contexts")
+	int getMaxContexts();
 }
