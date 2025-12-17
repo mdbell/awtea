@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import me.mdbell.awtea.classlib.java.awt.image.TFontFormatException;
 import me.mdbell.awtea.font.FontLoader;
 import me.mdbell.awtea.font.FontPeer;
+import me.mdbell.awtea.font.FontRenderer;
 import me.mdbell.awtea.font.FontRendererFactory;
 import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.impl.Debug;
@@ -75,8 +76,47 @@ public class TFont {
             styleStr += "Italic";
         }
 
-        TrueTypeFont trueType = loadSafeFont(name, styleStr);
-        this.fontPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
+        TrueTypeFont trueType;
+        boolean needsSyntheticBold = false;
+        boolean needsSyntheticItalic = false;
+        
+        // Try to load styled font
+        try {
+            trueType = loadStyledFont(name, styleStr);
+            
+            // Check if loaded font actually has the requested style
+            // (some fonts may load but not have the style embedded)
+            if (isBold() && !trueType.isBold()) {
+                needsSyntheticBold = true;
+            }
+            if (isItalic() && !trueType.isItalic()) {
+                needsSyntheticItalic = true;
+            }
+        } catch (Exception e) {
+            // Styled font doesn't exist, fall back to plain with synthetic styling
+            if (!styleStr.isEmpty()) {
+                log.debug("Styled font '{}{}' not found, using synthetic styling", name, styleStr);
+                trueType = loadSafeFont(name, "");  // Load plain font
+                needsSyntheticBold = isBold();
+                needsSyntheticItalic = isItalic();
+            } else {
+                // Even plain font failed, propagate error
+                throw e;
+            }
+        }
+        
+        FontRenderer renderer = FontRendererFactory.getDefaultRenderer();
+        
+        // Wrap with synthetic styling if needed
+        if (needsSyntheticBold || needsSyntheticItalic) {
+            renderer = new me.mdbell.awtea.font.SyntheticStyledFontRenderer(
+                renderer, 
+                needsSyntheticBold, 
+                needsSyntheticItalic
+            );
+        }
+        
+        this.fontPeer = new FontPeer(trueType, renderer);
     }
 
     public TFont(Map<? extends AttributedCharacterIterator.Attribute, ?> attributes) {
@@ -263,6 +303,37 @@ public class TFont {
         return getFont(nm, null);
     }
 
+    /**
+     * Load a font with a specific style, throwing an exception if not found.
+     * This method is used to detect missing font variants so synthetic styling can be applied.
+     * 
+     * @param name the font family name
+     * @param style the style string (e.g., "Bold", "Italic", "BoldItalic", or empty for plain)
+     * @return the loaded TrueTypeFont
+     * @throws RuntimeException if the font variant is not found
+     */
+    @SneakyThrows
+    private static TrueTypeFont loadStyledFont(String name, String style) {
+        String fontname = name;
+        if (style != null && !style.isEmpty()) {
+            fontname = name + "-" + style;
+        }
+        try {
+            return FontLoader.loadFont(fontname);
+        } catch (IOException e) {
+            // Rethrow so caller can detect missing variant and apply synthetic styling
+            throw new RuntimeException("Font variant not found: " + fontname, e);
+        }
+    }
+
+    /**
+     * Load a font safely with fallback to default font if not found.
+     * This method never throws - it always returns a valid font.
+     * 
+     * @param name the font family name
+     * @param style the style string (e.g., "Bold", "Italic", "BoldItalic", or empty for plain)
+     * @return the loaded TrueTypeFont, or fallback font if not found
+     */
     @SneakyThrows
     private static TrueTypeFont loadSafeFont(String name, String style) {
         String fontname = name;
