@@ -10,15 +10,9 @@
 
 import { assertEquals, assertNotEquals } from "@std/assert";
 import { PixelFormat, WasmRasterizer } from "./wasm_rasterizer.ts";
+import { assertPixelEquals } from "./test_helpers.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
-
-// Helper to compare Uint32 values (JavaScript bitwise operations are signed)
-function assertPixelEquals(actual: number, expected: number, message: string) {
-  const actualU32 = actual >>> 0;
-  const expectedU32 = expected >>> 0;
-  assertEquals(actualU32, expectedU32, message);
-}
 
 Deno.test("Context creation and destruction", async () => {
   const rasterizer = new WasmRasterizer();

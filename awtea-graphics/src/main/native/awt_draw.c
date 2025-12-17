@@ -294,12 +294,111 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
             return;
         }
 
-        // Source *has* alpha → blend with composite mode
+        // Source *has* alpha → check for fast paths before generic blending
+        
+        // Fast path 1: COMPOSITE_SRC mode (copy source, ignore destination)
+        if (context->composite_mode == COMPOSITE_SRC && context->composite_alpha >= 1.0f) {
+            SetPixelFunc set_pixel_func = get_set_pixel_func(src->format, dst->format);
+            
+            if (set_pixel_func == set_pixel_same_format) {
+                // Same format: use memcpy for rows
+                uint32_t* dst_pixels = (uint32_t*)(uintptr_t)dst->ptr;
+                uint32_t  dst_stride = dst->stride / 4;
+                for (int dst_y = startY; dst_y < endY; ++dst_y) {
+                    int src_y = dst_y - y;
+                    uint32_t* src_row = &src_pixels[src_y * src_stride + (startX - x)];
+                    uint32_t* dst_row = &dst_pixels[dst_y * dst_stride + startX];
+                    size_t row_bytes = (size_t)(endX - startX) * sizeof(uint32_t);
+                    memcpy(dst_row, src_row, row_bytes);
+                }
+            } else {
+                // Different formats: direct set without blending
+                for (int dst_y = startY; dst_y < endY; ++dst_y) {
+                    int src_y = dst_y - y;
+                    for (int dst_x = startX; dst_x < endX; ++dst_x) {
+                        int src_x = dst_x - x;
+                        uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
+                        set_pixel_func(dst, dst_x, dst_y, src->format, srcPixel);
+                    }
+                }
+            }
+            STACK_EXIT();
+            return;
+        }
+        
+        // Fast path 2: SRC_OVER with fully opaque source
+        // When source is fully opaque (all pixels have alpha=255), SRC_OVER becomes a simple copy
+        if (context->composite_mode == COMPOSITE_SRC_OVER && context->composite_alpha >= 1.0f) {
+            // Check if all source pixels are opaque
+            int all_opaque = 1;
+            uint32_t alpha_mask = srcInfo->mask_a;
+            uint32_t alpha_max = alpha_mask; // All alpha bits set = opaque
+            
+            // Quick scan: check a sampling of pixels to determine if source is likely all opaque
+            // For large images, checking every pixel would be expensive, so we sample
+            int sample_stride = (src->width > 32 || src->height > 32) ? 4 : 1;
+            for (int sy = 0; sy < (int)src->height && all_opaque; sy += sample_stride) {
+                for (int sx = 0; sx < (int)src->width && all_opaque; sx += sample_stride) {
+                    uint32_t pixel = src_pixels[sy * src_stride + sx];
+                    if ((pixel & alpha_mask) != alpha_max) {
+                        all_opaque = 0;
+                        break;
+                    }
+                }
+            }
+            
+            // If source is fully opaque, use fast copy path
+            if (all_opaque) {
+                SetPixelFunc set_pixel_func = get_set_pixel_func(src->format, dst->format);
+                
+                if (set_pixel_func == set_pixel_same_format) {
+                    // Same format: use memcpy for rows
+                    uint32_t* dst_pixels = (uint32_t*)(uintptr_t)dst->ptr;
+                    uint32_t  dst_stride = dst->stride / 4;
+                    for (int dst_y = startY; dst_y < endY; ++dst_y) {
+                        int src_y = dst_y - y;
+                        uint32_t* src_row = &src_pixels[src_y * src_stride + (startX - x)];
+                        uint32_t* dst_row = &dst_pixels[dst_y * dst_stride + startX];
+                        size_t row_bytes = (size_t)(endX - startX) * sizeof(uint32_t);
+                        memcpy(dst_row, src_row, row_bytes);
+                    }
+                } else {
+                    // Different formats: direct set without blending
+                    for (int dst_y = startY; dst_y < endY; ++dst_y) {
+                        int src_y = dst_y - y;
+                        for (int dst_x = startX; dst_x < endX; ++dst_x) {
+                            int src_x = dst_x - x;
+                            uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
+                            set_pixel_func(dst, dst_x, dst_y, src->format, srcPixel);
+                        }
+                    }
+                }
+                STACK_EXIT();
+                return;
+            }
+        }
+        
+        // Generic blending path with row-based processing for better cache locality
+        uint32_t* dst_pixels = (uint32_t*)(uintptr_t)dst->ptr;
+        uint32_t  dst_stride = dst->stride / 4;
+        const PixelFormatInfo* dstInfo = &g_pixel_format_info[dst->format];
+        
         for (int dst_y = startY; dst_y < endY; ++dst_y) {
             int src_y = dst_y - y;
+            uint32_t* src_row = &src_pixels[src_y * src_stride];
+            uint32_t* dst_row = &dst_pixels[dst_y * dst_stride];
+            
             for (int dst_x = startX; dst_x < endX; ++dst_x) {
                 int src_x = dst_x - x;
-                uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
+                uint32_t srcPixel = src_row[src_x];
+                
+                // Inline fast check for transparent pixels (common case to skip)
+                uint8_t srcAlphaRaw = (srcPixel & srcInfo->mask_a) >> srcInfo->shift_a;
+                if (srcAlphaRaw == 0 && context->composite_mode != COMPOSITE_CLEAR) {
+                    // Fully transparent source has no effect in most modes
+                    continue;
+                }
+                
                 blend_pixel_composite(dst, dst_x, dst_y, src->format, srcPixel,
                                      context->composite_mode, context->composite_alpha);
             }
