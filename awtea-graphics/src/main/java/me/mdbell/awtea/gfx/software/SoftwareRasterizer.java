@@ -146,10 +146,10 @@ public class SoftwareRasterizer implements Rasterizer {
             switch (cmd.type) {
                 case SET_COLOR:
                     Color c = (Color) cmd.obj;
-                    if (cmd.arg1 == 0) {
+                    if (cmd.argCount > 0 && cmd.args[0] == 0) {
                         this.foreground = c;
                         updateEncodedForeground();
-                    } else if (cmd.arg1 == 1) {
+                    } else if (cmd.argCount > 0 && cmd.args[0] == 1) {
                         this.background = c;
                         updateEncodedBackground();
                     }
@@ -173,19 +173,19 @@ public class SoftwareRasterizer implements Rasterizer {
                     break;
                 case BLIT_IMAGE:
                     Surface srcSurface = ((SurfaceContainer) cmd.obj).getSurface();
-                    blitImage(srcSurface, cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    blitImage(srcSurface, cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case DRAW_RECT:
-                    drawRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    drawRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case FILL_RECT:
-                    fillRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    fillRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case CLEAR_RECT:
-                    clearRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    clearRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case DRAW_LINE:
-                    drawLine(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    drawLine(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case DRAW_POLYGON: {
                     SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
@@ -198,13 +198,13 @@ public class SoftwareRasterizer implements Rasterizer {
                 }
                     break;
                 case FILL_OVAL:
-                    fillOval(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    fillOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case FILL_ROUND_RECT:
-                    fillRoundRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4, cmd.arg5, cmd.arg6);
+                    fillRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
                     break;
                 case FILL_ARC:
-                    fillArc(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4, cmd.arg5, cmd.arg6);
+                    fillArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
                     break;
                 case NO_OP:
                     break;
