@@ -112,8 +112,8 @@ public class TFont {
         }
 
         TrueTypeFont trueType;
-        boolean needsSyntheticBold = false;
-        boolean needsSyntheticItalic = false;
+        boolean needsSyntheticBold;
+        boolean needsSyntheticItalic;
         
         // Try to load styled font
         try {
@@ -121,12 +121,8 @@ public class TFont {
             
             // Check if loaded font actually has the requested style
             // (some fonts may load but not have the style embedded)
-            if (isBold() && !trueType.isBold()) {
-                needsSyntheticBold = true;
-            }
-            if (isItalic() && !trueType.isItalic()) {
-                needsSyntheticItalic = true;
-            }
+            needsSyntheticBold = isBold() && !trueType.isBold();
+            needsSyntheticItalic = isItalic() && !trueType.isItalic();
         } catch (RuntimeException e) {
             // Styled font doesn't exist, fall back to plain with synthetic styling
             if (!styleStr.isEmpty()) {
@@ -139,32 +135,33 @@ public class TFont {
                 // Plain font doesn't exist, use safe fallback (won't throw)
                 log.debug("Font '{}' not found, using fallback font: {}", name, e.getMessage());
                 trueType = loadSafeFont(name, "");  // This will fallback to FALLBACK_FONT_NAME
+                needsSyntheticBold = false;
+                needsSyntheticItalic = false;
             }
         }
         
-        // Create cache key and check if FontPeer already exists
-        FontPeerKey cacheKey = new FontPeerKey(trueType, needsSyntheticBold, needsSyntheticItalic);
-        FontPeer cachedPeer = fontPeerCache.get(cacheKey);
+        // Make variables effectively final for lambda
+        final TrueTypeFont finalTrueType = trueType;
+        final boolean finalNeedsSyntheticBold = needsSyntheticBold;
+        final boolean finalNeedsSyntheticItalic = needsSyntheticItalic;
         
-        if (cachedPeer != null) {
-            this.fontPeer = cachedPeer;
-        } else {
-            // Create new FontPeer and cache it
+        // Create cache key and use computeIfAbsent for thread-safe caching
+        FontPeerKey cacheKey = new FontPeerKey(finalTrueType, finalNeedsSyntheticBold, finalNeedsSyntheticItalic);
+        this.fontPeer = fontPeerCache.computeIfAbsent(cacheKey, key -> {
+            // Create new FontPeer
             FontRenderer renderer = FontRendererFactory.getDefaultRenderer();
             
             // Wrap with synthetic styling if needed
-            if (needsSyntheticBold || needsSyntheticItalic) {
+            if (finalNeedsSyntheticBold || finalNeedsSyntheticItalic) {
                 renderer = new me.mdbell.awtea.font.SyntheticStyledFontRenderer(
                     renderer, 
-                    needsSyntheticBold, 
-                    needsSyntheticItalic
+                    finalNeedsSyntheticBold, 
+                    finalNeedsSyntheticItalic
                 );
             }
             
-            FontPeer newPeer = new FontPeer(trueType, renderer);
-            fontPeerCache.put(cacheKey, newPeer);
-            this.fontPeer = newPeer;
-        }
+            return new FontPeer(finalTrueType, renderer);
+        });
     }
 
     public TFont(Map<? extends AttributedCharacterIterator.Attribute, ?> attributes) {
@@ -185,17 +182,12 @@ public class TFont {
 
         this.style = style;
         
-        // Use FontPeer cache - no synthetic styling needed as font has intrinsic style
+        // Use FontPeer cache with computeIfAbsent for thread-safety
+        // No synthetic styling needed as font has intrinsic style
         FontPeerKey cacheKey = new FontPeerKey(trueType, false, false);
-        FontPeer cachedPeer = fontPeerCache.get(cacheKey);
-        
-        if (cachedPeer != null) {
-            this.fontPeer = cachedPeer;
-        } else {
-            FontPeer newPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
-            fontPeerCache.put(cacheKey, newPeer);
-            this.fontPeer = newPeer;
-        }
+        this.fontPeer = fontPeerCache.computeIfAbsent(cacheKey, key -> 
+            new FontPeer(trueType, FontRendererFactory.getDefaultRenderer())
+        );
     }
 
     public static TFont getDefaultFont() {
