@@ -317,12 +317,12 @@ class WebGLRasterizer implements Rasterizer {
             switch (cmd.type) {
                 case SET_COLOR:
                     Color c = (Color) cmd.obj;
-                    if (cmd.arg1 == 0) {
+                    if (cmd.argCount > 0 && cmd.args[0] == 0) {
                         this.foreground = c;
-                    } else if (cmd.arg1 == 1) {
+                    } else if (cmd.argCount > 0 && cmd.args[0] == 1) {
                         this.background = c;
                     } else {
-                        log.error("WebGLRasterizer: Unknown color target: {}", cmd.arg1);
+                        log.error("WebGLRasterizer: Unknown color target: {}", cmd.argCount > 0 ? cmd.args[0] : -1);
                     }
                     break;
                 case SET_TRANSFORM:
@@ -335,16 +335,16 @@ class WebGLRasterizer implements Rasterizer {
                     break;
                 case BLIT_IMAGE:
                     Surface s = ((SurfaceContainer) cmd.obj).getSurface();
-                    drawImage(s, cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    drawImage(s, cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case DRAW_RECT:
-                    drawRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4, 1.0f);
+                    drawRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], 1.0f);
                     break;
                 case FILL_RECT:
-                    fillRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    fillRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case CLEAR_RECT:
-                    clearRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    clearRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
 //				case DRAW_LINE:
 //					break;

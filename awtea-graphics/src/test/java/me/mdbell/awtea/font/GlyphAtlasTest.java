@@ -48,14 +48,14 @@ public class GlyphAtlasTest {
 
 		// First access - should rasterize and cache
 		GlyphAtlas.GlyphEntry entry1 = atlas.getOrCreateGlyph(
-				testFont, glyphId, 16.0f, 0xFF000000, 4);
+				testFont, glyphId, 16.0f, 0xFF000000, 4, false);
 		Assert.assertNotNull(entry1, "First glyph entry should be created");
 		Assert.assertTrue(entry1.getWidth() > 0, "Glyph width should be positive");
 		Assert.assertTrue(entry1.getHeight() > 0, "Glyph height should be positive");
 
 		// Second access - should return cached entry (same object reference)
 		GlyphAtlas.GlyphEntry entry2 = atlas.getOrCreateGlyph(
-				testFont, glyphId, 16.0f, 0xFF000000, 4);
+				testFont, glyphId, 16.0f, 0xFF000000, 4, false);
 		Assert.assertNotNull(entry2, "Second glyph entry should be returned");
 		Assert.assertTrue(entry1 == entry2, "Should return the same cached entry");
 
@@ -73,7 +73,7 @@ public class GlyphAtlasTest {
 			int glyphId = testFont.glyphForCodePoint(c);
 
 			GlyphAtlas.GlyphEntry entry = atlas.getOrCreateGlyph(
-					testFont, glyphId, 16.0f, 0xFF000000, 4);
+					testFont, glyphId, 16.0f, 0xFF000000, 4, false);
 			Assert.assertNotNull(entry, "Glyph entry for '" + c + "' should be created");
 		}
 
@@ -83,7 +83,7 @@ public class GlyphAtlasTest {
 			int glyphId = testFont.glyphForCodePoint(c);
 
 			GlyphAtlas.GlyphEntry entry = atlas.getOrCreateGlyph(
-					testFont, glyphId, 16.0f, 0xFF000000, 4);
+					testFont, glyphId, 16.0f, 0xFF000000, 4, false);
 			Assert.assertNotNull(entry, "Cached glyph for '" + c + "' should be retrievable");
 		}
 
@@ -98,9 +98,9 @@ public class GlyphAtlasTest {
 
 		// Same glyph at different sizes should be cached separately
 		GlyphAtlas.GlyphEntry entry16 = atlas.getOrCreateGlyph(
-				testFont, glyphId, 16.0f, 0xFF000000, 4);
+				testFont, glyphId, 16.0f, 0xFF000000, 4, false);
 		GlyphAtlas.GlyphEntry entry24 = atlas.getOrCreateGlyph(
-				testFont, glyphId, 24.0f, 0xFF000000, 4);
+				testFont, glyphId, 24.0f, 0xFF000000, 4, false);
 
 		Assert.assertNotNull(entry16, "16px glyph should be cached");
 		Assert.assertNotNull(entry24, "24px glyph should be cached");
@@ -121,9 +121,9 @@ public class GlyphAtlasTest {
 
 		// Same glyph in different colors should be cached separately
 		GlyphAtlas.GlyphEntry entryBlack = atlas.getOrCreateGlyph(
-				testFont, glyphId, 16.0f, 0xFF000000, 4);
+				testFont, glyphId, 16.0f, 0xFF000000, 4, false);
 		GlyphAtlas.GlyphEntry entryRed = atlas.getOrCreateGlyph(
-				testFont, glyphId, 16.0f, 0xFFFF0000, 4);
+				testFont, glyphId, 16.0f, 0xFFFF0000, 4, false);
 
 		Assert.assertNotNull(entryBlack, "Black glyph should be cached");
 		Assert.assertNotNull(entryRed, "Red glyph should be cached");
@@ -139,7 +139,7 @@ public class GlyphAtlasTest {
 		// Cache some glyphs
 		int glyphId = testFont.glyphForCodePoint('A');
 		GlyphAtlas.GlyphEntry entry = atlas.getOrCreateGlyph(
-				testFont, glyphId, 16.0f, 0xFF000000, 4);
+				testFont, glyphId, 16.0f, 0xFF000000, 4, false);
 		Assert.assertNotNull(entry, "Glyph should be cached");
 
 		// Destroy atlas

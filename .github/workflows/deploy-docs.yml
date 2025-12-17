@@ -2,11 +2,11 @@ name: Deploy Documentation
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'docs/**'
-      - 'awtea-util/**'
-      - 'build.gradle.kts'
+      - "docs/**"
+      - "awtea-util/**"
+      - "build.gradle.kts"
   workflow_dispatch:
 
 # Sets permissions for GitHub Pages deployment
@@ -24,32 +24,38 @@ jobs:
   generate-docs:
     name: Generate API Documentation
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '11'
-          cache: 'gradle'
-      
+          distribution: "temurin"
+          java-version: "11"
+          cache: "gradle"
+
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: "3.1.51"
+          actions-cache-folder: "emsdk-cache"
+
       - name: Make gradlew executable
         run: chmod +x gradlew
-      
+
       - name: Generate enums from schemas
         run: ./gradlew generateEnums --no-daemon
-      
+
       - name: Generate API coverage documentation
         run: ./gradlew generateDocs --no-daemon
-      
+
       - name: Prepare GitHub Pages content
         run: |
           mkdir -p gh-pages
           cp -r docs/* gh-pages/
-          
+
           # Create an index.html that redirects to main documentation
           cat > gh-pages/index.html << 'EOF'
           <!DOCTYPE html>
@@ -103,7 +109,7 @@ jobs:
           </body>
           </html>
           EOF
-      
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -113,11 +119,11 @@ jobs:
     name: Deploy to GitHub Pages
     needs: generate-docs
     runs-on: ubuntu-latest
-    
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

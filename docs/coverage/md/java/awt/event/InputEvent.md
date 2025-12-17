@@ -1,11 +1,11 @@
-# Class: `InputEvent` ![Coverage](https://img.shields.io/badge/coverage-7.1%25-red)
+# Class: `InputEvent` ![Coverage](https://img.shields.io/badge/coverage-64.3%25-yellow)
 
 **Full Name:** `java.awt.event.InputEvent`
 
-**Coverage:** 2 / 28 (7.1%)
+**Coverage:** 18 / 28 (64.3%)
 
 ```
-[███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 7.1%
+[████████████████████████████████░░░░░░░░░░░░░░░░░░] 64.3%
 ```
 
 ## ✓ Implemented Methods
@@ -26,7 +26,7 @@
 - `public static java.lang.String getModifiersExText(int)`
 - `public void consume()`
 
-## ✗ Missing Fields
+## ✓ Implemented Fields
 
 - `public static final int ALT_DOWN_MASK`
 - `public static final int ALT_GRAPH_DOWN_MASK`

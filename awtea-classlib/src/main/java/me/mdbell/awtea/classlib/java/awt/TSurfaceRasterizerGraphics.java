@@ -15,6 +15,7 @@ import org.teavm.jso.browser.Window;
 
 import java.awt.*;
 import java.text.AttributedCharacterIterator;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,11 +28,20 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
      */
     private static final int TEXT_SURFACE_PADDING = 4;
 
+    /**
+     * Maximum number of SurfaceCommand objects to keep in the pool.
+     * This prevents unbounded memory growth while still providing pooling benefits.
+     */
+    private static final int MAX_POOL_SIZE = 128;
+
     protected transient boolean scheduled = false;
     protected transient boolean disposed = false;
 
     private final List<SurfaceCommand> surfaceCommandsA = new ArrayList<>();
     private final List<SurfaceCommand> surfaceCommandsB = new ArrayList<>();
+
+    // Object pool for SurfaceCommand instances to reduce GC pressure
+    private final ArrayDeque<SurfaceCommand> commandPool = new ArrayDeque<>();
 
     // Which one we are writing to right now
     private transient List<SurfaceCommand> writeList = surfaceCommandsA;
@@ -82,6 +92,40 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Override
     public TGraphics create() {
         return new TSurfaceRasterizerGraphics(this);
+    }
+
+    /**
+     * Acquires a SurfaceCommand from the pool, or creates a new one if the pool is empty.
+     * This reduces GC pressure during high-frequency rendering operations.
+     * 
+     * @return a SurfaceCommand instance ready to be configured
+     */
+    private SurfaceCommand acquireCommand() {
+        SurfaceCommand cmd = commandPool.poll();
+        if (cmd == null) {
+            cmd = new SurfaceCommand();
+        }
+        return cmd;
+    }
+
+    /**
+     * Returns a SurfaceCommand to the pool for reuse, if the pool is not full.
+     * The command is reset to prevent memory leaks from retained references.
+     * 
+     * @param cmd the command to return to the pool
+     */
+    private void releaseCommand(SurfaceCommand cmd) {
+        if (cmd == null) {
+            return;
+        }
+        // Reset the command to clear any object references (images, transforms, etc.)
+        cmd.reset();
+        
+        // Only add to pool if we haven't exceeded the max size
+        if (commandPool.size() < MAX_POOL_SIZE) {
+            commandPool.offer(cmd);
+        }
+        // Otherwise, let it be garbage collected
     }
 
     public final void pushOp(SurfaceCommand op) {
@@ -174,7 +218,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     }
 
     private void pushTransform() {
-        pushOp(new SurfaceCommand(Operation.SET_TRANSFORM, new TAffineTransform(transform)));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.SET_TRANSFORM, new TAffineTransform(transform));
+        pushOp(cmd);
     }
 
     @Override
@@ -204,7 +250,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         if (width <= 0 || height <= 0) {
             return;
         }
-        pushOp(new SurfaceCommand(Operation.CLEAR_RECT, x, y, width, height));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.CLEAR_RECT, null, x, y, width, height);
+        pushOp(cmd);
     }
 
     @Override
@@ -238,7 +286,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             return false;
         }
         if (img instanceof TBufferedImage) {
-            pushOp(new SurfaceCommand(Operation.BLIT_IMAGE, img, x, y, width, height));
+            SurfaceCommand cmd = acquireCommand();
+            cmd.configure(Operation.BLIT_IMAGE, img, x, y, width, height);
+            pushOp(cmd);
             return true;
         }
         return false;
@@ -250,8 +300,10 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             return false;
         }
         if (img instanceof TBufferedImage) {
-            pushOp(new SurfaceCommand(Operation.BLIT_IMAGE, img, x, y,
-                    img.getWidth(null), img.getHeight(null)));
+            SurfaceCommand cmd = acquireCommand();
+            cmd.configure(Operation.BLIT_IMAGE, img, x, y,
+                    img.getWidth(null), img.getHeight(null));
+            pushOp(cmd);
             return true;
         }
         return false;
@@ -282,7 +334,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     public void setClip(int x, int y, int width, int height) {
         if (width <= 0 || height <= 0) {
             this.clip = null;
-            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT));
+            SurfaceCommand cmd = acquireCommand();
+            cmd.configure(Operation.SET_CLIP_RECT);
+            pushOp(cmd);
             return;
         }
         this.clip = new TRectangle(x, y, width, height);
@@ -303,7 +357,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         }
         // Transform the clip to device coordinates before sending
         if (this.clip == null) {
-            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT));
+            SurfaceCommand cmd = acquireCommand();
+            cmd.configure(Operation.SET_CLIP_RECT);
+            pushOp(cmd);
         } else {
             pushTransformedClip();
         }
@@ -318,7 +374,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
      */
     private void pushTransformedClip() {
         if (clip == null) {
-            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT));
+            SurfaceCommand cmd = acquireCommand();
+            cmd.configure(Operation.SET_CLIP_RECT);
+            pushOp(cmd);
             return;
         }
 
@@ -345,12 +403,16 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
         // Create a transformed clip rectangle and push it
         TRectangle deviceClip = new TRectangle(deviceX, deviceY, deviceWidth, deviceHeight);
-        pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, deviceClip));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.SET_CLIP_RECT, deviceClip);
+        pushOp(cmd);
     }
 
     @Override
     public void drawLine(int x1, int y1, int x2, int y2) {
-        pushOp(new SurfaceCommand(Operation.DRAW_LINE, null, x1, y1, x2, y2));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_LINE, null, x1, y1, x2, y2);
+        pushOp(cmd);
     }
 
     @Override
@@ -365,7 +427,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         int[] ypts = Arrays.copyOf(yPoints, nPoints);
 
         SurfaceCommand.PolygonPoints points = new SurfaceCommand.PolygonPoints(xpts, ypts);
-        pushOp(new SurfaceCommand(Operation.DRAW_POLYGON, points));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_POLYGON, points);
+        pushOp(cmd);
     }
 
     @Override
@@ -375,7 +439,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         int[] ypts = Arrays.copyOf(yPoints, nPoints);
 
         SurfaceCommand.PolygonPoints points = new SurfaceCommand.PolygonPoints(xpts, ypts);
-        pushOp(new SurfaceCommand(Operation.FILL_POLYGON, points));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.FILL_POLYGON, points);
+        pushOp(cmd);
     }
 
     @Override
@@ -390,7 +456,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        pushOp(new SurfaceCommand(Operation.FILL_ROUND_RECT, x, y, width, height, arcWidth, arcHeight));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.FILL_ROUND_RECT, null, x, y, width, height, arcWidth, arcHeight);
+        pushOp(cmd);
     }
 
     @Override
@@ -459,8 +527,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         // Blit the rendered text surface to the screen
         int destX = x - halfPadding;
         int destY = y - renderY;
-        pushOp(new SurfaceCommand(Operation.BLIT_IMAGE, textImage,
-                destX, destY, surfaceWidth, surfaceHeight));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.BLIT_IMAGE, textImage, destX, destY, surfaceWidth, surfaceHeight);
+        pushOp(cmd);
 
         // Note: textImage and its surface will be garbage collected after the blit
         // operation completes
@@ -502,17 +571,23 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         if (width <= 0 || height <= 0 || (clip != null && !clip.intersects(x, y, width, height))) {
             return;
         }
-        pushOp(new SurfaceCommand(opType, x, y, width, height));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(opType, null, x, y, width, height);
+        pushOp(cmd);
     }
 
     @Override
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        pushOp(new SurfaceCommand(Operation.FILL_ARC, x, y, width, height, startAngle, arcAngle));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.FILL_ARC, null, x, y, width, height, startAngle, arcAngle);
+        pushOp(cmd);
     }
 
     @Override
     public void fillOval(int x, int y, int width, int height) {
-        pushOp(new SurfaceCommand(Operation.FILL_OVAL, x, y, width, height));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.FILL_OVAL, null, x, y, width, height);
+        pushOp(cmd);
     }
 
     @Override
@@ -523,7 +598,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Override
     public void setBackground(Color bg) {
         this.background = bg;
-        pushOp(new SurfaceCommand(Operation.SET_COLOR, bg, 1));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.SET_COLOR, bg, 1);
+        pushOp(cmd);
     }
 
     @Override
@@ -532,7 +609,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             c = Color.WHITE;
         }
         this.color = c;
-        pushOp(new SurfaceCommand(Operation.SET_COLOR, c, 0));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.SET_COLOR, c, 0);
+        pushOp(cmd);
     }
 
     @Override
@@ -546,7 +625,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             comp = TAlphaComposite.SrcOver;
         }
         this.composite = comp;
-        pushOp(new SurfaceCommand(Operation.SET_COMPOSITE, comp));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.SET_COMPOSITE, comp);
+        pushOp(cmd);
     }
 
     @Override
@@ -569,6 +650,12 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         writeList.clear();
 
         rasterizer.rasterizeCommands(readList);
+
+        // Return commands to the pool after rasterization
+        for (SurfaceCommand cmd : readList) {
+            releaseCommand(cmd);
+        }
+        readList.clear();
 
         scheduled = false;
     }
@@ -603,8 +690,16 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             case DRAW_RECT:
             case FILL_RECT:
             case CLEAR_RECT:
-                return previous.arg1 == requested.arg1 && previous.arg2 == requested.arg2 &&
-                        previous.arg3 == requested.arg3 && previous.arg4 == requested.arg4;
+                // Compare arg count first, then compare only the valid portion
+                if (previous.argCount != requested.argCount) {
+                    return false;
+                }
+                for (int i = 0; i < previous.argCount; i++) {
+                    if (previous.args[i] != requested.args[i]) {
+                        return false;
+                    }
+                }
+                return true;
             case SET_TRANSFORM:
             case SET_COLOR:
                 previous.obj = requested.obj; // Update to the latest object
