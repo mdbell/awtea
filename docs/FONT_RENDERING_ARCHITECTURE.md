@@ -330,6 +330,7 @@ The `RasterFontRenderer` caches rendered glyphs using a composite key:
 - Glyph ID
 - Size in pixels
 - Supersampling factor
+- Sub-pixel rendering mode
 
 Cache size is configurable via `GlyphRasterizer.setMaxGlyphCacheEntries()`.
 
@@ -345,6 +346,39 @@ Configure via system property:
 ```bash
 -Dme.mdbell.awtea.font.supersample=2
 ```
+
+### Sub-Pixel Rendering
+
+Sub-pixel rendering (LCD/ClearType-style) is an optional enhancement that significantly improves text sharpness on LCD displays:
+
+**How it Works:**
+- Takes advantage of the physical RGB sub-pixel arrangement on LCD displays
+- Each color channel (R, G, B) is sampled independently at slightly offset horizontal positions
+- Increases apparent horizontal resolution by ~3x for text
+- Best suited for horizontal RGB stripe layouts (R-G-B from left to right)
+
+**Trade-offs:**
+
+| Mode | Sharpness | Color Fringing | Display Compatibility |
+|------|-----------|----------------|----------------------|
+| Disabled (default) | Good | None | Universal |
+| Enabled | Excellent | Minimal (on LCD) | Best on RGB LCD |
+
+**Configuration:**
+```bash
+# Enable sub-pixel rendering
+-Dme.mdbell.awtea.font.subpixel=true
+```
+
+**Display Considerations:**
+- **RGB LCD (Horizontal):** Optimal - sharp text with minimal color fringing
+- **BGR LCD:** May show reversed color fringing (BGR subpixel order detection could be added in future iterations)
+- **Vertical RGB/BGR:** Not optimal for this horizontal implementation
+- **OLED/PenTile:** May show color artifacts
+- **Retina/Hi-DPI:** Less benefit due to already high pixel density
+
+**Performance Impact:**
+Minimal - uses the same supersampling approach but applies independent per-channel sampling during downsampling.
 
 ## Future Rendering Strategies
 
