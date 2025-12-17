@@ -46,10 +46,8 @@ public abstract class TWindow extends TSurface {
      * adds the window's insets, and then sets the window's size accordingly.
      */
     public void pack() {
-        // Ensure the window is validated before packing
-        validate();
-        
-        // Get the preferred size from the layout manager
+        // Get the preferred size from the layout manager WITHOUT validating first
+        // This allows components to report their preferred sizes before being laid out
         TDimension preferredSize = getPreferredLayoutSize();
         
         // Get the insets (borders, title bar, etc.) - subclasses may override
@@ -67,7 +65,7 @@ public abstract class TWindow extends TSurface {
         // Set the window size
         setSize(width, height);
         
-        // Validate the layout with the new size
+        // Now validate the layout with the new size
         validate();
     }
 
