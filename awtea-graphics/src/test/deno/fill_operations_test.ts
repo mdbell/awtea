@@ -100,6 +100,7 @@ Deno.test("fillOval - circle", async () => {
   rasterizer.freeSurface(surfaceId);
 
   if (centerPixel !== expectedGreen) {
+    console.log(`Center pixel: 0x${centerPixel.toString(16).padStart(8, '0')}, expected: 0x${expectedGreen.toString(16).padStart(8, '0')}`);
     throw new Error("Center of circle not filled with correct color");
   }
 });

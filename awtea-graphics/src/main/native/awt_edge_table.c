@@ -246,15 +246,22 @@ void edge_table_add_arc(EdgeTable* et, int cx, int cy, int rx, int ry,
                        double start_angle, double end_angle) {
     STACK_ENTER();
     
-    // Normalize angles to [0, 2*PI)
-    while (start_angle < 0) start_angle += 2.0 * M_PI;
-    while (end_angle < 0) end_angle += 2.0 * M_PI;
-    while (start_angle >= 2.0 * M_PI) start_angle -= 2.0 * M_PI;
-    while (end_angle >= 2.0 * M_PI) end_angle -= 2.0 * M_PI;
+    // Check if this is a full circle (complete 360 degrees)
+    double arc_span = end_angle - start_angle;
+    bool is_full_circle = (fabs(arc_span - 2.0 * M_PI) < 0.01) || 
+                          (fabs(arc_span + 2.0 * M_PI) < 0.01);
     
-    // Handle wrap-around
-    if (end_angle <= start_angle) {
-        end_angle += 2.0 * M_PI;
+    if (!is_full_circle) {
+        // Normalize angles to [0, 2*PI)
+        while (start_angle < 0) start_angle += 2.0 * M_PI;
+        while (end_angle < 0) end_angle += 2.0 * M_PI;
+        while (start_angle >= 2.0 * M_PI) start_angle -= 2.0 * M_PI;
+        while (end_angle >= 2.0 * M_PI) end_angle -= 2.0 * M_PI;
+        
+        // Handle wrap-around
+        if (end_angle <= start_angle) {
+            end_angle += 2.0 * M_PI;
+        }
     }
     
     // Calculate number of segments based on arc length and radius
@@ -342,7 +349,7 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
             edge_list_add(&et->active, scanline->edges[i]);
         }
         
-        // Remove edges that have reached their max y
+        // Remove edges that have reached their max y (do this BEFORE filling to avoid using stale edges)
         edge_list_remove_inactive(&et->active, y);
         
         // Sort active edges by x coordinate
