@@ -254,7 +254,7 @@ Sub-pixel rendering (LCD/ClearType-style) is an optional enhancement that signif
 
 **Display Considerations:**
 - **RGB LCD (Horizontal):** Optimal - sharp text with minimal color fringing
-- **BGR LCD:** May show reversed color fringing (future: auto-detection)
+- **BGR LCD:** May show reversed color fringing (BGR subpixel order detection could be added in future iterations)
 - **Vertical RGB/BGR:** Not optimal for this horizontal implementation
 - **OLED/PenTile:** May show color artifacts
 - **Retina/Hi-DPI:** Less benefit due to already high pixel density
