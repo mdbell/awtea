@@ -56,19 +56,14 @@ public class SurfaceCommand {
     /**
      * Configures this command with new values, supporting object reuse from a pool.
      * Uses varargs for flexible argument count.
+     * 
+     * @param operation the operation type
+     * @param obj the object parameter (can be null for operations without objects)
+     * @param args variable number of integer arguments
      */
     public void configure(Operation operation, Object obj, int... args) {
         this.type = operation;
         this.obj = obj;
-        this.args = args;
-    }
-
-    /**
-     * Configures this command - convenience overload for operations with no object.
-     */
-    public void configure(Operation operation, int... args) {
-        this.type = operation;
-        this.obj = null;
         this.args = args;
     }
 

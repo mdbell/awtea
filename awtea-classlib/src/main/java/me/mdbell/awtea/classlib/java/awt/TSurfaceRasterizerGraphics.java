@@ -251,7 +251,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             return;
         }
         SurfaceCommand cmd = acquireCommand();
-        cmd.configure(Operation.CLEAR_RECT, x, y, width, height);
+        cmd.configure(Operation.CLEAR_RECT, null, x, y, width, height);
         pushOp(cmd);
     }
 
@@ -457,7 +457,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Override
     public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
         SurfaceCommand cmd = acquireCommand();
-        cmd.configure(Operation.FILL_ROUND_RECT, x, y, width, height, arcWidth, arcHeight);
+        cmd.configure(Operation.FILL_ROUND_RECT, null, x, y, width, height, arcWidth, arcHeight);
         pushOp(cmd);
     }
 
@@ -572,21 +572,21 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             return;
         }
         SurfaceCommand cmd = acquireCommand();
-        cmd.configure(opType, x, y, width, height);
+        cmd.configure(opType, null, x, y, width, height);
         pushOp(cmd);
     }
 
     @Override
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
         SurfaceCommand cmd = acquireCommand();
-        cmd.configure(Operation.FILL_ARC, x, y, width, height, startAngle, arcAngle);
+        cmd.configure(Operation.FILL_ARC, null, x, y, width, height, startAngle, arcAngle);
         pushOp(cmd);
     }
 
     @Override
     public void fillOval(int x, int y, int width, int height) {
         SurfaceCommand cmd = acquireCommand();
-        cmd.configure(Operation.FILL_OVAL, x, y, width, height);
+        cmd.configure(Operation.FILL_OVAL, null, x, y, width, height);
         pushOp(cmd);
     }
 
@@ -598,7 +598,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Override
     public void setBackground(Color bg) {
         this.background = bg;
-        pushOp(new SurfaceCommand(Operation.SET_COLOR, bg, 1));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.SET_COLOR, bg, 1);
+        pushOp(cmd);
     }
 
     @Override
@@ -607,7 +609,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             c = Color.WHITE;
         }
         this.color = c;
-        pushOp(new SurfaceCommand(Operation.SET_COLOR, c, 0));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.SET_COLOR, c, 0);
+        pushOp(cmd);
     }
 
     @Override
@@ -621,7 +625,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             comp = TAlphaComposite.SrcOver;
         }
         this.composite = comp;
-        pushOp(new SurfaceCommand(Operation.SET_COMPOSITE, comp));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.SET_COMPOSITE, comp);
+        pushOp(cmd);
     }
 
     @Override
