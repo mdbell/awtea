@@ -426,9 +426,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         int[] xpts = Arrays.copyOf(xPoints, nPoints);
         int[] ypts = Arrays.copyOf(yPoints, nPoints);
 
-        SurfaceCommand.PolygonPoints points = new SurfaceCommand.PolygonPoints(xpts, ypts);
+        TPolygon polygon = new TPolygon(xpts, ypts, nPoints);
         SurfaceCommand cmd = acquireCommand();
-        cmd.configure(Operation.DRAW_POLYGON, points);
+        cmd.configure(Operation.DRAW_POLYGON, polygon);
         pushOp(cmd);
     }
 
@@ -438,9 +438,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         int[] xpts = Arrays.copyOf(xPoints, nPoints);
         int[] ypts = Arrays.copyOf(yPoints, nPoints);
 
-        SurfaceCommand.PolygonPoints points = new SurfaceCommand.PolygonPoints(xpts, ypts);
+        TPolygon polygon = new TPolygon(xpts, ypts, nPoints);
         SurfaceCommand cmd = acquireCommand();
-        cmd.configure(Operation.FILL_POLYGON, points);
+        cmd.configure(Operation.FILL_POLYGON, polygon);
         pushOp(cmd);
     }
 

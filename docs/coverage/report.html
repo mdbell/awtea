@@ -47,15 +47,15 @@
 <body>
     <div class="container">
         <h1>AWT API Coverage Report</h1>
-        <p class="timestamp">Generated: 2025-12-17 14:55:38</p>
+        <p class="timestamp">Generated: 2025-12-17 15:03:19</p>
         <div class="summary">
             <h2>Summary</h2>
-            <div class="summary-item"><strong>Total Coverage:</strong> 779 / 1605 (48.5%)</div>
+            <div class="summary-item"><strong>Total Coverage:</strong> 873 / 1664 (52.5%)</div>
                 <div class="progress-bar">
-                    <div class="progress-fill low" style="width: 48.5%">48.5%</div>
+                    <div class="progress-fill medium" style="width: 52.5%">52.5%</div>
                 </div>
-            <div class="summary-item"><strong>Packages:</strong> 13</div>
-            <div class="summary-item"><strong>Classes:</strong> 93</div>
+            <div class="summary-item"><strong>Packages:</strong> 14</div>
+            <div class="summary-item"><strong>Classes:</strong> 98</div>
         </div>
         <div class="package">
             <div class="package-header" onclick="togglePackage('java_applet')">
@@ -122,10 +122,10 @@
         </div>
         <div class="package">
             <div class="package-header" onclick="togglePackage('java_awt')">
-                <h2><span class="toggle-icon" id="icon-java_awt">▶</span>Package: java.awt <span class="coverage-badge low">39.8%</span></h2>
-                <div>Coverage: 173 / 435 (39.8%)</div>
+                <h2><span class="toggle-icon" id="icon-java_awt">▶</span>Package: java.awt <span class="coverage-badge partial">54.0%</span></h2>
+                <div>Coverage: 249 / 461 (54.0%)</div>
                 <div class="progress-bar">
-                    <div class="progress-fill low" style="width: 39.8%">39.8%</div>
+                    <div class="progress-fill medium" style="width: 54.0%">54.0%</div>
                 </div>
             </div>
             <div class="package-content" id="pkg-java_awt">
@@ -280,6 +280,65 @@
                                 <li>public static final java.awt.AlphaComposite SrcIn</li>
                                 <li>public static final java.awt.AlphaComposite SrcOut</li>
                                 <li>public static final java.awt.AlphaComposite Xor</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="class partial">
+                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_BasicStroke')">
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_BasicStroke">▶</span>BasicStroke <span class="coverage-badge partial">90.0%</span></h3>
+                        <div>Coverage: 18 / 20 (90.0%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 90.0%">90.0%</div>
+                </div>
+                    </div>
+                    <div class="class-content" id="cls-rt_class_java_awt_BasicStroke">
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_BasicStroke_impl_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_BasicStroke_impl_methods">▶</span> ✓ Implemented Methods (7)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_BasicStroke_impl_methods" style="display: none;">
+                                <li>public float getDashPhase()</li>
+                                <li>public float getLineWidth()</li>
+                                <li>public float getMiterLimit()</li>
+                                <li>public float[] getDashArray()</li>
+                                <li>public int getEndCap()</li>
+                                <li>public int getLineJoin()</li>
+                                <li>public java.awt.Shape createStrokedShape(java.awt.Shape)</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_BasicStroke_miss_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_BasicStroke_miss_methods">▶</span> ✗ Missing Methods (2)
+                            </div>
+                            <ul class="item-list missing" id="java_awt_BasicStroke_miss_methods" style="display: none;">
+                                <li>public boolean equals(java.lang.Object)</li>
+                                <li>public int hashCode()</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_BasicStroke_impl_fields')">
+                                <span class="toggle-icon" id="icon-java_awt_BasicStroke_impl_fields">▶</span> ✓ Implemented Fields (6)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_BasicStroke_impl_fields" style="display: none;">
+                                <li>public static final int CAP_BUTT</li>
+                                <li>public static final int CAP_ROUND</li>
+                                <li>public static final int CAP_SQUARE</li>
+                                <li>public static final int JOIN_BEVEL</li>
+                                <li>public static final int JOIN_MITER</li>
+                                <li>public static final int JOIN_ROUND</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_BasicStroke_impl_ctors')">
+                                <span class="toggle-icon" id="icon-java_awt_BasicStroke_impl_ctors">▶</span> ✓ Implemented Constructors (5)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_BasicStroke_impl_ctors" style="display: none;">
+                                <li>public java.awt.BasicStroke()</li>
+                                <li>public java.awt.BasicStroke(float)</li>
+                                <li>public java.awt.BasicStroke(float, int, int)</li>
+                                <li>public java.awt.BasicStroke(float, int, int, float)</li>
+                                <li>public java.awt.BasicStroke(float, int, int, float, float[], float)</li>
                             </ul>
                         </div>
                     </div>
@@ -627,16 +686,16 @@
                 </div>
                 <div class="class partial">
                     <div class="class-header" onclick="toggleClass('rt_class_java_awt_Graphics')">
-                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Graphics">▶</span>Graphics <span class="coverage-badge partial">56.9%</span></h3>
-                        <div>Coverage: 29 / 51 (56.9%)</div>
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Graphics">▶</span>Graphics <span class="coverage-badge partial">74.5%</span></h3>
+                        <div>Coverage: 38 / 51 (74.5%)</div>
                 <div class="progress-bar">
-                    <div class="progress-fill medium" style="width: 56.9%">56.9%</div>
+                    <div class="progress-fill medium" style="width: 74.5%">74.5%</div>
                 </div>
                     </div>
                     <div class="class-content" id="cls-rt_class_java_awt_Graphics">
                         <div class="section">
                             <div class="section-title collapsible" onclick="toggleSection('java_awt_Graphics_impl_methods')">
-                                <span class="toggle-icon" id="icon-java_awt_Graphics_impl_methods">▶</span> ✓ Implemented Methods (28)
+                                <span class="toggle-icon" id="icon-java_awt_Graphics_impl_methods">▶</span> ✓ Implemented Methods (37)
                             </div>
                             <ul class="item-list implemented" id="java_awt_Graphics_impl_methods" style="display: none;">
                                 <li>public abstract boolean drawImage(java.awt.Image, int, int, int, int, java.awt.image.ImageObserver)</li>
@@ -664,14 +723,23 @@
                                 <li>public abstract void setPaintMode()</li>
                                 <li>public abstract void setXORMode(java.awt.Color)</li>
                                 <li>public abstract void translate(int, int)</li>
+                                <li>public boolean hitClip(int, int, int, int)</li>
                                 <li>public java.awt.FontMetrics getFontMetrics()</li>
                                 <li>public java.awt.Graphics create(int, int, int, int)</li>
+                                <li>public java.awt.Rectangle getClipBounds(java.awt.Rectangle)</li>
+                                <li>public java.awt.Rectangle getClipRect()</li>
                                 <li>public java.lang.String toString()</li>
+                                <li>public void draw3DRect(int, int, int, int, boolean)</li>
+                                <li>public void drawBytes(byte[], int, int, int, int)</li>
+                                <li>public void drawChars(char[], int, int, int, int)</li>
+                                <li>public void drawPolygon(java.awt.Polygon)</li>
+                                <li>public void fill3DRect(int, int, int, int, boolean)</li>
+                                <li>public void fillPolygon(java.awt.Polygon)</li>
                             </ul>
                         </div>
                         <div class="section">
                             <div class="section-title collapsible" onclick="toggleSection('java_awt_Graphics_miss_methods')">
-                                <span class="toggle-icon" id="icon-java_awt_Graphics_miss_methods">▶</span> ✗ Missing Methods (22)
+                                <span class="toggle-icon" id="icon-java_awt_Graphics_miss_methods">▶</span> ✗ Missing Methods (13)
                             </div>
                             <ul class="item-list missing" id="java_awt_Graphics_miss_methods" style="display: none;">
                                 <li>public abstract boolean drawImage(java.awt.Image, int, int, int, int, int, int, int, int, java.awt.Color, java.awt.image.ImageObserver)</li>
@@ -685,16 +753,7 @@
                                 <li>public abstract void drawString(java.text.AttributedCharacterIterator, int, int)</li>
                                 <li>public abstract void fillArc(int, int, int, int, int, int)</li>
                                 <li>public abstract void fillOval(int, int, int, int)</li>
-                                <li>public boolean hitClip(int, int, int, int)</li>
-                                <li>public java.awt.Rectangle getClipBounds(java.awt.Rectangle)</li>
-                                <li>public java.awt.Rectangle getClipRect()</li>
-                                <li>public void draw3DRect(int, int, int, int, boolean)</li>
-                                <li>public void drawBytes(byte[], int, int, int, int)</li>
-                                <li>public void drawChars(char[], int, int, int, int)</li>
-                                <li>public void drawPolygon(java.awt.Polygon)</li>
                                 <li>public void drawRect(int, int, int, int)</li>
-                                <li>public void fill3DRect(int, int, int, int, boolean)</li>
-                                <li>public void fillPolygon(java.awt.Polygon)</li>
                                 <li>public void finalize()</li>
                             </ul>
                         </div>
@@ -946,25 +1005,23 @@
                         </div>
                     </div>
                 </div>
-                <div class="class missing">
+                <div class="class partial">
                     <div class="class-header" onclick="toggleClass('rt_class_java_awt_RenderingHints')">
-                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_RenderingHints">▶</span>RenderingHints <span class="coverage-badge low">0.0%</span></h3>
-                        <div>Coverage: 0 / 66 (0.0%)</div>
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_RenderingHints">▶</span>RenderingHints <span class="coverage-badge partial">65.2%</span></h3>
+                        <div>Coverage: 43 / 66 (65.2%)</div>
                 <div class="progress-bar">
-                    <div class="progress-fill low" style="width: 0.0%">0.0%</div>
+                    <div class="progress-fill medium" style="width: 65.2%">65.2%</div>
                 </div>
                     </div>
                     <div class="class-content" id="cls-rt_class_java_awt_RenderingHints">
                         <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_miss_methods')">
-                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_miss_methods">▶</span> ✗ Missing Methods (17)
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_impl_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_impl_methods">▶</span> ✓ Implemented Methods (14)
                             </div>
-                            <ul class="item-list missing" id="java_awt_RenderingHints_miss_methods" style="display: none;">
+                            <ul class="item-list implemented" id="java_awt_RenderingHints_impl_methods" style="display: none;">
                                 <li>public boolean containsKey(java.lang.Object)</li>
                                 <li>public boolean containsValue(java.lang.Object)</li>
-                                <li>public boolean equals(java.lang.Object)</li>
                                 <li>public boolean isEmpty()</li>
-                                <li>public int hashCode()</li>
                                 <li>public int size()</li>
                                 <li>public java.lang.Object clone()</li>
                                 <li>public java.lang.Object get(java.lang.Object)</li>
@@ -974,27 +1031,25 @@
                                 <li>public java.util.Collection values()</li>
                                 <li>public java.util.Set entrySet()</li>
                                 <li>public java.util.Set keySet()</li>
-                                <li>public void add(java.awt.RenderingHints)</li>
                                 <li>public void clear()</li>
                                 <li>public void putAll(java.util.Map)</li>
                             </ul>
                         </div>
                         <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_miss_fields')">
-                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_miss_fields">▶</span> ✗ Missing Fields (47)
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_miss_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_miss_methods">▶</span> ✗ Missing Methods (3)
                             </div>
-                            <ul class="item-list missing" id="java_awt_RenderingHints_miss_fields" style="display: none;">
-                                <li>public static final java.awt.RenderingHints$Key KEY_ALPHA_INTERPOLATION</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_ANTIALIASING</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_COLOR_RENDERING</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_DITHERING</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_FRACTIONALMETRICS</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_INTERPOLATION</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_RENDERING</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_RESOLUTION_VARIANT</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_STROKE_CONTROL</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_TEXT_ANTIALIASING</li>
-                                <li>public static final java.awt.RenderingHints$Key KEY_TEXT_LCD_CONTRAST</li>
+                            <ul class="item-list missing" id="java_awt_RenderingHints_miss_methods" style="display: none;">
+                                <li>public boolean equals(java.lang.Object)</li>
+                                <li>public int hashCode()</li>
+                                <li>public void add(java.awt.RenderingHints)</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_impl_fields')">
+                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_impl_fields">▶</span> ✓ Implemented Fields (27)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_RenderingHints_impl_fields" style="display: none;">
                                 <li>public static final java.lang.Object VALUE_ALPHA_INTERPOLATION_DEFAULT</li>
                                 <li>public static final java.lang.Object VALUE_ALPHA_INTERPOLATION_QUALITY</li>
                                 <li>public static final java.lang.Object VALUE_ALPHA_INTERPOLATION_SPEED</li>
@@ -1016,30 +1071,97 @@
                                 <li>public static final java.lang.Object VALUE_RENDER_DEFAULT</li>
                                 <li>public static final java.lang.Object VALUE_RENDER_QUALITY</li>
                                 <li>public static final java.lang.Object VALUE_RENDER_SPEED</li>
-                                <li>public static final java.lang.Object VALUE_RESOLUTION_VARIANT_BASE</li>
-                                <li>public static final java.lang.Object VALUE_RESOLUTION_VARIANT_DEFAULT</li>
-                                <li>public static final java.lang.Object VALUE_RESOLUTION_VARIANT_DPI_FIT</li>
-                                <li>public static final java.lang.Object VALUE_RESOLUTION_VARIANT_SIZE_FIT</li>
                                 <li>public static final java.lang.Object VALUE_STROKE_DEFAULT</li>
                                 <li>public static final java.lang.Object VALUE_STROKE_NORMALIZE</li>
                                 <li>public static final java.lang.Object VALUE_STROKE_PURE</li>
                                 <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_DEFAULT</li>
-                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_GASP</li>
-                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_LCD_HBGR</li>
-                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_LCD_HRGB</li>
-                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_LCD_VBGR</li>
-                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_LCD_VRGB</li>
                                 <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_OFF</li>
                                 <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_ON</li>
                             </ul>
                         </div>
                         <div class="section">
-                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_miss_ctors')">
-                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_miss_ctors">▶</span> ✗ Missing Constructors (2)
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_miss_fields')">
+                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_miss_fields">▶</span> ✗ Missing Fields (20)
                             </div>
-                            <ul class="item-list missing" id="java_awt_RenderingHints_miss_ctors" style="display: none;">
+                            <ul class="item-list missing" id="java_awt_RenderingHints_miss_fields" style="display: none;">
+                                <li>public static final java.awt.RenderingHints$Key KEY_ALPHA_INTERPOLATION</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_ANTIALIASING</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_COLOR_RENDERING</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_DITHERING</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_FRACTIONALMETRICS</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_INTERPOLATION</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_RENDERING</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_RESOLUTION_VARIANT</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_STROKE_CONTROL</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_TEXT_ANTIALIASING</li>
+                                <li>public static final java.awt.RenderingHints$Key KEY_TEXT_LCD_CONTRAST</li>
+                                <li>public static final java.lang.Object VALUE_RESOLUTION_VARIANT_BASE</li>
+                                <li>public static final java.lang.Object VALUE_RESOLUTION_VARIANT_DEFAULT</li>
+                                <li>public static final java.lang.Object VALUE_RESOLUTION_VARIANT_DPI_FIT</li>
+                                <li>public static final java.lang.Object VALUE_RESOLUTION_VARIANT_SIZE_FIT</li>
+                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_GASP</li>
+                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_LCD_HBGR</li>
+                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_LCD_HRGB</li>
+                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_LCD_VBGR</li>
+                                <li>public static final java.lang.Object VALUE_TEXT_ANTIALIAS_LCD_VRGB</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_impl_ctors')">
+                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_impl_ctors">▶</span> ✓ Implemented Constructors (2)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_RenderingHints_impl_ctors" style="display: none;">
                                 <li>public java.awt.RenderingHints(java.awt.RenderingHints$Key, java.lang.Object)</li>
                                 <li>public java.awt.RenderingHints(java.util.Map)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="class">
+                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_RenderingHints_Key')">
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_RenderingHints_Key">▶</span>RenderingHints$Key <span class="coverage-badge full">100.0%</span></h3>
+                        <div>Coverage: 5 / 5 (100.0%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100.0%">100.0%</div>
+                </div>
+                    </div>
+                    <div class="class-content" id="cls-rt_class_java_awt_RenderingHints_Key">
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_Key_impl_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_Key_impl_methods">▶</span> ✓ Implemented Methods (4)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_RenderingHints_Key_impl_methods" style="display: none;">
+                                <li>protected final int intKey()</li>
+                                <li>public abstract boolean isCompatibleValue(java.lang.Object)</li>
+                                <li>public final boolean equals(java.lang.Object)</li>
+                                <li>public final int hashCode()</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_RenderingHints_Key_impl_ctors')">
+                                <span class="toggle-icon" id="icon-java_awt_RenderingHints_Key_impl_ctors">▶</span> ✓ Implemented Constructors (1)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_RenderingHints_Key_impl_ctors" style="display: none;">
+                                <li>protected java.awt.RenderingHints$Key(int)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="class">
+                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_Stroke')">
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_Stroke">▶</span>Stroke <span class="coverage-badge full">100.0%</span></h3>
+                        <div>Coverage: 1 / 1 (100.0%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100.0%">100.0%</div>
+                </div>
+                    </div>
+                    <div class="class-content" id="cls-rt_class_java_awt_Stroke">
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_Stroke_impl_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_Stroke_impl_methods">▶</span> ✓ Implemented Methods (1)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_Stroke_impl_methods" style="display: none;">
+                                <li>public abstract java.awt.Shape createStrokedShape(java.awt.Shape)</li>
                             </ul>
                         </div>
                     </div>
@@ -2387,10 +2509,10 @@
         </div>
         <div class="package">
             <div class="package-header" onclick="togglePackage('java_awt_image')">
-                <h2><span class="toggle-icon" id="icon-java_awt_image">▶</span>Package: java.awt.image <span class="coverage-badge partial">57.9%</span></h2>
-                <div>Coverage: 220 / 380 (57.9%)</div>
+                <h2><span class="toggle-icon" id="icon-java_awt_image">▶</span>Package: java.awt.image <span class="coverage-badge partial">57.1%</span></h2>
+                <div>Coverage: 229 / 401 (57.1%)</div>
                 <div class="progress-bar">
-                    <div class="progress-fill medium" style="width: 57.9%">57.9%</div>
+                    <div class="progress-fill medium" style="width: 57.1%">57.1%</div>
                 </div>
             </div>
             <div class="package-content" id="pkg-java_awt_image">
@@ -3079,6 +3201,52 @@
                     </div>
                 </div>
                 <div class="class missing">
+                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_image_RenderedImage')">
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_image_RenderedImage">▶</span>RenderedImage <span class="coverage-badge low">42.9%</span></h3>
+                        <div>Coverage: 9 / 21 (42.9%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill low" style="width: 42.9%">42.9%</div>
+                </div>
+                    </div>
+                    <div class="class-content" id="cls-rt_class_java_awt_image_RenderedImage">
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_image_RenderedImage_impl_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_image_RenderedImage_impl_methods">▶</span> ✓ Implemented Methods (9)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_image_RenderedImage_impl_methods" style="display: none;">
+                                <li>public abstract int getHeight()</li>
+                                <li>public abstract int getMinX()</li>
+                                <li>public abstract int getMinY()</li>
+                                <li>public abstract int getWidth()</li>
+                                <li>public abstract java.awt.image.ColorModel getColorModel()</li>
+                                <li>public abstract java.awt.image.Raster getData()</li>
+                                <li>public abstract java.awt.image.Raster getData(java.awt.Rectangle)</li>
+                                <li>public abstract java.awt.image.Raster getTile(int, int)</li>
+                                <li>public abstract java.awt.image.SampleModel getSampleModel()</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_image_RenderedImage_miss_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_image_RenderedImage_miss_methods">▶</span> ✗ Missing Methods (12)
+                            </div>
+                            <ul class="item-list missing" id="java_awt_image_RenderedImage_miss_methods" style="display: none;">
+                                <li>public abstract int getMinTileX()</li>
+                                <li>public abstract int getMinTileY()</li>
+                                <li>public abstract int getNumXTiles()</li>
+                                <li>public abstract int getNumYTiles()</li>
+                                <li>public abstract int getTileGridXOffset()</li>
+                                <li>public abstract int getTileGridYOffset()</li>
+                                <li>public abstract int getTileHeight()</li>
+                                <li>public abstract int getTileWidth()</li>
+                                <li>public abstract java.awt.image.WritableRaster copyData(java.awt.image.WritableRaster)</li>
+                                <li>public abstract java.lang.Object getProperty(java.lang.String)</li>
+                                <li>public abstract java.lang.String[] getPropertyNames()</li>
+                                <li>public abstract java.util.Vector getSources()</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="class missing">
                     <div class="class-header" onclick="toggleClass('rt_class_java_awt_image_SampleModel')">
                         <h3><span class="toggle-icon" id="icon-rt_class_java_awt_image_SampleModel">▶</span>SampleModel <span class="coverage-badge low">25.0%</span></h3>
                         <div>Coverage: 11 / 44 (25.0%)</div>
@@ -3275,6 +3443,61 @@
                             <ul class="item-list missing" id="java_awt_image_WritableRaster_miss_ctors" style="display: none;">
                                 <li>protected java.awt.image.WritableRaster(java.awt.image.SampleModel, java.awt.Point)</li>
                                 <li>protected java.awt.image.WritableRaster(java.awt.image.SampleModel, java.awt.image.DataBuffer, java.awt.Rectangle, java.awt.Point, java.awt.image.WritableRaster)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="package">
+            <div class="package-header" onclick="togglePackage('java_awt_image_renderable')">
+                <h2><span class="toggle-icon" id="icon-java_awt_image_renderable">▶</span>Package: java.awt.image.renderable <span class="coverage-badge partial">75.0%</span></h2>
+                <div>Coverage: 9 / 12 (75.0%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 75.0%">75.0%</div>
+                </div>
+            </div>
+            <div class="package-content" id="pkg-java_awt_image_renderable">
+                <div class="class partial">
+                    <div class="class-header" onclick="toggleClass('rt_class_java_awt_image_renderable_RenderableImage')">
+                        <h3><span class="toggle-icon" id="icon-rt_class_java_awt_image_renderable_RenderableImage">▶</span>RenderableImage <span class="coverage-badge partial">75.0%</span></h3>
+                        <div>Coverage: 9 / 12 (75.0%)</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 75.0%">75.0%</div>
+                </div>
+                    </div>
+                    <div class="class-content" id="cls-rt_class_java_awt_image_renderable_RenderableImage">
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_image_renderable_RenderableImage_impl_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_image_renderable_RenderableImage_impl_methods">▶</span> ✓ Implemented Methods (9)
+                            </div>
+                            <ul class="item-list implemented" id="java_awt_image_renderable_RenderableImage_impl_methods" style="display: none;">
+                                <li>public abstract float getHeight()</li>
+                                <li>public abstract float getMinX()</li>
+                                <li>public abstract float getMinY()</li>
+                                <li>public abstract float getWidth()</li>
+                                <li>public abstract java.awt.image.RenderedImage createDefaultRendering()</li>
+                                <li>public abstract java.awt.image.RenderedImage createRendering(java.awt.image.renderable.RenderContext)</li>
+                                <li>public abstract java.awt.image.RenderedImage createScaledRendering(int, int, java.awt.RenderingHints)</li>
+                                <li>public abstract java.lang.Object getProperty(java.lang.String)</li>
+                                <li>public abstract java.lang.String[] getPropertyNames()</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_image_renderable_RenderableImage_miss_methods')">
+                                <span class="toggle-icon" id="icon-java_awt_image_renderable_RenderableImage_miss_methods">▶</span> ✗ Missing Methods (2)
+                            </div>
+                            <ul class="item-list missing" id="java_awt_image_renderable_RenderableImage_miss_methods" style="display: none;">
+                                <li>public abstract boolean isDynamic()</li>
+                                <li>public abstract java.util.Vector getSources()</li>
+                            </ul>
+                        </div>
+                        <div class="section">
+                            <div class="section-title collapsible" onclick="toggleSection('java_awt_image_renderable_RenderableImage_miss_fields')">
+                                <span class="toggle-icon" id="icon-java_awt_image_renderable_RenderableImage_miss_fields">▶</span> ✗ Missing Fields (1)
+                            </div>
+                            <ul class="item-list missing" id="java_awt_image_renderable_RenderableImage_miss_fields" style="display: none;">
+                                <li>public static final java.lang.String HINTS_OBSERVED</li>
                             </ul>
                         </div>
                     </div>
