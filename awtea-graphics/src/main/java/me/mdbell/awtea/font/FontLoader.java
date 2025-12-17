@@ -16,7 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * or from resources (for JVM/test environments).
  * <p>
  * This loader caches loaded fonts to avoid repeated network requests and
- * leverages browser HTTP caching when available.
+ * leverages browser HTTP caching when available. It also caches font loading
+ * failures to prevent repeated performance hits from retrying failed loads.
  */
 public final class FontLoader {
 
@@ -29,6 +30,10 @@ public final class FontLoader {
 
 	// Cache for parsed TrueTypeFont objects - thread-safe for concurrent access
 	private static final Map<String, TrueTypeFont> parsedFontCache = new ConcurrentHashMap<>();
+
+	// Cache for failed font load attempts to avoid repeated failures - thread-safe for concurrent access
+	// Using a ConcurrentHashMap with dummy values as a thread-safe set
+	private static final Map<String, Boolean> failureCache = new ConcurrentHashMap<>();
 
 	private FontLoader() {
 	}
@@ -59,23 +64,49 @@ public final class FontLoader {
 	}
 
 	/**
-	 * Clears the font cache.
+	 * Clears the font cache (both success and failure caches).
 	 */
 	public static void clearCache() {
 		fontCache.clear();
 		parsedFontCache.clear();
+		failureCache.clear();
+	}
+
+	/**
+	 * Clears only the failure cache.
+	 * Useful for development/debugging when you want to retry previously failed loads.
+	 */
+	public static void clearFailureCache() {
+		failureCache.clear();
+	}
+
+	/**
+	 * Checks if a font name is in the failure cache.
+	 * 
+	 * @param fontName the font name to check
+	 * @return true if this font has previously failed to load
+	 */
+	public static boolean isFailureCached(String fontName) {
+		return failureCache.containsKey(fontName);
 	}
 
 	/**
 	 * Loads a TrueTypeFont for the given font name.
 	 * Caches parsed fonts to avoid repeated parsing.
+	 * Also caches failures to avoid repeated load attempts.
 	 *
 	 * @param fontName the font name (without .ttf extension)
 	 * @return the parsed TrueTypeFont
 	 * @throws IOException if the font cannot be loaded
 	 */
 	public static TrueTypeFont loadFont(String fontName) throws IOException {
-		// Check parsed font cache first
+		// Check failure cache first - fail fast if we know this font doesn't exist
+		if (failureCache.containsKey(fontName)) {
+			log.debug("Font '{}' is in failure cache, not retrying", fontName);
+			throw new IOException("Font previously failed to load: " + fontName);
+		}
+
+		// Check parsed font cache
 		TrueTypeFont cached = parsedFontCache.get(fontName);
 		if (cached != null) {
 			log.debug("Font '{}' loaded from parsed cache", fontName);
@@ -84,14 +115,21 @@ public final class FontLoader {
 
 		log.debug("Loading font '{}'", fontName);
 
-		// Load and parse font
-		byte[] data = loadFontBytes(fontName);
-		TrueTypeFont font = TrueTypeFont.read(data);
+		try {
+			// Load and parse font
+			byte[] data = loadFontBytes(fontName);
+			TrueTypeFont font = TrueTypeFont.read(data);
 
-		// Cache parsed font
-		parsedFontCache.put(fontName, font);
+			// Cache parsed font
+			parsedFontCache.put(fontName, font);
 
-		return font;
+			return font;
+		} catch (IOException e) {
+			// Cache the failure to avoid repeated attempts
+			failureCache.put(fontName, Boolean.TRUE);
+			log.debug("Font '{}' failed to load, added to failure cache", fontName);
+			throw e;
+		}
 	}
 
 	/**
