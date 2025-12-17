@@ -46,6 +46,19 @@ Modular font rendering with `FontRenderer` interface and `FontPeer` bridge:
 ./gradlew :examples:gui-demo:generateJavaScript    # Compile Java → JS via TeaVM
 ```
 
+### TeaVM Build Requirements
+**IMPORTANT**: When building examples or any project using TeaVM's JavaScript generation, use the `--no-daemon` flag to avoid TeaVM plugin corruption:
+
+```bash
+./gradlew --no-daemon :examples:gui-demo:build
+./gradlew --no-daemon :examples:layout-demo:build
+./gradlew --no-daemon :examples:gui-demo:generateJavaScript
+```
+
+The Gradle daemon can cause TeaVM plugin state corruption, leading to build failures with errors like "Error loading plugins" or "ZipException: ZipFile invalid LOC header". Using `--no-daemon` ensures each build starts with a clean state.
+
+This requirement only applies to tasks that invoke TeaVM's JavaScript/WASM generation (typically example builds). Library modules (`awtea-classlib`, `awtea-graphics`, etc.) can be built normally without this flag.
+
 ### WASM Compilation (Native C → WASM)
 The `awtea-graphics` module compiles C rasterization code to WASM using Emscripten:
 ```bash

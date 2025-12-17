@@ -101,6 +101,17 @@ Build a specific module:
 ./gradlew :awtea-graphics:build
 ```
 
+### Building Examples with TeaVM
+
+**Important:** When building examples that use TeaVM JavaScript generation, use the `--no-daemon` flag to avoid plugin corruption:
+
+```bash
+./gradlew --no-daemon :examples:gui-demo:build
+./gradlew --no-daemon :examples:layout-demo:build
+```
+
+The Gradle daemon can cause TeaVM plugin state corruption, resulting in build failures. Using `--no-daemon` ensures a clean build environment. This requirement only applies to example builds; library modules can be built normally.
+
 ## Using as a Dependency
 
 ### In Another Gradle Project

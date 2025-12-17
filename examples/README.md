@@ -35,6 +35,17 @@ An advanced example demonstrating real-time animation, physics simulation, and i
 - Delta-time based physics for frame-independent movement
 - Motion trails and velocity vector visualization
 
+### 4. Layout Demo (`layout-demo/`)
+A comprehensive demonstration of AWT layout managers, showing how components can be automatically positioned and sized.
+
+**Features demonstrated:**
+- BorderLayout (5-region layout: NORTH, SOUTH, EAST, WEST, CENTER)
+- FlowLayout (horizontal flow with automatic wrapping)
+- GridLayout (equal-sized grid cells)
+- CardLayout (stack of panels showing one at a time)
+- Automatic component sizing with preferred dimensions
+- Layout validation and component hierarchy
+
 ## Building and Running Examples
 
 The examples are integrated as subprojects of the main awtea build.
@@ -43,32 +54,25 @@ The examples are integrated as subprojects of the main awtea build.
 - Java 11 or newer
 - Gradle (or use the included wrapper)
 
-### Current Status
+### Building Examples
 
-⚠️ **Note**: The examples are currently experiencing TeaVM compilation issues that are being investigated. The example code demonstrates the correct API usage and structure for awtea applications. Once the underlying runtime compatibility issues are resolved, these examples will build and run successfully.
-
-The examples serve as:
-- Reference implementations showing proper awtea API usage
-- Templates for your own applications
-- Documentation of component interactions and patterns
-
-### Building an Example
-
-From the root awtea directory, you can build individual examples:
+**Important:** When building examples, use the `--no-daemon` flag to avoid TeaVM plugin corruption:
 
 ```bash
 # Build hello-world example
-./gradlew :examples:hello-world:build
+./gradlew --no-daemon :examples:hello-world:build
 
 # Build gui-demo example
-./gradlew :examples:gui-demo:build
+./gradlew --no-daemon :examples:gui-demo:build
 
 # Build animation-demo example
-./gradlew :examples:animation-demo:build
+./gradlew --no-daemon :examples:animation-demo:build
 
-# Build all examples
-./gradlew :examples:hello-world:build :examples:gui-demo:build :examples:animation-demo:build
+# Build layout-demo example
+./gradlew --no-daemon :examples:layout-demo:build
 ```
+
+The Gradle daemon can cause TeaVM plugin state corruption, leading to build failures. Using `--no-daemon` ensures each build starts with a clean state. This requirement only applies to example builds that use TeaVM JavaScript generation.
 
 This will:
 1. Compile the Java source code
