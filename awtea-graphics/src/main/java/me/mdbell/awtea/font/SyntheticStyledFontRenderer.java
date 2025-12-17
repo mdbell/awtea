@@ -1,5 +1,6 @@
 package me.mdbell.awtea.font;
 
+import me.mdbell.awtea.util.GlyphRasterizer;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
@@ -16,8 +17,8 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
  * offset. This creates a heavier appearance similar to bold text.</p>
  * 
  * <h3>Synthetic Italic</h3>
- * <p>Implemented by intercepting pixel rendering and applying a shear transformation
- * that slants the text. This approximates oblique styling but lacks the design 
+ * <p>Implemented by applying a shear transformation at the glyph rasterization level.
+ * This creates an oblique slant that approximates italic styling but lacks the design 
  * refinements of true italic fonts.</p>
  * 
  * @see FontRenderer
@@ -58,16 +59,20 @@ public class SyntheticStyledFontRenderer implements FontRenderer {
     @Override
     public void renderGlyph(TrueTypeFont font, int glyphId, RasterTarget target,
                            float sizePx, int x, int y, int argb) {
-        // Wrap target with shearing target if italic is needed
-        RasterTarget renderTarget = syntheticItalic ? 
-            new ShearingRasterTarget(target, x, y, ITALIC_SHEAR) : target;
-        
-        if (syntheticBold) {
-            // Render glyph multiple times with slight offsets for bold effect
-            delegate.renderGlyph(font, glyphId, renderTarget, sizePx, x, y, argb);
-            delegate.renderGlyph(font, glyphId, renderTarget, sizePx, x + BOLD_OFFSET_PIXELS, y, argb);
+        // Use GlyphRasterizer directly with shear for italic
+        if (syntheticItalic || syntheticBold) {
+            GlyphRasterizer.RasterTarget adaptedTarget = adaptTarget(target);
+            float shear = syntheticItalic ? ITALIC_SHEAR : 0.0f;
+            
+            if (syntheticBold) {
+                // Render glyph multiple times with slight offsets for bold effect
+                GlyphRasterizer.drawGlyph(font, glyphId, adaptedTarget, sizePx, x, y, argb, 4, false, shear);
+                GlyphRasterizer.drawGlyph(font, glyphId, adaptedTarget, sizePx, x + BOLD_OFFSET_PIXELS, y, argb, 4, false, shear);
+            } else {
+                GlyphRasterizer.drawGlyph(font, glyphId, adaptedTarget, sizePx, x, y, argb, 4, false, shear);
+            }
         } else {
-            delegate.renderGlyph(font, glyphId, renderTarget, sizePx, x, y, argb);
+            delegate.renderGlyph(font, glyphId, target, sizePx, x, y, argb);
         }
     }
     
@@ -125,48 +130,29 @@ public class SyntheticStyledFontRenderer implements FontRenderer {
     }
     
     /**
-     * A RasterTarget wrapper that applies shear transformation to incoming pixels.
-     * This creates the italic slant effect by shifting pixels horizontally based on
-     * their vertical position.
+     * Adapt FontRenderer.RasterTarget to GlyphRasterizer.RasterTarget.
      */
-    private static class ShearingRasterTarget implements RasterTarget {
-        private final RasterTarget delegate;
-        private final int baseX;
-        private final int baseY;
-        private final float shearFactor;
-        
-        public ShearingRasterTarget(RasterTarget delegate, int baseX, int baseY, float shearFactor) {
-            this.delegate = delegate;
-            this.baseX = baseX;
-            this.baseY = baseY;
-            this.shearFactor = shearFactor;
-        }
-        
-        @Override
-        public int getWidth() {
-            return delegate.getWidth();
-        }
-        
-        @Override
-        public int getHeight() {
-            return delegate.getHeight();
-        }
-        
-        @Override
-        public void setRGB(int x, int y, int argb) {
-            // Apply shear: shift x based on distance from baseline
-            // The shear increases as we move up from the baseline
-            int dy = y - baseY;
-            int shearOffsetX = (int)(dy * shearFactor);
-            int transformedX = x + shearOffsetX;
+    private GlyphRasterizer.RasterTarget adaptTarget(RasterTarget target) {
+        return new GlyphRasterizer.RasterTarget() {
+            @Override
+            public int getWidth() {
+                return target.getWidth();
+            }
             
-            delegate.setRGB(transformedX, y, argb);
-        }
-        
-        @Override
-        public int getRGB(int x, int y) {
-            // For getRGB, we don't apply the transform (rarely used in rendering)
-            return delegate.getRGB(x, y);
-        }
+            @Override
+            public int getHeight() {
+                return target.getHeight();
+            }
+            
+            @Override
+            public void setRGB(int x, int y, int argb) {
+                target.setRGB(x, y, argb);
+            }
+            
+            @Override
+            public int getRGB(int x, int y) {
+                return target.getRGB(x, y);
+            }
+        };
     }
 }

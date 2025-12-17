@@ -186,6 +186,33 @@ public final class GlyphRasterizer {
 								  int argb,
 								  int supersample,
 								  boolean subpixelRendering) {
+		drawGlyph(font, glyphId, dest, sizePx, originX, baselineY, argb, supersample, subpixelRendering, 0.0f);
+	}
+
+	/**
+	 * Draw a glyph with optional shear transformation (for synthetic italic).
+	 * 
+	 * @param font the font containing the glyph
+	 * @param glyphId the glyph ID to render
+	 * @param dest the target surface
+	 * @param sizePx the font size in pixels
+	 * @param originX the x-coordinate (baseline origin)
+	 * @param baselineY the y-coordinate (baseline)
+	 * @param argb the color in ARGB format
+	 * @param supersample the supersampling factor
+	 * @param subpixelRendering whether to enable sub-pixel rendering
+	 * @param shearX the horizontal shear factor (for italic, typically -0.2)
+	 */
+	public static void drawGlyph(TrueTypeFont font,
+								  int glyphId,
+								  RasterTarget dest,
+								  float sizePx,
+								  int originX,
+								  int baselineY,
+								  int argb,
+								  int supersample,
+								  boolean subpixelRendering,
+								  float shearX) {
 
 		if (supersample <= 0) {
 			throw new IllegalArgumentException("supersample must be >= 1");
@@ -196,8 +223,8 @@ public final class GlyphRasterizer {
 			return;
 		}
 
-		// 1) Get or build cached supersampled alpha mask for this glyph/size
-		CachedGlyph cached = getOrCreateCachedGlyph(font, glyphId, glyph, sizePx, supersample, subpixelRendering);
+		// 1) Get or build cached supersampled alpha mask for this glyph/size/shear
+		CachedGlyph cached = getOrCreateCachedGlyph(font, glyphId, glyph, sizePx, supersample, subpixelRendering, shearX);
 		if (cached == null) {
 			return;
 		}
@@ -234,8 +261,18 @@ public final class GlyphRasterizer {
 													  float sizePx,
 													  int supersample,
 													  boolean subpixelRendering) {
+		return getOrCreateCachedGlyph(font, glyphId, glyph, sizePx, supersample, subpixelRendering, 0.0f);
+	}
 
-		GlyphKey key = new GlyphKey(font, glyphId, sizePx, supersample, subpixelRendering);
+	private static CachedGlyph getOrCreateCachedGlyph(TrueTypeFont font,
+													  int glyphId,
+													  Glyph glyph,
+													  float sizePx,
+													  int supersample,
+													  boolean subpixelRendering,
+													  float shearX) {
+
+		GlyphKey key = new GlyphKey(font, glyphId, sizePx, supersample, subpixelRendering, shearX);
 
 		synchronized (CACHE) {
 			CachedGlyph cached = CACHE.get(key);
@@ -264,6 +301,20 @@ public final class GlyphRasterizer {
 			// baselineY = 0, y up in font → y down in pixels
 			float yMaxPx = baselineY - yMinUnits * scalePx;
 			float yMinPx = baselineY - yMaxUnits * scalePx;
+
+			// If shear is applied, adjust bounding box
+			if (shearX != 0.0f) {
+				// For italic shear, the top of the glyph shifts horizontally
+				// Calculate additional width needed for shear
+				float shearOffset = Math.abs(shearX * (yMaxPx - yMinPx));
+				if (shearX < 0) {
+					// Negative shear (italic): top shifts left
+					xMinPx += shearX * (yMaxPx - baselineY);
+				} else {
+					// Positive shear: top shifts right
+					xMaxPx += shearX * (yMaxPx - baselineY);
+				}
+			}
 
 			// Supersampled bbox
 			int ssX0 = (int) Math.floor(xMinPx * supersample);
@@ -296,7 +347,8 @@ public final class GlyphRasterizer {
 				ssY0,
 				alphaMask,
 				ssWidth,
-				ssHeight
+				ssHeight,
+				shearX
 			);
 
 			cached = new CachedGlyph(ssX0, ssY0, ssWidth, ssHeight, alphaMask);
@@ -312,6 +364,17 @@ public final class GlyphRasterizer {
 											  int ssX0, int ssY0,
 											  byte[] alphaMask,
 											  int ssWidth, int ssHeight) {
+		rasterizeGlyphToAlpha(glyph, ssScale, supersample, originX, baselineY, ssX0, ssY0, alphaMask, ssWidth, ssHeight, 0.0f);
+	}
+
+	private static void rasterizeGlyphToAlpha(Glyph glyph,
+											  float ssScale,
+											  int supersample,
+											  int originX, int baselineY,
+											  int ssX0, int ssY0,
+											  byte[] alphaMask,
+											  int ssWidth, int ssHeight,
+											  float shearX) {
 
 		if (glyph == null || glyph.numberOfContours <= 0) {
 			return;
@@ -320,10 +383,19 @@ public final class GlyphRasterizer {
 		// Build path in font units
 		GlyphPath path = GlyphPathBuilder.buildPath(glyph);
 
-		// Build edges in *supersampled* coordinate space
+		// Build edges in *supersampled* coordinate space with optional shear
 		List<Edge> edges = buildEdges(path, (x, y, out) -> {
-			out[0] = originX * supersample + x * ssScale;
-			out[1] = baselineY * supersample - y * ssScale;
+			float pixelX = originX * supersample + x * ssScale;
+			float pixelY = baselineY * supersample - y * ssScale;
+			
+			// Apply shear transformation if specified (for italic)
+			// Shear formula: x' = x + shearX * (y - baselineY)
+			if (shearX != 0.0f) {
+				pixelX += shearX * (pixelY - baselineY * supersample);
+			}
+			
+			out[0] = pixelX;
+			out[1] = pixelY;
 		});
 
 		if (edges.isEmpty()) {
@@ -918,20 +990,27 @@ public final class GlyphRasterizer {
 		final float sizePx;
 		final int supersample;
 		final boolean subpixelRendering;
+		final float shearX;
 		private final int hash;
 
 		GlyphKey(TrueTypeFont font, int glyphId, float sizePx, int supersample, boolean subpixelRendering) {
+			this(font, glyphId, sizePx, supersample, subpixelRendering, 0.0f);
+		}
+
+		GlyphKey(TrueTypeFont font, int glyphId, float sizePx, int supersample, boolean subpixelRendering, float shearX) {
 			this.font = font;
 			this.glyphId = glyphId;
 			this.sizePx = sizePx;
 			this.supersample = supersample;
 			this.subpixelRendering = subpixelRendering;
+			this.shearX = shearX;
 
 			int h = System.identityHashCode(font);
 			h = 31 * h + glyphId;
 			h = 31 * h + Float.floatToIntBits(sizePx);
 			h = 31 * h + supersample;
 			h = 31 * h + (subpixelRendering ? 1 : 0);
+			h = 31 * h + Float.floatToIntBits(shearX);
 			this.hash = h;
 		}
 
@@ -944,7 +1023,8 @@ public final class GlyphRasterizer {
 				&& this.glyphId == other.glyphId
 				&& Float.floatToIntBits(this.sizePx) == Float.floatToIntBits(other.sizePx)
 				&& this.supersample == other.supersample
-				&& this.subpixelRendering == other.subpixelRendering;
+				&& this.subpixelRendering == other.subpixelRendering
+				&& Float.floatToIntBits(this.shearX) == Float.floatToIntBits(other.shearX);
 		}
 
 		@Override
