@@ -20,7 +20,7 @@ static EdgeList* edge_list_create(int initial_capacity) {
     }
     list->edges = (EdgeNode*)malloc(sizeof(EdgeNode) * initial_capacity);
     if (!list->edges) {
-        free(list);
+        tracked_free(list);
         return NULL;
     }
     list->count = 0;
@@ -32,9 +32,9 @@ static EdgeList* edge_list_create(int initial_capacity) {
 static void edge_list_destroy(EdgeList* list) {
     if (list) {
         if (list->edges) {
-            free(list->edges);
+            tracked_free(list->edges);
         }
-        free(list);
+        tracked_free(list);
     }
 }
 
@@ -102,7 +102,7 @@ EdgeTable* edge_table_create(int min_y, int max_y, int width, int height) {
     int num_scanlines = max_y - min_y + 1;
     if (num_scanlines <= 0) {
         log_error("Invalid scanline range: min_y=%d, max_y=%d", min_y, max_y);
-        free(et);
+        tracked_free(et);
         STACK_EXIT();
         return NULL;
     }
@@ -110,7 +110,7 @@ EdgeTable* edge_table_create(int min_y, int max_y, int width, int height) {
     et->scanlines = (EdgeList*)tracked_malloc(sizeof(EdgeList) * num_scanlines);
     if (!et->scanlines) {
         log_error("Failed to allocate scanline array");
-        free(et);
+        tracked_free(et);
         STACK_EXIT();
         return NULL;
     }
@@ -126,8 +126,8 @@ EdgeTable* edge_table_create(int min_y, int max_y, int width, int height) {
     et->active.edges = (EdgeNode*)tracked_malloc(sizeof(EdgeNode) * 16);
     if (!et->active.edges) {
         log_error("Failed to allocate active edge list");
-        free(et->scanlines);
-        free(et);
+        tracked_free(et->scanlines);
+        tracked_free(et);
         STACK_EXIT();
         return NULL;
     }
@@ -151,17 +151,17 @@ void edge_table_destroy(EdgeTable* et) {
         int num_scanlines = et->max_y - et->min_y + 1;
         for (int i = 0; i < num_scanlines; i++) {
             if (et->scanlines[i].edges) {
-                free(et->scanlines[i].edges);
+                tracked_free(et->scanlines[i].edges);
             }
         }
-        free(et->scanlines);
+        tracked_free(et->scanlines);
     }
     
     if (et->active.edges) {
-        free(et->active.edges);
+        tracked_free(et->active.edges);
     }
     
-    free(et);
+    tracked_free(et);
 }
 
 // Add a single edge to the edge table
@@ -457,9 +457,9 @@ EdgeTablePool* edge_table_pool_create(int initial_capacity) {
     
     if (!pool->tables || !pool->in_use) {
         log_error("Failed to allocate pool arrays");
-        if (pool->tables) free(pool->tables);
-        if (pool->in_use) free(pool->in_use);
-        free(pool);
+        if (pool->tables) tracked_free(pool->tables);
+        if (pool->in_use) tracked_free(pool->in_use);
+        tracked_free(pool);
         STACK_EXIT();
         return NULL;
     }
@@ -569,9 +569,9 @@ void edge_table_pool_destroy(EdgeTablePool* pool) {
         }
     }
     
-    free(pool->tables);
-    free(pool->in_use);
-    free(pool);
+    tracked_free(pool->tables);
+    tracked_free(pool->in_use);
+    tracked_free(pool);
     
     log_debug("Destroyed edge table pool");
 }
