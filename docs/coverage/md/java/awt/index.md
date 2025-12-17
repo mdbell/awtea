@@ -1,9 +1,9 @@
 # Package: `java.awt`
 
-**Coverage:** 362 / 579 (62.5%)
+**Coverage:** 367 / 579 (63.4%)
 
 ```
-[███████████████████████████████░░░░░░░░░░░░░░░░░░░] 62.5%
+[███████████████████████████████░░░░░░░░░░░░░░░░░░░] 63.4%
 ```
 
 ## Classes
@@ -112,12 +112,12 @@
 [██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 20.7%
 ```
 
-### [`Graphics`](Graphics.md) ![Coverage](https://img.shields.io/badge/coverage-74.5%25-yellow)
+### [`Graphics`](Graphics.md) ![Coverage](https://img.shields.io/badge/coverage-84.3%25-green)
 
-**Coverage:** 38 / 51 (74.5%)
+**Coverage:** 43 / 51 (84.3%)
 
 ```
-[█████████████████████████████████████░░░░░░░░░░░░░] 74.5%
+[██████████████████████████████████████████░░░░░░░░] 84.3%
 ```
 
 ### [`GraphicsDevice`](GraphicsDevice.md) ![Coverage](https://img.shields.io/badge/coverage-77.8%25-green)
