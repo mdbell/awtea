@@ -427,7 +427,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         int[] ypts = Arrays.copyOf(yPoints, nPoints);
 
         SurfaceCommand.PolygonPoints points = new SurfaceCommand.PolygonPoints(xpts, ypts);
-        pushOp(new SurfaceCommand(Operation.DRAW_POLYGON, points));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.DRAW_POLYGON, points);
+        pushOp(cmd);
     }
 
     @Override
@@ -437,7 +439,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         int[] ypts = Arrays.copyOf(yPoints, nPoints);
 
         SurfaceCommand.PolygonPoints points = new SurfaceCommand.PolygonPoints(xpts, ypts);
-        pushOp(new SurfaceCommand(Operation.FILL_POLYGON, points));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.FILL_POLYGON, points);
+        pushOp(cmd);
     }
 
     @Override
@@ -452,7 +456,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
-        pushOp(new SurfaceCommand(Operation.FILL_ROUND_RECT, x, y, width, height, arcWidth, arcHeight));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.FILL_ROUND_RECT, x, y, width, height, arcWidth, arcHeight);
+        pushOp(cmd);
     }
 
     @Override
@@ -521,8 +527,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         // Blit the rendered text surface to the screen
         int destX = x - halfPadding;
         int destY = y - renderY;
-        pushOp(new SurfaceCommand(Operation.BLIT_IMAGE, textImage,
-                destX, destY, surfaceWidth, surfaceHeight));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.BLIT_IMAGE, textImage, destX, destY, surfaceWidth, surfaceHeight);
+        pushOp(cmd);
 
         // Note: textImage and its surface will be garbage collected after the blit
         // operation completes
@@ -564,17 +571,23 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         if (width <= 0 || height <= 0 || (clip != null && !clip.intersects(x, y, width, height))) {
             return;
         }
-        pushOp(new SurfaceCommand(opType, x, y, width, height));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(opType, x, y, width, height);
+        pushOp(cmd);
     }
 
     @Override
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
-        pushOp(new SurfaceCommand(Operation.FILL_ARC, x, y, width, height, startAngle, arcAngle));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.FILL_ARC, x, y, width, height, startAngle, arcAngle);
+        pushOp(cmd);
     }
 
     @Override
     public void fillOval(int x, int y, int width, int height) {
-        pushOp(new SurfaceCommand(Operation.FILL_OVAL, x, y, width, height));
+        SurfaceCommand cmd = acquireCommand();
+        cmd.configure(Operation.FILL_OVAL, x, y, width, height);
+        pushOp(cmd);
     }
 
     @Override
@@ -671,8 +684,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             case DRAW_RECT:
             case FILL_RECT:
             case CLEAR_RECT:
-                return previous.arg1 == requested.arg1 && previous.arg2 == requested.arg2 &&
-                        previous.arg3 == requested.arg3 && previous.arg4 == requested.arg4;
+                return Arrays.equals(previous.args, requested.args);
             case SET_TRANSFORM:
             case SET_COLOR:
                 previous.obj = requested.obj; // Update to the latest object

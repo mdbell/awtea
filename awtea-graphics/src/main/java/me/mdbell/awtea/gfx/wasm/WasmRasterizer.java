@@ -160,10 +160,10 @@ public class WasmRasterizer implements Rasterizer {
 
             switch (cmd.type) {
                 case DRAW_RECT:
-                    commandBuffer.emitDrawRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    commandBuffer.emitDrawRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case FILL_RECT:
-                    commandBuffer.emitFillRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    commandBuffer.emitFillRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case BLIT_IMAGE:
                     if (!(cmd.obj instanceof SurfaceContainer)) {
@@ -171,7 +171,7 @@ public class WasmRasterizer implements Rasterizer {
                     } else {
                         Surface surface1 = ((SurfaceContainer) cmd.obj).getSurface();
                         // TODO: missing width/height args?
-                        blitSurface(surface1, cmd.arg1, cmd.arg2);
+                        blitSurface(surface1, cmd.args[0], cmd.args[1]);
                     }
                     break;
                 case SET_COLOR:
@@ -180,7 +180,7 @@ public class WasmRasterizer implements Rasterizer {
                             c.getRed() << 16 |
                             c.getGreen() << 8 |
                             c.getBlue();
-                    commandBuffer.emitSetColor(argb, cmd.arg1);
+                    commandBuffer.emitSetColor(argb, cmd.args.length > 0 ? cmd.args[0] : 0);
                     break;
                 case SET_CLIP_RECT:
                     Shape shape = (Shape) cmd.obj;
@@ -194,7 +194,7 @@ public class WasmRasterizer implements Rasterizer {
                     }
                     break;
                 case CLEAR_RECT:
-                    commandBuffer.emitClearRect(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    commandBuffer.emitClearRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case SET_TRANSFORM:
                     me.mdbell.awtea.gfx.AffineTransform transform = (me.mdbell.awtea.gfx.AffineTransform) cmd.obj;
@@ -207,7 +207,7 @@ public class WasmRasterizer implements Rasterizer {
                             (float) transform.getTranslateY());
                     break;
                 case DRAW_LINE:
-                    commandBuffer.emitDrawLine(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4);
+                    commandBuffer.emitDrawLine(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
                 case DRAW_POLYGON: {
                     SurfaceCommand.PolygonPoints pts = (SurfaceCommand.PolygonPoints) cmd.obj;
