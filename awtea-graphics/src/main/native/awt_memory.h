@@ -17,6 +17,22 @@ typedef struct {
     size_t size;
 } alloc_header_t;
 
+static inline void* tracked_realloc(void* ptr, size_t size) {
+    alloc_header_t* header = (alloc_header_t*)((uint8_t*)ptr - sizeof(alloc_header_t));
+    total_allocated_memory -= header->size;
+    total_allocation_count--;
+    void* raw_ptr = realloc(header, size + sizeof(alloc_header_t));
+    if(raw_ptr) {
+        header = (alloc_header_t*)raw_ptr;
+        header->size = size;
+        total_allocated_memory += size;
+        total_allocation_count++;
+        wasm_report_memory_usage(total_allocated_memory, total_allocation_count, peak_allocated_memory);
+        return (void*)((uint8_t*)raw_ptr + sizeof(alloc_header_t));
+    }
+    return raw_ptr;
+}
+
 static inline void* tracked_malloc(size_t size) {
     void* raw_ptr = malloc(sizeof(alloc_header_t) + size);
     if (!raw_ptr) {

@@ -10,29 +10,6 @@ import static me.mdbell.awtea.test.Assert.*;
  * via TeaVM and executed in Deno.
  */
 public class SurfaceTests {
-    
-    private int testCounter = 0;
-
-    @BeforeAll
-    public void setupAll() {
-        System.out.println("BeforeAll: Setting up test suite");
-    }
-    
-    @AfterAll
-    public void teardownAll() {
-        System.out.println("AfterAll: Tearing down test suite. Ran " + testCounter + " tests.");
-    }
-    
-    @BeforeEach
-    public void setup() {
-        testCounter++;
-        System.out.println("BeforeEach: Starting test #" + testCounter);
-    }
-    
-    @AfterEach
-    public void teardown() {
-        System.out.println("AfterEach: Completed test #" + testCounter);
-    }
 
     /**
      * Test that pixel format constants are defined with expected values.
@@ -69,7 +46,7 @@ public class SurfaceTests {
         assertTrue(Surface.isValidPixelFormat(Surface.FORMAT_INT_RGBA), "FORMAT_INT_RGBA should be valid");
         assertTrue(Surface.isValidPixelFormat(Surface.FORMAT_INT_ABGR), "FORMAT_INT_ABGR should be valid");
         assertTrue(Surface.isValidPixelFormat(Surface.FORMAT_INT_BGR), "FORMAT_INT_BGR should be valid");
-        
+
         // Invalid formats
         assertFalse(Surface.isValidPixelFormat(-1), "Negative format should be invalid");
         assertFalse(Surface.isValidPixelFormat(5), "Format 5 should be invalid");
@@ -90,13 +67,13 @@ public class SurfaceTests {
         // Verify that the constants are sequential from MIN to MAX
         int expectedValue = Surface.MIN_FORMAT;
         int[] allFormats = {
-            Surface.FORMAT_INT_ARGB,
-            Surface.FORMAT_INT_RGB,
-            Surface.FORMAT_INT_RGBA,
-            Surface.FORMAT_INT_ABGR,
-            Surface.FORMAT_INT_BGR
+                Surface.FORMAT_INT_ARGB,
+                Surface.FORMAT_INT_RGB,
+                Surface.FORMAT_INT_RGBA,
+                Surface.FORMAT_INT_ABGR,
+                Surface.FORMAT_INT_BGR
         };
-        
+
         for (int i = 0; i < allFormats.length; i++) {
             assertEquals(expectedValue + i, allFormats[i], "Format at index " + i + " should have sequential value");
         }
