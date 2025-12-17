@@ -21,6 +21,9 @@ By default, AWTea expects fonts to be available at `fonts/{fontname}.ttf` relati
 
 For example, if your application is at `https://example.com/app/`, fonts should be at:
 - `https://example.com/app/fonts/NotoSans.ttf`
+- `https://example.com/app/fonts/NotoSans-Bold.ttf`
+- `https://example.com/app/fonts/NotoSans-Italic.ttf`
+- `https://example.com/app/fonts/NotoSans-BoldItalic.ttf`
 - `https://example.com/app/fonts/Helvetica.ttf`
 - `https://example.com/app/fonts/Helvetica-Bold.ttf`
 - `https://example.com/app/fonts/Helvetica-Italic.ttf`
@@ -76,7 +79,12 @@ This directory includes the following fonts:
 - **Helvetica-Bold.ttf**: Bold variant
 - **Helvetica-Italic.ttf**: Italic variant
 - **Helvetica-BoldItalic.ttf**: Bold italic variant
-- **NotoSans.ttf**: Fallback font (Noto Sans)
+- **NotoSans.ttf**: Fallback font (Noto Sans) - Plain
+- **NotoSans-Bold.ttf**: Noto Sans Bold variant
+- **NotoSans-Italic.ttf**: Noto Sans Italic variant
+- **NotoSans-BoldItalic.ttf**: Noto Sans Bold Italic variant
+
+**Note**: AWTea automatically applies synthetic styling (synthetic bold/italic) when font variant files are missing. For best quality, deploy all four variants (Plain, Bold, Italic, BoldItalic) for each font family you use.
 
 ## Testing Locally
 
