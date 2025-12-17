@@ -30,7 +30,7 @@ public final class LoggerFactory {
 	static {
 		// Initialize log level from system property or default to INFO
 		globalLevel = initLogLevel();
-		
+
 		// Initialize with console sink by default
 		addSink(new ConsoleLogSink());
 	}
@@ -45,8 +45,8 @@ public final class LoggerFactory {
 				return LogLevel.valueOf(levelProperty.toUpperCase());
 			} catch (IllegalArgumentException e) {
 				// Invalid level specified, fall back to INFO
-				System.err.println("Invalid log level '" + levelProperty + "' specified in " + 
-					LOG_LEVEL_PROPERTY + ". Valid values: ERROR, WARN, INFO, DEBUG. Using INFO.");
+				System.err.println("Invalid log level '" + levelProperty + "' specified in " +
+						LOG_LEVEL_PROPERTY + ". Valid values: ERROR, WARN, INFO, DEBUG, TRACE. Using INFO.");
 			}
 		}
 		return LogLevel.INFO;
@@ -166,8 +166,8 @@ public final class LoggerFactory {
 			}
 		}
 
-		@JSBody(params = {"sinkClass", "errorMessage"}, script = 
-			"console.error('Error in log sink ' + sinkClass + ': ' + errorMessage);")
+		@JSBody(params = { "sinkClass",
+				"errorMessage" }, script = "console.error('Error in log sink ' + sinkClass + ': ' + errorMessage);")
 		private static native void logTeaVMError(String sinkClass, String errorMessage);
 	}
 }

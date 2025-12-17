@@ -1,0 +1,20 @@
+# Package: `java.awt.image.renderable`
+
+**Coverage:** 9 / 12 (75.0%)
+
+```
+[█████████████████████████████████████░░░░░░░░░░░░░] 75.0%
+```
+
+## Classes
+
+### [`RenderableImage`](RenderableImage.md) ![Coverage](https://img.shields.io/badge/coverage-75.0%25-green)
+
+**Coverage:** 9 / 12 (75.0%)
+
+```
+[█████████████████████████████████████░░░░░░░░░░░░░] 75.0%
+```
+
+
+[← Back to Index](../../../../../../report.md)

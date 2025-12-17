@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import me.mdbell.awtea.classlib.java.awt.image.TFontFormatException;
 import me.mdbell.awtea.font.FontLoader;
 import me.mdbell.awtea.font.FontPeer;
+import me.mdbell.awtea.font.FontRenderer;
 import me.mdbell.awtea.font.FontRendererFactory;
 import me.mdbell.awtea.font.TrueTypeFont;
 import me.mdbell.awtea.impl.Debug;
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 import java.text.AttributedCharacterIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @see java.awt.Font
@@ -30,6 +32,9 @@ public class TFont {
     private static final String TTF_DIR = "/fonts/";
 
     private static final String FALLBACK_FONT_NAME = "NotoSans";
+    
+    // Cache for FontPeer instances to avoid recreating them for the same font specification
+    private static final Map<FontPeerKey, FontPeer> fontPeerCache = new ConcurrentHashMap<>();
 
     public static final int TRUETYPE_FONT = 0;
 
@@ -64,10 +69,39 @@ public class TFont {
     public static final String MONOSPACED = "Monospaced";
     public static final String DIALOG = "Dialog";
     public static final String DIALOG_INPUT = "DialogInput";
+    
+    /**
+     * Cache key for FontPeer instances.
+     * A FontPeer is uniquely identified by the TrueTypeFont instance and styling requirements.
+     */
+    private static class FontPeerKey {
+        private final TrueTypeFont trueType;
+        private final boolean needsSyntheticBold;
+        private final boolean needsSyntheticItalic;
+        
+        FontPeerKey(TrueTypeFont trueType, boolean needsSyntheticBold, boolean needsSyntheticItalic) {
+            this.trueType = trueType;
+            this.needsSyntheticBold = needsSyntheticBold;
+            this.needsSyntheticItalic = needsSyntheticItalic;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof FontPeerKey)) return false;
+            FontPeerKey that = (FontPeerKey) o;
+            return needsSyntheticBold == that.needsSyntheticBold &&
+                   needsSyntheticItalic == that.needsSyntheticItalic &&
+                   trueType == that.trueType; // Identity comparison for TrueTypeFont
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(System.identityHashCode(trueType), needsSyntheticBold, needsSyntheticItalic);
+        }
+    }
 
     public TFont(String name, int style, int size) {
-        name = "NotoSans";
-        style = 0;
         this.name = name;
         this.style = style;
         this.size = size;
@@ -77,8 +111,57 @@ public class TFont {
             styleStr += "Italic";
         }
 
-        TrueTypeFont trueType = loadSafeFont(name, styleStr);
-        this.fontPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
+        TrueTypeFont trueType;
+        boolean needsSyntheticBold;
+        boolean needsSyntheticItalic;
+        
+        // Try to load styled font
+        try {
+            trueType = loadStyledFont(name, styleStr);
+            
+            // Check if loaded font actually has the requested style
+            // (some fonts may load but not have the style embedded)
+            needsSyntheticBold = isBold() && !trueType.isBold();
+            needsSyntheticItalic = isItalic() && !trueType.isItalic();
+        } catch (RuntimeException e) {
+            // Styled font doesn't exist, fall back to plain with synthetic styling
+            if (!styleStr.isEmpty()) {
+                log.debug("Styled font '{}{}' not found, using synthetic styling: {}", 
+                         name, styleStr, e.getMessage());
+                trueType = loadSafeFont(name, "");  // Load plain font
+                needsSyntheticBold = isBold();
+                needsSyntheticItalic = isItalic();
+            } else {
+                // Plain font doesn't exist, use safe fallback (won't throw)
+                log.debug("Font '{}' not found, using fallback font: {}", name, e.getMessage());
+                trueType = loadSafeFont(name, "");  // This will fallback to FALLBACK_FONT_NAME
+                needsSyntheticBold = false;
+                needsSyntheticItalic = false;
+            }
+        }
+        
+        // Make variables effectively final for lambda
+        final TrueTypeFont finalTrueType = trueType;
+        final boolean finalNeedsSyntheticBold = needsSyntheticBold;
+        final boolean finalNeedsSyntheticItalic = needsSyntheticItalic;
+        
+        // Create cache key and use computeIfAbsent for thread-safe caching
+        FontPeerKey cacheKey = new FontPeerKey(finalTrueType, finalNeedsSyntheticBold, finalNeedsSyntheticItalic);
+        this.fontPeer = fontPeerCache.computeIfAbsent(cacheKey, key -> {
+            // Create new FontPeer
+            FontRenderer renderer = FontRendererFactory.getDefaultRenderer();
+            
+            // Wrap with synthetic styling if needed
+            if (finalNeedsSyntheticBold || finalNeedsSyntheticItalic) {
+                renderer = new me.mdbell.awtea.font.SyntheticStyledFontRenderer(
+                    renderer, 
+                    finalNeedsSyntheticBold, 
+                    finalNeedsSyntheticItalic
+                );
+            }
+            
+            return new FontPeer(finalTrueType, renderer);
+        });
     }
 
     public TFont(Map<? extends AttributedCharacterIterator.Attribute, ?> attributes) {
@@ -98,11 +181,26 @@ public class TFont {
         }
 
         this.style = style;
-        this.fontPeer = new FontPeer(trueType, FontRendererFactory.getDefaultRenderer());
+        
+        // Use FontPeer cache with computeIfAbsent for thread-safety
+        // No synthetic styling needed as font has intrinsic style
+        FontPeerKey cacheKey = new FontPeerKey(trueType, false, false);
+        this.fontPeer = fontPeerCache.computeIfAbsent(cacheKey, key -> 
+            new FontPeer(trueType, FontRendererFactory.getDefaultRenderer())
+        );
     }
 
     public static TFont getDefaultFont() {
         return new TFont("Helvetica", PLAIN, 12);
+    }
+    
+    /**
+     * Clear the FontPeer cache.
+     * This method is useful for testing and development when you want to force
+     * recreation of FontPeer instances.
+     */
+    public static void clearFontPeerCache() {
+        fontPeerCache.clear();
     }
 
     public String getFamily() {
@@ -265,16 +363,56 @@ public class TFont {
         return getFont(nm, null);
     }
 
+    /**
+     * Load a font with a specific style, throwing an exception if not found.
+     * This method is used to detect missing font variants so synthetic styling can be applied.
+     * 
+     * @param name the font family name
+     * @param style the style string (e.g., "Bold", "Italic", "BoldItalic", or empty for plain)
+     * @return the loaded TrueTypeFont
+     * @throws RuntimeException if the font variant is not found
+     */
     @SneakyThrows
-    private static TrueTypeFont loadSafeFont(String name, String style) {
+    private static TrueTypeFont loadStyledFont(String name, String style) {
         String fontname = name;
         if (style != null && !style.isEmpty()) {
-            fontname = "-" + style;
+            fontname = name + "-" + style;
         }
         try {
             return FontLoader.loadFont(fontname);
         } catch (IOException e) {
-            log.warn("Missing font:{}", fontname + " - falling back");
+            // Rethrow so caller can detect missing variant and apply synthetic styling
+            throw new RuntimeException("Font variant not found: " + fontname, e);
+        }
+    }
+
+    /**
+     * Load a font safely with fallback to default font if not found.
+     * This method never throws - it always returns a valid font.
+     * 
+     * @param name the font family name
+     * @param style the style string (e.g., "Bold", "Italic", "BoldItalic", or empty for plain)
+     * @return the loaded TrueTypeFont, or fallback font if not found
+     */
+    @SneakyThrows
+    private static TrueTypeFont loadSafeFont(String name, String style) {
+        String fontname = name;
+        if (style != null && !style.isEmpty()) {
+            fontname = name + "-" + style;
+        }
+        
+        // Check if this font has already failed to load - only log once
+        boolean isCachedFailure = FontLoader.isFailureCached(fontname);
+        
+        try {
+            return FontLoader.loadFont(fontname);
+        } catch (IOException e) {
+            // Only log warning on first failure - cached failures use DEBUG level
+            if (isCachedFailure) {
+                log.debug("Font '{}' previously failed to load, using fallback", fontname);
+            } else {
+                log.warn("Missing font:{}", fontname + " - falling back");
+            }
             try {
                 return FontLoader.loadFont(FALLBACK_FONT_NAME);
             } catch (IOException fallbackError) {
