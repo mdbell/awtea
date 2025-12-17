@@ -744,13 +744,18 @@ void fill_rect(SurfaceData* surface, SurfaceContext* context,
     log_debug("fill_rect: x=%d, y=%d, w=%d, h=%d, color=0x%08X",
              x, y, width, height, color);
     
-    // Create array of 4 corner points
+    // In AWT, fillRect(x, y, width, height) fills pixels from (x,y) to (x+width-1, y+height-1) inclusive
+    // For the polygon, we need corners that, when rasterized, produce this result
+    // The polygon corners are: (x, y), (x+width, y), (x+width, y+height), (x, y+height)
+    // When rasterized, scanlines from y to y+height-1 will be filled from x to x+width-1
+    
     int x_points[4];
     int y_points[4];
     
     // Apply transform if necessary
     if (!is_identity_transform(&context->transform)) {
         // Transform all four corners
+        // Use x+width and y+height (exclusive upper bounds) for correct polygon
         float corners_x[4] = {(float)x, (float)(x + width), (float)(x + width), (float)x};
         float corners_y[4] = {(float)y, (float)y, (float)(y + height), (float)(y + height)};
         
@@ -785,19 +790,32 @@ void fill_rect(SurfaceData* surface, SurfaceContext* context,
         if (y_points[i] > max_y) max_y = y_points[i];
     }
     
-    // Clip bounding box to surface
-    min_y = clamp_int(min_y, 0, (int)surface->height - 1);
-    max_y = clamp_int(max_y, 0, (int)surface->height - 1);
+    // Clamp min_y but DON'T clamp max_y yet - the edge table needs the full range
+    // to properly include all edges
+    if (min_y < 0) min_y = 0;
+    if (min_y >= (int)surface->height) {
+        log_debug("fill_rect: clipped out entirely (min_y >= height)");
+        STACK_EXIT();
+        return;
+    }
     
-    if (min_y >= max_y) {
-        log_debug("fill_rect: clipped out entirely");
+    // For edge table, we need max_y to include the last scanline that has pixels
+    // If max_y is the exclusive upper bound, the last scanline with pixels is max_y-1
+    // But edge table expects inclusive range, so we use max_y-1 as the max
+    int edge_table_max_y = max_y - 1;
+    if (edge_table_max_y > (int)surface->height - 1) {
+        edge_table_max_y = (int)surface->height - 1;
+    }
+    
+    if (min_y > edge_table_max_y) {
+        log_debug("fill_rect: clipped out entirely (min_y > max_y)");
         STACK_EXIT();
         return;
     }
     
     // Get edge table from pool
     ensure_edge_table_pool();
-    EdgeTable* et = edge_table_pool_acquire(g_edge_table_pool, min_y, max_y,
+    EdgeTable* et = edge_table_pool_acquire(g_edge_table_pool, min_y, edge_table_max_y,
                                             surface->width, surface->height);
     if (!et) {
         log_error("fill_rect: failed to acquire edge table");

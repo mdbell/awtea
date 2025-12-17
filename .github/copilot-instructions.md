@@ -173,11 +173,22 @@ The `.devcontainer/` setup provides all tools pre-configured:
 6. **Update WasmRasterizer helper**: Add `write*Command()` static methods to `awtea-graphics/src/test/deno/wasm_rasterizer.ts` for easy test authoring
 
 **Testing Requirements for WASM Rendering Changes:**
-- Every new WASM rendering function MUST have corresponding Deno tests
-- Every new WASM rendering function SHOULD have a visual demo
-- Tests verify correctness, demos showcase functionality
-- Run tests with: `./gradlew :awtea-graphics:denoTest`
-- Run demos manually with: `deno run --allow-read src/test/deno/<demo_name>.ts`
+- Every new WASM rendering function MUST have corresponding Deno tests in `*_test.ts` files
+- Every new WASM rendering function SHOULD have a visual demo in `demo.ts`
+- Tests verify correctness using `Deno.test()`, demos showcase functionality visually
+- **CRITICAL**: Always run ALL tests before committing ANY changes (not just WASM):
+  ```bash
+  ./gradlew :awtea-graphics:denoTest
+  ```
+- **REQUIRED**: Verify all tests pass before pushing commits
+- **REQUIRED**: If ANY tests fail (even unrelated to your changes), investigate and fix them:
+  - Read the test failure output carefully
+  - Reproduce the failure locally if needed
+  - Debug the root cause (don't just adjust test thresholds without understanding why)
+  - Fix the underlying issue, not just the test
+  - Run tests again to confirm the fix
+- DO NOT commit if tests fail - fix the issues first
+- Run visual demos manually to verify rendering: `deno run --allow-read src/test/deno/demo.ts`
 
 ### Extending Bytecode Transformation
 1. Create transformer implementing `ClassHolderTransformer` in `awtea-instrument`

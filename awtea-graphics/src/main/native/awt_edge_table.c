@@ -76,7 +76,9 @@ static void edge_list_sort_by_x(EdgeList* list) {
 static void edge_list_remove_inactive(EdgeList* list, int y) {
     int write_idx = 0;
     for (int read_idx = 0; read_idx < list->count; read_idx++) {
-        if (list->edges[read_idx].y_max > y) {
+        // Keep edges that are still active at this scanline
+        // An edge is active from its y_min up to and INCLUDING its y_max
+        if (list->edges[read_idx].y_max >= y) {
             list->edges[write_idx++] = list->edges[read_idx];
         }
     }
