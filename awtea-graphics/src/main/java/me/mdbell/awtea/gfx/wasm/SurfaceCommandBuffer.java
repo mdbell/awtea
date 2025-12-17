@@ -272,8 +272,11 @@ public final class SurfaceCommandBuffer {
         log.trace("SurfaceCommandBuffer.emitFillPolygon: xpoints={}, ypoints={}", xpoints, ypoints);
 
         beginCommand(Operation.FILL_POLYGON, 0);
+        writer.writeInt32(xpoints.length); // Write nPoints first
         for (int i = 0; i < xpoints.length; i++) {
             writer.writeInt32(xpoints[i]);
+        }
+        for (int i = 0; i < ypoints.length; i++) {
             writer.writeInt32(ypoints[i]);
         }
     }
