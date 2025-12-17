@@ -271,16 +271,17 @@ void edge_table_add_arc(EdgeTable* et, int cx, int cy, int rx, int ry,
     
     double angle_step = (end_angle - start_angle) / num_segments;
     
-    // Generate points along the arc
-    int prev_x = cx + (int)(rx * cos(start_angle));
-    int prev_y = cy + (int)(ry * sin(start_angle));
+    // Generate points along the arc - keep X as float for precision
+    float prev_x = cx + rx * cos(start_angle);
+    int prev_y = cy + (int)(ry * sin(start_angle) + 0.5);
     
     for (int i = 1; i <= num_segments; i++) {
         double angle = start_angle + i * angle_step;
-        int curr_x = cx + (int)(rx * cos(angle));
-        int curr_y = cy + (int)(ry * sin(angle));
+        float curr_x = cx + rx * cos(angle);
+        int curr_y = cy + (int)(ry * sin(angle) + 0.5);
         
-        edge_table_add_line(et, prev_x, prev_y, curr_x, curr_y);
+        // Add edge with float X coordinates
+        edge_table_add_edge(et, prev_y, prev_x, curr_y, curr_x);
         
         prev_x = curr_x;
         prev_y = curr_y;
@@ -298,7 +299,7 @@ void edge_table_add_bezier(EdgeTable* et, int x1, int y1, int cx, int cy,
     const int num_segments = 20;
     const float step = 1.0f / num_segments;
     
-    int prev_x = x1;
+    float prev_x = (float)x1;
     int prev_y = y1;
     
     for (int i = 1; i <= num_segments; i++) {
@@ -306,10 +307,10 @@ void edge_table_add_bezier(EdgeTable* et, int x1, int y1, int cx, int cy,
         float t_inv = 1.0f - t;
         
         // Quadratic Bezier formula: B(t) = (1-t)^2 * P0 + 2*(1-t)*t * P1 + t^2 * P2
-        int curr_x = (int)(t_inv * t_inv * x1 + 2.0f * t_inv * t * cx + t * t * x2);
-        int curr_y = (int)(t_inv * t_inv * y1 + 2.0f * t_inv * t * cy + t * t * y2);
+        float curr_x = t_inv * t_inv * x1 + 2.0f * t_inv * t * cx + t * t * x2;
+        int curr_y = (int)(t_inv * t_inv * y1 + 2.0f * t_inv * t * cy + t * t * y2 + 0.5f);
         
-        edge_table_add_line(et, prev_x, prev_y, curr_x, curr_y);
+        edge_table_add_edge(et, prev_y, prev_x, curr_y, curr_x);
         
         prev_x = curr_x;
         prev_y = curr_y;
