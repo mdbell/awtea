@@ -7,6 +7,24 @@ import java.io.IOException;
 
 /**
  * Tests for FontLoader failure caching functionality.
+ * 
+ * <p>The failure cache prevents repeated performance hits when fonts fail to load.
+ * This is particularly important in scenarios where:
+ * <ul>
+ * <li>A font variant doesn't exist (e.g., "Arial-Bold" when only "Arial" is available)</li>
+ * <li>Network errors occur during font fetching in browser environments</li>
+ * <li>Multiple UI components try to use the same non-existent font</li>
+ * <li>Font initialization happens frequently (e.g., GUI demo rendering)</li>
+ * </ul>
+ * 
+ * <p>Without the failure cache, each failed font load would:
+ * <ul>
+ * <li>Attempt a network fetch (in browser environments)</li>
+ * <li>Wait for timeout or error response</li>
+ * <li>Fall back to resource loading</li>
+ * <li>Generate error logs</li>
+ * </ul>
+ * This overhead compounds quickly when multiple components or frequent redraws are involved.
  */
 public class FontLoaderTest {
 
