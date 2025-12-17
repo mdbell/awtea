@@ -28,17 +28,17 @@ public class WasmSafetyTests {
     @Test
     public void testSurfaceDestroyIdempotent() {
         WasmSurface surface = backend.createSurface(100, 100, Surface.FORMAT_INT_ARGB);
-        int surfaceId = surface.getId();
-        
+        surface.setPoolable(false); // we should not be pooling a surface we explicity want to destroy
+
         // First destroy should succeed
         surface.destroy();
-        
+
         // Second destroy should be safe (idempotent)
         surface.destroy();
-        
+
         // Third destroy should also be safe
         surface.destroy();
-        
+
         // Surface ID should be -1 after destroy
         assertEquals(surface.getId(), -1, "Surface ID should be -1 after destroy");
     }
@@ -50,16 +50,16 @@ public class WasmSafetyTests {
     public void testRasterizerDisposeIdempotent() {
         WasmSurface surface = backend.createSurface(100, 100, Surface.FORMAT_INT_ARGB);
         WasmRasterizer rasterizer = (WasmRasterizer) surface.createRasterizer();
-        
+
         // First dispose should succeed
         rasterizer.dispose();
-        
+
         // Second dispose should be safe (idempotent)
         rasterizer.dispose();
-        
+
         // Third dispose should also be safe
         rasterizer.dispose();
-        
+
         // Clean up surface
         surface.setPoolable(false);
         surface.destroy();
@@ -71,23 +71,23 @@ public class WasmSafetyTests {
     @Test
     public void testDiagnosticsActiveSurfaceCount() {
         int initialCount = diagnostics.getActiveSurfaceCount();
-        
+
         WasmSurface surface1 = backend.createSurface(100, 100, Surface.FORMAT_INT_ARGB);
-        assertEquals(diagnostics.getActiveSurfaceCount(), initialCount + 1, 
+        assertEquals(diagnostics.getActiveSurfaceCount(), initialCount + 1,
                 "Should have 1 more active surface");
-        
+
         WasmSurface surface2 = backend.createSurface(200, 200, Surface.FORMAT_INT_RGB);
-        assertEquals(diagnostics.getActiveSurfaceCount(), initialCount + 2, 
+        assertEquals(diagnostics.getActiveSurfaceCount(), initialCount + 2,
                 "Should have 2 more active surfaces");
-        
+
         surface1.setPoolable(false);
         surface1.destroy();
-        assertEquals(diagnostics.getActiveSurfaceCount(), initialCount + 1, 
+        assertEquals(diagnostics.getActiveSurfaceCount(), initialCount + 1,
                 "Should have 1 more active surface after first destroy");
-        
+
         surface2.setPoolable(false);
         surface2.destroy();
-        assertEquals(diagnostics.getActiveSurfaceCount(), initialCount, 
+        assertEquals(diagnostics.getActiveSurfaceCount(), initialCount,
                 "Should be back to initial count");
     }
 
@@ -97,24 +97,24 @@ public class WasmSafetyTests {
     @Test
     public void testDiagnosticsActiveContextCount() {
         int initialCount = diagnostics.getActiveContextCount();
-        
+
         WasmSurface surface = backend.createSurface(100, 100, Surface.FORMAT_INT_ARGB);
         WasmRasterizer rast1 = (WasmRasterizer) surface.createRasterizer();
-        assertEquals(diagnostics.getActiveContextCount(), initialCount + 1, 
+        assertEquals(diagnostics.getActiveContextCount(), initialCount + 1,
                 "Should have 1 more active context");
-        
+
         WasmRasterizer rast2 = (WasmRasterizer) surface.createRasterizer();
-        assertEquals(diagnostics.getActiveContextCount(), initialCount + 2, 
+        assertEquals(diagnostics.getActiveContextCount(), initialCount + 2,
                 "Should have 2 more active contexts");
-        
+
         rast1.dispose();
-        assertEquals(diagnostics.getActiveContextCount(), initialCount + 1, 
+        assertEquals(diagnostics.getActiveContextCount(), initialCount + 1,
                 "Should have 1 more active context after first dispose");
-        
+
         rast2.dispose();
-        assertEquals(diagnostics.getActiveContextCount(), initialCount, 
+        assertEquals(diagnostics.getActiveContextCount(), initialCount,
                 "Should be back to initial count");
-        
+
         surface.setPoolable(false);
         surface.destroy();
     }
@@ -126,31 +126,31 @@ public class WasmSafetyTests {
     public void testDiagnosticsSurfaceRefCount() {
         WasmSurface surface = backend.createSurface(100, 100, Surface.FORMAT_INT_ARGB);
         int surfaceId = surface.getId();
-        
+
         // No contexts created yet, ref count should be 0
-        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 0, 
+        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 0,
                 "Initial ref count should be 0");
-        
+
         // Create first rasterizer (context), ref count should be 1
         WasmRasterizer rast1 = (WasmRasterizer) surface.createRasterizer();
-        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 1, 
+        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 1,
                 "Ref count should be 1 after first rasterizer");
-        
+
         // Create second rasterizer (context), ref count should be 2
         WasmRasterizer rast2 = (WasmRasterizer) surface.createRasterizer();
-        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 2, 
+        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 2,
                 "Ref count should be 2 after second rasterizer");
-        
+
         // Dispose first rasterizer, ref count should be 1
         rast1.dispose();
-        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 1, 
+        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 1,
                 "Ref count should be 1 after first dispose");
-        
+
         // Dispose second rasterizer, ref count should be 0
         rast2.dispose();
-        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 0, 
+        assertEquals(diagnostics.getSurfaceRefCount(surfaceId), 0,
                 "Ref count should be 0 after all disposed");
-        
+
         surface.setPoolable(false);
         surface.destroy();
     }
@@ -161,18 +161,18 @@ public class WasmSafetyTests {
     @Test
     public void testDiagnosticsCapacityWarning() {
         // At low utilization, no warnings should be triggered
-        assertFalse(diagnostics.isSurfaceCapacityWarning(0.9), 
+        assertFalse(diagnostics.isSurfaceCapacityWarning(0.9),
                 "Should not trigger warning at low utilization");
-        assertFalse(diagnostics.isContextCapacityWarning(0.9), 
+        assertFalse(diagnostics.isContextCapacityWarning(0.9),
                 "Should not trigger warning at low utilization");
-        
+
         // Utilization values should be between 0 and 1
         double surfaceUtil = diagnostics.getSurfaceUtilization();
-        assertTrue(surfaceUtil >= 0.0 && surfaceUtil <= 1.0, 
+        assertTrue(surfaceUtil >= 0.0 && surfaceUtil <= 1.0,
                 "Surface utilization should be in [0,1]");
-        
+
         double contextUtil = diagnostics.getContextUtilization();
-        assertTrue(contextUtil >= 0.0 && contextUtil <= 1.0, 
+        assertTrue(contextUtil >= 0.0 && contextUtil <= 1.0,
                 "Context utilization should be in [0,1]");
     }
 
@@ -195,7 +195,7 @@ public class WasmSafetyTests {
         int maxSurfaces = diagnostics.getMaxSurfaces();
         assertTrue(maxSurfaces > 0, "Max surfaces should be positive");
         assertEquals(maxSurfaces, 1024, "Max surfaces should be 1024");
-        
+
         int maxContexts = diagnostics.getMaxContexts();
         assertTrue(maxContexts > 0, "Max contexts should be positive");
         assertEquals(maxContexts, 2048, "Max contexts should be 2048");
@@ -218,14 +218,14 @@ public class WasmSafetyTests {
         WasmSurface surface = backend.createSurface(100, 100, Surface.FORMAT_INT_ARGB);
         surface.setPoolable(false);
         surface.destroy();
-        
+
         boolean exceptionThrown = false;
         try {
             surface.createRasterizer();
         } catch (IllegalStateException e) {
             exceptionThrown = true;
         }
-        
+
         assertTrue(exceptionThrown, "Should throw exception when creating rasterizer on destroyed surface");
     }
 
@@ -237,14 +237,14 @@ public class WasmSafetyTests {
         WasmSurface surface = backend.createSurface(100, 100, Surface.FORMAT_INT_ARGB);
         surface.setPoolable(false);
         surface.destroy();
-        
+
         boolean exceptionThrown = false;
         try {
             surface.resize(200, 200);
         } catch (IllegalStateException e) {
             exceptionThrown = true;
         }
-        
+
         assertTrue(exceptionThrown, "Should throw exception when resizing destroyed surface");
     }
 
@@ -256,14 +256,14 @@ public class WasmSafetyTests {
         WasmSurface surface = backend.createSurface(100, 100, Surface.FORMAT_INT_ARGB);
         surface.setPoolable(false);
         surface.destroy();
-        
+
         boolean exceptionThrown = false;
         try {
             surface.getPixelData();
         } catch (IllegalStateException e) {
             exceptionThrown = true;
         }
-        
+
         assertTrue(exceptionThrown, "Should throw exception when getting pixel data on destroyed surface");
     }
 
@@ -275,7 +275,7 @@ public class WasmSafetyTests {
         WasmSurface surface = backend.createSurface(100, 100, Surface.FORMAT_INT_ARGB);
         surface.setPoolable(false);
         surface.destroy();
-        
+
         assertEquals(surface.getWidth(), 0, "Width should be 0 after destroy");
         assertEquals(surface.getHeight(), 0, "Height should be 0 after destroy");
     }
