@@ -168,6 +168,16 @@ The `.devcontainer/` setup provides all tools pre-configured:
 1. Add to appropriate backend's Rasterizer class (`WebGLRasterizer`, `WasmRasterizer`, `SoftwareRasterizer`)
 2. For WASM: Add C implementation in `awtea-graphics/src/main/native/*.c`, rebuild WASM
 3. For WASM imports: Update bindings and see `docs/WASM_IMPORTS.md`
+4. **Add Deno tests**: Update `awtea-graphics/src/test/deno/*_test.ts` with tests covering the new primitive
+5. **Add Deno demos**: Update or create demo files in `awtea-graphics/src/test/deno/*_demo.ts` to showcase the new functionality
+6. **Update WasmRasterizer helper**: Add `write*Command()` static methods to `awtea-graphics/src/test/deno/wasm_rasterizer.ts` for easy test authoring
+
+**Testing Requirements for WASM Rendering Changes:**
+- Every new WASM rendering function MUST have corresponding Deno tests
+- Every new WASM rendering function SHOULD have a visual demo
+- Tests verify correctness, demos showcase functionality
+- Run tests with: `./gradlew :awtea-graphics:denoTest`
+- Run demos manually with: `deno run --allow-read src/test/deno/<demo_name>.ts`
 
 ### Extending Bytecode Transformation
 1. Create transformer implementing `ClassHolderTransformer` in `awtea-instrument`

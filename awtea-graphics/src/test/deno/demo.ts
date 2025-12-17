@@ -301,6 +301,117 @@ async function demo6_ComplexScene() {
 }
 
 /**
+ * Demo 7: Fill operations with edge table infrastructure
+ */
+async function demo7_FillOperations() {
+  console.log("\n=== Demo 7: Fill Operations (Edge Table) ===");
+  
+  const rasterizer = new WasmRasterizer();
+  await rasterizer.load(WASM_PATH);
+
+  const width = 40;
+  const height = 30;
+  const surfaceId = rasterizer.allocateSurface(width, height);
+  const contextId = rasterizer.createContext(surfaceId);
+
+  // Clear background to white
+  const white = WasmRasterizer.makeARGB(255, 255, 255, 255);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, white),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, width, height),
+  ]);
+
+  // Draw a filled triangle (polygon)
+  const red = WasmRasterizer.makeARGB(255, 255, 0, 0);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillPolygonCommand(w, [5, 15, 10], [5, 5, 15]),
+  ]);
+
+  // Draw a filled oval
+  const blue = WasmRasterizer.makeARGB(255, 0, 0, 255);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillOvalCommand(w, 18, 5, 12, 12),
+  ]);
+
+  // Draw a filled rounded rectangle
+  const green = WasmRasterizer.makeARGB(255, 0, 200, 0);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, green),
+    (w) => WasmRasterizer.writeFillRoundRectCommand(w, 5, 19, 15, 8, 4, 4),
+  ]);
+
+  // Draw a filled arc (pie slice)
+  const yellow = WasmRasterizer.makeARGB(255, 255, 255, 0);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, yellow),
+    (w) => WasmRasterizer.writeFillArcCommand(w, 24, 18, 12, 10, 0, 180),
+  ]);
+
+  printSurface(rasterizer, surfaceId);
+
+  rasterizer.destroyContext(contextId);
+  rasterizer.freeSurface(surfaceId);
+}
+
+/**
+ * Demo 8: Filled polygons with transforms
+ */
+async function demo8_TransformedFillOperations() {
+  console.log("\n=== Demo 8: Transformed Fill Operations ===");
+  
+  const rasterizer = new WasmRasterizer();
+  await rasterizer.load(WASM_PATH);
+
+  const width = 30;
+  const height = 30;
+  const surfaceId = rasterizer.allocateSurface(width, height);
+  const contextId = rasterizer.createContext(surfaceId);
+
+  // Clear background to light gray
+  const lightGray = WasmRasterizer.makeARGB(255, 220, 220, 220);
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetColorCommand(w, lightGray),
+    (w) => WasmRasterizer.writeFillRectCommand(w, 0, 0, width, height),
+  ]);
+
+  // Draw same triangle with different translations
+  const red = WasmRasterizer.makeARGB(200, 255, 0, 0);
+  const green = WasmRasterizer.makeARGB(200, 0, 255, 0);
+  const blue = WasmRasterizer.makeARGB(200, 0, 0, 255);
+
+  const triX = [0, 8, 4];
+  const triY = [0, 0, 8];
+
+  // Red triangle - translated to (5, 5)
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 5, 0, 1, 5),
+    (w) => WasmRasterizer.writeSetColorCommand(w, red),
+    (w) => WasmRasterizer.writeFillPolygonCommand(w, triX, triY),
+  ]);
+
+  // Green triangle - translated to (10, 10)
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 10, 0, 1, 10),
+    (w) => WasmRasterizer.writeSetColorCommand(w, green),
+    (w) => WasmRasterizer.writeFillPolygonCommand(w, triX, triY),
+  ]);
+
+  // Blue triangle - translated to (15, 15)
+  rasterizer.renderVariableLengthCommands(contextId, [
+    (w) => WasmRasterizer.writeSetTransformCommand(w, 1, 0, 15, 0, 1, 15),
+    (w) => WasmRasterizer.writeSetColorCommand(w, blue),
+    (w) => WasmRasterizer.writeFillPolygonCommand(w, triX, triY),
+  ]);
+
+  printSurface(rasterizer, surfaceId);
+
+  rasterizer.destroyContext(contextId);
+  rasterizer.freeSurface(surfaceId);
+}
+
+/**
  * Main demo runner
  */
 async function main() {
@@ -315,6 +426,8 @@ async function main() {
     await demo4_SurfaceBlitting();
     await demo5_Transforms();
     await demo6_ComplexScene();
+    await demo7_FillOperations();
+    await demo8_TransformedFillOperations();
 
     console.log("\n✅ All demos completed successfully!");
     console.log("\nNote: This demo shows ASCII visualization of rendered surfaces.");
