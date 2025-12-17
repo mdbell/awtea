@@ -7,6 +7,8 @@
 // Include auto-generated enums
 #include "generated/surface_operation.h"
 #include "generated/pixel_format.h"
+#include "generated/composite_mode.h"
+#include "awt_command_reader.h"
 
 #define NUM_SURFACES 1024
 #define NUM_CONTEXTS 2048
@@ -26,34 +28,13 @@
 #define DEFAULT_FG_COLOR 0xFF000000 // opaque black
 #define DEFAULT_BG_COLOR 0xFFFFFFFF // opaque white
 
-// Maximum number of commands in each context's fixed command buffer
-#define MAX_CONTEXT_COMMANDS 512
-
 // Note: SurfaceOperation enum is now defined in generated/surface_operation.h
 // Edit schemas/surface-operation.yaml to modify the enum values
-
-typedef struct {
-    uint8_t operation; // SurfaceOperation
-    uint8_t reserved[3]; // Padding for alignment
-    uint32_t x; // X coordinate for the command
-    uint32_t y; // Y coordinate for the command
-    uint32_t width; // Width parameter
-    uint32_t height; // Height parameter
-    union {
-        struct { uint32_t argb, which; } set_color;
-        struct { uint32_t surface_id; } blit;
-        //TODO: figure out how we're going to do transforms
-        // struct { uint32_t m00, m01, m10, m11; } transform; 
-        uint32_t args[2]; // Fallback for generic access
-    };
-} SurfaceCommand;
 
 typedef struct {
     float m00, m01, m02; // first row: x' = m00*x + m01*y + m02
     float m10, m11, m12; // second row: y' = m10*x + m11*y + m12
 } Transform2D;
-
-
 
 // Note: PixelFormat enum is now defined in generated/pixel_format.h
 // Edit schemas/pixel-format.yaml to modify the enum values
@@ -96,24 +77,9 @@ typedef struct {
     uint32_t    argb[COLOR_MAX + 1];
     Transform2D transform;
     ClipRect    clip;
+    CompositeMode composite_mode;
+    float       composite_alpha;
     
-    // Fixed-size command buffer for this context
-    SurfaceCommand* command_buffer;
-    int             max_commands;
+    // Variable-length command buffer reader for this context
+    CommandReader reader;
 } SurfaceContext;
-
-// RenderSurface: temporary combined view of SurfaceData + SurfaceContext for rendering
-// This struct combines pixel data and rendering state for use by rendering functions.
-typedef struct {
-    // Pixel data fields (from SurfaceData)
-    uint32_t    ptr;
-    PixelFormat format;
-    uint32_t    width;
-    uint32_t    height;
-    uint32_t    stride;
-    uint32_t    layer;
-    // Rendering state fields (from SurfaceContext)
-    uint32_t    argb[COLOR_MAX + 1];
-    Transform2D transform;
-    ClipRect    clip;
-} RenderSurface;

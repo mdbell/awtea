@@ -3,286 +3,260 @@ package me.mdbell.awtea.gfx.wasm;
 import lombok.Getter;
 import lombok.Setter;
 import me.mdbell.awtea.gfx.generated.Operation;
+import me.mdbell.awtea.util.ByteWriter;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.typedarrays.ArrayBuffer;
-import org.teavm.jso.typedarrays.Int32Array;
-import org.teavm.jso.typedarrays.Uint8Array;
 
+/**
+ * Command buffer for building variable-length rendering commands.
+ * 
+ * <p>
+ * Commands are written in the format:
+ * 
+ * <pre>
+ * [opcode: uint8][flags: uint8][length: uint16][data: length*4 bytes]
+ * </pre>
+ * 
+ * <p>
+ * This class manages the context's internal command buffer and provides
+ * high-level methods for emitting graphics commands.
+ */
 public final class SurfaceCommandBuffer {
 
     private static final Logger log = LoggerFactory.getLogger(SurfaceCommandBuffer.class);
 
+    // Command flags
+    private static final int CMD_FLAG_EXTENDED = 0x01; // Reserved for future use
+
     private final WasmAwtRasterizerExports exports;
-    private final ArrayBuffer memoryBuffer;
-    private final Uint8Array u8;
-    private final Int32Array i32;
+    private final ByteWriter writer;
     @Getter
-    private final int basePtr;         // wasm pointer to first command
-    private final int commandSize;     // bytes per SurfaceCommand
+    private final int basePtr;
     @Getter
-    private final int maxCommands;
-    @Getter
-    private int count;
+    private final int maxBytes;
 
     @Setter
     private int contextId;
 
-    SurfaceCommandBuffer(WasmAwtRasterizerExports exports,
-                         int maxCommands) {
-        this(-1, exports, maxCommands);
-    }
+    /**
+     * Create a command buffer for a context.
+     * 
+     * @param contextId The context ID (must be valid)
+     * @param exports   The WASM exports
+     */
+    SurfaceCommandBuffer(int contextId, WasmAwtRasterizerExports exports) {
+        if (contextId < 0) {
+            throw new IllegalArgumentException("Invalid context ID: " + contextId);
+        }
 
-    SurfaceCommandBuffer(int contextId, WasmAwtRasterizerExports exports,
-                         int maxCommands) {
         this.contextId = contextId;
         this.exports = exports;
-        this.memoryBuffer = exports.getMemory().getBuffer();
-        this.u8 = new Uint8Array(memoryBuffer);
-        this.i32 = new Int32Array(memoryBuffer);
 
-        this.commandSize = exports.getSurfaceCommandSize();
-        
-        // If contextId is provided, get buffer from context instead of allocating
-        if (contextId != -1) {
-            this.basePtr = exports.getContextCommandBufferPtr(contextId);
-            this.maxCommands = exports.getMaxContextCommands();
-            
-            if (basePtr == 0) {
-                throw new IllegalStateException("Failed to get context command buffer");
-            }
-        } else {
-            // Legacy path: allocate a temporary buffer
-            this.maxCommands = maxCommands;
-            this.basePtr = exports.requestCommandBuffer(maxCommands);
-            if (basePtr == 0) {
-                throw new IllegalStateException("Failed to allocate command buffer");
-            }
+        // Query buffer size and pointer from WASM
+        int bufferSizeWords = exports.getContextBufferSizeWords();
+        this.basePtr = exports.getContextBufferPtr(contextId);
+        this.maxBytes = bufferSizeWords * 4;
+
+        if (basePtr == 0) {
+            throw new IllegalStateException("Failed to get context command buffer for context " + contextId);
         }
-        
-        this.count = 0;
+
+        ArrayBuffer memoryBuffer = exports.getMemory().getBuffer();
+        this.writer = new ByteWriter(memoryBuffer, basePtr, bufferSizeWords);
+
+        log.trace("SurfaceCommandBuffer created: context={}, basePtr={}, maxBytes={}",
+                contextId, basePtr, maxBytes);
     }
 
+    /**
+     * Reset the command buffer, discarding any commands.
+     */
     public void reset() {
-        log.trace("SurfaceCommandBuffer.reset: Resetting command buffer at ptr {}", basePtr);
-        count = 0;
+        log.trace("SurfaceCommandBuffer.reset: context={}", contextId);
+        writer.reset();
     }
 
-    public void free() {
-        // Only free if this is a legacy allocated buffer (contextId == -1)
-        if (contextId == -1) {
-            log.trace("SurfaceCommandBuffer.free: Freeing command buffer at ptr {}", basePtr);
-            exports.freePixels(basePtr);
-        } else {
-            log.trace("SurfaceCommandBuffer.free: Skipping free for context-owned buffer (context={})", contextId);
-            // Context-owned buffer is freed when the context is destroyed
-        }
-    }
-
+    /**
+     * Flush the command buffer by sending all commands to the WASM renderer.
+     * After flushing, the buffer is automatically reset.
+     */
     public void flush() {
-        log.trace("SurfaceCommandBuffer.flush: Flushing {} commands from buffer at ptr {} to context {}",
-                count, basePtr, contextId);
-        if (contextId == -1) {
-            throw new IllegalStateException("Cannot flush command buffer without associated context");
+        // Finish any in-progress command
+        if (writer.isInCommand()) {
+            writer.finishCommand();
         }
-        if (count == 0) {
-            return; // nothing to do
+
+        int bytesUsed = writer.getBytesUsed();
+        log.trace("SurfaceCommandBuffer.flush: context={}, bytesUsed={}", contextId, bytesUsed);
+
+        if (bytesUsed == 0) {
+            return; // Nothing to flush
         }
-        int rc = exports.renderAwt(contextId, basePtr, count);
+
+        // Pass cmdPtr=0 to use context's internal buffer, bytesUsed in bytes
+        int rc = exports.renderAwt(contextId, 0, bytesUsed);
         if (rc == 0) {
             reset();
         } else {
-            log.error("SurfaceCommandBuffer.flush: renderAwt failed: {}", rc);
+            log.error("SurfaceCommandBuffer.flush: renderAwt failed with code {}", rc);
         }
     }
 
-    private int ensureSlot() {
-        if (count >= maxCommands) {
-            if (contextId == -1) {
-                throw new IllegalStateException("Command buffer overflow: " + count + " / " + maxCommands);
-            } else {
-                // it's not ideal to flush on a non-frame boundary, but
-                // it's better than raising an error.
-                flush();
-            }
-        }
-        int index = count;
-        count++;
-        return index;
+    /**
+     * Get the number of bytes remaining in the buffer.
+     * 
+     * @return Available bytes
+     */
+    public int getRemainingBytes() {
+        return writer.getRemainingBytes();
     }
 
-    private int cmdBaseByte(int index) {
-        return basePtr + index * commandSize;
+    /**
+     * Check if the buffer has enough space for a typical command.
+     * Uses a conservative estimate of 256 bytes per command.
+     * 
+     * @return true if buffer should be flushed soon
+     */
+    public boolean shouldFlush() {
+        // Flush when less than 512 bytes remain (conservative buffer)
+        return getRemainingBytes() < 512;
     }
 
-    private int cmdWordBase(int baseByte) {
-        return baseByte >> 2; // byte offset -> int index (wasm memory is little-endian)
+    /**
+     * Get buffer utilization (0.0 to 1.0).
+     * 
+     * @return Current buffer usage percentage
+     */
+    public double getUtilization() {
+        return writer.getUtilization();
     }
 
-    // ---- helpers for specific commands ----
+    // ---- Command emission methods ----
+
+    /**
+     * Begin writing a new command.
+     * 
+     * <p>
+     * If a previous command was started but not finished, it will be automatically
+     * finished.
+     * 
+     * @param operation The command operation
+     * @param flags     Command flags (0-255). Bit 0 reserved for CMD_FLAG_EXTENDED.
+     */
+    private void beginCommand(Operation operation, int flags) {
+        writer.beginCommand(operation.ordinal(), flags);
+    }
 
     public void emitSetColor(int argb, int which) {
         log.trace("SurfaceCommandBuffer.emitSetColor: argb=0x{}, which={}",
                 Integer.toHexString(argb), which);
-        int idx = ensureSlot();
-        int baseByte = cmdBaseByte(idx);
-        int wordBase = cmdWordBase(baseByte);
 
-        // operation byte
-        setOperation(baseByte, Operation.SET_COLOR);
-
-        // x,y,width,height unused here; leave zero
-        i32.set(wordBase + 1, 0); // x
-        i32.set(wordBase + 2, 0); // y
-        i32.set(wordBase + 3, 0); // width
-        i32.set(wordBase + 4, 0); // height
-
-        // union.set_color.argb / which
-        i32.set(wordBase + 5, argb); // argb
-        i32.set(wordBase + 6, which); // which index (fg/bg)
+        beginCommand(Operation.SET_COLOR, 0);
+        writer.writeInt32(argb);
+        writer.writeInt32(which);
     }
 
     public void emitFillRect(int x, int y, int w, int h) {
         log.trace("SurfaceCommandBuffer.emitFillRect: x={}, y={}, w={}, h={}",
                 x, y, w, h);
-        int idx = ensureSlot();
-        int baseByte = cmdBaseByte(idx);
-        int wordBase = cmdWordBase(baseByte);
 
-        setOperation(baseByte, Operation.FILL_RECT);
-
-        i32.set(wordBase + 1, x);
-        i32.set(wordBase + 2, y);
-        i32.set(wordBase + 3, w);
-        i32.set(wordBase + 4, h);
-
-        // args unused
-        i32.set(wordBase + 5, 0);
-        i32.set(wordBase + 6, 0);
+        beginCommand(Operation.FILL_RECT, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
     }
 
     public void emitDrawRect(int x, int y, int w, int h) {
         log.trace("SurfaceCommandBuffer.emitDrawRect: x={}, y={}, w={}, h={}",
                 x, y, w, h);
-        int idx = ensureSlot();
-        int baseByte = cmdBaseByte(idx);
-        int wordBase = cmdWordBase(baseByte);
 
-        setOperation(baseByte, Operation.DRAW_RECT);
-
-        i32.set(wordBase + 1, x);
-        i32.set(wordBase + 2, y);
-        i32.set(wordBase + 3, w);
-        i32.set(wordBase + 4, h);
-
-        i32.set(wordBase + 5, 0);
-        i32.set(wordBase + 6, 0);
+        beginCommand(Operation.DRAW_RECT, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
     }
 
     public void emitClearRect(int x, int y, int w, int h) {
         log.trace("SurfaceCommandBuffer.emitClearRect: x={}, y={}, w={}, h={}",
                 x, y, w, h);
-        int idx = ensureSlot();
-        int baseByte = cmdBaseByte(idx);
-        int wordBase = cmdWordBase(baseByte);
 
-        setOperation(baseByte, Operation.CLEAR_RECT);
-
-        i32.set(wordBase + 1, x);
-        i32.set(wordBase + 2, y);
-        i32.set(wordBase + 3, w);
-        i32.set(wordBase + 4, h);
-
-        i32.set(wordBase + 5, 0);
-        i32.set(wordBase + 6, 0);
+        beginCommand(Operation.CLEAR_RECT, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
     }
 
     public void emitSetClipRect(int x, int y, int w, int h) {
         log.trace("SurfaceCommandBuffer.emitSetClipRect: x={}, y={}, w={}, h={}",
                 x, y, w, h);
-        int idx = ensureSlot();
-        int baseByte = cmdBaseByte(idx);
-        int wordBase = cmdWordBase(baseByte);
 
-        setOperation(baseByte, Operation.SET_CLIP_RECT);
-
-        i32.set(wordBase + 1, x);
-        i32.set(wordBase + 2, y);
-        i32.set(wordBase + 3, w);
-        i32.set(wordBase + 4, h);
-
-        i32.set(wordBase + 5, 0);
-        i32.set(wordBase + 6, 0);
+        beginCommand(Operation.SET_CLIP_RECT, 0);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
+        writer.writeInt32(w);
+        writer.writeInt32(h);
     }
 
     public void emitBlitImage(int surfaceId, int x, int y) {
         log.trace("SurfaceCommandBuffer.emitBlitImage: surfaceId={}, x={}, y={}",
                 surfaceId, x, y);
-        int idx = ensureSlot();
-        int baseByte = cmdBaseByte(idx);
-        int wordBase = cmdWordBase(baseByte);
 
-        setOperation(baseByte, Operation.BLIT_IMAGE);
-
-        i32.set(wordBase + 1, x);
-        i32.set(wordBase + 2, y);
-        i32.set(wordBase + 3, 0);
-        i32.set(wordBase + 4, 0);
-        i32.set(wordBase + 5, surfaceId);
-        i32.set(wordBase + 6, 0);
+        beginCommand(Operation.BLIT_IMAGE, 0);
+        writer.writeInt32(surfaceId);
+        writer.writeInt32(x);
+        writer.writeInt32(y);
     }
 
     public void emitSetTransform(
             float m00, float m10, float m01,
             float m11, float m02, float m12) {
         log.trace("SurfaceCommandBuffer.emitSetTransform: [" +
-                        "{}, {}, {}}, " +
-                        "{{}, {}, {}}]",
+                "{}, {}, {}}, " +
+                "{{}, {}, {}}]",
                 m00, m01, m02,
                 m10, m11, m12);
-        int idx = ensureSlot();
-        int baseByte = cmdBaseByte(idx);
-        int wordBase = cmdWordBase(baseByte);
 
-        // operation
-        setOperation(baseByte, Operation.SET_TRANSFORM);
-
-        // reinterpret float->uint32
-        int i00 = Float.floatToIntBits(m00);
-        int i01 = Float.floatToIntBits(m01);
-        int i02 = Float.floatToIntBits(m02);
-        int i10 = Float.floatToIntBits(m10);
-        int i11 = Float.floatToIntBits(m11);
-        int i12 = Float.floatToIntBits(m12);
-
-        i32.set(wordBase + 1, i00); // x
-        i32.set(wordBase + 2, i01); // y
-        i32.set(wordBase + 3, i02); // width
-        i32.set(wordBase + 4, i10); // height
-        i32.set(wordBase + 5, i11); // args[0]
-        i32.set(wordBase + 6, i12); // args[1]
+        beginCommand(Operation.SET_TRANSFORM, 0);
+        writer.writeFloat(m00);
+        writer.writeFloat(m01);
+        writer.writeFloat(m02);
+        writer.writeFloat(m10);
+        writer.writeFloat(m11);
+        writer.writeFloat(m12);
     }
 
     public void emitDrawLine(int x0, int y0, int x1, int y1) {
         log.trace("SurfaceCommandBuffer.emitDrawLine: x0={}, y0={}, x1={}, y1={}",
                 x0, y0, x1, y1);
-        int idx = ensureSlot();
-        int baseByte = cmdBaseByte(idx);
-        int wordBase = cmdWordBase(baseByte);
 
-        setOperation(baseByte, Operation.DRAW_LINE);
-
-        i32.set(wordBase + 1, x0);
-        i32.set(wordBase + 2, y0);
-        i32.set(wordBase + 3, x1);
-        i32.set(wordBase + 4, y1);
-
-        i32.set(wordBase + 5, 0);
-        i32.set(wordBase + 6, 0);
+        beginCommand(Operation.DRAW_LINE, 0);
+        writer.writeInt32(x0);
+        writer.writeInt32(y0);
+        writer.writeInt32(x1);
+        writer.writeInt32(y1);
     }
 
-    private void setOperation(int byteIndex, Operation op) {
-        u8.set(byteIndex, (short) op.ordinal());
+    public void emitSetComposite(int compositeMode, float alpha) {
+        log.trace("SurfaceCommandBuffer.emitSetComposite: mode={}, alpha={}",
+                compositeMode, alpha);
+
+        beginCommand(Operation.SET_COMPOSITE, 0);
+        writer.writeInt32(compositeMode);
+        writer.writeFloat(alpha);
+    }
+
+    public void emitDrawPolygon(int[] xpoints, int[] ypoints) {
+        log.trace("SurfaceCommandBuffer.emitDrawPolygon: xpoints={}, ypoints={}", xpoints, ypoints);
+
+        beginCommand(Operation.DRAW_POLYGON, 0);
+        for (int i = 0; i < xpoints.length; i++) {
+            writer.writeInt32(xpoints[i]);
+            writer.writeInt32(ypoints[i]);
+        }
     }
 
     public void emitDrawSurface(WasmSurface surface, int imgX, int imgY) {

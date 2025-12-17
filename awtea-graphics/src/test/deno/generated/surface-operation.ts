@@ -14,7 +14,7 @@ export enum SurfaceOperation {
   CMD_SET_TRANSFORM = 2,
   /** Set clipping rectangle */
   CMD_SET_CLIP_RECT = 3,
-  /** Set compositing mode (unimplemented in WASM) */
+  /** Set compositing mode (Porter-Duff alpha blending) */
   CMD_SET_COMPOSITE = 4,
   /** Copy image to surface */
   CMD_BLIT_IMAGE = 5,
@@ -26,4 +26,6 @@ export enum SurfaceOperation {
   CMD_CLEAR_RECT = 8,
   /** Draw line */
   CMD_DRAW_LINE = 9,
+  /** Draw a polygon */
+  CMD_DRAW_POLYGON = 10,
 }

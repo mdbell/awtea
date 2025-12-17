@@ -21,13 +21,8 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSMethod("find_free_surface")
 	int findFreeSurfaceId();
 
-	@JSMethod("get_command_size")
-	int getSurfaceCommandSize();
-
-	@JSMethod("request_command_buffer")
-	int requestCommandBuffer(int commandCount);
-
-	// int reset_surface(int surface_id, int layer, int width, int height, int pixel_format);
+	// int reset_surface(int surface_id, int layer, int width, int height, int
+	// pixel_format);
 	@JSMethod("reset_surface")
 	int resetSurface(int surfaceId, int layer, int width, int height, int pixelFormat);
 
@@ -66,16 +61,27 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSMethod("get_context_surface_id")
 	int getContextSurfaceId(int contextId);
 
-	@JSMethod("get_max_context_commands")
-	int getMaxContextCommands();
+	@JSMethod("get_context_buffer_size_words")
+	int getContextBufferSizeWords();
 
-	@JSMethod("get_context_command_buffer_ptr")
-	int getContextCommandBufferPtr(int contextId);
+	@JSMethod("get_context_buffer_ptr")
+	int getContextBufferPtr(int contextId);
 
 	@JSMethod("free_pixels")
 	void freePixels(int ptr);
 
-	// int render_awt(int context_id, uint32_t cmdPtr, int cmdCount);
+	// int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed);
+	// Note: bytesUsed parameter is now in bytes (not command count)
 	@JSMethod("render_awt")
-	int renderAwt(int contextId, int commandsPtr, int commandCount);
+	int renderAwt(int contextId, int commandsPtr, int bytesUsed);
+
+	// Stack tracking exports
+	@JSMethod("get_stack_buffer_ptr")
+	int getStackBufferPtr();
+
+	@JSMethod("get_stack_depth")
+	int getStackDepth();
+
+	@JSMethod("get_max_stack_depth")
+	int getMaxStackDepth();
 }

@@ -16,6 +16,7 @@ import org.teavm.jso.browser.Window;
 import java.awt.*;
 import java.text.AttributedCharacterIterator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class TSurfaceRasterizerGraphics extends TGraphics2D {
@@ -106,7 +107,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         background = Color.BLACK;
         font = TFont.getDefaultFont();
         composite = TAlphaComposite.SrcOver;
-        //TODO: clear ops?
+        // TODO: clear ops?
     }
 
     @Override
@@ -272,8 +273,8 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             setClip(x, y, width, height);
         } else {
             clip = clip.intersection(new TRectangle(x, y, width, height));
-            // op gets pushed in setClip, so we only need to push it here
-            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, this.clip));
+            // Transform the clip to device coordinates before sending
+            pushTransformedClip();
         }
     }
 
@@ -285,7 +286,8 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             return;
         }
         this.clip = new TRectangle(x, y, width, height);
-        pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, this.clip));
+        // Transform the clip to device coordinates before sending
+        pushTransformedClip();
 
     }
 
@@ -299,7 +301,51 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             // non-rect clips not implemented
             throw new UnsupportedOperationException("Non-rect clip not supported yet");
         }
-        pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, this.clip));
+        // Transform the clip to device coordinates before sending
+        if (this.clip == null) {
+            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT));
+        } else {
+            pushTransformedClip();
+        }
+    }
+
+    /**
+     * Transform the current clip rectangle to device coordinates and push it to the
+     * command buffer.
+     * This is necessary because the clip is stored in user space but all
+     * rasterizers expect it in
+     * device coordinates.
+     */
+    private void pushTransformedClip() {
+        if (clip == null) {
+            pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT));
+            return;
+        }
+
+        // Transform the four corners of the clip rectangle
+        double[] pts = new double[] {
+                clip.x, clip.y, // top-left
+                clip.x + clip.width, clip.y, // top-right
+                clip.x, clip.y + clip.height, // bottom-left
+                clip.x + clip.width, clip.y + clip.height // bottom-right
+        };
+        transform.transform(pts, 0, pts, 0, 4);
+
+        // Find the bounding box of the transformed corners
+        double minX = Math.min(Math.min(pts[0], pts[2]), Math.min(pts[4], pts[6]));
+        double minY = Math.min(Math.min(pts[1], pts[3]), Math.min(pts[5], pts[7]));
+        double maxX = Math.max(Math.max(pts[0], pts[2]), Math.max(pts[4], pts[6]));
+        double maxY = Math.max(Math.max(pts[1], pts[3]), Math.max(pts[5], pts[7]));
+
+        // Convert to integer rectangle in device coordinates
+        int deviceX = (int) Math.floor(minX);
+        int deviceY = (int) Math.floor(minY);
+        int deviceWidth = Math.max(0, (int) Math.ceil(maxX) - deviceX);
+        int deviceHeight = Math.max(0, (int) Math.ceil(maxY) - deviceY);
+
+        // Create a transformed clip rectangle and push it
+        TRectangle deviceClip = new TRectangle(deviceX, deviceY, deviceWidth, deviceHeight);
+        pushOp(new SurfaceCommand(Operation.SET_CLIP_RECT, deviceClip));
     }
 
     @Override
@@ -315,6 +361,11 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     @Override
     public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints) {
 
+        int[] xpts = Arrays.copyOf(xPoints, nPoints);
+        int[] ypts = Arrays.copyOf(yPoints, nPoints);
+
+        SurfaceCommand.PolygonPoints points = new SurfaceCommand.PolygonPoints(xpts, ypts);
+        pushOp(new SurfaceCommand(Operation.DRAW_POLYGON, points));
     }
 
     @Override
@@ -353,7 +404,8 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         int textWidth = peer.measureString(str, sizePx);
         FontPeer.FontMetrics metrics = peer.getFontMetrics(sizePx);
 
-        // Calculate surface dimensions with padding for glyphs that may extend beyond bounds
+        // Calculate surface dimensions with padding for glyphs that may extend beyond
+        // bounds
         int surfaceWidth = textWidth + TEXT_SURFACE_PADDING;
         int surfaceHeight = (int) Math.ceil(metrics.getAscent() + metrics.getDescent()) + TEXT_SURFACE_PADDING;
 
@@ -399,8 +451,10 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         pushOp(new SurfaceCommand(Operation.BLIT_IMAGE, textImage,
                 destX, destY, surfaceWidth, surfaceHeight));
 
-        // Note: textImage and its surface will be garbage collected after the blit operation completes
-        // The memory pressure is now much lower because individual glyphs are cached in the atlas
+        // Note: textImage and its surface will be garbage collected after the blit
+        // operation completes
+        // The memory pressure is now much lower because individual glyphs are cached in
+        // the atlas
     }
 
     @Override
@@ -452,7 +506,8 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
-
+        // just draw it for now, will implement scanline fill later
+        drawPolygon(xPoints, yPoints, nPoints);
     }
 
     @Override
