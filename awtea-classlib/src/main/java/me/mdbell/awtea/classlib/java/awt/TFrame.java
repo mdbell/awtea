@@ -88,7 +88,8 @@ public class TFrame extends TWindow {
 
     /**
      * Sets the size of this frame to the specified width and height.
-     * Also notifies the peer to update the window size.
+     * Also notifies the peer to update the window size and ensures proper
+     * layout validation and repainting.
      *
      * @param width  the new width of this frame in pixels
      * @param height the new height of this frame in pixels
@@ -100,5 +101,8 @@ public class TFrame extends TWindow {
         }
         super.setSize(width, height);
         peer.setSize(width, height);
+        invalidate();
+        validate();
+        repaint();
     }
 }

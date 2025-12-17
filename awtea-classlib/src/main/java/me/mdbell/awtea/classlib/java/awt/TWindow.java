@@ -109,21 +109,16 @@ public abstract class TWindow extends TSurface {
     /**
      * Sets the size of this component to the specified width and height.
      * <p>
-     * For windows, this method also invalidates and validates the layout,
-     * ensuring all components are properly positioned after the resize.
+     * For windows, this method delegates to the superclass (TSurface) to handle
+     * the actual size change. Subclasses like TFrame should override to add
+     * invalidation and validation as needed.
      *
      * @param width  the new width of this component in pixels
      * @param height the new height of this component in pixels
      */
     @Override
     public void setSize(int width, int height) {
-        if (width == getWidth() && height == getHeight()) {
-            return;
-        }
         super.setSize(width, height);
-        invalidate();
-        validate();
-        repaint();
     }
 
     /**
