@@ -44,3 +44,7 @@ void fill_round_rect(SurfaceData* surface, SurfaceContext* context,
                     int x, int y, int width, int height,
                     int arc_width, int arc_height,
                     uint32_t color);
+
+void fill_rect(SurfaceData* surface, SurfaceContext* context,
+              int x, int y, int width, int height,
+              uint32_t color);

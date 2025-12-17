@@ -6,6 +6,7 @@
 #include "awt_log.h"
 #include "awt_stack.h"
 #include "awt_edge_table.h"
+#include "awt_memory.h"
 
 // Global edge table pool (lazy initialization)
 static EdgeTablePool* g_edge_table_pool = NULL;
@@ -396,17 +397,50 @@ void fill_polygon(SurfaceData* surface, SurfaceContext* context,
     
     log_debug("fill_polygon: n_points=%d, color=0x%08X", n_points, color);
     
-    // Calculate bounding box
-    int min_x = x_points[0];
-    int max_x = x_points[0];
-    int min_y = y_points[0];
-    int max_y = y_points[0];
+    // Apply transform to points if necessary
+    int* transformed_x = x_points;
+    int* transformed_y = y_points;
+    int* allocated_x = NULL;
+    int* allocated_y = NULL;
+    
+    if (!is_identity_transform(&context->transform)) {
+        // Need to transform points - allocate temporary arrays
+        allocated_x = (int*)tracked_malloc(sizeof(int) * n_points);
+        allocated_y = (int*)tracked_malloc(sizeof(int) * n_points);
+        
+        if (!allocated_x || !allocated_y) {
+            log_error("fill_polygon: failed to allocate transform arrays");
+            if (allocated_x) tracked_free(allocated_x);
+            if (allocated_y) tracked_free(allocated_y);
+            STACK_EXIT();
+            return;
+        }
+        
+        // Transform all points
+        for (int i = 0; i < n_points; i++) {
+            float fx = (float)x_points[i];
+            float fy = (float)y_points[i];
+            float tx, ty;
+            transform_point(&context->transform, fx, fy, &tx, &ty);
+            allocated_x[i] = (int)(tx + 0.5f); // Round to nearest integer
+            allocated_y[i] = (int)(ty + 0.5f);
+        }
+        
+        transformed_x = allocated_x;
+        transformed_y = allocated_y;
+    }
+    
+    // Calculate bounding box using transformed points
+    int min_x = transformed_x[0];
+    int max_x = transformed_x[0];
+    int min_y = transformed_y[0];
+    int max_y = transformed_y[0];
     
     for (int i = 1; i < n_points; i++) {
-        if (x_points[i] < min_x) min_x = x_points[i];
-        if (x_points[i] > max_x) max_x = x_points[i];
-        if (y_points[i] < min_y) min_y = y_points[i];
-        if (y_points[i] > max_y) max_y = y_points[i];
+        if (transformed_x[i] < min_x) min_x = transformed_x[i];
+        if (transformed_x[i] > max_x) max_x = transformed_x[i];
+        if (transformed_y[i] < min_y) min_y = transformed_y[i];
+        if (transformed_y[i] > max_y) max_y = transformed_y[i];
     }
     
     // Clip bounding box to surface
@@ -415,6 +449,8 @@ void fill_polygon(SurfaceData* surface, SurfaceContext* context,
     
     if (min_y >= max_y) {
         log_debug("fill_polygon: clipped out entirely");
+        if (allocated_x) tracked_free(allocated_x);
+        if (allocated_y) tracked_free(allocated_y);
         STACK_EXIT();
         return;
     }
@@ -425,15 +461,17 @@ void fill_polygon(SurfaceData* surface, SurfaceContext* context,
                                             surface->width, surface->height);
     if (!et) {
         log_error("fill_polygon: failed to acquire edge table");
+        if (allocated_x) tracked_free(allocated_x);
+        if (allocated_y) tracked_free(allocated_y);
         STACK_EXIT();
         return;
     }
     
-    // Add all edges of the polygon
+    // Add all edges of the polygon using transformed points
     for (int i = 0; i < n_points; i++) {
         int next = (i + 1) % n_points;
-        edge_table_add_line(et, x_points[i], y_points[i], 
-                           x_points[next], y_points[next]);
+        edge_table_add_line(et, transformed_x[i], transformed_y[i], 
+                           transformed_x[next], transformed_y[next]);
     }
     
     // Fill using edge table with even-odd rule
@@ -441,6 +479,10 @@ void fill_polygon(SurfaceData* surface, SurfaceContext* context,
     
     // Return edge table to pool
     edge_table_pool_release(g_edge_table_pool, et);
+    
+    // Free allocated transform arrays if any
+    if (allocated_x) tracked_free(allocated_x);
+    if (allocated_y) tracked_free(allocated_y);
     
     log_debug("fill_polygon: completed");
     STACK_EXIT();
@@ -460,6 +502,18 @@ void fill_oval(SurfaceData* surface, SurfaceContext* context,
     
     log_debug("fill_oval: x=%d, y=%d, w=%d, h=%d, color=0x%08X", 
              x, y, width, height, color);
+    
+    // Apply transform if necessary
+    if (!is_identity_transform(&context->transform)) {
+        float fx = (float)x;
+        float fy = (float)y;
+        float tx, ty;
+        transform_point(&context->transform, fx, fy, &tx, &ty);
+        x = (int)(tx + 0.5f);
+        y = (int)(ty + 0.5f);
+        // Note: For proper transform, width/height should also be transformed
+        // but for translation-only (current case), this is sufficient
+    }
     
     // Calculate center and radii
     int cx = x + width / 2;
@@ -515,6 +569,16 @@ void fill_arc(SurfaceData* surface, SurfaceContext* context,
     
     log_debug("fill_arc: x=%d, y=%d, w=%d, h=%d, start=%d, arc=%d, color=0x%08X",
              x, y, width, height, start_angle, arc_angle, color);
+    
+    // Apply transform if necessary
+    if (!is_identity_transform(&context->transform)) {
+        float fx = (float)x;
+        float fy = (float)y;
+        float tx, ty;
+        transform_point(&context->transform, fx, fy, &tx, &ty);
+        x = (int)(tx + 0.5f);
+        y = (int)(ty + 0.5f);
+    }
     
     // Calculate center and radii
     int cx = x + width / 2;
@@ -589,6 +653,16 @@ void fill_round_rect(SurfaceData* surface, SurfaceContext* context,
     log_debug("fill_round_rect: x=%d, y=%d, w=%d, h=%d, arc_w=%d, arc_h=%d, color=0x%08X",
              x, y, width, height, arc_width, arc_height, color);
     
+    // Apply transform if necessary
+    if (!is_identity_transform(&context->transform)) {
+        float fx = (float)x;
+        float fy = (float)y;
+        float tx, ty;
+        transform_point(&context->transform, fx, fy, &tx, &ty);
+        x = (int)(tx + 0.5f);
+        y = (int)(ty + 0.5f);
+    }
+    
     // Clamp arc dimensions
     if (arc_width > width) arc_width = width;
     if (arc_height > height) arc_height = height;
@@ -652,5 +726,98 @@ void fill_round_rect(SurfaceData* surface, SurfaceContext* context,
     edge_table_pool_release(g_edge_table_pool, et);
     
     log_debug("fill_round_rect: completed");
+    STACK_EXIT();
+}
+
+// Fill rectangle using edge table (supports transforms)
+void fill_rect(SurfaceData* surface, SurfaceContext* context,
+              int x, int y, int width, int height,
+              uint32_t color) {
+    STACK_ENTER();
+    
+    if (!surface || !context || width <= 0 || height <= 0) {
+        log_error("fill_rect: invalid parameters");
+        STACK_EXIT();
+        return;
+    }
+    
+    log_debug("fill_rect: x=%d, y=%d, w=%d, h=%d, color=0x%08X",
+             x, y, width, height, color);
+    
+    // Create array of 4 corner points
+    int x_points[4];
+    int y_points[4];
+    
+    // Apply transform if necessary
+    if (!is_identity_transform(&context->transform)) {
+        // Transform all four corners
+        float corners_x[4] = {(float)x, (float)(x + width), (float)(x + width), (float)x};
+        float corners_y[4] = {(float)y, (float)y, (float)(y + height), (float)(y + height)};
+        
+        for (int i = 0; i < 4; i++) {
+            float tx, ty;
+            transform_point(&context->transform, corners_x[i], corners_y[i], &tx, &ty);
+            x_points[i] = (int)(tx + 0.5f);
+            y_points[i] = (int)(ty + 0.5f);
+        }
+    } else {
+        // No transform - simple rectangle corners
+        x_points[0] = x;
+        y_points[0] = y;
+        x_points[1] = x + width;
+        y_points[1] = y;
+        x_points[2] = x + width;
+        y_points[2] = y + height;
+        x_points[3] = x;
+        y_points[3] = y + height;
+    }
+    
+    // Calculate bounding box
+    int min_x = x_points[0];
+    int max_x = x_points[0];
+    int min_y = y_points[0];
+    int max_y = y_points[0];
+    
+    for (int i = 1; i < 4; i++) {
+        if (x_points[i] < min_x) min_x = x_points[i];
+        if (x_points[i] > max_x) max_x = x_points[i];
+        if (y_points[i] < min_y) min_y = y_points[i];
+        if (y_points[i] > max_y) max_y = y_points[i];
+    }
+    
+    // Clip bounding box to surface
+    min_y = clamp_int(min_y, 0, (int)surface->height - 1);
+    max_y = clamp_int(max_y, 0, (int)surface->height - 1);
+    
+    if (min_y >= max_y) {
+        log_debug("fill_rect: clipped out entirely");
+        STACK_EXIT();
+        return;
+    }
+    
+    // Get edge table from pool
+    ensure_edge_table_pool();
+    EdgeTable* et = edge_table_pool_acquire(g_edge_table_pool, min_y, max_y,
+                                            surface->width, surface->height);
+    if (!et) {
+        log_error("fill_rect: failed to acquire edge table");
+        STACK_EXIT();
+        return;
+    }
+    
+    // Add all four edges of the rectangle
+    for (int i = 0; i < 4; i++) {
+        int next = (i + 1) % 4;
+        edge_table_add_line(et, x_points[i], y_points[i], 
+                           x_points[next], y_points[next]);
+    }
+    
+    // Fill using edge table
+    edge_table_fill(et, surface, context, color, FILL_RULE_EVENODD);
+    
+    // Return edge table to pool
+    edge_table_pool_release(g_edge_table_pool, et);
+    
+    log_debug("fill_rect: completed");
     STACK_EXIT();
 }

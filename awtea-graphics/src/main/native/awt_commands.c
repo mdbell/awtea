@@ -259,7 +259,7 @@ static int handle_fill_rect(SurfaceContext* ctx, SurfaceData* surface, CommandRe
     int width = (int)read_u32(reader);
     int height = (int)read_u32(reader);
 
-    draw_filled_rect(surface, ctx, x, y, width, height, ctx->argb[COLOR_FG]);
+    fill_rect(surface, ctx, x, y, width, height, ctx->argb[COLOR_FG]);
     log_debug("Fill rect: [%d, %d, %d, %d] with color 0x%08X",
               x, y, width, height, ctx->argb[COLOR_FG]);
     return 0;
