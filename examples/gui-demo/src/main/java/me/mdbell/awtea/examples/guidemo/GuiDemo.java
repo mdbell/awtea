@@ -48,22 +48,18 @@ public class GuiDemo {
         titlePanel.setBounds(0, 0, 1050, 70);
         mainPanel.add(titlePanel);
 
-        // Add interactive drawing canvas (expanded to fill more space)
         DrawingCanvas canvas = new DrawingCanvas();
-        canvas.setBounds(10, 80, 500, 550);
+        canvas.setBounds(10, 80, 500, 540);
         mainPanel.add(canvas);
 
-        // Add graphics demo panel (increased height to show all primitives)
         GraphicsDemoPanel demoPanel = new GraphicsDemoPanel();
         demoPanel.setBounds(520, 80, 270, 660);
         mainPanel.add(demoPanel);
 
-        // Add alpha blending demo panel
         AlphaBlendingDemoPanel alphaPanel = new AlphaBlendingDemoPanel();
         alphaPanel.setBounds(800, 80, 220, 660);
         mainPanel.add(alphaPanel);
 
-        // Add info panel at the bottom (moved down to accommodate taller panels)
         Container infoPanel = new Container() {
             @Override
             public void paint(Graphics g) {
