@@ -103,10 +103,10 @@ public class GuiDemo {
 
         frame.add(centerPanel, BorderLayout.CENTER);
 
+        // Set size before making window visible
+        frame.setSize(1050, 780);
+
         // Show the window
         frame.setVisible(true);
-        
-        // Set size after components are added to ensure proper layout
-        frame.setSize(1050, 780);
     }
 }
