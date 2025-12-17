@@ -32,6 +32,7 @@
             <option value="$PROJECT_DIR$/awtea-util" />
             <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/examples" />
+            <option value="$PROJECT_DIR$/examples/animation-demo" />
             <option value="$PROJECT_DIR$/examples/gui-demo" />
             <option value="$PROJECT_DIR$/examples/hello-world" />
           </set>

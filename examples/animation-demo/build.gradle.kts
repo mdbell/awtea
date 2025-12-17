@@ -20,8 +20,10 @@ java {
 dependencies {
     // awtea dependencies - now as project dependencies
     implementation(project(":awtea-classlib"))
+    implementation(project(":awtea-graphics"))
     // needed for logging
     implementation(project(":awtea-util"))
+    implementation(project(":awtea-ui"))
 
     // TeaVM dependencies
     implementation("org.teavm:teavm-classlib:0.13.0")
@@ -31,7 +33,7 @@ dependencies {
 teavm {
     js {
         // Configure JavaScript generation
-        mainClass = "me.mdbell.awtea.examples.helloworld.HelloWorld"
+        mainClass = "me.mdbell.awtea.examples.animationdemo.AnimationDemo"
         outputDir = layout.buildDirectory.dir("dist").get().asFile
         moduleType = JSModuleType.ES2015
 
@@ -47,8 +49,6 @@ teavm {
 // Copy the HTML template to the dist directory
 tasks.register<Copy>("copyWebapp") {
     from("src/main/webapp")
-    into(layout.buildDirectory.dir("dist"))
-
     from("../../webapp-common")
     into(layout.buildDirectory.dir("dist"))
 }
