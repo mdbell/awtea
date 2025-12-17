@@ -361,6 +361,10 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
                 x_end = clamp_int(x_end, 0, (int)surface->width - 1);
                 
                 if (context->clip.width > 0 && context->clip.height > 0) {
+                    // Check if y is outside clip bounds
+                    if (y < context->clip.y || y >= context->clip.y + context->clip.height) {
+                        continue;
+                    }
                     x_start = clamp_int(x_start, context->clip.x, 
                                        context->clip.x + context->clip.width - 1);
                     x_end = clamp_int(x_end, context->clip.x, 
@@ -405,6 +409,11 @@ void edge_table_fill(EdgeTable* et, SurfaceData* surface, SurfaceContext* contex
                         x_end = clamp_int(x_end, 0, (int)surface->width - 1);
                         
                         if (context->clip.width > 0 && context->clip.height > 0) {
+                            // Check if y is outside clip bounds
+                            if (y < context->clip.y || y >= context->clip.y + context->clip.height) {
+                                span_start = -1;
+                                continue;
+                            }
                             x_start = clamp_int(x_start, context->clip.x, 
                                                context->clip.x + context->clip.width - 1);
                             x_end = clamp_int(x_end, context->clip.x, 
