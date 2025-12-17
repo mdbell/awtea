@@ -180,7 +180,7 @@ public class WasmRasterizer implements Rasterizer {
                             c.getRed() << 16 |
                             c.getGreen() << 8 |
                             c.getBlue();
-                    commandBuffer.emitSetColor(argb, cmd.args.length > 0 ? cmd.args[0] : 0);
+                    commandBuffer.emitSetColor(argb, cmd.argCount > 0 ? cmd.args[0] : 0);
                     break;
                 case SET_CLIP_RECT:
                     Shape shape = (Shape) cmd.obj;

@@ -146,10 +146,10 @@ public class SoftwareRasterizer implements Rasterizer {
             switch (cmd.type) {
                 case SET_COLOR:
                     Color c = (Color) cmd.obj;
-                    if (cmd.args.length > 0 && cmd.args[0] == 0) {
+                    if (cmd.argCount > 0 && cmd.args[0] == 0) {
                         this.foreground = c;
                         updateEncodedForeground();
-                    } else if (cmd.args.length > 0 && cmd.args[0] == 1) {
+                    } else if (cmd.argCount > 0 && cmd.args[0] == 1) {
                         this.background = c;
                         updateEncodedBackground();
                     }

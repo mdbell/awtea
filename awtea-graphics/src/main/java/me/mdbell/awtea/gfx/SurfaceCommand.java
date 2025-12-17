@@ -8,35 +8,51 @@ public class SurfaceCommand {
     public Operation type;
     public Object obj;
     public int[] args;
+    public int argCount; // Tracks the actual number of valid args
 
     public SurfaceCommand() {
         this.type = Operation.NO_OP;
         this.obj = null;
-        this.args = new int[0];
+        this.args = new int[6]; // Pre-allocate common size (most commands use <= 6 args)
+        this.argCount = 0;
     }
 
     public SurfaceCommand(Operation operation) {
         this.type = operation;
         this.obj = null;
-        this.args = new int[0];
+        this.args = new int[6];
+        this.argCount = 0;
     }
 
     public SurfaceCommand(Operation operation, Object obj) {
         this.type = operation;
         this.obj = obj;
-        this.args = new int[0];
+        this.args = new int[6];
+        this.argCount = 0;
     }
 
     public SurfaceCommand(Operation operation, Object obj, int... args) {
         this.type = operation;
         this.obj = obj;
-        this.args = args;
+        this.argCount = args.length;
+        if (args.length <= 6) {
+            this.args = new int[6];
+            System.arraycopy(args, 0, this.args, 0, args.length);
+        } else {
+            this.args = args;
+        }
     }
 
     public SurfaceCommand(Operation operation, int... args) {
         this.type = operation;
         this.obj = null;
-        this.args = args;
+        this.argCount = args.length;
+        if (args.length <= 6) {
+            this.args = new int[6];
+            System.arraycopy(args, 0, this.args, 0, args.length);
+        } else {
+            this.args = args;
+        }
     }
 
     // Note: Operation enum is now defined in
@@ -46,16 +62,19 @@ public class SurfaceCommand {
     /**
      * Resets this command to a clean state, clearing all fields.
      * Used when returning a command to the object pool to prevent memory leaks.
+     * Note: Keeps the args array allocated to avoid re-allocation on next use.
      */
     public void reset() {
         this.type = Operation.NO_OP;
         this.obj = null;
-        this.args = new int[0];
+        this.argCount = 0;
+        // Keep args array allocated - just reset count
     }
 
     /**
      * Configures this command with new values, supporting object reuse from a pool.
      * Uses varargs for flexible argument count.
+     * Only allocates a new array if the existing one is too small.
      * 
      * @param operation the operation type
      * @param obj the object parameter (can be null for operations without objects)
@@ -64,7 +83,15 @@ public class SurfaceCommand {
     public void configure(Operation operation, Object obj, int... args) {
         this.type = operation;
         this.obj = obj;
-        this.args = args;
+        this.argCount = args.length;
+        
+        // Only resize if needed
+        if (args.length > this.args.length) {
+            this.args = new int[args.length];
+        }
+        
+        // Copy args into our array
+        System.arraycopy(args, 0, this.args, 0, args.length);
     }
 
     /**
@@ -73,7 +100,7 @@ public class SurfaceCommand {
     public void configure(Operation operation) {
         this.type = operation;
         this.obj = null;
-        this.args = new int[0];
+        this.argCount = 0;
     }
 
     /**
@@ -82,7 +109,7 @@ public class SurfaceCommand {
     public void configure(Operation operation, Object obj) {
         this.type = operation;
         this.obj = obj;
-        this.args = new int[0];
+        this.argCount = 0;
     }
 
     @AllArgsConstructor

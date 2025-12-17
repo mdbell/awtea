@@ -317,12 +317,12 @@ class WebGLRasterizer implements Rasterizer {
             switch (cmd.type) {
                 case SET_COLOR:
                     Color c = (Color) cmd.obj;
-                    if (cmd.args.length > 0 && cmd.args[0] == 0) {
+                    if (cmd.argCount > 0 && cmd.args[0] == 0) {
                         this.foreground = c;
-                    } else if (cmd.args.length > 0 && cmd.args[0] == 1) {
+                    } else if (cmd.argCount > 0 && cmd.args[0] == 1) {
                         this.background = c;
                     } else {
-                        log.error("WebGLRasterizer: Unknown color target: {}", cmd.args.length > 0 ? cmd.args[0] : -1);
+                        log.error("WebGLRasterizer: Unknown color target: {}", cmd.argCount > 0 ? cmd.args[0] : -1);
                     }
                     break;
                 case SET_TRANSFORM:

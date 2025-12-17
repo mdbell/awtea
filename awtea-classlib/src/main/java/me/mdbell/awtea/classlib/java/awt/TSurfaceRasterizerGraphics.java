@@ -690,7 +690,16 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             case DRAW_RECT:
             case FILL_RECT:
             case CLEAR_RECT:
-                return Arrays.equals(previous.args, requested.args);
+                // Compare arg count first, then compare only the valid portion
+                if (previous.argCount != requested.argCount) {
+                    return false;
+                }
+                for (int i = 0; i < previous.argCount; i++) {
+                    if (previous.args[i] != requested.args[i]) {
+                        return false;
+                    }
+                }
+                return true;
             case SET_TRANSFORM:
             case SET_COLOR:
                 previous.obj = requested.obj; // Update to the latest object
