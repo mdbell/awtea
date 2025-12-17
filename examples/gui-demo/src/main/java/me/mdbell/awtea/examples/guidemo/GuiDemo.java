@@ -48,9 +48,9 @@ public class GuiDemo {
         titlePanel.setBounds(0, 0, 1050, 70);
         mainPanel.add(titlePanel);
 
-        // Add interactive drawing canvas
+        // Add interactive drawing canvas (expanded to fill more space)
         DrawingCanvas canvas = new DrawingCanvas();
-        canvas.setBounds(10, 80, 500, 300);
+        canvas.setBounds(10, 80, 500, 550);
         mainPanel.add(canvas);
 
         // Add graphics demo panel (increased height to show all primitives)

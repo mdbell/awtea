@@ -38,7 +38,7 @@ public class GraphicsDemoPanel extends Container {
         g.drawString("Rounded Rects:", 10, yPos);
         g.setColor(Color.ORANGE);
         g.fillRoundRect(100, yPos - 15, 50, 30, 15, 15);
-        g.setColor(new Color(128, 0, 128)); // Purple
+        g.setColor(Color.RED); // Bright red for maximum visibility
         g.drawRoundRect(180, yPos - 15, 50, 30, 10, 10);
         yPos += spacing;
 
@@ -66,7 +66,7 @@ public class GraphicsDemoPanel extends Container {
         g.setColor(new Color(255, 150, 0)); // Orange
         g.fillArc(100, yPos - 15, 50, 30, 0, 180);
         g.setColor(new Color(200, 0, 0)); // Darker red for better visibility
-        g.drawArc(180, yPos - 15, 50, 30, 45, 270);
+        g.drawArc(180, yPos - 15, 50, 30, 0, 180); // Simplified: same as fillArc
         yPos += spacing;
 
         // Polygons

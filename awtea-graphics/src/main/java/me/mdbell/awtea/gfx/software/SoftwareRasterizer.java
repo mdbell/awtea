@@ -362,6 +362,15 @@ public class SoftwareRasterizer implements Rasterizer {
         x2 = Math.round((float) p2.getX());
         y2 = Math.round((float) p2.getY());
 
+        drawLineDeviceSpace(x1, y1, x2, y2);
+    }
+
+    /**
+     * Draw a line in device space (coordinates already transformed).
+     * Used internally by helper methods that work in device space.
+     */
+    private void drawLineDeviceSpace(int x1, int y1, int x2, int y2) {
+
         // Fast path: both points are outside clip (in device space)
         if (clip != null) {
             if ((x1 < clip.x && x2 < clip.x) ||
@@ -1258,25 +1267,25 @@ public class SoftwareRasterizer implements Rasterizer {
 
         // Draw four corner arcs and four straight edges
         // Top edge
-        drawLine(x + rx, y, x + width - rx, y);
+        drawLineDeviceSpace(x + rx, y, x + width - rx, y);
 
         // Top-right corner arc (0 to 90 degrees)
         drawArcSegment(x + width - rx, y + ry, rx, ry, -Math.PI / 2.0, 0.0);
 
         // Right edge
-        drawLine(x + width, y + ry, x + width, y + height - ry);
+        drawLineDeviceSpace(x + width, y + ry, x + width, y + height - ry);
 
         // Bottom-right corner arc (90 to 180 degrees)
         drawArcSegment(x + width - rx, y + height - ry, rx, ry, 0.0, Math.PI / 2.0);
 
         // Bottom edge
-        drawLine(x + width - rx, y + height, x + rx, y + height);
+        drawLineDeviceSpace(x + width - rx, y + height, x + rx, y + height);
 
         // Bottom-left corner arc (180 to 270 degrees)
         drawArcSegment(x + rx, y + height - ry, rx, ry, Math.PI / 2.0, Math.PI);
 
         // Left edge
-        drawLine(x, y + height - ry, x, y + ry);
+        drawLineDeviceSpace(x, y + height - ry, x, y + ry);
 
         // Top-left corner arc (270 to 360 degrees)
         drawArcSegment(x + rx, y + ry, rx, ry, Math.PI, 3.0 * Math.PI / 2.0);
@@ -1351,7 +1360,7 @@ public class SoftwareRasterizer implements Rasterizer {
             copyHeight = surfaceHeight - srcY;
         }
 
-        // Clip destination rectangle
+        // Clip destination rectangle to surface bounds
         if (dstX < 0) {
             copyWidth += dstX;
             srcX -= dstX;
@@ -1367,6 +1376,32 @@ public class SoftwareRasterizer implements Rasterizer {
         }
         if (dstY + copyHeight > surfaceHeight) {
             copyHeight = surfaceHeight - dstY;
+        }
+
+        // Apply clip rectangle to destination
+        if (clip != null) {
+            // Clip destination to clip rectangle
+            int clipRight = clip.x + clip.width;
+            int clipBottom = clip.y + clip.height;
+            
+            if (dstX < clip.x) {
+                int diff = clip.x - dstX;
+                srcX += diff;
+                copyWidth -= diff;
+                dstX = clip.x;
+            }
+            if (dstY < clip.y) {
+                int diff = clip.y - dstY;
+                srcY += diff;
+                copyHeight -= diff;
+                dstY = clip.y;
+            }
+            if (dstX + copyWidth > clipRight) {
+                copyWidth = clipRight - dstX;
+            }
+            if (dstY + copyHeight > clipBottom) {
+                copyHeight = clipBottom - dstY;
+            }
         }
 
         if (copyWidth <= 0 || copyHeight <= 0) {
@@ -1526,13 +1561,13 @@ public class SoftwareRasterizer implements Rasterizer {
 
         double angleStep = (endAngle - startAngle) / steps;
         int prevX = cx + (int) Math.round(rx * Math.cos(startAngle));
-        int prevY = cy - (int) Math.round(ry * Math.sin(startAngle)); // Negate for screen coords
+        int prevY = cy + (int) Math.round(ry * Math.sin(startAngle));
 
         for (int i = 1; i <= steps; i++) {
             double angle = startAngle + i * angleStep;
             int x = cx + (int) Math.round(rx * Math.cos(angle));
-            int y = cy - (int) Math.round(ry * Math.sin(angle)); // Negate for screen coords
-            drawLine(prevX, prevY, x, y);
+            int y = cy + (int) Math.round(ry * Math.sin(angle));
+            drawLineDeviceSpace(prevX, prevY, x, y); // Use device space version
             prevX = x;
             prevY = y;
         }
