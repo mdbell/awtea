@@ -63,10 +63,10 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
         return -3;
     }
 
-    WASM_ASSERT(surface != NULL && "get_surface_data returned NULL for valid ID range");
-    
     if(!surface) {
+        // This should never happen if ID range is valid, but check anyway
         log_error("Failed to get surface data for ID: %d", surface_id);
+        WASM_ASSERT(0 && "get_surface_data returned NULL for valid ID range");
         STACK_EXIT_ERR(-2);
         return -2;
     }
@@ -201,7 +201,14 @@ int create_context(int surface_id) {
         return -1; // invalid surface
     }
     
-    WASM_ASSERT(surface->width > 0 && surface->height > 0 && "Surface must have positive dimensions");
+    // Validate surface dimensions
+    if (!(surface->width > 0 && surface->height > 0)) {
+        log_error("create_context: surface %d has invalid dimensions: %dx%d", 
+                  surface_id, surface->width, surface->height);
+        WASM_ASSERT(0 && "Surface must have positive dimensions");
+        STACK_EXIT_ERR(-1);
+        return -1;
+    }
 
     int context_id = find_free_context();
     if (context_id == -1) {
@@ -211,10 +218,11 @@ int create_context(int surface_id) {
     }
 
     SurfaceContext* ctx = get_context_data(context_id);
-    WASM_ASSERT(ctx != NULL && "get_context_data returned NULL for valid context ID");
     
     if (!ctx) {
+        // This should never happen if context_id is valid, but check anyway
         log_error("create_context: failed to get context data for id %d", context_id);
+        WASM_ASSERT(0 && "get_context_data returned NULL for valid context ID");
         STACK_EXIT_ERR(-1);
         return -1; // should not happen
     }

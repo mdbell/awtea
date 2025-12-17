@@ -26,6 +26,10 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     private final WasmSurfacePool surfacePool;
     
     private final WasmDiagnostics diagnostics;
+    
+    // Cache for capacity warning thresholds to avoid frequent checks
+    private long lastCapacityWarningTime = 0;
+    private static final long CAPACITY_WARNING_INTERVAL_MS = 5000; // Warn at most once per 5 seconds
 
     public WasmSurfaceBackend() {
 
@@ -117,12 +121,16 @@ public class WasmSurfaceBackend implements SurfaceBackend {
             throw new IllegalArgumentException("Invalid pixel format: " + pixelFormat);
         }
         
-        // Check if we're approaching surface capacity
-        if (diagnostics.isSurfaceCapacityWarning(0.9)) {
-            log.warn("Surface capacity at {:.1f}% ({} / {}), approaching limit",
-                    diagnostics.getSurfaceUtilization() * 100,
-                    diagnostics.getActiveSurfaceCount(),
-                    diagnostics.getMaxSurfaces());
+        // Check if we're approaching surface capacity (throttled to avoid performance impact)
+        long now = System.currentTimeMillis();
+        if (now - lastCapacityWarningTime > CAPACITY_WARNING_INTERVAL_MS) {
+            if (diagnostics.isSurfaceCapacityWarning(0.9)) {
+                log.warn("Surface capacity at {:.1f}% ({} / {}), approaching limit",
+                        diagnostics.getSurfaceUtilization() * 100,
+                        diagnostics.getActiveSurfaceCount(),
+                        diagnostics.getMaxSurfaces());
+                lastCapacityWarningTime = now;
+            }
         }
 
         // Use pool to acquire or create surface

@@ -192,8 +192,15 @@ public final class WasmSurface implements Surface {
 	/**
 	 * Finalizer to detect resource leaks.
 	 * Warns if surface was not explicitly destroyed.
+	 * 
+	 * NOTE: finalize() is deprecated in Java 9+ and should be replaced with Cleaner,
+	 * but TeaVM does not yet support java.lang.ref.Cleaner. This is a temporary solution
+	 * for leak detection until TeaVM adds Cleaner support.
+	 * 
+	 * @deprecated This method uses deprecated finalize() mechanism
 	 */
 	@Override
+	@Deprecated
 	protected void finalize() throws Throwable {
 		try {
 			if (surfaceId != -1 && !explicitlyDestroyed) {

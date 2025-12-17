@@ -355,11 +355,14 @@ public class WasmSurfacePool {
 
     /**
      * Create a new surface (not from pool).
+     * @throws IllegalStateException if no free surface IDs available
      */
     private WasmSurface createNewSurface(int width, int height, int pixelFormat) {
         int surfaceId = backend.exports.findFreeSurfaceId();
         if (surfaceId < 0) {
-            // No free surface available - log diagnostics
+            // No free surface available - provide helpful error message
+            // Note: We avoid calling getDiagnostics() in hot path for performance,
+            // but it's acceptable in error cases which should be rare
             WasmDiagnostics diag = backend.getDiagnostics();
             log.error("Failed to create surface: no free surface IDs available. " +
                     "Active: {} / {}, Utilization: {:.1f}%",
