@@ -413,13 +413,13 @@ public class AnimationDemo {
         private void drawFPSCounter(Graphics g) {
             double fps = fpsCounter.getFPS();
 
-            // Background
+            // Background with rounded corners
             g.setColor(Color.WHITE);
-            g.fillRect(5, 5, 100, 25);
+            g.fillRoundRect(5, 5, 100, 25, 8, 8);
 
-            // Border
+            // Border with rounded corners
             g.setColor(Color.BLACK);
-            g.drawRect(5, 5, 100, 25);
+            g.drawRoundRect(5, 5, 100, 25, 8, 8);
 
             // Text
             g.setFont(new Font("SansSerif", Font.BOLD, 14));
@@ -437,13 +437,13 @@ public class AnimationDemo {
             
             int y = 65; // Position below ball count
             
-            // Background
+            // Background with rounded corners
             g.setColor(Color.WHITE);
-            g.fillRect(5, y, 150, 55);
+            g.fillRoundRect(5, y, 150, 55, 8, 8);
             
-            // Border
+            // Border with rounded corners
             g.setColor(Color.BLACK);
-            g.drawRect(5, y, 150, 55);
+            g.drawRoundRect(5, y, 150, 55, 8, 8);
             
             // Text
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
@@ -473,13 +473,13 @@ public class AnimationDemo {
                     "Click: Add ball"
             };
 
-            // Background
+            // Background with rounded corners
             g.setColor(new Color(255, 255, 255, 230));
-            g.fillRect(x, y, 210, controls.length * 18 + 10);
+            g.fillRoundRect(x, y, 210, controls.length * 18 + 10, 8, 8);
 
-            // Border
+            // Border with rounded corners
             g.setColor(Color.BLACK);
-            g.drawRect(x, y, 210, controls.length * 18 + 10);
+            g.drawRoundRect(x, y, 210, controls.length * 18 + 10, 8, 8);
 
             // Text
             g.setFont(new Font("SansSerif", Font.PLAIN, 12));
@@ -497,13 +497,13 @@ public class AnimationDemo {
          * Draws the ball count.
          */
         private void drawBallCount(Graphics g) {
-            // Background
+            // Background with rounded corners
             g.setColor(Color.WHITE);
-            g.fillRect(5, 35, 100, 25);
+            g.fillRoundRect(5, 35, 100, 25, 8, 8);
 
-            // Border
+            // Border with rounded corners
             g.setColor(Color.BLACK);
-            g.drawRect(5, 35, 100, 25);
+            g.drawRoundRect(5, 35, 100, 25, 8, 8);
 
             // Text
             g.setFont(new Font("SansSerif", Font.BOLD, 14));
