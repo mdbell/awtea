@@ -78,9 +78,7 @@ static void edge_list_remove_inactive(EdgeList* list, int y) {
     for (int read_idx = 0; read_idx < list->count; read_idx++) {
         // Keep edges that are still active at this scanline
         // An edge is active from its y_min up to and INCLUDING its y_max
-        // Note: y_max may have been clipped to surface bounds in edge_table_add_edge,
-        // so an edge ending at y_max=9 should still be used at scanline y=9
-        if (list->edges[read_idx].y_max >= y) {
+        if (list->edges[read_idx].y_max > y) {
             list->edges[write_idx++] = list->edges[read_idx];
         }
     }
@@ -198,11 +196,11 @@ void edge_table_add_edge(EdgeTable* et, int y1, float x1, int y2, float x2) {
         x1 = x1 + t * (x2 - x1);
         y1 = 0;
     }
-    if (y2 >= et->height) {
+    if (y2 > et->height) {
         // Interpolate x at y=height-1
-        float t = (float)(et->height - 1 - y1) / (float)(y2 - y1);
+        float t = (float)(et->height - y1) / (float)(y2 - y1);
         x2 = x1 + t * (x2 - x1);
-        y2 = et->height - 1;
+        y2 = et->height;
     }
     
     // Calculate dx (change in x per scanline)
