@@ -1,5 +1,7 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
  * Defines an interface for classes that know how to lay out containers
  * based on a layout constraints object.

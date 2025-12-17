@@ -1,24 +1,30 @@
 package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.awtea.peer.TFrameFloatingPeer;
-import me.mdbell.awtea.classlib.java.awt.event.TWindowListener;
 
-import java.awt.*;
-import java.awt.event.ComponentListener;
-
-public class TFrame extends TSurface {
+/**
+ * A {@code TFrame} is a top-level window with a title and a border.
+ * The size of the frame includes any area designated for the border.
+ * <p>
+ * The default layout for a frame is {@code BorderLayout}.
+ * <p>
+ * A frame may have its native decorations (such as border, title, and so on)
+ * turned off by using {@code setUndecorated}.
+ *
+ * @see java.awt.Frame
+ * @see TWindow
+ */
+public class TFrame extends TWindow {
 
     private final TFrameFloatingPeer peer;
 
-    private static final Color FRAME_BACKGROUND_COLOR = new Color(223, 223, 223);
-
-    // Constructor
+    /**
+     * Constructs a new frame that is initially invisible.
+     * The frame is created with a peer that manages the actual windowing behavior.
+     */
     public TFrame() {
         peer = new TFrameFloatingPeer(this);
         this.surfacePeer = new TOffscreenBufferPeer(this, 1, 1);
-        this.setBackground(FRAME_BACKGROUND_COLOR);
-        // Frames use BorderLayout by default in AWT
-        setLayout(new TBorderLayout());
     }
 
     @Override
@@ -26,36 +32,71 @@ public class TFrame extends TSurface {
         return peer.getGraphics();
     }
 
-    // Set the title of the frame
+    /**
+     * Sets the title for this frame to the specified string.
+     *
+     * @param title the title to be displayed in the frame's border.
+     *              A {@code null} value is treated as an empty string, "".
+     */
     public void setTitle(String title) {
         peer.setTitle(title);
     }
 
-    // Set whether the frame is resizable
+    /**
+     * Sets whether this frame is resizable by the user.
+     * By default, all frames are initially resizable.
+     *
+     * @param resizable {@code true} if this frame is resizable;
+     *                  {@code false} otherwise
+     */
     public void setResizable(boolean resizable) {
         peer.setResizeable(resizable);
     }
 
-    // Add a window listener
-    public void addWindowListener(TWindowListener l) {
-        // Implement event listener logic
-    }
-
-    // Set the frame visible
+    /**
+     * Shows or hides this frame depending on the value of parameter {@code b}.
+     * Also notifies the peer to update the visibility state.
+     *
+     * @param b if {@code true}, makes the frame visible, otherwise hides the frame
+     */
+    @Override
     public void setVisible(boolean b) {
         super.setVisible(b);
         peer.setVisible(b);
     }
 
+    /**
+     * If this frame is visible, brings this frame to the front and may make it the
+     * focused window.
+     */
+    @Override
     public void toFront() {
         peer.bringToFront();
     }
 
-    // Get Insets, using the TInsets class
+    /**
+     * Determines the insets of this frame, which indicate the size of the frame's
+     * border.
+     * This includes the title bar and other decorations.
+     *
+     * @return the insets of this frame
+     */
+    @Override
     public TInsets getInsets() {
+        // TODO: Calculate actual insets based on frame decorations
+        // For now, return zero insets (decorations are handled by peer)
         return new TInsets(0, 0, 0, 0);
     }
 
+    /**
+     * Sets the size of this frame to the specified width and height.
+     * Also notifies the peer to update the window size and ensures proper
+     * layout validation and repainting.
+     *
+     * @param width  the new width of this frame in pixels
+     * @param height the new height of this frame in pixels
+     */
+    @Override
     public void setSize(int width, int height) {
         if (width == getWidth() && height == getHeight()) {
             return;
@@ -64,28 +105,5 @@ public class TFrame extends TSurface {
         peer.setSize(width, height);
         invalidate();
         validate();
-        repaint();
-    }
-
-    // this is _technically_ part of Window, but whatever
-    public void pack() {
-        int minWidth = 0;
-        int minHeight = 0;
-        TComponent[] components = this.getComponents();
-        for (TComponent child : components) {
-            minWidth = Math.max(minWidth, child.getX() + child.getWidth());
-            minHeight = Math.max(minHeight, child.getY() + child.getHeight());
-        }
-
-        setSize(minWidth, minHeight);
-        repaint();
-    }
-
-    public void setMinimumSize(Dimension dim) {
-        // No-op mock
-    }
-
-    public void addComponentListener(ComponentListener l) {
-
     }
 }

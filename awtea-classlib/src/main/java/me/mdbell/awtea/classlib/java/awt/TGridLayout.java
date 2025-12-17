@@ -1,5 +1,7 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
  * The {@code TGridLayout} class is a layout manager that lays out a container's
  * components in a rectangular grid. The container is divided into equal-sized
@@ -7,12 +9,14 @@ package me.mdbell.awtea.classlib.java.awt;
  * <p>
  * For example, the following is an applet that lays out six buttons
  * into three rows and two columns:
+ * 
  * <pre>
  * import java.awt.*;
  * import java.applet.Applet;
+ * 
  * public class ButtonGrid extends Applet {
  *     public void init() {
- *         setLayout(new GridLayout(3,2));
+ *         setLayout(new GridLayout(3, 2));
  *         add(new Button("1"));
  *         add(new Button("2"));
  *         add(new Button("3"));
@@ -22,6 +26,7 @@ package me.mdbell.awtea.classlib.java.awt;
  *     }
  * }
  * </pre>
+ * 
  * This is the awtea implementation of java.awt.GridLayout.
  *
  * @see java.awt.GridLayout
@@ -59,7 +64,8 @@ public class TGridLayout implements TLayoutManager {
      * Creates a grid layout with the specified number of rows and columns.
      * All components in the layout are given equal size.
      * <p>
-     * In addition, the horizontal and vertical gaps are set to the specified values.
+     * In addition, the horizontal and vertical gaps are set to the specified
+     * values.
      * One, but not both, of {@code rows} and {@code cols} can be zero,
      * which means that any number of objects can be placed in a row or in a column.
      *
@@ -200,8 +206,7 @@ public class TGridLayout implements TLayoutManager {
 
             return new TDimension(
                     insets.left + insets.right + ncols * w + (ncols - 1) * hgap,
-                    insets.top + insets.bottom + nrows * h + (nrows - 1) * vgap
-            );
+                    insets.top + insets.bottom + nrows * h + (nrows - 1) * vgap);
         }
     }
 
@@ -233,8 +238,7 @@ public class TGridLayout implements TLayoutManager {
 
             return new TDimension(
                     insets.left + insets.right + ncols * w + (ncols - 1) * hgap,
-                    insets.top + insets.bottom + nrows * h + (nrows - 1) * vgap
-            );
+                    insets.top + insets.bottom + nrows * h + (nrows - 1) * vgap);
         }
     }
 

@@ -3,6 +3,8 @@ package me.mdbell.awtea.classlib.java.awt;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 /**
  * A flow layout arranges components in a directional flow, much
  * like lines of text in a paragraph. The flow direction is determined
@@ -203,7 +205,7 @@ public class TFlowLayout implements TLayoutManager {
         synchronized (target.getTreeLock()) {
             TDimension dim = new TDimension(0, 0);
             TComponent[] components = target.getComponents();
-            
+
             boolean firstVisibleComponent = true;
             for (TComponent comp : components) {
                 TDimension d = getComponentSize(comp);
@@ -215,7 +217,7 @@ public class TFlowLayout implements TLayoutManager {
                 }
                 dim.width += d.width;
             }
-            
+
             TInsets insets = target.getInsets();
             dim.width += insets.left + insets.right + hgap * 2;
             dim.height += insets.top + insets.bottom + vgap * 2;
@@ -228,7 +230,7 @@ public class TFlowLayout implements TLayoutManager {
         synchronized (target.getTreeLock()) {
             TDimension dim = new TDimension(0, 0);
             TComponent[] components = target.getComponents();
-            
+
             boolean firstVisibleComponent = true;
             for (TComponent comp : components) {
                 TDimension d = getComponentSize(comp);
@@ -240,7 +242,7 @@ public class TFlowLayout implements TLayoutManager {
                 }
                 dim.width += d.width;
             }
-            
+
             TInsets insets = target.getInsets();
             dim.width += insets.left + insets.right + hgap * 2;
             dim.height += insets.top + insets.bottom + vgap * 2;
@@ -260,45 +262,45 @@ public class TFlowLayout implements TLayoutManager {
             TComponent[] components = target.getComponents();
 
             boolean ltr = true; // TODO: add component orientation support
-            
+
             for (int i = 0; i < nmembers; i++) {
                 TComponent m = components[i];
                 TDimension d = getComponentSize(m);
-                
+
                 // Start a new row if this component won't fit
                 if (x > 0 && x + d.width > maxwidth) {
                     moveComponents(target, insets.left + hgap, y, maxwidth - x, rowh,
-                                   start, i, ltr);
+                            start, i, ltr);
                     x = 0;
                     y += vgap + rowh;
                     rowh = 0;
                     start = i;
                 }
-                
+
                 x += d.width + hgap;
                 rowh = Math.max(rowh, d.height);
             }
-            
+
             // Layout the last row
             moveComponents(target, insets.left + hgap, y, maxwidth - x, rowh,
-                           start, nmembers, ltr);
+                    start, nmembers, ltr);
         }
     }
 
     /**
      * Centers the elements in the specified row, if there is any slack.
      *
-     * @param target    the container
-     * @param x         the x coordinate
-     * @param y         the y coordinate
-     * @param width     the width dimensions
-     * @param height    the height dimensions
-     * @param rowStart  the start of the row
-     * @param rowEnd    the end of the row
-     * @param ltr       left-to-right flag
+     * @param target   the container
+     * @param x        the x coordinate
+     * @param y        the y coordinate
+     * @param width    the width dimensions
+     * @param height   the height dimensions
+     * @param rowStart the start of the row
+     * @param rowEnd   the end of the row
+     * @param ltr      left-to-right flag
      */
     private void moveComponents(TContainer target, int x, int y, int width, int height,
-                                int rowStart, int rowEnd, boolean ltr) {
+            int rowStart, int rowEnd, boolean ltr) {
         switch (align) {
             case LEFT:
                 x = ltr ? x : x + width;
@@ -315,15 +317,15 @@ public class TFlowLayout implements TLayoutManager {
                 x = x + width;
                 break;
         }
-        
+
         TComponent[] components = target.getComponents();
         for (int i = rowStart; i < rowEnd; i++) {
             TComponent m = components[i];
             TDimension d = getComponentSize(m);
-            
+
             // Set the component's size to match its preferred size
             m.setSize(d.width, d.height);
-            
+
             if (ltr) {
                 m.setLocation(x, y + (height - d.height) / 2);
             } else {

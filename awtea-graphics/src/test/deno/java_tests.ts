@@ -46,7 +46,7 @@ const originalFetch = globalThis.fetch;
 
 const fetch_roots = [Deno.cwd(), `${gitRoot}/webapp-common`, gitRoot];
 
-async function fetchPolyfill(
+function fetchPolyfill(
     input: string | URL | Request,
     init?: RequestInit,
 ): Promise<Response> {
@@ -68,30 +68,34 @@ async function fetchPolyfill(
         for (const path of fetch_roots) {
             try {
                 // Read the file
-                const data = await Deno.readFile(`${path}/${filePath}`);
+                const data = Deno.readFileSync(`${path}/${filePath}`);
 
                 // Determine content type from file extension
                 const ext = filePath.split(".").pop()?.toLowerCase() || "";
                 const contentType = getContentType(ext);
 
                 // Create a Response object
-                return new Response(data, {
-                    status: 200,
-                    statusText: "OK",
-                    headers: {
-                        "Content-Type": contentType,
-                        "Content-Length": data.length.toString(),
-                    },
-                });
-            } catch (error) {
+                return Promise.resolve(
+                    new Response(data, {
+                        status: 200,
+                        statusText: "OK",
+                        headers: {
+                            "Content-Type": contentType,
+                            "Content-Length": data.length.toString(),
+                        },
+                    }),
+                );
+            } catch (_error) {
                 // ignored
             }
         }
         // File not found or read error
-        return new Response(null, {
-            status: 404,
-            statusText: "Not Found",
-        });
+        return Promise.resolve(
+            new Response(null, {
+                status: 404,
+                statusText: "Not Found",
+            }),
+        );
     }
 
     // Fall back to original fetch for HTTP(S) requests

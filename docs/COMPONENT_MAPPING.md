@@ -35,7 +35,7 @@ between **heavyweight** components (with DOM elements and peers) and **lightweig
 | AWT Class    | Weight          | awtea Class               | Peer / DOM Mapping                                         | Notes                                                  |
 |--------------|-----------------|---------------------------|------------------------------------------------------------|--------------------------------------------------------|
 | `Frame`      | **Heavyweight** | `TFrame`                  | `TFrameFloatingPeer` → `FloatingWindow` + `<canvas>`       | Top-level decorated window with title bar and controls |
-| `Window`     | **Heavyweight** | _Not yet implemented_     | Planned: `TAWTWindowPeer` → `FloatingWindow` (undecorated) | Top-level window without decorations (Issue #18)       |
+| `Window`     | **Heavyweight** | `TWindow`                 | Abstract base class for heavyweight windows                | Top-level window base class with pack() implementation |
 | `Dialog`     | **Heavyweight** | _Not yet implemented_     | Planned: `TDialogFloatingPeer` → `FloatingWindow`          | Modal/non-modal dialog window (Issue #18)              |
 | `Applet`     | **Heavyweight** | `TApplet`                 | `AppletWindow` → `FloatingWindow` + `<canvas>`             | Browser-embedded application window                    |
 | `Panel`      | **Lightweight** | _Implicit via TContainer_ | ❌ None                                                     | Pure Java container, renders to parent                 |
@@ -98,7 +98,8 @@ java.awt.Component (AWT API)
    ├─ TContainer (lightweight container)
    │  ├─ TApplet (actually lightweight in implementation)
    │  ├─ TSurface (heavyweight base with peer)
-   │  │  └─ TFrame (heavyweight window)
+   │  │  └─ TWindow (abstract heavyweight window base with pack())
+   │  │     └─ TFrame (heavyweight decorated window)
    │  ├─ TJComponent (Swing base)
    │  │  └─ TJPanel (Swing panel)
    │  └─ (future: Panel, ScrollPane, etc.)
@@ -430,6 +431,7 @@ For text input components, consider a hybrid approach:
   base
 - [`TCanvas.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TCanvas.java) - Lightweight canvas
 - [`TSurface.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TSurface.java) - Heavyweight base
+- [`TWindow.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TWindow.java) - Abstract heavyweight window base with pack()
 - [`TFrame.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TFrame.java) - Frame window
 - [`TApplet.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/applet/TApplet.java) - Applet container
 
