@@ -111,10 +111,4 @@ public class SurfaceCommand {
         this.obj = obj;
         this.argCount = 0;
     }
-
-    @AllArgsConstructor
-    public static class PolygonPoints {
-        public int[] xpoints;
-        public int[] ypoints;
-    }
 }
