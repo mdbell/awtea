@@ -7,6 +7,7 @@ import me.mdbell.awtea.gfx.SurfaceContainer;
 import me.mdbell.awtea.instrument.Monitored;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import org.teavm.jso.webgl.WebGL2RenderingContext;
@@ -304,97 +305,71 @@ class WebGLRasterizer implements Rasterizer {
     }
 
     private void drawLine(int x1, int y1, int x2, int y2) {
-        // Use Bresenham's algorithm implemented via fillRect for pixel-perfect lines
-        int dx = Math.abs(x2 - x1);
-        int dy = Math.abs(y2 - y1);
-        int sx = x1 < x2 ? 1 : -1;
-        int sy = y1 < y2 ? 1 : -1;
-        int err = dx - dy;
-
-        while (true) {
-            // Draw a 1x1 pixel at current position
-            fillRect(x1, y1, 1, 1);
-            
-            if (x1 == x2 && y1 == y2) {
-                break;
-            }
-            
-            int err2 = 2 * err;
-            if (err2 > -dy) {
-                err -= dy;
-                x1 += sx;
-            }
-            if (err2 < dx) {
-                err += dx;
-                y1 += sy;
-            }
-        }
+        // Use WebGL line primitive for efficient GPU rendering
+        int h = surface.getHeight();
+        
+        useColorProgram();
+        setColor(foreground);
+        
+        // Create line vertices
+        float[] verts = {
+            x1, h - y1,
+            x2, h - y2
+        };
+        
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.LINES, 0, 2);
+        surface.markDirty();
     }
 
     private void drawPolygon(int[] xpoints, int[] ypoints, int npoints) {
         if (npoints < 2) return;
         
-        // Draw lines connecting consecutive points
-        for (int i = 1; i < npoints; i++) {
-            drawLine(xpoints[i - 1], ypoints[i - 1], xpoints[i], ypoints[i]);
+        // Use WebGL LINE_LOOP for efficient GPU rendering
+        int h = surface.getHeight();
+        useColorProgram();
+        setColor(foreground);
+        
+        // Create vertices array (flip Y coordinates for screen space)
+        float[] verts = new float[npoints * 2];
+        for (int i = 0; i < npoints; i++) {
+            verts[i * 2] = xpoints[i];
+            verts[i * 2 + 1] = h - ypoints[i];
         }
-        // Close the polygon
-        drawLine(xpoints[npoints - 1], ypoints[npoints - 1], xpoints[0], ypoints[0]);
+        
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.LINE_LOOP, 0, npoints);
+        surface.markDirty();
     }
 
     private void fillPolygon(int[] xpoints, int[] ypoints, int npoints) {
         if (npoints < 3) return;
         
-        // Calculate bounding box
-        int minX = xpoints[0];
-        int maxX = xpoints[0];
-        int minY = ypoints[0];
-        int maxY = ypoints[0];
+        // Use WebGL TRIANGLE_FAN for efficient GPU polygon filling
+        int h = surface.getHeight();
+        useColorProgram();
+        setColor(foreground);
         
-        for (int i = 1; i < npoints; i++) {
-            minX = Math.min(minX, xpoints[i]);
-            maxX = Math.max(maxX, xpoints[i]);
-            minY = Math.min(minY, ypoints[i]);
-            maxY = Math.max(maxY, ypoints[i]);
+        // Create vertices array (flip Y coordinates for screen space)
+        float[] verts = new float[npoints * 2];
+        for (int i = 0; i < npoints; i++) {
+            verts[i * 2] = xpoints[i];
+            verts[i * 2 + 1] = h - ypoints[i];
         }
         
-        // Scanline fill algorithm
-        for (int y = minY; y <= maxY; y++) {
-            // Find intersections with edges
-            java.util.ArrayList<Integer> intersections = new java.util.ArrayList<>();
-            
-            for (int i = 0; i < npoints; i++) {
-                int j = (i + 1) % npoints;
-                int y1 = ypoints[i];
-                int y2 = ypoints[j];
-                
-                // Check if edge crosses scanline
-                if ((y1 <= y && y < y2) || (y2 <= y && y < y1)) {
-                    int x1 = xpoints[i];
-                    int x2 = xpoints[j];
-                    
-                    // Calculate intersection x coordinate using floating point to avoid precision loss
-                    float x = x1 + (float)(y - y1) * (x2 - x1) / (y2 - y1);
-                    intersections.add((int)x);
-                }
-            }
-            
-            // Sort intersections
-            intersections.sort(Integer::compareTo);
-            
-            // Fill between pairs of intersections
-            for (int i = 0; i < intersections.size() - 1; i += 2) {
-                int x1 = intersections.get(i);
-                int x2 = intersections.get(i + 1);
-                if (x2 > x1) {
-                    fillRect(x1, y, x2 - x1, 1);
-                }
-            }
-        }
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, npoints);
+        surface.markDirty();
     }
 
     private void fillOval(int x, int y, int width, int height) {
-        // Use midpoint ellipse algorithm
+        // Use triangle fan with parametric ellipse points for GPU rendering
         int cx = x + width / 2;
         int cy = y + height / 2;
         int rx = width / 2;
@@ -402,16 +377,31 @@ class WebGLRasterizer implements Rasterizer {
         
         if (rx == 0 || ry == 0) return;
         
-        // Scanline fill approach
-        for (int dy = -ry; dy <= ry; dy++) {
-            // Calculate width at this y coordinate using ellipse equation
-            // x^2/rx^2 + y^2/ry^2 = 1
-            // x = rx * sqrt(1 - y^2/ry^2)
-            double dx = rx * Math.sqrt(1.0 - (double)(dy * dy) / (ry * ry));
-            int x1 = cx - (int)dx;
-            int x2 = cx + (int)dx;
-            fillRect(x1, cy + dy, x2 - x1, 1);
+        int h = surface.getHeight();
+        useColorProgram();
+        setColor(foreground);
+        
+        // Generate ellipse vertices using parametric equations
+        // Use enough segments for smooth appearance
+        int segments = Math.max(32, (Math.max(rx, ry) / 2));
+        float[] verts = new float[(segments + 2) * 2]; // center + segments + first point again
+        
+        // Center point
+        verts[0] = cx;
+        verts[1] = h - cy;
+        
+        // Generate points around ellipse
+        for (int i = 0; i <= segments; i++) {
+            double angle = 2.0 * Math.PI * i / segments;
+            verts[(i + 1) * 2] = (float)(cx + rx * Math.cos(angle));
+            verts[(i + 1) * 2 + 1] = (float)(h - (cy + ry * Math.sin(angle)));
         }
+        
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
+        surface.markDirty();
     }
 
     private void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
@@ -420,44 +410,93 @@ class WebGLRasterizer implements Rasterizer {
             return;
         }
         
-        int rx = arcWidth / 2;
-        int ry = arcHeight / 2;
+        int rx = Math.min(arcWidth / 2, width / 2);
+        int ry = Math.min(arcHeight / 2, height / 2);
         
-        // Clamp arc dimensions
-        rx = Math.min(rx, width / 2);
-        ry = Math.min(ry, height / 2);
+        int h = surface.getHeight();
+        useColorProgram();
+        setColor(foreground);
         
-        // Fill center rectangle
-        fillRect(x + rx, y, width - 2 * rx, height);
+        // Build rounded rectangle as a single triangle fan
+        // Segments per corner arc
+        int segsPerCorner = Math.max(4, Math.max(rx, ry) / 4);
+        int totalVerts = 1 + 4 * segsPerCorner + 4; // center + 4 corners + 4 straight edges
+        float[] verts = new float[totalVerts * 2];
         
-        // Fill left and right rectangles
-        fillRect(x, y + ry, rx, height - 2 * ry);
-        fillRect(x + width - rx, y + ry, rx, height - 2 * ry);
+        // Center point
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        verts[0] = cx;
+        verts[1] = h - cy;
         
-        // Fill four corner arcs using scanline approach
-        // Top-left corner
-        for (int dy = 0; dy < ry; dy++) {
-            double dx = rx * Math.sqrt(1.0 - (double)((ry - dy) * (ry - dy)) / (ry * ry));
-            fillRect(x + rx - (int)dx, y + dy, (int)dx, 1);
+        int idx = 1;
+        
+        // Top edge + top-right corner
+        verts[idx * 2] = x + rx;
+        verts[idx * 2 + 1] = h - y;
+        idx++;
+        
+        verts[idx * 2] = x + width - rx;
+        verts[idx * 2 + 1] = h - y;
+        idx++;
+        
+        // Top-right corner arc
+        for (int i = 0; i <= segsPerCorner; i++) {
+            double angle = -Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
+            verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            idx++;
         }
         
-        // Top-right corner
-        for (int dy = 0; dy < ry; dy++) {
-            double dx = rx * Math.sqrt(1.0 - (double)((ry - dy) * (ry - dy)) / (ry * ry));
-            fillRect(x + width - rx, y + dy, (int)dx, 1);
+        // Right edge
+        verts[idx * 2] = x + width;
+        verts[idx * 2 + 1] = h - (y + height - ry);
+        idx++;
+        
+        // Bottom-right corner arc
+        for (int i = 0; i <= segsPerCorner; i++) {
+            double angle = 0 + (Math.PI / 2) * i / segsPerCorner;
+            verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            idx++;
         }
         
-        // Bottom-left corner
-        for (int dy = 0; dy < ry; dy++) {
-            double dx = rx * Math.sqrt(1.0 - (double)((ry - dy) * (ry - dy)) / (ry * ry));
-            fillRect(x + rx - (int)dx, y + height - ry + dy, (int)dx, 1);
+        // Bottom edge
+        verts[idx * 2] = x + rx;
+        verts[idx * 2 + 1] = h - (y + height);
+        idx++;
+        
+        // Bottom-left corner arc
+        for (int i = 0; i <= segsPerCorner; i++) {
+            double angle = Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
+            verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            idx++;
         }
         
-        // Bottom-right corner
-        for (int dy = 0; dy < ry; dy++) {
-            double dx = rx * Math.sqrt(1.0 - (double)((ry - dy) * (ry - dy)) / (ry * ry));
-            fillRect(x + width - rx, y + height - ry + dy, (int)dx, 1);
+        // Left edge
+        verts[idx * 2] = x;
+        verts[idx * 2 + 1] = h - (y + ry);
+        idx++;
+        
+        // Top-left corner arc
+        for (int i = 0; i <= segsPerCorner; i++) {
+            double angle = Math.PI + (Math.PI / 2) * i / segsPerCorner;
+            verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            idx++;
         }
+        
+        // Close to first edge point
+        verts[idx * 2] = x + rx;
+        verts[idx * 2 + 1] = h - y;
+        idx++;
+        
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(java.util.Arrays.copyOf(verts, idx * 2)).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, idx);
+        surface.markDirty();
     }
 
     private void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
@@ -468,49 +507,38 @@ class WebGLRasterizer implements Rasterizer {
         
         if (rx == 0 || ry == 0) return;
         
-        // Convert angles to radians
-        double startRad = Math.toRadians(startAngle);
-        double endRad = Math.toRadians(startAngle + arcAngle);
+        int h = surface.getHeight();
+        useColorProgram();
+        setColor(foreground);
         
-        // Normalize angles
-        while (startRad < 0) startRad += 2 * Math.PI;
-        while (endRad < 0) endRad += 2 * Math.PI;
+        // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW positive)
+        double startRad = Math.toRadians(-startAngle); // negate for screen coords
+        double endRad = Math.toRadians(-(startAngle + arcAngle));
         
-        // Draw pie slice using scanline approach
-        for (int dy = -ry; dy <= ry; dy++) {
-            double dx = rx * Math.sqrt(1.0 - (double)(dy * dy) / (ry * ry));
-            
-            for (int px = -(int)dx; px <= (int)dx; px++) {
-                // Check if point is within arc angle range
-                // In screen coordinates, Y increases downward, so we negate dy to convert to
-                // standard mathematical coordinates where atan2 expects Y to increase upward
-                double angle = Math.atan2(-dy, px);
-                if (angle < 0) angle += 2 * Math.PI;
-                
-                boolean inArc;
-                if (arcAngle >= 0) {
-                    if (endRad >= startRad) {
-                        inArc = angle >= startRad && angle <= endRad;
-                    } else {
-                        inArc = angle >= startRad || angle <= endRad;
-                    }
-                } else {
-                    if (startRad >= endRad) {
-                        inArc = angle <= startRad && angle >= endRad;
-                    } else {
-                        inArc = angle <= startRad || angle >= endRad;
-                    }
-                }
-                
-                if (inArc) {
-                    fillRect(cx + px, cy + dy, 1, 1);
-                }
-            }
+        // Generate arc as triangle fan (center + arc points)
+        int segments = Math.max(8, Math.abs(arcAngle) / 5); // ~5 degrees per segment
+        float[] verts = new float[(segments + 2) * 2]; // center + arc points + close
+        
+        // Center point
+        verts[0] = cx;
+        verts[1] = h - cy;
+        
+        // Generate points along arc
+        for (int i = 0; i <= segments; i++) {
+            double angle = startRad + (endRad - startRad) * i / segments;
+            verts[(i + 1) * 2] = (float)(cx + rx * Math.cos(angle));
+            verts[(i + 1) * 2 + 1] = (float)(h - (cy - ry * Math.sin(angle)));
         }
+        
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
+        surface.markDirty();
     }
 
     private void drawOval(int x, int y, int width, int height) {
-        // Use midpoint ellipse algorithm for outline
+        // Use LINE_LOOP with parametric ellipse points for GPU rendering
         int cx = x + width / 2;
         int cy = y + height / 2;
         int rx = width / 2;
@@ -518,52 +546,29 @@ class WebGLRasterizer implements Rasterizer {
         
         if (rx == 0 || ry == 0) return;
         
-        // Midpoint ellipse algorithm
-        int x1 = 0;
-        int y1 = ry;
-        int rx2 = rx * rx;
-        int ry2 = ry * ry;
-        int twoRx2 = 2 * rx2;
-        int twoRy2 = 2 * ry2;
-        int p1 = (int)(ry2 - rx2 * ry + 0.25 * rx2);
-        int px = 0;
-        int py = twoRx2 * y1;
+        int h = surface.getHeight();
+        useColorProgram();
+        setColor(foreground);
         
-        // Region 1
-        while (px < py) {
-            plotEllipsePoints(cx, cy, x1, y1);
-            x1++;
-            px += twoRy2;
-            if (p1 < 0) {
-                p1 += ry2 + px;
-            } else {
-                y1--;
-                py -= twoRx2;
-                p1 += ry2 + px - py;
-            }
+        // Generate ellipse vertices
+        int segments = Math.max(32, (Math.max(rx, ry) / 2));
+        float[] verts = new float[segments * 2];
+        
+        for (int i = 0; i < segments; i++) {
+            double angle = 2.0 * Math.PI * i / segments;
+            verts[i * 2] = (float)(cx + rx * Math.cos(angle));
+            verts[i * 2 + 1] = (float)(h - (cy + ry * Math.sin(angle)));
         }
         
-        // Region 2
-        int p2 = (int)(ry2 * (x1 + 0.5) * (x1 + 0.5) + rx2 * (y1 - 1) * (y1 - 1) - rx2 * ry2);
-        while (y1 >= 0) {
-            plotEllipsePoints(cx, cy, x1, y1);
-            y1--;
-            py -= twoRx2;
-            if (p2 > 0) {
-                p2 += rx2 - py;
-            } else {
-                x1++;
-                px += twoRy2;
-                p2 += rx2 - py + px;
-            }
-        }
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.LINE_LOOP, 0, segments);
+        surface.markDirty();
     }
 
     private void plotEllipsePoints(int cx, int cy, int x, int y) {
-        fillRect(cx + x, cy + y, 1, 1);
-        fillRect(cx - x, cy + y, 1, 1);
-        fillRect(cx + x, cy - y, 1, 1);
-        fillRect(cx - x, cy - y, 1, 1);
+        // No longer needed with shader-based rendering
     }
 
     private void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
@@ -574,25 +579,29 @@ class WebGLRasterizer implements Rasterizer {
         
         if (rx == 0 || ry == 0) return;
         
-        // Convert angles to radians
-        double startRad = Math.toRadians(startAngle);
-        double endRad = Math.toRadians(startAngle + arcAngle);
+        int h = surface.getHeight();
+        useColorProgram();
+        setColor(foreground);
         
-        // Draw arc using parametric equations
-        int steps = Math.abs(arcAngle);
+        // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW positive)
+        double startRad = Math.toRadians(-startAngle); // negate for screen coords
+        double endRad = Math.toRadians(-(startAngle + arcAngle));
         
-        double angleInc = (endRad - startRad) / steps;
-        double prevX = cx + rx * Math.cos(startRad);
-        double prevY = cy - ry * Math.sin(startRad); // negative sin for screen coordinates
+        // Generate arc as line strip
+        int segments = Math.max(8, Math.abs(arcAngle) / 5); // ~5 degrees per segment
+        float[] verts = new float[(segments + 1) * 2];
         
-        for (int i = 1; i <= steps; i++) {
-            double angle = startRad + i * angleInc;
-            double nextX = cx + rx * Math.cos(angle);
-            double nextY = cy - ry * Math.sin(angle);
-            drawLine((int)prevX, (int)prevY, (int)nextX, (int)nextY);
-            prevX = nextX;
-            prevY = nextY;
+        for (int i = 0; i <= segments; i++) {
+            double angle = startRad + (endRad - startRad) * i / segments;
+            verts[i * 2] = (float)(cx + rx * Math.cos(angle));
+            verts[i * 2 + 1] = (float)(h - (cy - ry * Math.sin(angle)));
         }
+        
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.LINE_STRIP, 0, segments + 1);
+        surface.markDirty();
     }
 
     private void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
@@ -601,33 +610,103 @@ class WebGLRasterizer implements Rasterizer {
             return;
         }
         
-        int rx = arcWidth / 2;
-        int ry = arcHeight / 2;
+        int rx = Math.min(arcWidth / 2, width / 2);
+        int ry = Math.min(arcHeight / 2, height / 2);
         
-        // Clamp arc dimensions
-        rx = Math.min(rx, width / 2);
-        ry = Math.min(ry, height / 2);
+        int h = surface.getHeight();
+        useColorProgram();
+        setColor(foreground);
         
-        // Draw four straight edges
-        drawLine(x + rx, y, x + width - rx, y); // top
-        drawLine(x + width, y + ry, x + width, y + height - ry); // right
-        drawLine(x + width - rx, y + height, x + rx, y + height); // bottom
-        drawLine(x, y + height - ry, x, y + ry); // left
+        // Build rounded rectangle outline as a single line loop
+        int segsPerCorner = Math.max(4, Math.max(rx, ry) / 4);
+        int totalVerts = 4 + 4 * segsPerCorner; // 4 straight edges + 4 corners
+        float[] verts = new float[totalVerts * 2];
         
-        // Draw four corner arcs
-        drawArc(x, y, 2 * rx, 2 * ry, 90, 90); // top-left
-        drawArc(x + width - 2 * rx, y, 2 * rx, 2 * ry, 0, 90); // top-right
-        drawArc(x, y + height - 2 * ry, 2 * rx, 2 * ry, 180, 90); // bottom-left
-        drawArc(x + width - 2 * rx, y + height - 2 * ry, 2 * rx, 2 * ry, 270, 90); // bottom-right
+        int idx = 0;
+        
+        // Top edge
+        verts[idx * 2] = x + rx;
+        verts[idx * 2 + 1] = h - y;
+        idx++;
+        
+        verts[idx * 2] = x + width - rx;
+        verts[idx * 2 + 1] = h - y;
+        idx++;
+        
+        // Top-right corner
+        for (int i = 0; i <= segsPerCorner; i++) {
+            double angle = -Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
+            verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            idx++;
+        }
+        
+        // Right edge
+        verts[idx * 2] = x + width;
+        verts[idx * 2 + 1] = h - (y + height - ry);
+        idx++;
+        
+        // Bottom-right corner
+        for (int i = 0; i <= segsPerCorner; i++) {
+            double angle = 0 + (Math.PI / 2) * i / segsPerCorner;
+            verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            idx++;
+        }
+        
+        // Bottom edge
+        verts[idx * 2] = x + rx;
+        verts[idx * 2 + 1] = h - (y + height);
+        idx++;
+        
+        // Bottom-left corner
+        for (int i = 0; i <= segsPerCorner; i++) {
+            double angle = Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
+            verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            idx++;
+        }
+        
+        // Left edge
+        verts[idx * 2] = x;
+        verts[idx * 2 + 1] = h - (y + ry);
+        idx++;
+        
+        // Top-left corner
+        for (int i = 0; i <= segsPerCorner; i++) {
+            double angle = Math.PI + (Math.PI / 2) * i / segsPerCorner;
+            verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            idx++;
+        }
+        
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(java.util.Arrays.copyOf(verts, idx * 2)).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.LINE_LOOP, 0, idx);
+        surface.markDirty();
     }
 
     private void drawPolyline(int[] xpoints, int[] ypoints, int npoints) {
         if (npoints < 2) return;
         
-        // Draw lines connecting consecutive points (but don't close)
-        for (int i = 1; i < npoints; i++) {
-            drawLine(xpoints[i - 1], ypoints[i - 1], xpoints[i], ypoints[i]);
+        // Use WebGL LINE_STRIP for efficient GPU rendering
+        int h = surface.getHeight();
+        useColorProgram();
+        setColor(foreground);
+        
+        // Create vertices array
+        float[] verts = new float[npoints * 2];
+        for (int i = 0; i < npoints; i++) {
+            verts[i * 2] = xpoints[i];
+            verts[i * 2 + 1] = h - ypoints[i];
         }
+        
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        
+        gl.drawArrays(WebGLRenderingContext.LINE_STRIP, 0, npoints);
+        surface.markDirty();
     }
 
     private void copyArea(int x, int y, int width, int height, int dx, int dy) {
