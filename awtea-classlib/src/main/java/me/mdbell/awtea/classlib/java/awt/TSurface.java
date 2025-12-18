@@ -1,7 +1,5 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import java.awt.Color;
-
 import lombok.Setter;
 import me.mdbell.awtea.classlib.java.awt.awtea.peer.TSurfacePeer;
 import me.mdbell.awtea.classlib.java.awt.event.TPaintEvent;
@@ -12,7 +10,7 @@ abstract class TSurface extends TContainer {
 	protected TSurfacePeer surfacePeer;
 
 	protected TSurface() {
-		setBackground(new Color(220, 220, 220));
+
 	}
 
 	/**
