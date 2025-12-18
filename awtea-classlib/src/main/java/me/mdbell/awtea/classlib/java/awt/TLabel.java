@@ -109,6 +109,13 @@ public class TLabel extends TComponent {
 		int w = getWidth();
 		int h = getHeight();
 
+		// Clear background to prevent text overlap on repaint
+		Color bg = getBackground();
+		if (bg != null) {
+			g.setColor(bg);
+			g.fillRect(0, 0, w, h);
+		}
+
 		// Draw text if present
 		if (text != null && !text.isEmpty()) {
 			// Use foreground color if set, otherwise black
