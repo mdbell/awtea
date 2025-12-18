@@ -1,6 +1,7 @@
 package me.mdbell.awtea.examples.guidemo;
 
 import me.mdbell.awtea.util.logging.LogLevel;
+import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.awt.*;
@@ -16,6 +17,8 @@ import java.awt.event.MouseEvent;
  * - Text rendering
  */
 public class GuiDemo {
+
+    private static final Logger log = LoggerFactory.getLogger(GuiDemo.class);
 
     public static void main(String[] args) {
 
@@ -75,11 +78,11 @@ public class GuiDemo {
         button1.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                System.out.println("Mouse entered button: Hello World");
+                log.info("Mouse entered button: Hello World");
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                System.out.println("Mouse exited button: Hello World");
+                log.info("Mouse exited button: Hello World");
             }
         });
         button1.addActionListener(e -> {
@@ -92,11 +95,11 @@ public class GuiDemo {
         button2.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                System.out.println("Mouse entered button: Clear Canvas");
+                log.info("Mouse entered button: Clear Canvas");
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                System.out.println("Mouse exited button: Clear Canvas");
+                log.info("Mouse exited button: Clear Canvas");
             }
         });
         button2.addActionListener(e -> {
@@ -110,11 +113,11 @@ public class GuiDemo {
         button3.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                System.out.println("Mouse entered button: Change Color");
+                log.info("Mouse entered button: Change Color");
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                System.out.println("Mouse exited button: Change Color");
+                log.info("Mouse exited button: Change Color");
             }
         });
         button3.addActionListener(e -> {
@@ -240,14 +243,14 @@ public class GuiDemo {
         panel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                System.out.println("Mouse entered: " + label);
+                log.info("Mouse entered: {}", label);
                 hoveredState[0] = true;
                 panel.repaint();
             }
             
             @Override
             public void mouseExited(MouseEvent e) {
-                System.out.println("Mouse exited: " + label);
+                log.info("Mouse exited: {}", label);
                 hoveredState[0] = false;
                 panel.repaint();
             }
