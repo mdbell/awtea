@@ -8,10 +8,10 @@ uint32_t alloc_pixels(int width, int height) {
     if (!p){
         return 0;
     }
-    memset(p, 0, bytes);
+    memset(p, 0xFF, bytes);
     return (uint32_t)(uintptr_t)p;
 }
 
 void free_pixels(uint32_t ptr) {
-    free((void*)(uintptr_t)ptr);
+    tracked_free((void*)(uintptr_t)ptr);
 }
