@@ -34,6 +34,8 @@ class WebGLRasterizer implements Rasterizer {
 
     private Color foreground = Color.WHITE;
     private Color background = Color.BLACK;
+    
+    private Composite composite = AlphaComposite.SrcOver;
 
     private boolean pushToScreen = false;
 
@@ -63,6 +65,7 @@ class WebGLRasterizer implements Rasterizer {
         this.transform.setTransform(other.transform);
         this.foreground = other.foreground;
         this.background = other.background;
+        this.composite = other.composite;
         this.clip = other.clip;
         updateTransformFloats(this.transform);
     }
@@ -78,6 +81,7 @@ class WebGLRasterizer implements Rasterizer {
         updateTransformFloats(transform);
         this.foreground = Color.WHITE;
         this.background = Color.BLACK;
+        this.composite = AlphaComposite.SrcOver;
         this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
     }
 
@@ -299,6 +303,426 @@ class WebGLRasterizer implements Rasterizer {
         surface.markDirty();
     }
 
+    private void drawLine(int x1, int y1, int x2, int y2) {
+        // Use Bresenham's algorithm implemented via fillRect for pixel-perfect lines
+        // Transform coordinates
+        int dx = Math.abs(x2 - x1);
+        int dy = Math.abs(y2 - y1);
+        int sx = x1 < x2 ? 1 : -1;
+        int sy = y1 < y2 ? 1 : -1;
+        int err = dx - dy;
+
+        while (true) {
+            // Draw a 1x1 pixel at current position
+            fillRect(x1, y1, 1, 1);
+            
+            if (x1 == x2 && y1 == y2) {
+                break;
+            }
+            
+            int err2 = 2 * err;
+            if (err2 > -dy) {
+                err -= dy;
+                x1 += sx;
+            }
+            if (err2 < dx) {
+                err += dx;
+                y1 += sy;
+            }
+        }
+    }
+
+    private void drawPolygon(int[] xpoints, int[] ypoints, int npoints) {
+        if (npoints < 2) return;
+        
+        // Draw lines connecting consecutive points
+        for (int i = 1; i < npoints; i++) {
+            drawLine(xpoints[i - 1], ypoints[i - 1], xpoints[i], ypoints[i]);
+        }
+        // Close the polygon
+        drawLine(xpoints[npoints - 1], ypoints[npoints - 1], xpoints[0], ypoints[0]);
+    }
+
+    private void fillPolygon(int[] xpoints, int[] ypoints, int npoints) {
+        if (npoints < 3) return;
+        
+        // Calculate bounding box
+        int minX = xpoints[0];
+        int maxX = xpoints[0];
+        int minY = ypoints[0];
+        int maxY = ypoints[0];
+        
+        for (int i = 1; i < npoints; i++) {
+            minX = Math.min(minX, xpoints[i]);
+            maxX = Math.max(maxX, xpoints[i]);
+            minY = Math.min(minY, ypoints[i]);
+            maxY = Math.max(maxY, ypoints[i]);
+        }
+        
+        // Scanline fill algorithm
+        for (int y = minY; y <= maxY; y++) {
+            // Find intersections with edges
+            java.util.ArrayList<Integer> intersections = new java.util.ArrayList<>();
+            
+            for (int i = 0; i < npoints; i++) {
+                int j = (i + 1) % npoints;
+                int y1 = ypoints[i];
+                int y2 = ypoints[j];
+                
+                // Check if edge crosses scanline
+                if ((y1 <= y && y < y2) || (y2 <= y && y < y1)) {
+                    int x1 = xpoints[i];
+                    int x2 = xpoints[j];
+                    
+                    // Calculate intersection x coordinate
+                    int x = x1 + (y - y1) * (x2 - x1) / (y2 - y1);
+                    intersections.add(x);
+                }
+            }
+            
+            // Sort intersections
+            intersections.sort(Integer::compareTo);
+            
+            // Fill between pairs of intersections
+            for (int i = 0; i < intersections.size() - 1; i += 2) {
+                int x1 = intersections.get(i);
+                int x2 = intersections.get(i + 1);
+                if (x2 > x1) {
+                    fillRect(x1, y, x2 - x1, 1);
+                }
+            }
+        }
+    }
+
+    private void fillOval(int x, int y, int width, int height) {
+        // Use midpoint ellipse algorithm
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        int rx = width / 2;
+        int ry = height / 2;
+        
+        if (rx == 0 || ry == 0) return;
+        
+        // Scanline fill approach
+        for (int dy = -ry; dy <= ry; dy++) {
+            // Calculate width at this y coordinate using ellipse equation
+            // x^2/rx^2 + y^2/ry^2 = 1
+            // x = rx * sqrt(1 - y^2/ry^2)
+            double dx = rx * Math.sqrt(1.0 - (double)(dy * dy) / (ry * ry));
+            int x1 = cx - (int)dx;
+            int x2 = cx + (int)dx;
+            fillRect(x1, cy + dy, x2 - x1, 1);
+        }
+    }
+
+    private void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        if (arcWidth == 0 || arcHeight == 0) {
+            fillRect(x, y, width, height);
+            return;
+        }
+        
+        int rx = arcWidth / 2;
+        int ry = arcHeight / 2;
+        
+        // Clamp arc dimensions
+        rx = Math.min(rx, width / 2);
+        ry = Math.min(ry, height / 2);
+        
+        // Fill center rectangle
+        fillRect(x + rx, y, width - 2 * rx, height);
+        
+        // Fill left and right rectangles
+        fillRect(x, y + ry, rx, height - 2 * ry);
+        fillRect(x + width - rx, y + ry, rx, height - 2 * ry);
+        
+        // Fill four corner arcs using scanline approach
+        // Top-left corner
+        for (int dy = 0; dy < ry; dy++) {
+            double dx = rx * Math.sqrt(1.0 - (double)((ry - dy) * (ry - dy)) / (ry * ry));
+            fillRect(x + rx - (int)dx, y + dy, (int)dx, 1);
+        }
+        
+        // Top-right corner
+        for (int dy = 0; dy < ry; dy++) {
+            double dx = rx * Math.sqrt(1.0 - (double)((ry - dy) * (ry - dy)) / (ry * ry));
+            fillRect(x + width - rx, y + dy, (int)dx, 1);
+        }
+        
+        // Bottom-left corner
+        for (int dy = 0; dy < ry; dy++) {
+            double dx = rx * Math.sqrt(1.0 - (double)((ry - dy) * (ry - dy)) / (ry * ry));
+            fillRect(x + rx - (int)dx, y + height - ry + dy, (int)dx, 1);
+        }
+        
+        // Bottom-right corner
+        for (int dy = 0; dy < ry; dy++) {
+            double dx = rx * Math.sqrt(1.0 - (double)((ry - dy) * (ry - dy)) / (ry * ry));
+            fillRect(x + width - rx, y + height - ry + dy, (int)dx, 1);
+        }
+    }
+
+    private void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        int rx = width / 2;
+        int ry = height / 2;
+        
+        if (rx == 0 || ry == 0) return;
+        
+        // Convert angles to radians
+        double startRad = Math.toRadians(startAngle);
+        double endRad = Math.toRadians(startAngle + arcAngle);
+        
+        // Normalize angles
+        while (startRad < 0) startRad += 2 * Math.PI;
+        while (endRad < 0) endRad += 2 * Math.PI;
+        
+        // Draw pie slice using scanline approach
+        for (int dy = -ry; dy <= ry; dy++) {
+            double dx = rx * Math.sqrt(1.0 - (double)(dy * dy) / (ry * ry));
+            
+            for (int px = -(int)dx; px <= (int)dx; px++) {
+                // Check if point is within arc angle range
+                double angle = Math.atan2(-dy, px); // negative dy for screen coordinates
+                if (angle < 0) angle += 2 * Math.PI;
+                
+                boolean inArc;
+                if (arcAngle >= 0) {
+                    if (endRad >= startRad) {
+                        inArc = angle >= startRad && angle <= endRad;
+                    } else {
+                        inArc = angle >= startRad || angle <= endRad;
+                    }
+                } else {
+                    if (startRad >= endRad) {
+                        inArc = angle <= startRad && angle >= endRad;
+                    } else {
+                        inArc = angle <= startRad || angle >= endRad;
+                    }
+                }
+                
+                if (inArc) {
+                    fillRect(cx + px, cy + dy, 1, 1);
+                }
+            }
+        }
+    }
+
+    private void drawOval(int x, int y, int width, int height) {
+        // Use midpoint ellipse algorithm for outline
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        int rx = width / 2;
+        int ry = height / 2;
+        
+        if (rx == 0 || ry == 0) return;
+        
+        // Midpoint ellipse algorithm
+        int x1 = 0;
+        int y1 = ry;
+        int rx2 = rx * rx;
+        int ry2 = ry * ry;
+        int twoRx2 = 2 * rx2;
+        int twoRy2 = 2 * ry2;
+        int p1 = (int)(ry2 - rx2 * ry + 0.25 * rx2);
+        int px = 0;
+        int py = twoRx2 * y1;
+        
+        // Region 1
+        while (px < py) {
+            plotEllipsePoints(cx, cy, x1, y1);
+            x1++;
+            px += twoRy2;
+            if (p1 < 0) {
+                p1 += ry2 + px;
+            } else {
+                y1--;
+                py -= twoRx2;
+                p1 += ry2 + px - py;
+            }
+        }
+        
+        // Region 2
+        int p2 = (int)(ry2 * (x1 + 0.5) * (x1 + 0.5) + rx2 * (y1 - 1) * (y1 - 1) - rx2 * ry2);
+        while (y1 >= 0) {
+            plotEllipsePoints(cx, cy, x1, y1);
+            y1--;
+            py -= twoRx2;
+            if (p2 > 0) {
+                p2 += rx2 - py;
+            } else {
+                x1++;
+                px += twoRy2;
+                p2 += rx2 - py + px;
+            }
+        }
+    }
+
+    private void plotEllipsePoints(int cx, int cy, int x, int y) {
+        fillRect(cx + x, cy + y, 1, 1);
+        fillRect(cx - x, cy + y, 1, 1);
+        fillRect(cx + x, cy - y, 1, 1);
+        fillRect(cx - x, cy - y, 1, 1);
+    }
+
+    private void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        int rx = width / 2;
+        int ry = height / 2;
+        
+        if (rx == 0 || ry == 0) return;
+        
+        // Convert angles to radians
+        double startRad = Math.toRadians(startAngle);
+        double endRad = Math.toRadians(startAngle + arcAngle);
+        
+        // Draw arc using parametric equations
+        double angleStep = Math.toRadians(1); // 1 degree steps
+        int steps = Math.abs(arcAngle);
+        
+        double angleInc = (endRad - startRad) / steps;
+        double prevX = cx + rx * Math.cos(startRad);
+        double prevY = cy - ry * Math.sin(startRad); // negative for screen coordinates
+        
+        for (int i = 1; i <= steps; i++) {
+            double angle = startRad + i * angleInc;
+            double nextX = cx + rx * Math.cos(angle);
+            double nextY = cy - ry * Math.sin(angle);
+            drawLine((int)prevX, (int)prevY, (int)nextX, (int)nextY);
+            prevX = nextX;
+            prevY = nextY;
+        }
+    }
+
+    private void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
+        if (arcWidth == 0 || arcHeight == 0) {
+            drawRect(x, y, width, height, 1.0f);
+            return;
+        }
+        
+        int rx = arcWidth / 2;
+        int ry = arcHeight / 2;
+        
+        // Clamp arc dimensions
+        rx = Math.min(rx, width / 2);
+        ry = Math.min(ry, height / 2);
+        
+        // Draw four straight edges
+        drawLine(x + rx, y, x + width - rx, y); // top
+        drawLine(x + width, y + ry, x + width, y + height - ry); // right
+        drawLine(x + width - rx, y + height, x + rx, y + height); // bottom
+        drawLine(x, y + height - ry, x, y + ry); // left
+        
+        // Draw four corner arcs
+        drawArc(x, y, 2 * rx, 2 * ry, 90, 90); // top-left
+        drawArc(x + width - 2 * rx, y, 2 * rx, 2 * ry, 0, 90); // top-right
+        drawArc(x, y + height - 2 * ry, 2 * rx, 2 * ry, 180, 90); // bottom-left
+        drawArc(x + width - 2 * rx, y + height - 2 * ry, 2 * rx, 2 * ry, 270, 90); // bottom-right
+    }
+
+    private void drawPolyline(int[] xpoints, int[] ypoints, int npoints) {
+        if (npoints < 2) return;
+        
+        // Draw lines connecting consecutive points (but don't close)
+        for (int i = 1; i < npoints; i++) {
+            drawLine(xpoints[i - 1], ypoints[i - 1], xpoints[i], ypoints[i]);
+        }
+    }
+
+    private void copyArea(int x, int y, int width, int height, int dx, int dy) {
+        // For WebGL, we need to read pixels and redraw them
+        // This is expensive, but necessary for compatibility
+        
+        int srcX = x + (int)transform.getTranslateX();
+        int srcY = y + (int)transform.getTranslateY();
+        int destX = srcX + dx;
+        int destY = srcY + dy;
+        
+        // Create a temporary texture to hold the source region
+        WebGLTexture tmpTexture = gl.createTexture();
+        gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, tmpTexture);
+        gl.texParameteri(WebGLRenderingContext.TEXTURE_2D,
+                WebGLRenderingContext.TEXTURE_WRAP_S,
+                WebGLRenderingContext.CLAMP_TO_EDGE);
+        gl.texParameteri(WebGLRenderingContext.TEXTURE_2D,
+                WebGLRenderingContext.TEXTURE_WRAP_T,
+                WebGLRenderingContext.CLAMP_TO_EDGE);
+        gl.texParameteri(WebGLRenderingContext.TEXTURE_2D,
+                WebGLRenderingContext.TEXTURE_MIN_FILTER,
+                WebGLRenderingContext.NEAREST);
+        gl.texParameteri(WebGLRenderingContext.TEXTURE_2D,
+                WebGLRenderingContext.TEXTURE_MAG_FILTER,
+                WebGLRenderingContext.NEAREST);
+        
+        // Copy from framebuffer to texture
+        gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, framebuffer);
+        gl.copyTexImage2D(WebGLRenderingContext.TEXTURE_2D, 0, 
+                WebGLRenderingContext.RGBA, srcX, surface.getHeight() - (srcY + height), 
+                width, height, 0);
+        
+        // Draw the texture at destination
+        drawTexture(tmpTexture, WebGLSurfaceBackend.SwizzleMode.NONE, 
+                destX, destY, width, height, width, height, null);
+        
+        // Clean up
+        gl.deleteTexture(tmpTexture);
+    }
+
+    private void setComposite(Composite composite) {
+        this.composite = composite != null ? composite : AlphaComposite.SrcOver;
+        
+        // Update WebGL blend function based on composite
+        if (composite instanceof AlphaComposite) {
+            AlphaComposite ac = (AlphaComposite) composite;
+            int rule = ac.getRule();
+            
+            // Map AlphaComposite rules to WebGL blend functions
+            switch (rule) {
+                case AlphaComposite.CLEAR:
+                    gl.blendFunc(WebGLRenderingContext.ZERO, WebGLRenderingContext.ZERO);
+                    break;
+                case AlphaComposite.SRC:
+                    gl.blendFunc(WebGLRenderingContext.ONE, WebGLRenderingContext.ZERO);
+                    break;
+                case AlphaComposite.DST:
+                    gl.blendFunc(WebGLRenderingContext.ZERO, WebGLRenderingContext.ONE);
+                    break;
+                case AlphaComposite.SRC_OVER:
+                    gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
+                    break;
+                case AlphaComposite.DST_OVER:
+                    gl.blendFunc(WebGLRenderingContext.ONE_MINUS_DST_ALPHA, WebGLRenderingContext.DST_ALPHA);
+                    break;
+                case AlphaComposite.SRC_IN:
+                    gl.blendFunc(WebGLRenderingContext.DST_ALPHA, WebGLRenderingContext.ZERO);
+                    break;
+                case AlphaComposite.DST_IN:
+                    gl.blendFunc(WebGLRenderingContext.ZERO, WebGLRenderingContext.SRC_ALPHA);
+                    break;
+                case AlphaComposite.SRC_OUT:
+                    gl.blendFunc(WebGLRenderingContext.ONE_MINUS_DST_ALPHA, WebGLRenderingContext.ZERO);
+                    break;
+                case AlphaComposite.DST_OUT:
+                    gl.blendFunc(WebGLRenderingContext.ZERO, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
+                    break;
+                case AlphaComposite.SRC_ATOP:
+                    gl.blendFunc(WebGLRenderingContext.DST_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
+                    break;
+                case AlphaComposite.DST_ATOP:
+                    gl.blendFunc(WebGLRenderingContext.ONE_MINUS_DST_ALPHA, WebGLRenderingContext.SRC_ALPHA);
+                    break;
+                case AlphaComposite.XOR:
+                    gl.blendFunc(WebGLRenderingContext.ONE_MINUS_DST_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
+                    break;
+                default:
+                    // Default to SRC_OVER
+                    gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
+                    break;
+            }
+        }
+    }
+
     @Override
     public void rasterizeCommands(List<SurfaceCommand> cmds) {
 
@@ -333,6 +757,9 @@ class WebGLRasterizer implements Rasterizer {
                 case SET_CLIP_RECT:
                     setClip((Shape) cmd.obj);
                     break;
+                case SET_COMPOSITE:
+                    setComposite((Composite) cmd.obj);
+                    break;
                 case BLIT_IMAGE:
                     Surface s = ((SurfaceContainer) cmd.obj).getSurface();
                     drawImage(s, cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
@@ -346,8 +773,45 @@ class WebGLRasterizer implements Rasterizer {
                 case CLEAR_RECT:
                     clearRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
                     break;
-//				case DRAW_LINE:
-//					break;
+                case DRAW_LINE:
+                    drawLine(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                    break;
+                case DRAW_POLYGON: {
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    drawPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
+                    break;
+                }
+                case FILL_POLYGON: {
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    fillPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
+                    break;
+                }
+                case FILL_OVAL:
+                    fillOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                    break;
+                case FILL_ROUND_RECT:
+                    fillRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                    break;
+                case FILL_ARC:
+                    fillArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                    break;
+                case DRAW_OVAL:
+                    drawOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                    break;
+                case DRAW_ARC:
+                    drawArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                    break;
+                case DRAW_ROUND_RECT:
+                    drawRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                    break;
+                case DRAW_POLYLINE: {
+                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                    drawPolyline(polygon.xpoints, polygon.ypoints, polygon.npoints);
+                    break;
+                }
+                case COPY_AREA:
+                    copyArea(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                    break;
                 case NO_OP:
                     // do nothing (shouldn't be in the command list in the first place)
                     break;
