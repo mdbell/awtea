@@ -8,6 +8,7 @@ import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TKeyListener;
 
 import java.awt.Color;
+
 import org.teavm.classlib.java.awt.TDimension;
 
 /**
