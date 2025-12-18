@@ -36,6 +36,10 @@ public abstract class TComponent implements TImageObserver {
     @Getter
     private TDimension preferredSize;
 
+    @Setter
+    @Getter
+    private TDimension minimumSize;
+
     @Getter
     private boolean focusable = true;
 

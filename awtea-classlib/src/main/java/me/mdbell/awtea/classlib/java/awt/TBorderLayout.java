@@ -429,19 +429,23 @@ public class TBorderLayout implements TLayoutManager2 {
 
     /**
      * Gets the preferred size of a component for layout calculations.
-     * First tries getPreferredSize() which all components should implement.
-     * For containers, also asks for their preferred layout size which will recursively
-     * query child components and layout managers.
-     * Falls back to current dimensions if nothing else is available.
+     * Priority: minimum size -> current size -> preferred size (fallback)
      */
     private TDimension getComponentSize(TComponent comp) {
-        // First try getPreferredSize() which all components should implement
-        TDimension pref = comp.getPreferredSize();
-        if (pref != null && (pref.width > 0 || pref.height > 0)) {
-            return pref;
+        // First try minimum size if it's meaningful
+        TDimension min = comp.getMinimumSize();
+        if (min != null && (min.width > 0 || min.height > 0)) {
+            return min;
         }
         
-        // For containers, also try getPreferredLayoutSize()
+        // Then use current dimensions if set
+        int w = comp.getWidth();
+        int h = comp.getHeight();
+        if (w > 0 || h > 0) {
+            return new TDimension(w, h);
+        }
+        
+        // For containers, try getPreferredLayoutSize() as fallback
         if (comp instanceof TContainer) {
             TDimension layoutPref = ((TContainer) comp).getPreferredLayoutSize();
             if (layoutPref != null) {
@@ -449,8 +453,14 @@ public class TBorderLayout implements TLayoutManager2 {
             }
         }
         
-        // Fall back to current dimensions
-        return new TDimension(comp.getWidth(), comp.getHeight());
+        // Last resort: try preferred size
+        TDimension pref = comp.getPreferredSize();
+        if (pref != null && (pref.width > 0 || pref.height > 0)) {
+            return pref;
+        }
+        
+        // Absolute fallback
+        return new TDimension(0, 0);
     }
 
     /**

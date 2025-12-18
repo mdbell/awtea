@@ -343,17 +343,24 @@ public class TCardLayout implements TLayoutManager2 {
     }
 
     /**
-     * Gets the size of a component. First tries getPreferredSize() which all components
-     * should implement, then falls back to current width/height if needed.
+     * Gets the size of a component for layout calculations.
+     * Priority: minimum size -> current size -> preferred size (fallback)
      */
     private TDimension getComponentSize(TComponent comp) {
-        // First try getPreferredSize() which all components should implement
-        TDimension pref = comp.getPreferredSize();
-        if (pref != null && (pref.width > 0 || pref.height > 0)) {
-            return pref;
+        // First try minimum size if it's meaningful
+        TDimension min = comp.getMinimumSize();
+        if (min != null && (min.width > 0 || min.height > 0)) {
+            return min;
         }
         
-        // For containers, also try getPreferredLayoutSize()
+        // Then use current dimensions if set
+        int w = comp.getWidth();
+        int h = comp.getHeight();
+        if (w > 0 || h > 0) {
+            return new TDimension(w, h);
+        }
+        
+        // For containers, try getPreferredLayoutSize() as fallback
         if (comp instanceof TContainer) {
             TDimension layoutPref = ((TContainer) comp).getPreferredLayoutSize();
             if (layoutPref != null) {
@@ -361,8 +368,14 @@ public class TCardLayout implements TLayoutManager2 {
             }
         }
         
-        // Fall back to current dimensions
-        return new TDimension(comp.getWidth(), comp.getHeight());
+        // Last resort: try preferred size
+        TDimension pref = comp.getPreferredSize();
+        if (pref != null && (pref.width > 0 || pref.height > 0)) {
+            return pref;
+        }
+        
+        // Absolute fallback
+        return new TDimension(0, 0);
     }
 
     /**

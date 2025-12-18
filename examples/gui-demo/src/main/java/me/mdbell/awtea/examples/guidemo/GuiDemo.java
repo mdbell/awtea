@@ -64,12 +64,10 @@ public class GuiDemo {
 
         Label buttonDemoLabel = new Label("Button Demo:", Label.CENTER);
         buttonDemoLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
-        buttonDemoLabel.setPreferredSize(new Dimension(500, 20));
         buttonPanel.add(buttonDemoLabel);
 
         final Label statusLabel = new Label("Click a button to see action!", Label.CENTER);
         statusLabel.setForeground(new Color(0, 100, 0));
-        statusLabel.setPreferredSize(new Dimension(300, 20));
 
         Button button1 = new Button("Hello World");
         button1.addActionListener(e -> {
