@@ -32,11 +32,14 @@ public abstract class TWindow extends TSurface {
     /**
      * Constructs a new, initially invisible window.
      * The window is created with BorderLayout as the default layout manager.
+     * Windows are focus cycle roots by default.
      */
     public TWindow() {
         this.setBackground(WINDOW_BACKGROUND_COLOR);
         // Windows use BorderLayout by default in AWT
         setLayout(new TBorderLayout());
+        // Windows are focus cycle roots by default
+        setFocusCycleRoot(true);
     }
 
     /**
