@@ -18,6 +18,7 @@ The awtea project implements a flexible rendering system that supports multiple 
 - Requires WebGL 2.0 support in the browser
 - Only available for screen surfaces (requires HTMLCanvasElement)
 - Uses GPU textures and shaders for all operations
+- Full primitive support including polygons, ovals, arcs, and compositing
 
 **Supported Pixel Formats**: `FORMAT_INT_RGBA`
 
@@ -139,10 +140,21 @@ All backends support the following rendering operations through the command patt
 - **SET_COLOR** - Set foreground/background color
 - **SET_TRANSFORM** - Apply affine transformations
 - **SET_CLIP_RECT** - Set clipping rectangle
+- **SET_COMPOSITE** - Set alpha compositing mode (Porter-Duff rules)
 - **FILL_RECT** - Fill a rectangle
 - **DRAW_RECT** - Draw rectangle outline
 - **CLEAR_RECT** - Clear rectangle with background color
 - **DRAW_LINE** - Draw a line
+- **DRAW_POLYGON** - Draw polygon outline
+- **FILL_POLYGON** - Fill a polygon
+- **FILL_OVAL** - Fill an oval/ellipse
+- **DRAW_OVAL** - Draw oval/ellipse outline
+- **FILL_ARC** - Fill an arc (pie slice)
+- **DRAW_ARC** - Draw arc outline
+- **FILL_ROUND_RECT** - Fill a rounded rectangle
+- **DRAW_ROUND_RECT** - Draw rounded rectangle outline
+- **DRAW_POLYLINE** - Draw connected line segments
+- **COPY_AREA** - Copy a region of the surface
 - **BLIT_IMAGE** - Copy pixels from another surface (with scaling)
 
 ## Pixel Format Support
