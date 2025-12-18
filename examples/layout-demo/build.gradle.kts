@@ -57,11 +57,22 @@ tasks.register<Copy>("copyWasmToWebapp") {
     from(wasmFile)
     into(layout.buildDirectory.dir("dist"))
     
-    dependsOn(":awtea-graphics:buildAwtRasterWasm")
+    // Only depend on buildAwtRasterWasm if WASM file doesn't exist
+    // This allows examples to build without triggering WASM compilation
+    // when running root ./gradlew build
+    if (!wasmFile.get().asFile.exists()) {
+        // Only add dependency if explicitly building this example
+        val explicitlyBuilding = gradle.startParameter.taskNames.any { 
+            it.contains(project.name) || it.contains("examples")
+        }
+        if (explicitlyBuilding) {
+            dependsOn(":awtea-graphics:buildAwtRasterWasm")
+        }
+    }
     
-    // Only run if WASM file exists or will be built
+    // Only copy if WASM file exists
     onlyIf {
-        wasmFile.get().asFile.exists() || gradle.taskGraph.hasTask(":awtea-graphics:buildAwtRasterWasm")
+        wasmFile.get().asFile.exists()
     }
 }
 
