@@ -11,6 +11,7 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -454,7 +455,7 @@ public abstract class TComponent implements TImageObserver {
     public TImage createImage(int width, int height) {
         // normally a peer would be involved here, but we just create a buffered image
         // directly
-        return new TBufferedImage(width, height);
+        return new TBufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     }
 
     public int checkImage(TImage image, TImageObserver observer) {
