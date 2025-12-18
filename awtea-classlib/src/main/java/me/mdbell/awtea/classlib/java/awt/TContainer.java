@@ -251,6 +251,10 @@ public class TContainer extends TComponent {
         x -= this.getX();
         y -= this.getY();
         for (TComponent child : children) {
+            // Skip invisible components for hit-testing
+            if (!child.isVisible()) {
+                continue;
+            }
             if (child.contains(x, y)) {
                 log.trace("Point ({}, {}) is within component {}", x, y, child.getClass().getName());
                 if (child instanceof TContainer) {
