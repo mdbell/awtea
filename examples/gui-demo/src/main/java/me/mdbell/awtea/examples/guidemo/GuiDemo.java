@@ -4,6 +4,8 @@ import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 /**
  * Comprehensive GUI demo showcasing awtea features including:
@@ -70,6 +72,17 @@ public class GuiDemo {
         statusLabel.setForeground(new Color(0, 100, 0));
 
         Button button1 = new Button("Hello World");
+        button1.addMouseListener(new MouseListener() {
+            public void mouseClicked(MouseEvent e) {}
+            public void mousePressed(MouseEvent e) {}
+            public void mouseReleased(MouseEvent e) {}
+            public void mouseEntered(MouseEvent e) {
+                System.out.println("Mouse entered button: Hello World");
+            }
+            public void mouseExited(MouseEvent e) {
+                System.out.println("Mouse exited button: Hello World");
+            }
+        });
         button1.addActionListener(e -> {
             statusLabel.setText("Hello World button clicked!");
             System.out.println("Hello World button action!");
@@ -77,6 +90,17 @@ public class GuiDemo {
         buttonPanel.add(button1);
 
         Button button2 = new Button("Clear Canvas");
+        button2.addMouseListener(new MouseListener() {
+            public void mouseClicked(MouseEvent e) {}
+            public void mousePressed(MouseEvent e) {}
+            public void mouseReleased(MouseEvent e) {}
+            public void mouseEntered(MouseEvent e) {
+                System.out.println("Mouse entered button: Clear Canvas");
+            }
+            public void mouseExited(MouseEvent e) {
+                System.out.println("Mouse exited button: Clear Canvas");
+            }
+        });
         button2.addActionListener(e -> {
             canvas.clear();
             statusLabel.setText("Canvas cleared!");
@@ -85,6 +109,17 @@ public class GuiDemo {
         buttonPanel.add(button2);
 
         Button button3 = new Button("Change Color");
+        button3.addMouseListener(new MouseListener() {
+            public void mouseClicked(MouseEvent e) {}
+            public void mousePressed(MouseEvent e) {}
+            public void mouseReleased(MouseEvent e) {}
+            public void mouseEntered(MouseEvent e) {
+                System.out.println("Mouse entered button: Change Color");
+            }
+            public void mouseExited(MouseEvent e) {
+                System.out.println("Mouse exited button: Change Color");
+            }
+        });
         button3.addActionListener(e -> {
             canvas.randomizeColor();
             statusLabel.setText("Color changed!");

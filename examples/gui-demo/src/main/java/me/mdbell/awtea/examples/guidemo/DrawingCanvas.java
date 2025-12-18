@@ -47,9 +47,15 @@ public class DrawingCanvas extends Canvas {
             }
 
             public void mouseEntered(MouseEvent e) {
+                System.out.println("Mouse entered DrawingCanvas");
             }
 
             public void mouseExited(MouseEvent e) {
+                System.out.println("Mouse exited DrawingCanvas");
+                // Clear mouse position when exiting
+                mouseX = -1;
+                mouseY = -1;
+                repaint();
             }
         });
 
