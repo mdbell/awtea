@@ -11,8 +11,6 @@ public enum MouseEventType {
     PRESSED("mousedown", MOUSE_PRESSED),
     RELEASED("mouseup", MOUSE_RELEASED),
     MOVED("mousemove", MOUSE_MOVED),
-    ENTERED("mouseenter", MOUSE_ENTERED),
-    EXITED("mouseout", MOUSE_EXITED),
     CLICKED("click", MOUSE_CLICKED),
     WHEEL("wheel", MOUSE_WHEEL),
     UNKNOWN("unknown", -1);

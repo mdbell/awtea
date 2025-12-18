@@ -25,7 +25,7 @@ public class GuiDemo {
         // LoggerFactory.setGlobalLevel(LogLevel.TRACE);
         System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
         // System.setProperty("me.mdbell.awtea.gfx.backend", "java");
-        System.setProperty("me.mdbell.awtea.font.subpixel", "false");
+        System.setProperty("me.mdbell.awtea.font.subpixel", "true");
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 
         // Create the main window
@@ -80,6 +80,7 @@ public class GuiDemo {
             public void mouseEntered(MouseEvent e) {
                 log.info("Mouse entered button: Hello World");
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 log.info("Mouse exited button: Hello World");
@@ -97,6 +98,7 @@ public class GuiDemo {
             public void mouseEntered(MouseEvent e) {
                 log.info("Mouse entered button: Clear Canvas");
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 log.info("Mouse exited button: Clear Canvas");
@@ -115,6 +117,7 @@ public class GuiDemo {
             public void mouseEntered(MouseEvent e) {
                 log.info("Mouse entered button: Change Color");
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 log.info("Mouse exited button: Change Color");
@@ -154,27 +157,27 @@ public class GuiDemo {
 
                 g.setFont(new Font("SansSerif", Font.ITALIC, 10));
                 g.setColor(Color.GRAY);
-                g.drawString("Powered by awtea - Java AWT for the Web", 10, 95);
+                g.drawString("Powered by awtea - Java AWT for the Web", 10, 100);
             }
         };
         infoPanel.setPreferredSize(new Dimension(500, 110));
-        
+
         // Add hover demo panel
         Panel hoverDemoPanel = new Panel();
         hoverDemoPanel.setLayout(new GridLayout(1, 3, 5, 0));
         hoverDemoPanel.setPreferredSize(new Dimension(500, 60));
-        
+
         // Add hover panels to demonstrate mouse enter/exit events
         hoverDemoPanel.add(createHoverPanel("Hover 1", new Color(200, 100, 100), new Color(255, 0, 0)));
         hoverDemoPanel.add(createHoverPanel("Hover 2", new Color(100, 200, 100), new Color(0, 255, 0)));
         hoverDemoPanel.add(createHoverPanel("Hover 3", new Color(100, 100, 200), new Color(0, 0, 255)));
-        
+
         // Create bottom panel to hold both info and hover panels
         Container bottomPanel = new Container();
         bottomPanel.setLayout(new BorderLayout(0, 5));
         bottomPanel.add(infoPanel, BorderLayout.NORTH);
         bottomPanel.add(hoverDemoPanel, BorderLayout.CENTER);
-        
+
         leftPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         centerPanel.add(leftPanel, BorderLayout.WEST);
@@ -206,39 +209,40 @@ public class GuiDemo {
      * Creates a hover panel that changes color when mouse enters/exits.
      */
     private static Panel createHoverPanel(String label, Color normalColor, Color hoverColor) {
-        // Use an array to hold mutable state that can be accessed from both inner classes
-        final boolean[] hoveredState = {false};
-        
+        // Use an array to hold mutable state that can be accessed from both inner
+        // classes
+        final boolean[] hoveredState = { false };
+
         Panel panel = new Panel() {
             @Override
             public void paint(Graphics g) {
                 // Draw background
                 g.setColor(hoveredState[0] ? hoverColor : normalColor);
                 g.fillRect(0, 0, getWidth(), getHeight());
-                
+
                 // Draw label
                 g.setColor(hoveredState[0] ? Color.WHITE : Color.BLACK);
                 g.setFont(new Font("SansSerif", Font.BOLD, 12));
-                
+
                 FontMetrics fm = g.getFontMetrics();
                 int x = (getWidth() - fm.stringWidth(label)) / 2;
                 int y = (getHeight() + fm.getAscent()) / 2 - 5;
-                
+
                 g.drawString(label, x, y);
-                
+
                 if (hoveredState[0]) {
                     g.setFont(new Font("SansSerif", Font.PLAIN, 10));
                     String hoverText = "HOVER!";
                     int hx = (getWidth() - g.getFontMetrics().stringWidth(hoverText)) / 2;
                     g.drawString(hoverText, hx, y + 15);
                 }
-                
+
                 // Draw border
                 g.setColor(Color.DARK_GRAY);
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
             }
         };
-        
+
         panel.setBackground(normalColor);
         panel.addMouseListener(new MouseAdapter() {
             @Override
@@ -247,7 +251,7 @@ public class GuiDemo {
                 hoveredState[0] = true;
                 panel.repaint();
             }
-            
+
             @Override
             public void mouseExited(MouseEvent e) {
                 log.info("Mouse exited: {}", label);
@@ -255,7 +259,7 @@ public class GuiDemo {
                 panel.repaint();
             }
         });
-        
+
         return panel;
     }
 }
