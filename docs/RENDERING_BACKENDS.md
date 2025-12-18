@@ -13,12 +13,21 @@ The awtea project implements a flexible rendering system that supports multiple 
 **Use Case**: Direct rendering to HTML Canvas elements using WebGL 2.0
 
 **Characteristics**:
-- Hardware-accelerated rendering
+- Hardware-accelerated GPU rendering with native WebGL primitives
 - Optimal performance for screen display
 - Requires WebGL 2.0 support in the browser
 - Only available for screen surfaces (requires HTMLCanvasElement)
-- Uses GPU textures and shaders for all operations
+- Uses GPU shaders for all drawing operations (LINES, LINE_LOOP, LINE_STRIP, TRIANGLE_FAN)
 - Full primitive support including polygons, ovals, arcs, and compositing
+- Single draw call per shape for maximum performance
+
+**Rendering Approach**:
+- Lines: WebGL `LINES` primitive
+- Polygon outlines: WebGL `LINE_LOOP` primitive  
+- Filled polygons: WebGL `TRIANGLE_FAN` primitive
+- Ovals/Ellipses: Parametric vertex generation with adaptive segmentation
+- Arcs: Parametric curves with ~5° per segment
+- Rounded rectangles: Single vertex buffer with corner arcs
 
 **Supported Pixel Formats**: `FORMAT_INT_RGBA`
 
@@ -172,8 +181,16 @@ All backends support the following rendering operations through the command patt
 ## Performance Considerations
 
 ### WebGL Backend
-- **Best**: Hardware-accelerated, ideal for screen rendering
-- **Limitations**: Requires canvas context, overhead for small operations
+- **Best**: Hardware-accelerated GPU rendering, ideal for screen rendering and real-time graphics
+- **Advantages**: 
+  - Single draw call per shape (vs thousands for software rasterization)
+  - Native GPU primitives (LINES, TRIANGLE_FAN, etc.)
+  - Automatic anti-aliasing on supported hardware
+  - Parallel vertex processing
+- **Limitations**: 
+  - Requires canvas context
+  - Small overhead for simple operations (GPU setup cost)
+  - Screen-only (no offscreen pixel access)
 
 ### WASM Backend
 - **Best**: Complex rendering operations, offscreen buffers
