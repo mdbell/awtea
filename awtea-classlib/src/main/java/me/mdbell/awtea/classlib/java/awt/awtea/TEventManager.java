@@ -48,6 +48,9 @@ public final class TEventManager implements AutoCloseable {
     private int lastMouseX = Integer.MIN_VALUE;
     private int lastMouseY = Integer.MIN_VALUE;
 
+    // Track the component currently under the mouse for synthesizing enter/exit events
+    private TComponent componentUnderMouse = null;
+
     public TEventManager(HTMLElement element, TContainer container) {
         this.element = element;
         this.container = container;
@@ -70,6 +73,10 @@ public final class TEventManager implements AutoCloseable {
             if (type == MouseEventType.WHEEL) {
                 continue; // Handled separately
             }
+            // Skip native enter/exit events - we'll synthesize them ourselves
+            if (type == MouseEventType.ENTERED || type == MouseEventType.EXITED) {
+                continue;
+            }
             element.onEvent(type.getType(), e -> {
                 MouseEvent me = (MouseEvent) e;
                 MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
@@ -80,6 +87,37 @@ public final class TEventManager implements AutoCloseable {
 
                 log.trace("Mouse event: type={}, button={}, point=({}, {}) on component={}",
                         type, button, point.getX(), point.getY(), comp.getClass().getName());
+
+                // Synthesize MOUSE_ENTERED/MOUSE_EXITED events when the component under mouse changes
+                // This should happen on all mouse events (move, press, release, etc.)
+                if (comp != componentUnderMouse) {
+                    // Fire MOUSE_EXITED to the previous component
+                    if (componentUnderMouse != null) {
+                        java.awt.Point exitOnScreen = componentUnderMouse.getLocationOnScreen();
+                        Point exitPoint = new Point(point.getX() + comp.getLocationOnScreen().x, 
+                                                     point.getY() + comp.getLocationOnScreen().y);
+                        exitPoint.translate(-exitOnScreen.x, -exitOnScreen.y);
+                        TMouseEvent exitEvent = new TMouseEvent(componentUnderMouse, 
+                                TMouseEvent.MOUSE_EXITED,
+                                exitPoint.getX(), exitPoint.getY(), button, me.getMetaKey());
+                        post(exitEvent);
+                        log.trace("Synthesized MOUSE_EXITED for component={}", 
+                                componentUnderMouse.getClass().getName());
+                    }
+                    
+                    // Fire MOUSE_ENTERED to the new component
+                    if (comp != null) {
+                        java.awt.Point enterOnScreen = comp.getLocationOnScreen();
+                        Point enterPoint = new Point(point.getX(), point.getY());
+                        TMouseEvent enterEvent = new TMouseEvent(comp, TMouseEvent.MOUSE_ENTERED,
+                                enterPoint.getX(), enterPoint.getY(), button, me.getMetaKey());
+                        post(enterEvent);
+                        log.trace("Synthesized MOUSE_ENTERED for component={}", 
+                                comp.getClass().getName());
+                    }
+                    
+                    componentUnderMouse = comp;
+                }
 
                 java.awt.Point onScreen = comp.getLocationOnScreen();
 
@@ -100,6 +138,30 @@ public final class TEventManager implements AutoCloseable {
 
             }).track(registrations);
         }
+        
+        // Handle when mouse leaves the canvas entirely - fire MOUSE_EXITED
+        element.onEvent("mouseout", e -> {
+            if (componentUnderMouse != null) {
+                MouseEvent me = (MouseEvent) e;
+                MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
+                
+                // Use last known position relative to the component
+                java.awt.Point onScreen = componentUnderMouse.getLocationOnScreen();
+                Point point = new Point(me.getClientX(), me.getClientY());
+                translatePoint(point, (HTMLCanvasElement) element);
+                point.translate(-onScreen.x, -onScreen.y);
+                
+                TMouseEvent exitEvent = new TMouseEvent(componentUnderMouse, 
+                        TMouseEvent.MOUSE_EXITED,
+                        point.getX(), point.getY(), button, me.getMetaKey());
+                post(exitEvent);
+                log.trace("Synthesized MOUSE_EXITED (canvas exit) for component={}", 
+                        componentUnderMouse.getClass().getName());
+                
+                componentUnderMouse = null;
+            }
+        }).track(registrations);
+        
         return this;
     }
 
@@ -177,6 +239,8 @@ public final class TEventManager implements AutoCloseable {
         // Reset mouse position tracking to prevent stale coordinates
         lastMouseX = Integer.MIN_VALUE;
         lastMouseY = Integer.MIN_VALUE;
+        // Reset component tracking
+        componentUnderMouse = null;
     }
 
     @Override
