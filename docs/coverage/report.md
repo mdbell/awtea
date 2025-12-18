@@ -1,15 +1,15 @@
 # AWT API Coverage Report
 
-**Generated:** 2025-12-18 14:02:22
+**Generated:** 2025-12-18 20:55:05
 
 ## Summary
 
-- **Total Coverage**: 984 / 1769 (55.6%)
+- **Total Coverage**: 990 / 1778 (55.7%)
 - **Packages**: 14
-- **Classes**: 105
+- **Classes**: 106
 
 ```
-[███████████████████████████░░░░░░░░░░░░░░░░░░░░░░░] 55.6%
+[███████████████████████████░░░░░░░░░░░░░░░░░░░░░░░] 55.7%
 ```
 
 ## Packages
@@ -19,7 +19,7 @@
 | [`java.applet`](md/java/applet/index.md) | 2 | 6 / 16 | 37.5% ![Coverage](https://img.shields.io/badge/coverage-37.5%25-orange) |
 | [`java.awt`](md/java/awt/index.md) | 26 | 359 / 565 | 63.5% ![Coverage](https://img.shields.io/badge/coverage-63.5%25-yellow) |
 | [`java.awt.color`](md/java/awt/color/index.md) | 1 | 12 / 42 | 28.6% ![Coverage](https://img.shields.io/badge/coverage-28.6%25-orange) |
-| [`java.awt.event`](md/java/awt/event/index.md) | 16 | 83 / 138 | 60.1% ![Coverage](https://img.shields.io/badge/coverage-60.1%25-yellow) |
+| [`java.awt.event`](md/java/awt/event/index.md) | 17 | 89 / 147 | 60.5% ![Coverage](https://img.shields.io/badge/coverage-60.5%25-yellow) |
 | [`java.awt.geom`](md/java/awt/geom/index.md) | 12 | 141 / 153 | 92.2% ![Coverage](https://img.shields.io/badge/coverage-92.2%25-green) |
 | [`java.awt.image`](md/java/awt/image/index.md) | 17 | 229 / 401 | 57.1% ![Coverage](https://img.shields.io/badge/coverage-57.1%25-yellow) |
 | [`java.awt.image.renderable`](md/java/awt/image/renderable/index.md) | 1 | 9 / 12 | 75.0% ![Coverage](https://img.shields.io/badge/coverage-75.0%25-green) |
