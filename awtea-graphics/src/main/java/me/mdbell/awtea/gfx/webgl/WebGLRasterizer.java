@@ -305,7 +305,6 @@ class WebGLRasterizer implements Rasterizer {
 
     private void drawLine(int x1, int y1, int x2, int y2) {
         // Use Bresenham's algorithm implemented via fillRect for pixel-perfect lines
-        // Transform coordinates
         int dx = Math.abs(x2 - x1);
         int dy = Math.abs(y2 - y1);
         int sx = x1 < x2 ? 1 : -1;
@@ -374,9 +373,9 @@ class WebGLRasterizer implements Rasterizer {
                     int x1 = xpoints[i];
                     int x2 = xpoints[j];
                     
-                    // Calculate intersection x coordinate
-                    int x = x1 + (y - y1) * (x2 - x1) / (y2 - y1);
-                    intersections.add(x);
+                    // Calculate intersection x coordinate using floating point to avoid precision loss
+                    float x = x1 + (float)(y - y1) * (x2 - x1) / (y2 - y1);
+                    intersections.add((int)x);
                 }
             }
             
@@ -483,7 +482,9 @@ class WebGLRasterizer implements Rasterizer {
             
             for (int px = -(int)dx; px <= (int)dx; px++) {
                 // Check if point is within arc angle range
-                double angle = Math.atan2(-dy, px); // negative dy for screen coordinates
+                // In screen coordinates, Y increases downward, so we negate dy to convert to
+                // standard mathematical coordinates where atan2 expects Y to increase upward
+                double angle = Math.atan2(-dy, px);
                 if (angle < 0) angle += 2 * Math.PI;
                 
                 boolean inArc;
@@ -578,12 +579,11 @@ class WebGLRasterizer implements Rasterizer {
         double endRad = Math.toRadians(startAngle + arcAngle);
         
         // Draw arc using parametric equations
-        double angleStep = Math.toRadians(1); // 1 degree steps
         int steps = Math.abs(arcAngle);
         
         double angleInc = (endRad - startRad) / steps;
         double prevX = cx + rx * Math.cos(startRad);
-        double prevY = cy - ry * Math.sin(startRad); // negative for screen coordinates
+        double prevY = cy - ry * Math.sin(startRad); // negative sin for screen coordinates
         
         for (int i = 1; i <= steps; i++) {
             double angle = startRad + i * angleInc;
@@ -632,7 +632,8 @@ class WebGLRasterizer implements Rasterizer {
 
     private void copyArea(int x, int y, int width, int height, int dx, int dy) {
         // For WebGL, we need to read pixels and redraw them
-        // This is expensive, but necessary for compatibility
+        // Note: This is expensive (requires GPU-CPU-GPU round-trip with texture operations)
+        // Consider using software rendering for complex copyArea operations
         
         int srcX = x + (int)transform.getTranslateX();
         int srcY = y + (int)transform.getTranslateY();
@@ -673,8 +674,8 @@ class WebGLRasterizer implements Rasterizer {
         this.composite = composite != null ? composite : AlphaComposite.SrcOver;
         
         // Update WebGL blend function based on composite
-        if (composite instanceof AlphaComposite) {
-            AlphaComposite ac = (AlphaComposite) composite;
+        if (this.composite instanceof AlphaComposite) {
+            AlphaComposite ac = (AlphaComposite) this.composite;
             int rule = ac.getRule();
             
             // Map AlphaComposite rules to WebGL blend functions
@@ -732,7 +733,8 @@ class WebGLRasterizer implements Rasterizer {
                 WebGLRenderingContext.TEXTURE_2D, this.surface.texture, 0);
 
         gl.enable(WebGLRenderingContext.BLEND);
-        gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
+        // Apply the current composite mode's blend function
+        setComposite(this.composite);
 
         updateTransformFloats(this.transform);
         applyClip();
