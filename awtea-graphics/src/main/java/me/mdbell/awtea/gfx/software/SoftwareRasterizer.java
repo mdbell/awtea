@@ -528,7 +528,8 @@ public class SoftwareRasterizer implements Rasterizer {
                     int dstColor = destPixels[destIdx];
                     int blendedColor = blendPixel(convertColorToARGB(convertedColor, destFormat),
                             convertColorToARGB(dstColor, destFormat), composite);
-                    destPixels[destIdx] = blendedColor;
+                    // Convert blended result back to destination format
+                    destPixels[destIdx] = convertColor(blendedColor, Surface.FORMAT_INT_ARGB, destFormat);
                 } else {
                     destPixels[destIdx] = convertedColor;
                 }
