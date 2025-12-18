@@ -21,10 +21,13 @@ public class TOffscreenBufferPeer implements TSurfacePeer {
     @Override
     public void paintAll() {
         TGraphics g = buffer.getGraphics();
-        TGraphics surface = root.getSurfaceGraphics();
+        try {
+            TGraphics surface = root.getSurfaceGraphics();
 
-        root.update(g);
-        g.dispose();
-        surface.drawImage(buffer, 0, 0, null);
+            root.update(g);
+            surface.drawImage(buffer, 0, 0, null);
+        } finally {
+            g.dispose();
+        }
     }
 }
