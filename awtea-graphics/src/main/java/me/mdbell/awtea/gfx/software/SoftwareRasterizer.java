@@ -323,8 +323,10 @@ public class SoftwareRasterizer implements Rasterizer {
             for (int row = y0; row <= y1; row++) {
                 for (int col = x0; col <= x1; col++) {
                     int dstColor = pixelDataAsInt32[row * surfaceWidth + col];
-                    pixelDataAsInt32[row * surfaceWidth + col] = blendPixel(srcColorARGB,
+                    int blendedColor = blendPixel(srcColorARGB,
                             convertColorToARGB(dstColor, format), composite);
+                    // Convert blended result back to surface format
+                    pixelDataAsInt32[row * surfaceWidth + col] = convertColor(blendedColor, Surface.FORMAT_INT_ARGB, format);
                 }
             }
         } else {
@@ -393,8 +395,10 @@ public class SoftwareRasterizer implements Rasterizer {
             int idx = y1 * surface.getWidth() + x1;
             if (needsBlending()) {
                 int dstColor = pixelDataAsInt32[idx];
-                pixelDataAsInt32[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()),
+                int blendedColor = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()),
                         convertColorToARGB(dstColor, surface.getFormat()), composite);
+                // Convert blended result back to surface format
+                pixelDataAsInt32[idx] = convertColor(blendedColor, Surface.FORMAT_INT_ARGB, surface.getFormat());
             } else {
                 pixelDataAsInt32[idx] = encodedForeground;
             }
@@ -418,8 +422,10 @@ public class SoftwareRasterizer implements Rasterizer {
             if (needsBlend) {
                 int idx = y1 * surface.getWidth() + x1;
                 int dstColor = pixelDataAsInt32[idx];
-                pixelDataAsInt32[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()),
+                int blendedColor = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()),
                         convertColorToARGB(dstColor, surface.getFormat()), composite);
+                // Convert blended result back to surface format
+                pixelDataAsInt32[idx] = convertColor(blendedColor, Surface.FORMAT_INT_ARGB, surface.getFormat());
             } else {
                 if (x1 >= 0 && x1 < surface.getWidth() && y1 >= 0 && y1 < surface.getHeight()) {
                     int idx = y1 * surface.getWidth() + x1;
@@ -1529,8 +1535,10 @@ public class SoftwareRasterizer implements Rasterizer {
         int idx = y * width + x;
         if (blend) {
             int dstColor = pixelData[idx];
-            pixelData[idx] = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()),
+            int blendedColor = blendPixel(convertColorToARGB(encodedForeground, surface.getFormat()),
                     convertColorToARGB(dstColor, surface.getFormat()), composite);
+            // Convert blended result back to surface format
+            pixelData[idx] = convertColor(blendedColor, Surface.FORMAT_INT_ARGB, surface.getFormat());
         } else {
             pixelData[idx] = encodedForeground;
         }
