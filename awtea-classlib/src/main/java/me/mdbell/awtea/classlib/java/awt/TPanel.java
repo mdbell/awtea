@@ -34,21 +34,20 @@ public class TPanel extends TContainer {
     }
 
     /**
-     * Paints this panel. First paints the background if a background color
-     * is set, then paints all child components.
+     * Updates this panel by clearing the background and then painting.
+     * This is called before paint() to prepare the drawing surface.
      *
      * @param g the graphics context to paint on
      */
     @Override
-    public void paint(TGraphics g) {
-        // Paint background if color is set
+    public void update(TGraphics g) {
+        // Clear background if color is set
         Color bg = getBackground();
         if (bg != null) {
             g.setColor(bg);
             g.fillRect(0, 0, getWidth(), getHeight());
         }
-
-        // Paint children
-        super.paint(g);
+        // Now paint children
+        paint(g);
     }
 }
