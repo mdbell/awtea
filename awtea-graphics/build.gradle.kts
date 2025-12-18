@@ -92,12 +92,19 @@ tasks.register("buildAwtRasterWasm") {
     }
 }
 
-tasks.named<ProcessResources>("processResources") {
-    dependsOn("buildAwtRasterWasm")
+// Configuration property to control WASM compilation (default: false)
+// Enable with: ./gradlew build -PbuildWasm=true
+val buildWasm = project.findProperty("buildWasm")?.toString()?.toBoolean() ?: false
 
-    from(wasmOutputDir) {
-        include("awt_raster.wasm")
-        into("") // root of resources
+tasks.named<ProcessResources>("processResources") {
+    // Conditionally depend on WASM build if enabled
+    if (buildWasm) {
+        dependsOn("buildAwtRasterWasm")
+        
+        from(wasmOutputDir) {
+            include("awt_raster.wasm")
+            into("") // root of resources
+        }
     }
 }
 

@@ -44,6 +44,25 @@ teavm {
     }
 }
 
+// Copy WASM rasterizer to dist directory
+tasks.register<Copy>("copyWasmToWebapp") {
+    description = "Copy WASM rasterizer to dist directory"
+    group = "build"
+    
+    val wasmFile = rootProject.project(":awtea-graphics")
+        .layout.buildDirectory.file("wasm/awt_raster.wasm")
+    
+    from(wasmFile)
+    into(layout.buildDirectory.dir("dist"))
+    
+    dependsOn(":awtea-graphics:buildAwtRasterWasm")
+    
+    // Only run if WASM file exists or will be built
+    onlyIf {
+        wasmFile.get().asFile.exists() || gradle.taskGraph.hasTask(":awtea-graphics:buildAwtRasterWasm")
+    }
+}
+
 // Copy the HTML template to the dist directory
 tasks.register<Copy>("copyWebapp") {
     from("src/main/webapp")
@@ -51,6 +70,8 @@ tasks.register<Copy>("copyWebapp") {
 
     from("../../webapp-common")
     into(layout.buildDirectory.dir("dist"))
+    
+    dependsOn("copyWasmToWebapp")
 }
 
 // Make sure HTML is copied before TeaVM runs

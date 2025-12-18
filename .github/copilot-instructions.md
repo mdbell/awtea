@@ -40,9 +40,10 @@ Modular font rendering with `FontRenderer` interface and `FontPeer` bridge:
 
 ### Standard Build Commands
 ```bash
-./gradlew build                                    # Build all modules
-./gradlew :awtea-graphics:build                    # Build specific module
-./gradlew :examples:gui-demo:build                 # Build example (generates JS/HTML)
+./gradlew build                                    # Build all modules (without WASM)
+./gradlew build -PbuildWasm=true                   # Build all modules with WASM compilation
+./gradlew :awtea-graphics:build                    # Build specific module (without WASM)
+./gradlew :examples:gui-demo:build                 # Build example (generates JS/HTML and WASM)
 ./gradlew :examples:gui-demo:generateJavaScript    # Compile Java → JS via TeaVM
 ```
 
@@ -67,8 +68,11 @@ The `awtea-graphics` module compiles C rasterization code to WASM using Emscript
 **Key points:**
 - Uses `emcc` (Emscripten compiler) - requires dev container or local Emscripten SDK
 - C sources in `awtea-graphics/src/main/native/`
-- Output bundled into resources during `processResources` task
-- WASM file loaded at runtime by `WasmSurfaceBackend`
+- **WASM compilation is optional for library builds** - use `-PbuildWasm=true` to enable
+- When building libraries WITHOUT `-PbuildWasm=true`, WASM is not compiled or bundled into resources
+- Example builds automatically trigger WASM compilation (examples depend on `:awtea-graphics:buildAwtRasterWasm`)
+- WASM file copied to example dist directories during example builds (loaded at runtime by examples)
+- Library development can proceed without Emscripten installed
 
 ### Code Generation (Required Before Build)
 Enums are code-generated from YAML schemas before compilation:
