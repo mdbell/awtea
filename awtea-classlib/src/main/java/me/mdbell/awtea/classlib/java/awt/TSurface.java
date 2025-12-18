@@ -13,10 +13,6 @@ abstract class TSurface extends TContainer {
 
 	}
 
-	final void superPaint(TGraphics g) {
-		super.paint(g);
-	}
-
 	/**
 	 * Gets the graphics context for the real surface.
 	 *
@@ -29,7 +25,8 @@ abstract class TSurface extends TContainer {
 	 * (This is used if a component [e.g an Applet that performs it's own buffering]
 	 * wants to draw directly to the screen).
 	 * <p>
-	 * Ideally rendering shouldn't use this method, but rather the normal paint mechanism.
+	 * Ideally rendering shouldn't use this method, but rather the normal paint
+	 * mechanism.
 	 *
 	 * @return The graphics context for the surface.
 	 */
@@ -48,11 +45,6 @@ abstract class TSurface extends TContainer {
 	@Override
 	public void update(TGraphics g) {
 		paint(g);
-	}
-
-	@Override
-	public void paint(TGraphics g) {
-		// Do nothing - painting is handled by the surface peer
 	}
 
 	@Override

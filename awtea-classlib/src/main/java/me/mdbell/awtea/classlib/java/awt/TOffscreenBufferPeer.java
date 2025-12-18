@@ -3,9 +3,6 @@ package me.mdbell.awtea.classlib.java.awt;
 import me.mdbell.awtea.classlib.java.awt.awtea.peer.TSurfacePeer;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 
-import java.awt.*;
-
-
 public class TOffscreenBufferPeer implements TSurfacePeer {
 
     private TBufferedImage buffer;
@@ -26,14 +23,8 @@ public class TOffscreenBufferPeer implements TSurfacePeer {
         TGraphics g = buffer.getGraphics();
         TGraphics surface = root.getSurfaceGraphics();
 
-        root.superPaint(g);
+        root.update(g);
         g.dispose();
-
-        Color bg = root.getBackground();
-        if (bg != null) {
-            surface.setColor(bg);
-            surface.fillRect(0, 0, root.getWidth(), root.getHeight());
-        }
         surface.drawImage(buffer, 0, 0, null);
     }
 }

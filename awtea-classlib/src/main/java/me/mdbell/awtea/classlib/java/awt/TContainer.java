@@ -6,6 +6,7 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -205,16 +206,16 @@ public class TContainer extends TComponent {
 
     @Override
     public void paint(TGraphics g) {
-        for (TComponent component : children) {
+        for (TComponent child : children) {
             // Skip invisible components
-            if (!component.isVisible()) {
+            if (!child.isVisible()) {
                 continue;
             }
 
-            int x = component.getX();
-            int y = component.getY();
-            int width = component.getWidth();
-            int height = component.getHeight();
+            int x = child.getX();
+            int y = child.getY();
+            int width = child.getWidth();
+            int height = child.getHeight();
 
             // Skip components with zero or negative dimensions
             if (width <= 0 || height <= 0) {
@@ -222,17 +223,21 @@ public class TContainer extends TComponent {
             }
 
             // Create a new graphics context for the child component
-            TGraphics childGraphics = g.create();
+            TGraphics childGfx = g.create();
             // g.create() can return null if graphics context creation fails
-            if (childGraphics != null) {
-                // Translate to the child's position first
-                childGraphics.translate(x, y);
-                // Then clip to the child's bounds in the child's coordinate system
-                // This ensures the clip is at (0, 0) relative to where the child will paint
-                childGraphics.setClip(0, 0, width, height);
-                // Paint the child
-                component.paint(childGraphics);
-                childGraphics.dispose();
+            if (childGfx != null) {
+                try {
+                    // Translate to the child's position first
+                    childGfx.translate(x, y);
+                    // Then clip to the child's bounds in the child's coordinate system
+                    // This ensures the clip is at (0, 0) relative to where the child will paint
+                    childGfx.setClip(0, 0, width, height);
+                    // Paint the child
+                    child.paint(childGfx);
+                } finally {
+                    // prevent a leak if we get an exception in the paint call
+                    childGfx.dispose();
+                }
             }
         }
     }
@@ -243,6 +248,8 @@ public class TContainer extends TComponent {
 
     public TComponent getComponentAt(int x, int y) {
         log.trace("TContainer.getComponentAt({}, {}) called on {}", x, y, this.getClass().getName());
+        x -= this.getX();
+        y -= this.getY();
         for (TComponent child : children) {
             if (child.contains(x, y)) {
                 log.trace("Point ({}, {}) is within component {}", x, y, child.getClass().getName());

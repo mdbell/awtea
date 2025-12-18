@@ -36,18 +36,24 @@ public abstract class TComponent implements TImageObserver {
     @Getter
     private TDimension preferredSize;
 
+    @Setter
+    @Getter
+    private TDimension minimumSize;
+
     @Getter
     private boolean focusable = true;
 
     @Getter
-    private boolean valid = true;
+    private boolean valid = false;
 
     @Getter
     private boolean visible = true;
 
-    private Color background;
+    private Color background = Color.LIGHT_GRAY;
 
-    private Color foreground;
+    private Color foreground = Color.BLACK;
+
+    private TFont font;
 
     protected List<TMouseListener> mouseListeners = new LinkedList<>();
     protected List<TMouseMotionListener> mouseMotionListeners = new LinkedList<>();
@@ -101,6 +107,23 @@ public abstract class TComponent implements TImageObserver {
         firePropertyChange("foreground", old, c);
     }
 
+    public TFont getFont() {
+        if (this.font != null) {
+            return this.font;
+        } else if (this.parent != null) {
+            return this.parent.getFont();
+        } else {
+            return null;
+        }
+    }
+
+    public void setFont(TFont font) {
+        TFont old = this.font;
+        this.font = font;
+        firePropertyChange("font", old, font);
+        repaint();
+    }
+
     public void dispatchEvent(TAWTEvent event) {
         if (event.isConsumed()) {
             return;
@@ -134,15 +157,22 @@ public abstract class TComponent implements TImageObserver {
             return;
         }
         TGraphics graphics = this.getGraphics();
-        if (event.getID() == TPaintEvent.PAINT) {
-            // TODO: clip rect
-            paint(graphics);
-        } else if (event.getID() == TPaintEvent.UPDATE) {
-            update(graphics);
-        } else {
-            log.warn("Unhandled paint event id: {}", event.getID());
+        if (graphics == null) {
+            return;
         }
-        graphics.dispose();
+        try {
+            if (event.getID() == TPaintEvent.PAINT) {
+                // TODO: clip rect
+                paint(graphics);
+            } else if (event.getID() == TPaintEvent.UPDATE) {
+                update(graphics);
+            } else {
+                log.warn("Unhandled paint event id: {}", event.getID());
+            }
+            graphics.dispose();
+        } finally {
+            graphics.dispose();
+        }
     }
 
     protected void dispatchMouseWheelEvent(TMouseWheelEvent e) {
@@ -304,7 +334,13 @@ public abstract class TComponent implements TImageObserver {
     }
 
     public TGraphics getGraphics() {
+        if (this.parent == null) {
+            return null;
+        }
         TGraphics parent = this.parent.getGraphics();
+        if (parent == null) {
+            return null;
+        }
         return parent.create(x, y, width, height);
     }
 
