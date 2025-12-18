@@ -1,5 +1,8 @@
 package me.mdbell.awtea.examples.guidemo;
 
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+
 import java.awt.*;
 import java.awt.event.*;
 
@@ -8,6 +11,8 @@ import java.awt.event.*;
  * Click to draw colored squares at the mouse position.
  */
 public class DrawingCanvas extends Canvas {
+
+    private static final Logger log = LoggerFactory.getLogger(DrawingCanvas.class);
 
     private static class DrawRect {
         int x, y, size;
@@ -47,11 +52,11 @@ public class DrawingCanvas extends Canvas {
             }
 
             public void mouseEntered(MouseEvent e) {
-                System.out.println("Mouse entered DrawingCanvas");
+                log.info("Mouse entered DrawingCanvas");
             }
 
             public void mouseExited(MouseEvent e) {
-                System.out.println("Mouse exited DrawingCanvas");
+                log.info("Mouse exited DrawingCanvas");
                 // Clear mouse position when exiting
                 mouseX = -1;
                 mouseY = -1;
