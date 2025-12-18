@@ -105,7 +105,7 @@ public class TextFieldDemo {
 
         frame.add(centerPanel, BorderLayout.CENTER);
 
-        // Button panel
+        // Button panel below the text fields
         Panel buttonPanel = new Panel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
         buttonPanel.setBackground(Color.WHITE);
@@ -161,7 +161,13 @@ public class TextFieldDemo {
         });
         buttonPanel.add(fillButton);
 
-        frame.add(buttonPanel, BorderLayout.CENTER);
+        // Create a main panel that holds both center and button panels
+        Panel mainPanel = new Panel();
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.add(centerPanel, BorderLayout.CENTER);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        frame.add(mainPanel, BorderLayout.CENTER);
 
         // Output/status panel at the bottom
         Panel statusPanel = new Panel();
