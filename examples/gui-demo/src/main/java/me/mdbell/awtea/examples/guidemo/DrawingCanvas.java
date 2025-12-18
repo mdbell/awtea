@@ -99,6 +99,16 @@ public class DrawingCanvas extends Canvas {
         }
 
         g.drawString("Shapes drawn: " + rects.size(), 10, 60);
+
+        g.drawString("Next Color:", 10, 80);
+
+        g.setColor(colors[colorIndex]);
+
+        g.fillRect(80, 70, 10, 10);
+
+        g.setColor(Color.BLACK);
+
+        g.drawRect(80, 70, 10, 10);
     }
 
     /**

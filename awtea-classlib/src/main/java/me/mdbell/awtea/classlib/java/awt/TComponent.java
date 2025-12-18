@@ -44,15 +44,15 @@ public abstract class TComponent implements TImageObserver {
     private boolean focusable = true;
 
     @Getter
-    private boolean valid = true;
+    private boolean valid = false;
 
     @Getter
     private boolean visible = true;
 
-    private Color background;
+    private Color background = Color.LIGHT_GRAY;
 
-    private Color foreground;
-    
+    private Color foreground = Color.BLACK;
+
     private TFont font;
 
     protected List<TMouseListener> mouseListeners = new LinkedList<>();
@@ -106,7 +106,7 @@ public abstract class TComponent implements TImageObserver {
         this.foreground = c;
         firePropertyChange("foreground", old, c);
     }
-    
+
     public TFont getFont() {
         if (this.font != null) {
             return this.font;
@@ -116,7 +116,7 @@ public abstract class TComponent implements TImageObserver {
             return null;
         }
     }
-    
+
     public void setFont(TFont font) {
         TFont old = this.font;
         this.font = font;
@@ -157,15 +157,22 @@ public abstract class TComponent implements TImageObserver {
             return;
         }
         TGraphics graphics = this.getGraphics();
-        if (event.getID() == TPaintEvent.PAINT) {
-            // TODO: clip rect
-            paint(graphics);
-        } else if (event.getID() == TPaintEvent.UPDATE) {
-            update(graphics);
-        } else {
-            log.warn("Unhandled paint event id: {}", event.getID());
+        if (graphics == null) {
+            return;
         }
-        graphics.dispose();
+        try {
+            if (event.getID() == TPaintEvent.PAINT) {
+                // TODO: clip rect
+                paint(graphics);
+            } else if (event.getID() == TPaintEvent.UPDATE) {
+                update(graphics);
+            } else {
+                log.warn("Unhandled paint event id: {}", event.getID());
+            }
+            graphics.dispose();
+        } finally {
+            graphics.dispose();
+        }
     }
 
     protected void dispatchMouseWheelEvent(TMouseWheelEvent e) {

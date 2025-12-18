@@ -129,6 +129,24 @@ public abstract class TWindow extends TSurface {
         // This will be implemented when the event system is fully set up
     }
 
+    @Override
+    public void paint(TGraphics g) {
+        // TODO: make this optional
+        Color back = this.getBackground();
+        
+        TGraphics bg = g.create();
+        if(back != null && bg != null){
+        try{
+            bg.setColor(back);
+            bg.fillRect(0, 0, getWidth(), getHeight());
+        }finally {
+            bg.dispose();
+        }
+    }
+
+        super.paint(g);
+    }
+
     /**
      * Determines the insets of this window, which indicate the size of the window's
      * border.
