@@ -93,10 +93,15 @@ public final class TEventManager implements AutoCloseable {
                 if (comp != componentUnderMouse) {
                     // Fire MOUSE_EXITED to the previous component
                     if (componentUnderMouse != null) {
+                        // Get the current mouse position in canvas coordinates
+                        Point canvasPoint = new Point(me.getClientX(), me.getClientY());
+                        translatePoint(canvasPoint, (HTMLCanvasElement) element);
+                        
+                        // Convert to coordinates relative to the exiting component
                         java.awt.Point exitOnScreen = componentUnderMouse.getLocationOnScreen();
-                        Point exitPoint = new Point(point.getX() + comp.getLocationOnScreen().x, 
-                                                     point.getY() + comp.getLocationOnScreen().y);
+                        Point exitPoint = new Point(canvasPoint.getX(), canvasPoint.getY());
                         exitPoint.translate(-exitOnScreen.x, -exitOnScreen.y);
+                        
                         TMouseEvent exitEvent = new TMouseEvent(componentUnderMouse, 
                                 TMouseEvent.MOUSE_EXITED,
                                 exitPoint.getX(), exitPoint.getY(), button, me.getMetaKey());
