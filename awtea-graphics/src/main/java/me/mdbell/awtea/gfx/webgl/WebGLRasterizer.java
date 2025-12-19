@@ -306,17 +306,16 @@ class WebGLRasterizer implements Rasterizer {
 
     private void drawLine(int x1, int y1, int x2, int y2) {
         // Use WebGL line primitive for efficient GPU rendering
-        int h = surface.getHeight();
-        
         useColorProgram();
         setColor(foreground);
         
-        // Create line vertices
+        // Create line vertices (coordinates are in pixel space, shader handles projection)
         float[] verts = {
-            x1, h - y1,
-            x2, h - y2
+            x1, y1,
+            x2, y2
         };
         
+        // Upload vertices to the already-bound rectBuffer
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         
@@ -328,15 +327,14 @@ class WebGLRasterizer implements Rasterizer {
         if (npoints < 2) return;
         
         // Use WebGL LINE_LOOP for efficient GPU rendering
-        int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
         
-        // Create vertices array (flip Y coordinates for screen space)
+        // Create vertices array (coordinates are in pixel space, shader handles projection)
         float[] verts = new float[npoints * 2];
         for (int i = 0; i < npoints; i++) {
             verts[i * 2] = xpoints[i];
-            verts[i * 2 + 1] = h - ypoints[i];
+            verts[i * 2 + 1] = ypoints[i];
         }
         
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
@@ -350,15 +348,14 @@ class WebGLRasterizer implements Rasterizer {
         if (npoints < 3) return;
         
         // Use WebGL TRIANGLE_FAN for efficient GPU polygon filling
-        int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
         
-        // Create vertices array (flip Y coordinates for screen space)
+        // Create vertices array (coordinates are in pixel space, shader handles projection)
         float[] verts = new float[npoints * 2];
         for (int i = 0; i < npoints; i++) {
             verts[i * 2] = xpoints[i];
-            verts[i * 2 + 1] = h - ypoints[i];
+            verts[i * 2 + 1] = ypoints[i];
         }
         
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
@@ -377,7 +374,6 @@ class WebGLRasterizer implements Rasterizer {
         
         if (rx == 0 || ry == 0) return;
         
-        int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
         
@@ -388,13 +384,13 @@ class WebGLRasterizer implements Rasterizer {
         
         // Center point
         verts[0] = cx;
-        verts[1] = h - cy;
+        verts[1] = cy;
         
         // Generate points around ellipse
         for (int i = 0; i <= segments; i++) {
             double angle = 2.0 * Math.PI * i / segments;
             verts[(i + 1) * 2] = (float)(cx + rx * Math.cos(angle));
-            verts[(i + 1) * 2 + 1] = (float)(h - (cy + ry * Math.sin(angle)));
+            verts[(i + 1) * 2 + 1] = (float)(cy + ry * Math.sin(angle));
         }
         
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
@@ -413,7 +409,6 @@ class WebGLRasterizer implements Rasterizer {
         int rx = Math.min(arcWidth / 2, width / 2);
         int ry = Math.min(arcHeight / 2, height / 2);
         
-        int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
         
@@ -427,69 +422,69 @@ class WebGLRasterizer implements Rasterizer {
         int cx = x + width / 2;
         int cy = y + height / 2;
         verts[0] = cx;
-        verts[1] = h - cy;
+        verts[1] = cy;
         
         int idx = 1;
         
         // Top edge + top-right corner
         verts[idx * 2] = x + rx;
-        verts[idx * 2 + 1] = h - y;
+        verts[idx * 2 + 1] = y;
         idx++;
         
         verts[idx * 2] = x + width - rx;
-        verts[idx * 2 + 1] = h - y;
+        verts[idx * 2 + 1] = y;
         idx++;
         
         // Top-right corner arc
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = -Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
             verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            verts[idx * 2 + 1] = (float)(y + ry + ry * Math.sin(angle));
             idx++;
         }
         
         // Right edge
         verts[idx * 2] = x + width;
-        verts[idx * 2 + 1] = h - (y + height - ry);
+        verts[idx * 2 + 1] = y + height - ry;
         idx++;
         
         // Bottom-right corner arc
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = 0 + (Math.PI / 2) * i / segsPerCorner;
             verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            verts[idx * 2 + 1] = (float)(y + height - ry + ry * Math.sin(angle));
             idx++;
         }
         
         // Bottom edge
         verts[idx * 2] = x + rx;
-        verts[idx * 2 + 1] = h - (y + height);
+        verts[idx * 2 + 1] = y + height;
         idx++;
         
         // Bottom-left corner arc
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
             verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            verts[idx * 2 + 1] = (float)(y + height - ry + ry * Math.sin(angle));
             idx++;
         }
         
         // Left edge
         verts[idx * 2] = x;
-        verts[idx * 2 + 1] = h - (y + ry);
+        verts[idx * 2 + 1] = y + ry;
         idx++;
         
         // Top-left corner arc
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = Math.PI + (Math.PI / 2) * i / segsPerCorner;
             verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            verts[idx * 2 + 1] = (float)(y + ry + ry * Math.sin(angle));
             idx++;
         }
         
         // Close to first edge point
         verts[idx * 2] = x + rx;
-        verts[idx * 2 + 1] = h - y;
+        verts[idx * 2 + 1] = y;
         idx++;
         
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(java.util.Arrays.copyOf(verts, idx * 2)).getBuffer();
@@ -507,7 +502,6 @@ class WebGLRasterizer implements Rasterizer {
         
         if (rx == 0 || ry == 0) return;
         
-        int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
         
@@ -521,13 +515,13 @@ class WebGLRasterizer implements Rasterizer {
         
         // Center point
         verts[0] = cx;
-        verts[1] = h - cy;
+        verts[1] = cy;
         
         // Generate points along arc
         for (int i = 0; i <= segments; i++) {
             double angle = startRad + (endRad - startRad) * i / segments;
             verts[(i + 1) * 2] = (float)(cx + rx * Math.cos(angle));
-            verts[(i + 1) * 2 + 1] = (float)(h - (cy - ry * Math.sin(angle)));
+            verts[(i + 1) * 2 + 1] = (float)(cy - ry * Math.sin(angle));
         }
         
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
@@ -546,7 +540,6 @@ class WebGLRasterizer implements Rasterizer {
         
         if (rx == 0 || ry == 0) return;
         
-        int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
         
@@ -557,7 +550,7 @@ class WebGLRasterizer implements Rasterizer {
         for (int i = 0; i < segments; i++) {
             double angle = 2.0 * Math.PI * i / segments;
             verts[i * 2] = (float)(cx + rx * Math.cos(angle));
-            verts[i * 2 + 1] = (float)(h - (cy + ry * Math.sin(angle)));
+            verts[i * 2 + 1] = (float)(cy + ry * Math.sin(angle));
         }
         
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
@@ -579,7 +572,6 @@ class WebGLRasterizer implements Rasterizer {
         
         if (rx == 0 || ry == 0) return;
         
-        int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
         
@@ -594,7 +586,7 @@ class WebGLRasterizer implements Rasterizer {
         for (int i = 0; i <= segments; i++) {
             double angle = startRad + (endRad - startRad) * i / segments;
             verts[i * 2] = (float)(cx + rx * Math.cos(angle));
-            verts[i * 2 + 1] = (float)(h - (cy - ry * Math.sin(angle)));
+            verts[i * 2 + 1] = (float)(cy - ry * Math.sin(angle));
         }
         
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
@@ -613,7 +605,6 @@ class WebGLRasterizer implements Rasterizer {
         int rx = Math.min(arcWidth / 2, width / 2);
         int ry = Math.min(arcHeight / 2, height / 2);
         
-        int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
         
@@ -626,57 +617,57 @@ class WebGLRasterizer implements Rasterizer {
         
         // Top edge
         verts[idx * 2] = x + rx;
-        verts[idx * 2 + 1] = h - y;
+        verts[idx * 2 + 1] = y;
         idx++;
         
         verts[idx * 2] = x + width - rx;
-        verts[idx * 2 + 1] = h - y;
+        verts[idx * 2 + 1] = y;
         idx++;
         
         // Top-right corner
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = -Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
             verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            verts[idx * 2 + 1] = (float)(y + ry + ry * Math.sin(angle));
             idx++;
         }
         
         // Right edge
         verts[idx * 2] = x + width;
-        verts[idx * 2 + 1] = h - (y + height - ry);
+        verts[idx * 2 + 1] = y + height - ry;
         idx++;
         
         // Bottom-right corner
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = 0 + (Math.PI / 2) * i / segsPerCorner;
             verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            verts[idx * 2 + 1] = (float)(y + height - ry + ry * Math.sin(angle));
             idx++;
         }
         
         // Bottom edge
         verts[idx * 2] = x + rx;
-        verts[idx * 2 + 1] = h - (y + height);
+        verts[idx * 2 + 1] = y + height;
         idx++;
         
         // Bottom-left corner
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
             verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            verts[idx * 2 + 1] = (float)(y + height - ry + ry * Math.sin(angle));
             idx++;
         }
         
         // Left edge
         verts[idx * 2] = x;
-        verts[idx * 2 + 1] = h - (y + ry);
+        verts[idx * 2 + 1] = y + ry;
         idx++;
         
         // Top-left corner
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = Math.PI + (Math.PI / 2) * i / segsPerCorner;
             verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            verts[idx * 2 + 1] = (float)(y + ry + ry * Math.sin(angle));
             idx++;
         }
         
@@ -691,7 +682,6 @@ class WebGLRasterizer implements Rasterizer {
         if (npoints < 2) return;
         
         // Use WebGL LINE_STRIP for efficient GPU rendering
-        int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
         
@@ -699,7 +689,7 @@ class WebGLRasterizer implements Rasterizer {
         float[] verts = new float[npoints * 2];
         for (int i = 0; i < npoints; i++) {
             verts[i * 2] = xpoints[i];
-            verts[i * 2 + 1] = h - ypoints[i];
+            verts[i * 2 + 1] = ypoints[i];
         }
         
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
