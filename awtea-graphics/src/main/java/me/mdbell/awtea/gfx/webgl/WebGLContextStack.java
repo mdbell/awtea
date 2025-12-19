@@ -30,6 +30,10 @@ class WebGLContextStack {
     private final Stack<WebGLState> stateStack = new Stack<>();
     private WebGLState currentState;
     
+    // Surface dimensions needed for clip application
+    private int surfaceWidth;
+    private int surfaceHeight;
+    
     /**
      * Snapshot of WebGL rendering state.
      */
@@ -77,6 +81,14 @@ class WebGLContextStack {
     WebGLContextStack(WebGL2RenderingContext gl) {
         this.gl = gl;
         this.currentState = new WebGLState();
+    }
+    
+    /**
+     * Sets the surface dimensions for clip application.
+     */
+    void setSurfaceDimensions(int width, int height) {
+        this.surfaceWidth = width;
+        this.surfaceHeight = height;
     }
     
     /**
@@ -250,9 +262,10 @@ class WebGLContextStack {
      * Applies all WebGL-level state to the context.
      * This applies state that can be set directly on the WebGL context:
      * - Composite/blend modes (glBlendFunc)
+     * - Clip rectangle (glScissor)
      * 
-     * Note: Transform and clip are applied by the rasterizer because they
-     * require additional context (surface dimensions, Float32Array conversion).
+     * Note: Transform is NOT applied here because it needs to be converted
+     * to Float32Array format by the rasterizer before being passed to shaders.
      * 
      * This is called automatically by useColorProgram() and useTextureProgram()
      * to ensure state consistency whenever a shader program is activated.
@@ -261,6 +274,20 @@ class WebGLContextStack {
         // Apply composite/blend mode
         applyComposite(currentState.composite);
         
-        // Future: Could add other WebGL-level state here (e.g., depth test, stencil, etc.)
+        // Apply clip rectangle
+        applyClip();
+    }
+    
+    /**
+     * Applies the clip rectangle to the WebGL context.
+     */
+    private void applyClip() {
+        if (currentState.clip == null) {
+            gl.disable(WebGLRenderingContext.SCISSOR_TEST);
+            return;
+        }
+        gl.enable(WebGLRenderingContext.SCISSOR_TEST);
+        gl.scissor(currentState.clip.x, currentState.clip.y, 
+                   currentState.clip.width, currentState.clip.height);
     }
 }

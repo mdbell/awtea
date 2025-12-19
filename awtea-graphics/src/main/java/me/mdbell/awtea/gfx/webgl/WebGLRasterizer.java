@@ -124,17 +124,6 @@ class WebGLRasterizer implements Rasterizer {
         backend.useColorProgram(width, height, this.transformArray);
     }
 
-    private void applyClip() {
-        Rectangle clip = backend.contextStack.getClip();
-        if (clip == null) {
-            gl.disable(WebGLRenderingContext.SCISSOR_TEST);
-            return;
-        }
-        gl.enable(WebGLRenderingContext.SCISSOR_TEST);
-
-        gl.scissor(clip.x, clip.y, clip.width, clip.height);
-    }
-
     private void updateTransformFloats(AffineTransform transform) {
         // Matrix needs to be in column-major order:
         // ---------------
@@ -178,21 +167,18 @@ class WebGLRasterizer implements Rasterizer {
             gl.clearColor(0f, 0f, 0f, 0f);
         }
         gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
-        applyClip(); // restore previous clip
-
+        // Clip will be restored by next useProgram call which applies state
+        
         surface.markDirty();
     }
 
     private void setClip(Shape shape) {
         if (shape == null) {
             backend.contextStack.setClip(null);
-            gl.disable(WebGLRenderingContext.SCISSOR_TEST);
             return;
         }
         Rectangle bounds = shape.getBounds();
-
         backend.contextStack.setClip(bounds);
-        applyClip();
     }
 
     private void drawImage(Object img, int x, int y, int width, int height) {
@@ -261,7 +247,6 @@ class WebGLRasterizer implements Rasterizer {
 
     private void drawTexture(WebGLTexture texture, WebGLSurfaceBackend.SwizzleMode mode,
             int x, int y, int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
-        applyClip();
         backend.useTextureProgram(mode, surface.getWidth(), surface.getHeight(), this.transformArray);
 
         y = surface.getHeight() - y - srcH;
@@ -793,9 +778,11 @@ class WebGLRasterizer implements Rasterizer {
                 WebGLRenderingContext.TEXTURE_2D, this.surface.texture, 0);
 
         gl.enable(WebGLRenderingContext.BLEND);
+        
+        // Set surface dimensions for clip application
+        backend.contextStack.setSurfaceDimensions(surface.getWidth(), surface.getHeight());
 
         updateTransformFloats(backend.contextStack.getTransform());
-        applyClip();
 
         for (SurfaceCommand cmd : cmds) {
             switch (cmd.type) {
