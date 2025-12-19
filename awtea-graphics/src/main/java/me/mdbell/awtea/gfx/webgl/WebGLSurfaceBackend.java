@@ -13,6 +13,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
 	private final HTMLCanvasElement element;
 	final WebGL2RenderingContext gl;
+	final WebGLContextStack contextStack;
 
 	//TODO: maybe refactor this to move programs to their own class (a.la. WebGLProgramManager/WebGLRenderer)
 	// the element would live there, and the backend would just create surfaces with references to the renderer
@@ -57,6 +58,9 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
 		gl.enable(WebGLRenderingContext.BLEND);
 		gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
+		
+		// Initialize the context stack for state management
+		this.contextStack = new WebGLContextStack(gl);
 
 		// ---- build shader programs ----
 		this.colorProgram = createProgram(gl, COLOR_VERTEX_SRC, COLOR_FRAGMENT_SRC);
@@ -146,6 +150,9 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			gl.useProgram(colorProgram);
 			currentProgram = WebGLProgramType.COLOR;
 		}
+		
+		// Apply state from context stack
+		contextStack.apply();
 
 		gl.uniform2f(uResolutionLocColor,
 			(float) width,
@@ -165,6 +172,9 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			gl.useProgram(textureProgram);
 			currentProgram = WebGLProgramType.TEXTURE;
 		}
+		
+		// Apply state from context stack
+		contextStack.apply();
 
 		gl.uniform2f(uResolutionLocTex,
 			(float) width,
