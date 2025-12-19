@@ -247,12 +247,20 @@ class WebGLContextStack {
     }
     
     /**
-     * Applies all current state to the WebGL context.
-     * This is a convenience method to ensure consistent state application.
-     * Should be called at the start of rendering operations.
+     * Applies all WebGL-level state to the context.
+     * This applies state that can be set directly on the WebGL context:
+     * - Composite/blend modes (glBlendFunc)
+     * 
+     * Note: Transform and clip are applied by the rasterizer because they
+     * require additional context (surface dimensions, Float32Array conversion).
+     * 
+     * This is called automatically by useColorProgram() and useTextureProgram()
+     * to ensure state consistency whenever a shader program is activated.
      */
     void apply() {
         // Apply composite/blend mode
         applyComposite(currentState.composite);
+        
+        // Future: Could add other WebGL-level state here (e.g., depth test, stencil, etc.)
     }
 }
