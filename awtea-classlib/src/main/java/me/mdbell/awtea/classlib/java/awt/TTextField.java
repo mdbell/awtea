@@ -131,7 +131,7 @@ public class TTextField extends TComponent {
 	/**
 	 * Padding inside the text field (top and bottom).
 	 */
-	private static final int PADDING_Y = 5;
+	private static final int PADDING_Y = 7;
 
 	/**
 	 * Caret blink interval in milliseconds.
@@ -165,6 +165,9 @@ public class TTextField extends TComponent {
 		this.columns = columns;
 		this.caretPosition = this.text.length();
 		this.actionCommand = null;
+
+		// Set a lighter background color (matching TButton's light gray)
+		setBackground(new Color(250, 250, 250));
 
 		// Set focusable by default
 		setFocusable(true);
