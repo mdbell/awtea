@@ -35,13 +35,13 @@ class WebGLRasterizer implements Rasterizer {
 
     private Color foreground = Color.WHITE;
     private Color background = Color.BLACK;
-    
+
     private Composite composite = AlphaComposite.SrcOver;
 
     private boolean pushToScreen = false;
 
     // identity transform array for pushing to screen
-    private static final Float32Array identityTransformArray = Float32Array.fromJavaArray(new float[]{
+    private static final Float32Array identityTransformArray = Float32Array.fromJavaArray(new float[] {
             1f, 0f, 0f,
             0f, 1f, 0f,
             0f, 0f, 1f
@@ -145,9 +145,9 @@ class WebGLRasterizer implements Rasterizer {
     private void updateTransformFloats(AffineTransform transform) {
         // Matrix needs to be in column-major order:
         // ---------------
-        // | m00 m10  0  |
-        // | m01 m11  0  |
-        // | m02 m12  1  |
+        // | m00 m10 0 |
+        // | m01 m11 0 |
+        // | m02 m12 1 |
         // ---------------
         transformArray.set(0, (float) transform.getScaleX());
         transformArray.set(1, (float) transform.getShearY());
@@ -199,7 +199,8 @@ class WebGLRasterizer implements Rasterizer {
         if (img instanceof WebGLSurface) {
             drawWebGLSurface((WebGLSurface) img, x, y, width, height);
         } else if (img instanceof Surface) {
-            // generic Surface drawing (not optimized - gets copied into GPU texture and then drawn)
+            // generic Surface drawing (not optimized - gets copied into GPU texture and
+            // then drawn)
             Surface surface = (Surface) img;
             drawSurface(surface, x, y, width, height);
         } else {
@@ -211,7 +212,8 @@ class WebGLRasterizer implements Rasterizer {
         WebGLTexture other = img.texture;
 
         // no swizzling needed when drawing from one WebGLSurface to another
-        drawTexture(other, WebGLSurfaceBackend.SwizzleMode.NONE, x, y, img.getWidth(), img.getHeight(), width, height, null);
+        drawTexture(other, WebGLSurfaceBackend.SwizzleMode.NONE, x, y, img.getWidth(), img.getHeight(), width, height,
+                null);
     }
 
     private void drawSurface(Surface surface, int x, int y, int width, int height) {
@@ -231,7 +233,8 @@ class WebGLRasterizer implements Rasterizer {
                 WebGLRenderingContext.LINEAR);
         WebGLSurfaceBackend.SwizzleMode mode = determineSwizzleMode(surface);
         try {
-            drawTexture(tmp, mode, x, y, surface.getWidth(), surface.getHeight(), width, height, surface.getPixelData());
+            drawTexture(tmp, mode, x, y, surface.getWidth(), surface.getHeight(), width, height,
+                    surface.getPixelData());
         } finally {
             // clean up temporary texture
             gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
@@ -250,21 +253,27 @@ class WebGLRasterizer implements Rasterizer {
             case Surface.FORMAT_INT_RGBA:
                 return WebGLSurfaceBackend.SwizzleMode.NONE;
             default:
-                log.warn("WebGLRasterizer: Unknown surface format: {}, defaulting to no swizzling", surface.getFormat());
+                log.warn("WebGLRasterizer: Unknown surface format: {}, defaulting to no swizzling",
+                        surface.getFormat());
                 return WebGLSurfaceBackend.SwizzleMode.NONE;
         }
     }
 
     private void drawTexture(WebGLTexture texture, WebGLSurfaceBackend.SwizzleMode mode,
-                             int x, int y, int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
+            int x, int y, int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
         backend.useTextureProgram(mode, surface.getWidth(), surface.getHeight(), this.transformArray);
 
-        // the surface associated with this rasterizer already has its texture on the GPU,
-        // and we have already called gl.bindTexture for it at the start of rasterization,
+        y = surface.getHeight() - y - srcH;
 
-        // we can skip the texture upload when using a WebGLSurface, as its texture is already on the GPU
+        // the surface associated with this rasterizer already has its texture on the
+        // GPU,
+        // and we have already called gl.bindTexture for it at the start of
+        // rasterization,
 
-        //TODO: optimize vertex buffer usage
+        // we can skip the texture upload when using a WebGLSurface, as its texture is
+        // already on the GPU
+
+        // TODO: optimize vertex buffer usage
 
         float[] verts = {
                 x, y,
@@ -309,61 +318,63 @@ class WebGLRasterizer implements Rasterizer {
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
+
         // Create line vertices (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = {
-            x1, h - y1,
-            x2, h - y2
+                x1, h - y1,
+                x2, h - y2
         };
-        
+
         // Upload vertices to the already-bound rectBuffer
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.LINES, 0, 2);
         surface.markDirty();
     }
 
     private void drawPolygon(int[] xpoints, int[] ypoints, int npoints) {
-        if (npoints < 2) return;
-        
+        if (npoints < 2)
+            return;
+
         // Use WebGL LINE_LOOP for efficient GPU rendering
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
+
         // Create vertices array (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = new float[npoints * 2];
         for (int i = 0; i < npoints; i++) {
             verts[i * 2] = xpoints[i];
             verts[i * 2 + 1] = h - ypoints[i];
         }
-        
+
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.LINE_LOOP, 0, npoints);
         surface.markDirty();
     }
 
     private void fillPolygon(int[] xpoints, int[] ypoints, int npoints) {
-        if (npoints < 3) return;
-        
+        if (npoints < 3)
+            return;
+
         // Use WebGL TRIANGLE_FAN for efficient GPU polygon filling
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
+
         // Create vertices array (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = new float[npoints * 2];
         for (int i = 0; i < npoints; i++) {
             verts[i * 2] = xpoints[i];
             verts[i * 2 + 1] = h - ypoints[i];
         }
-        
+
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, npoints);
         surface.markDirty();
     }
@@ -374,32 +385,33 @@ class WebGLRasterizer implements Rasterizer {
         int cy = y + height / 2;
         int rx = width / 2;
         int ry = height / 2;
-        
-        if (rx == 0 || ry == 0) return;
-        
+
+        if (rx == 0 || ry == 0)
+            return;
+
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
+
         // Generate ellipse vertices using parametric equations
         // Use enough segments for smooth appearance
         int segments = Math.max(32, (Math.max(rx, ry) / 2));
         float[] verts = new float[(segments + 2) * 2]; // center + segments + first point again
-        
+
         // Center point (flip Y to WebGL space)
         verts[0] = cx;
         verts[1] = h - cy;
-        
+
         // Generate points around ellipse (flip Y to WebGL space)
         for (int i = 0; i <= segments; i++) {
             double angle = 2.0 * Math.PI * i / segments;
-            verts[(i + 1) * 2] = (float)(cx + rx * Math.cos(angle));
-            verts[(i + 1) * 2 + 1] = (float)(h - (cy + ry * Math.sin(angle)));
+            verts[(i + 1) * 2] = (float) (cx + rx * Math.cos(angle));
+            verts[(i + 1) * 2 + 1] = (float) (h - (cy + ry * Math.sin(angle)));
         }
-        
+
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
         surface.markDirty();
     }
@@ -409,93 +421,95 @@ class WebGLRasterizer implements Rasterizer {
             fillRect(x, y, width, height);
             return;
         }
-        
+
         int rx = Math.min(arcWidth / 2, width / 2);
         int ry = Math.min(arcHeight / 2, height / 2);
-        
+
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
+
         // Build rounded rectangle as a single triangle fan
         // Segments per corner arc
         int segsPerCorner = Math.max(4, Math.max(rx, ry) / 4);
-        // Calculate correct vertex count: center + edges + corners (each corner is segsPerCorner+1 vertices)
-        int totalVerts = 1 + 2 + 4 * (segsPerCorner + 1) + 4 + 1; // center + 2 top edges + 4 corners + 4 edges + 1 closing
+        // Calculate correct vertex count: center + edges + corners (each corner is
+        // segsPerCorner+1 vertices)
+        int totalVerts = 1 + 2 + 4 * (segsPerCorner + 1) + 4 + 1; // center + 2 top edges + 4 corners + 4 edges + 1
+                                                                  // closing
         float[] verts = new float[totalVerts * 2];
-        
+
         // Center point (flip Y to WebGL space)
         int cx = x + width / 2;
         int cy = y + height / 2;
         verts[0] = cx;
         verts[1] = h - cy;
-        
+
         int idx = 1;
-        
+
         // Top edge + top-right corner (flip Y to WebGL space)
         verts[idx * 2] = x + rx;
         verts[idx * 2 + 1] = h - y;
         idx++;
-        
+
         verts[idx * 2] = x + width - rx;
         verts[idx * 2 + 1] = h - y;
         idx++;
-        
+
         // Top-right corner arc (flip Y to WebGL space)
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = -Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
-            verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            verts[idx * 2] = (float) (x + width - rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float) (h - (y + ry + ry * Math.sin(angle)));
             idx++;
         }
-        
+
         // Right edge (flip Y to WebGL space)
         verts[idx * 2] = x + width;
         verts[idx * 2 + 1] = h - (y + height - ry);
         idx++;
-        
+
         // Bottom-right corner arc (flip Y to WebGL space)
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = 0 + (Math.PI / 2) * i / segsPerCorner;
-            verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            verts[idx * 2] = (float) (x + width - rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float) (h - (y + height - ry + ry * Math.sin(angle)));
             idx++;
         }
-        
+
         // Bottom edge (flip Y to WebGL space)
         verts[idx * 2] = x + rx;
         verts[idx * 2 + 1] = h - (y + height);
         idx++;
-        
+
         // Bottom-left corner arc (flip Y to WebGL space)
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
-            verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            verts[idx * 2] = (float) (x + rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float) (h - (y + height - ry + ry * Math.sin(angle)));
             idx++;
         }
-        
+
         // Left edge (flip Y to WebGL space)
         verts[idx * 2] = x;
         verts[idx * 2 + 1] = h - (y + ry);
         idx++;
-        
+
         // Top-left corner arc (flip Y to WebGL space)
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = Math.PI + (Math.PI / 2) * i / segsPerCorner;
-            verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            verts[idx * 2] = (float) (x + rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float) (h - (y + ry + ry * Math.sin(angle)));
             idx++;
         }
-        
+
         // Close to first edge point (flip Y to WebGL space)
         verts[idx * 2] = x + rx;
         verts[idx * 2 + 1] = h - y;
         idx++;
-        
+
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(java.util.Arrays.copyOf(verts, idx * 2)).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, idx);
         surface.markDirty();
     }
@@ -505,35 +519,37 @@ class WebGLRasterizer implements Rasterizer {
         int cy = y + height / 2;
         int rx = width / 2;
         int ry = height / 2;
-        
-        if (rx == 0 || ry == 0) return;
-        
+
+        if (rx == 0 || ry == 0)
+            return;
+
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
-        // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW positive)
+
+        // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW
+        // positive)
         double startRad = Math.toRadians(-startAngle); // negate for screen coords
         double endRad = Math.toRadians(-(startAngle + arcAngle));
-        
+
         // Generate arc as triangle fan (center + arc points)
         int segments = Math.max(8, Math.abs(arcAngle) / 5); // ~5 degrees per segment
         float[] verts = new float[(segments + 2) * 2]; // center + arc points + close
-        
+
         // Center point (flip Y to WebGL space)
         verts[0] = cx;
         verts[1] = h - cy;
-        
+
         // Generate points along arc (flip Y to WebGL space)
         for (int i = 0; i <= segments; i++) {
             double angle = startRad + (endRad - startRad) * i / segments;
-            verts[(i + 1) * 2] = (float)(cx + rx * Math.cos(angle));
-            verts[(i + 1) * 2 + 1] = (float)(h - (cy - ry * Math.sin(angle)));
+            verts[(i + 1) * 2] = (float) (cx + rx * Math.cos(angle));
+            verts[(i + 1) * 2 + 1] = (float) (h - (cy - ry * Math.sin(angle)));
         }
-        
+
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
         surface.markDirty();
     }
@@ -544,32 +560,29 @@ class WebGLRasterizer implements Rasterizer {
         int cy = y + height / 2;
         int rx = width / 2;
         int ry = height / 2;
-        
-        if (rx == 0 || ry == 0) return;
-        
+
+        if (rx == 0 || ry == 0)
+            return;
+
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
+
         // Generate ellipse vertices
         int segments = Math.max(32, (Math.max(rx, ry) / 2));
         float[] verts = new float[segments * 2];
-        
+
         for (int i = 0; i < segments; i++) {
             double angle = 2.0 * Math.PI * i / segments;
-            verts[i * 2] = (float)(cx + rx * Math.cos(angle));
-            verts[i * 2 + 1] = (float)(h - (cy + ry * Math.sin(angle)));
+            verts[i * 2] = (float) (cx + rx * Math.cos(angle));
+            verts[i * 2 + 1] = (float) (h - (cy + ry * Math.sin(angle)));
         }
-        
+
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.LINE_LOOP, 0, segments);
         surface.markDirty();
-    }
-
-    private void plotEllipsePoints(int cx, int cy, int x, int y) {
-        // No longer needed with shader-based rendering
     }
 
     private void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
@@ -577,30 +590,32 @@ class WebGLRasterizer implements Rasterizer {
         int cy = y + height / 2;
         int rx = width / 2;
         int ry = height / 2;
-        
-        if (rx == 0 || ry == 0) return;
-        
+
+        if (rx == 0 || ry == 0)
+            return;
+
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
-        // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW positive)
+
+        // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW
+        // positive)
         double startRad = Math.toRadians(-startAngle); // negate for screen coords
         double endRad = Math.toRadians(-(startAngle + arcAngle));
-        
+
         // Generate arc as line strip
         int segments = Math.max(8, Math.abs(arcAngle) / 5); // ~5 degrees per segment
         float[] verts = new float[(segments + 1) * 2];
-        
+
         for (int i = 0; i <= segments; i++) {
             double angle = startRad + (endRad - startRad) * i / segments;
-            verts[i * 2] = (float)(cx + rx * Math.cos(angle));
-            verts[i * 2 + 1] = (float)(h - (cy - ry * Math.sin(angle)));
+            verts[i * 2] = (float) (cx + rx * Math.cos(angle));
+            verts[i * 2 + 1] = (float) (h - (cy - ry * Math.sin(angle)));
         }
-        
+
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.LINE_STRIP, 0, segments + 1);
         surface.markDirty();
     }
@@ -610,117 +625,119 @@ class WebGLRasterizer implements Rasterizer {
             drawRect(x, y, width, height, 1.0f);
             return;
         }
-        
+
         int rx = Math.min(arcWidth / 2, width / 2);
         int ry = Math.min(arcHeight / 2, height / 2);
-        
+
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
+
         // Build rounded rectangle outline as a single line loop
         int segsPerCorner = Math.max(4, Math.max(rx, ry) / 4);
         // Calculate correct vertex count: corners (each is segsPerCorner+1) + edges
         int totalVerts = 2 + 4 * (segsPerCorner + 1) + 4; // 2 top edge + 4 corners + 4 edges between corners
         float[] verts = new float[totalVerts * 2];
-        
+
         int idx = 0;
-        
+
         // Top edge (flip Y to WebGL space)
         verts[idx * 2] = x + rx;
         verts[idx * 2 + 1] = h - y;
         idx++;
-        
+
         verts[idx * 2] = x + width - rx;
         verts[idx * 2 + 1] = h - y;
         idx++;
-        
+
         // Top-right corner (flip Y to WebGL space)
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = -Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
-            verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            verts[idx * 2] = (float) (x + width - rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float) (h - (y + ry + ry * Math.sin(angle)));
             idx++;
         }
-        
+
         // Right edge (flip Y to WebGL space)
         verts[idx * 2] = x + width;
         verts[idx * 2 + 1] = h - (y + height - ry);
         idx++;
-        
+
         // Bottom-right corner (flip Y to WebGL space)
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = 0 + (Math.PI / 2) * i / segsPerCorner;
-            verts[idx * 2] = (float)(x + width - rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            verts[idx * 2] = (float) (x + width - rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float) (h - (y + height - ry + ry * Math.sin(angle)));
             idx++;
         }
-        
+
         // Bottom edge (flip Y to WebGL space)
         verts[idx * 2] = x + rx;
         verts[idx * 2 + 1] = h - (y + height);
         idx++;
-        
+
         // Bottom-left corner (flip Y to WebGL space)
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = Math.PI / 2 + (Math.PI / 2) * i / segsPerCorner;
-            verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + height - ry + ry * Math.sin(angle)));
+            verts[idx * 2] = (float) (x + rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float) (h - (y + height - ry + ry * Math.sin(angle)));
             idx++;
         }
-        
+
         // Left edge (flip Y to WebGL space)
         verts[idx * 2] = x;
         verts[idx * 2 + 1] = h - (y + ry);
         idx++;
-        
+
         // Top-left corner (flip Y to WebGL space)
         for (int i = 0; i <= segsPerCorner; i++) {
             double angle = Math.PI + (Math.PI / 2) * i / segsPerCorner;
-            verts[idx * 2] = (float)(x + rx + rx * Math.cos(angle));
-            verts[idx * 2 + 1] = (float)(h - (y + ry + ry * Math.sin(angle)));
+            verts[idx * 2] = (float) (x + rx + rx * Math.cos(angle));
+            verts[idx * 2 + 1] = (float) (h - (y + ry + ry * Math.sin(angle)));
             idx++;
         }
-        
+
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(java.util.Arrays.copyOf(verts, idx * 2)).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.LINE_LOOP, 0, idx);
         surface.markDirty();
     }
 
     private void drawPolyline(int[] xpoints, int[] ypoints, int npoints) {
-        if (npoints < 2) return;
-        
+        if (npoints < 2)
+            return;
+
         // Use WebGL LINE_STRIP for efficient GPU rendering
         int h = surface.getHeight();
         useColorProgram();
         setColor(foreground);
-        
+
         // Create vertices array (flip Y coordinates to WebGL space)
         float[] verts = new float[npoints * 2];
         for (int i = 0; i < npoints; i++) {
             verts[i * 2] = xpoints[i];
             verts[i * 2 + 1] = h - ypoints[i];
         }
-        
+
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-        
+
         gl.drawArrays(WebGLRenderingContext.LINE_STRIP, 0, npoints);
         surface.markDirty();
     }
 
     private void copyArea(int x, int y, int width, int height, int dx, int dy) {
         // For WebGL, we need to read pixels and redraw them
-        // Note: This is expensive (requires GPU-CPU-GPU round-trip with texture operations)
+        // Note: This is expensive (requires GPU-CPU-GPU round-trip with texture
+        // operations)
         // Consider using software rendering for complex copyArea operations
-        
-        int srcX = x + (int)transform.getTranslateX();
-        int srcY = y + (int)transform.getTranslateY();
+
+        int srcX = x + (int) transform.getTranslateX();
+        int srcY = y + (int) transform.getTranslateY();
         int destX = srcX + dx;
         int destY = srcY + dy;
-        
+
         // Create a temporary texture to hold the source region
         WebGLTexture tmpTexture = gl.createTexture();
         gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, tmpTexture);
@@ -736,29 +753,29 @@ class WebGLRasterizer implements Rasterizer {
         gl.texParameteri(WebGLRenderingContext.TEXTURE_2D,
                 WebGLRenderingContext.TEXTURE_MAG_FILTER,
                 WebGLRenderingContext.NEAREST);
-        
+
         // Copy from framebuffer to texture
         gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, framebuffer);
-        gl.copyTexImage2D(WebGLRenderingContext.TEXTURE_2D, 0, 
-                WebGLRenderingContext.RGBA, srcX, surface.getHeight() - (srcY + height), 
+        gl.copyTexImage2D(WebGLRenderingContext.TEXTURE_2D, 0,
+                WebGLRenderingContext.RGBA, srcX, surface.getHeight() - (srcY + height),
                 width, height, 0);
-        
+
         // Draw the texture at destination
-        drawTexture(tmpTexture, WebGLSurfaceBackend.SwizzleMode.NONE, 
+        drawTexture(tmpTexture, WebGLSurfaceBackend.SwizzleMode.NONE,
                 destX, destY, width, height, width, height, null);
-        
+
         // Clean up
         gl.deleteTexture(tmpTexture);
     }
 
     private void setComposite(Composite composite) {
         this.composite = composite != null ? composite : AlphaComposite.SrcOver;
-        
+
         // Update WebGL blend function based on composite
         if (this.composite instanceof AlphaComposite) {
             AlphaComposite ac = (AlphaComposite) this.composite;
             int rule = ac.getRule();
-            
+
             // Map AlphaComposite rules to WebGL blend functions
             switch (rule) {
                 case AlphaComposite.CLEAR:
@@ -913,14 +930,14 @@ class WebGLRasterizer implements Rasterizer {
         int width = gl.getCanvas().getWidth();
         int height = gl.getCanvas().getHeight();
 
-
         gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, null);
 
         gl.viewport(0, 0, width, height);
 
         gl.activeTexture(WebGLRenderingContext.TEXTURE0);
         gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, surface.texture);
-        // no swizzling when pushing to screen, as the surface texture is already in RGBA format
+        // no swizzling when pushing to screen, as the surface texture is already in
+        // RGBA format
         backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.NONE, surface.getWidth(), surface.getHeight(),
                 identityTransformArray);
 

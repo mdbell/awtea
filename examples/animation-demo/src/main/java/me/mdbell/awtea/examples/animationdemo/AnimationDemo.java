@@ -48,9 +48,10 @@ public class AnimationDemo {
         // Start animation loop
         canvas.startAnimation();
     }
-    
+
     /**
      * Check if we're running under TeaVM with WASM backend loaded.
+     * 
      * @return true if WASM diagnostics are available
      */
     private static boolean isWasmBackendAvailable() {
@@ -58,7 +59,7 @@ public class AnimationDemo {
         if (!Helper.isTeaVM()) {
             return false;
         }
-        
+
         try {
             DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
             return defaultBackend.getWasmBackend() != null;
@@ -66,9 +67,10 @@ public class AnimationDemo {
             return false;
         }
     }
-    
+
     /**
      * Get WASM diagnostics if available.
+     * 
      * @return WasmDiagnostics instance, or null if not available
      */
     private static WasmDiagnostics getWasmDiagnostics() {
@@ -76,7 +78,7 @@ public class AnimationDemo {
         if (!Helper.isTeaVM()) {
             return null;
         }
-        
+
         try {
             DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
             WasmSurfaceBackend wasmBackend = defaultBackend.getWasmBackend();
@@ -349,14 +351,14 @@ public class AnimationDemo {
             int height = getHeight();
 
             // Create offscreen buffer if needed
-            if (offscreenImage == null ||
-                    offscreenImage.getWidth(null) != width ||
-                    offscreenImage.getHeight(null) != height) {
-                offscreenImage = createImage(width, height);
-                if (offscreenImage != null) {
-                    offscreenGraphics = offscreenImage.getGraphics();
-                }
-            }
+            // if (offscreenImage == null ||
+            // offscreenImage.getWidth(null) != width ||
+            // offscreenImage.getHeight(null) != height) {
+            // offscreenImage = createImage(width, height);
+            // if (offscreenImage != null) {
+            // offscreenGraphics = offscreenImage.getGraphics();
+            // }
+            // }
 
             // Use offscreen graphics if available, otherwise draw directly
             Graphics drawGraphics = offscreenGraphics != null ? offscreenGraphics : g;
@@ -386,7 +388,7 @@ public class AnimationDemo {
 
             // Draw FPS counter
             drawFPSCounter(drawGraphics);
-            
+
             // Draw WASM diagnostics (if available)
             drawWasmDiagnostics(drawGraphics);
 
@@ -425,7 +427,7 @@ public class AnimationDemo {
             g.setFont(new Font("SansSerif", Font.BOLD, 14));
             g.drawString(String.format("FPS: %.1f", fps), 10, 22);
         }
-        
+
         /**
          * Draws WASM diagnostics below the FPS counter (if available).
          */
@@ -434,22 +436,22 @@ public class AnimationDemo {
             if (diag == null) {
                 return; // Not running with WASM backend
             }
-            
+
             int y = 65; // Position below ball count
-            
+
             // Background with rounded corners
             g.setColor(Color.WHITE);
             g.fillRoundRect(5, y, 150, 55, 8, 8);
-            
+
             // Border with rounded corners
             g.setColor(Color.BLACK);
             g.drawRoundRect(5, y, 150, 55, 8, 8);
-            
+
             // Text
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            g.drawString(String.format("Surf: %d/%d", 
+            g.drawString(String.format("Surf: %d/%d",
                     diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + 15);
-            g.drawString(String.format("Ctx: %d/%d", 
+            g.drawString(String.format("Ctx: %d/%d",
                     diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + 30);
             g.drawString(String.format("Mem: %.1f KB", diag.getAllocatedKB()), 10, y + 45);
         }
