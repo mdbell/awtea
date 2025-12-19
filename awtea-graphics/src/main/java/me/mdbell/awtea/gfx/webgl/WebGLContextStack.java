@@ -314,7 +314,9 @@ class WebGLContextStack {
      * - Composite/blend modes (glBlendFunc)
      * - Clip rectangle (glScissor)
      * - Transform array (updated for shader uniforms)
-     * - Foreground color (uniform)
+     * 
+     * Note: Color uniform is NOT applied here because it's only valid for the color program.
+     * Call applyColorUniform() separately when using the color program.
      * 
      * This is called automatically by useColorProgram() and useTextureProgram()
      * to ensure state consistency whenever a shader program is activated.
@@ -331,15 +333,13 @@ class WebGLContextStack {
         
         // Apply clip rectangle
         applyClip();
-        
-        // Apply foreground color
-        applyColor();
     }
     
     /**
      * Applies the foreground color to the color uniform.
+     * This should only be called when the color program is active.
      */
-    private void applyColor() {
+    void applyColorUniform() {
         if (uColorLoc == null) {
             return; // Color uniform not set yet
         }

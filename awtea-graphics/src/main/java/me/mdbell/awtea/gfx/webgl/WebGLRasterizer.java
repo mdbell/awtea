@@ -30,6 +30,7 @@ class WebGLRasterizer implements Rasterizer {
     private final WebGLFramebuffer framebuffer;
 
     private boolean pushToScreen = false;
+    private final boolean isChildRasterizer;
 
     WebGLRasterizer(WebGLSurfaceBackend backend, WebGLSurface surface, boolean pushToScreen) {
         this.backend = backend;
@@ -39,6 +40,7 @@ class WebGLRasterizer implements Rasterizer {
         backend.contextStack.getTransform().setToIdentity();
         backend.contextStack.setClip(new Rectangle(0, 0, surface.getWidth(), surface.getHeight()));
         this.pushToScreen = pushToScreen;
+        this.isChildRasterizer = false; // Root rasterizer
     }
 
     private WebGLRasterizer(WebGLRasterizer other) {
@@ -46,6 +48,7 @@ class WebGLRasterizer implements Rasterizer {
         this.framebuffer = other.framebuffer;
         this.backend = other.backend;
         this.gl = other.gl;
+        this.isChildRasterizer = true; // Child rasterizer
         
         // Save state on creation for isolation
         backend.contextStack.save();
@@ -58,8 +61,10 @@ class WebGLRasterizer implements Rasterizer {
 
     @Override
     public void dispose() {
-        // Restore state when child rasterizer is disposed
-        backend.contextStack.restore();
+        // Only restore state if this is a child rasterizer
+        if (isChildRasterizer) {
+            backend.contextStack.restore();
+        }
     }
 
     @Override

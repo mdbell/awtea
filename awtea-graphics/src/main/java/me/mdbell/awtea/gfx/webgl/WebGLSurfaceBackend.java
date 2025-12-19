@@ -150,8 +150,11 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			currentProgram = WebGLProgramType.COLOR;
 		}
 		
-		// Apply state from context stack (updates transform array)
+		// Apply state from context stack (updates transform array, blend, clip)
 		contextStack.apply();
+		
+		// Apply color uniform (only valid for color program)
+		contextStack.applyColorUniform();
 
 		gl.uniform2f(uResolutionLocColor,
 			(float) width,
