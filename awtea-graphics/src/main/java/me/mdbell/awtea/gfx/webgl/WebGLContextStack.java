@@ -38,6 +38,9 @@ class WebGLContextStack {
     // Transform array for passing to shaders (in column-major order)
     private final Float32Array transformArray = new Float32Array(9);
     
+    // Uniform location for color (set by backend after program creation)
+    private org.teavm.jso.webgl.WebGLUniformLocation uColorLoc;
+    
     /**
      * Snapshot of WebGL rendering state.
      */
@@ -94,6 +97,13 @@ class WebGLContextStack {
     void setSurfaceDimensions(int width, int height) {
         this.surfaceWidth = width;
         this.surfaceHeight = height;
+    }
+    
+    /**
+     * Sets the color uniform location for applying foreground color.
+     */
+    void setColorUniformLocation(org.teavm.jso.webgl.WebGLUniformLocation uColorLoc) {
+        this.uColorLoc = uColorLoc;
     }
     
     /**
@@ -300,14 +310,19 @@ class WebGLContextStack {
     /**
      * Applies all WebGL-level state to the context.
      * This applies state that can be set directly on the WebGL context:
+     * - Blend enable
      * - Composite/blend modes (glBlendFunc)
      * - Clip rectangle (glScissor)
      * - Transform array (updated for shader uniforms)
+     * - Foreground color (uniform)
      * 
      * This is called automatically by useColorProgram() and useTextureProgram()
      * to ensure state consistency whenever a shader program is activated.
      */
     void apply() {
+        // Enable blending
+        gl.enable(WebGLRenderingContext.BLEND);
+        
         // Update transform array from current transform
         updateTransformArray();
         
@@ -316,6 +331,24 @@ class WebGLContextStack {
         
         // Apply clip rectangle
         applyClip();
+        
+        // Apply foreground color
+        applyColor();
+    }
+    
+    /**
+     * Applies the foreground color to the color uniform.
+     */
+    private void applyColor() {
+        if (uColorLoc == null) {
+            return; // Color uniform not set yet
+        }
+        Color c = currentState.foreground;
+        float r = c.getRed() / 255.0f;
+        float g = c.getGreen() / 255.0f;
+        float b = c.getBlue() / 255.0f;
+        float a = c.getAlpha() / 255.0f;
+        gl.uniform4f(uColorLoc, r, g, b, a);
     }
     
     /**

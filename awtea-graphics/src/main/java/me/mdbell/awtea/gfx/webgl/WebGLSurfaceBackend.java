@@ -72,6 +72,9 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		this.uResolutionLocColor = gl.getUniformLocation(colorProgram, "u_resolution");
 		this.uColorLoc = gl.getUniformLocation(colorProgram, "u_color");
 		this.uTransformLocColor = gl.getUniformLocation(colorProgram, "u_transform");
+		
+		// Set the color uniform location in the context stack for automatic color application
+		this.contextStack.setColorUniformLocation(this.uColorLoc);
 
 		// texture program locations
 		gl.useProgram(textureProgram);
@@ -89,10 +92,6 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
 		quadBuffer = gl.createBuffer();
 		quadTexCoordBuffer = gl.createBuffer();
-	}
-
-	void setColor(float r, float g, float b, float a) {
-		gl.uniform4f(uColorLoc, r, g, b, a);
 	}
 
 	void setRectBuffer(float x, float y, float width, float height) {

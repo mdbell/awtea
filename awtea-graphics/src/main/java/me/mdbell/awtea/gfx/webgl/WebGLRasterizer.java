@@ -76,8 +76,6 @@ class WebGLRasterizer implements Rasterizer {
         y = h - (y + height); // flip Y coordinate
         useColorProgram();
 
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
         backend.setRectBuffer(x, y, width, height);
 
         gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
@@ -95,15 +93,6 @@ class WebGLRasterizer implements Rasterizer {
         surface.markDirty();
     }
 
-    private void setColor(Color c) {
-        float r = c.getRed() / 255.0f;
-        float g = c.getGreen() / 255.0f;
-        float b = c.getBlue() / 255.0f;
-        float a = c.getAlpha() / 255.0f;
-
-        backend.setColor(r, g, b, a);
-    }
-
     private void useColorProgram() {
         int width = surface.getWidth();
         int height = surface.getHeight();
@@ -112,7 +101,7 @@ class WebGLRasterizer implements Rasterizer {
     }
 
     private void clearRect(int x, int y, int width, int height) {
-        java.awt.geom.AffineTransform transform = backend.contextStack.getTransform();
+        AffineTransform transform = backend.contextStack.getTransform();
         Color background = backend.contextStack.getBackground();
         int tx = (int) transform.getTranslateX();
         int ty = (int) transform.getTranslateY();
@@ -269,8 +258,6 @@ class WebGLRasterizer implements Rasterizer {
         // Use WebGL line primitive for efficient GPU rendering
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Create line vertices (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = {
@@ -293,8 +280,6 @@ class WebGLRasterizer implements Rasterizer {
         // Use WebGL LINE_LOOP for efficient GPU rendering
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Create vertices array (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = new float[npoints * 2];
@@ -317,8 +302,6 @@ class WebGLRasterizer implements Rasterizer {
         // Use WebGL TRIANGLE_FAN for efficient GPU polygon filling
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Create vertices array (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = new float[npoints * 2];
@@ -346,8 +329,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Generate ellipse vertices using parametric equations
         // Use enough segments for smooth appearance
@@ -383,8 +364,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Build rounded rectangle as a single triangle fan
         // Segments per corner arc
@@ -482,8 +461,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW
         // positive)
@@ -524,8 +501,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Generate ellipse vertices
         int segments = Math.max(32, (Math.max(rx, ry) / 2));
@@ -555,8 +530,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW
         // positive)
@@ -591,8 +564,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Build rounded rectangle outline as a single line loop
         int segsPerCorner = Math.max(4, Math.max(rx, ry) / 4);
@@ -672,8 +643,6 @@ class WebGLRasterizer implements Rasterizer {
         // Use WebGL LINE_STRIP for efficient GPU rendering
         int h = surface.getHeight();
         useColorProgram();
-        Color foreground = backend.contextStack.getForeground();
-        setColor(foreground);
 
         // Create vertices array (flip Y coordinates to WebGL space)
         float[] verts = new float[npoints * 2];
@@ -742,8 +711,6 @@ class WebGLRasterizer implements Rasterizer {
         gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
         gl.framebufferTexture2D(WebGLRenderingContext.FRAMEBUFFER, WebGLRenderingContext.COLOR_ATTACHMENT0,
                 WebGLRenderingContext.TEXTURE_2D, this.surface.texture, 0);
-
-        gl.enable(WebGLRenderingContext.BLEND);
         
         // Set surface dimensions for clip application
         backend.contextStack.setSurfaceDimensions(surface.getWidth(), surface.getHeight());
