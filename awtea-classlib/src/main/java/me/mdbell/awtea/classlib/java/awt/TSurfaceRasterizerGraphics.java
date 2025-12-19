@@ -6,7 +6,7 @@ import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.font.FontPeer;
-import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
@@ -558,8 +558,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         }
 
         // Create a surface for rendering the text using the backend
-        DefaultSurfaceBackend backend = DefaultSurfaceBackend.getDefault();
-        Surface textSurface = backend.createFontRenderSurface(surfaceWidth, surfaceHeight);
+        Surface textSurface = SurfaceBackendFactory.getTextBackend().createFontRenderSurface(surfaceWidth, surfaceHeight);
 
         if (textSurface == null) {
             // If surface creation failed, silently return

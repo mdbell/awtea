@@ -124,8 +124,8 @@ public class FontRendererFactory {
 				// Use atlas-based renderer for better memory efficiency
 				int supersample = getSupersampleFromProperty();
 				boolean subpixel = getSubpixelFromProperty();
-				me.mdbell.awtea.gfx.DefaultSurfaceBackend backend = 
-					me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
+				me.mdbell.awtea.gfx.SurfaceBackend backend = 
+					me.mdbell.awtea.gfx.SurfaceBackendFactory.getDefault();
 				return new me.mdbell.awtea.font.AtlasBasedFontRenderer(backend, supersample, subpixel);
 			
 			case "raster":
@@ -138,7 +138,7 @@ public class FontRendererFactory {
 				// Default to atlas-based for best performance
 				supersample = getSupersampleFromProperty();
 				subpixel = getSubpixelFromProperty();
-				backend = me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
+				backend = me.mdbell.awtea.gfx.SurfaceBackendFactory.getDefault();
 				return new me.mdbell.awtea.font.AtlasBasedFontRenderer(backend, supersample, subpixel);
 			
 			// Future renderer types can be added here:

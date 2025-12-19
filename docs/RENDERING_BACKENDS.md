@@ -71,12 +71,11 @@ The awtea project implements a flexible rendering system that supports multiple 
 
 ## Backend Selection
 
-The `DefaultSurfaceBackend` class manages backend selection using a priority system:
+The `SurfaceBackendFactory` class manages backend selection and creation using a priority system:
 
 ### For Screen Surfaces
 ```java
-Surface surface = DefaultSurfaceBackend.getDefault()
-    .createScreenSurface(width, height, canvas);
+Surface surface = SurfaceBackendFactory.createScreenSurface(width, height, canvas);
 ```
 
 **Priority Order**:
@@ -84,7 +83,7 @@ Surface surface = DefaultSurfaceBackend.getDefault()
 
 ### For Offscreen Surfaces
 ```java
-Surface surface = DefaultSurfaceBackend.getDefault()
+Surface surface = SurfaceBackendFactory.getDefault()
     .createCompatibleSurface(width, height, BufferedImage.TYPE_INT_ARGB);
 ```
 

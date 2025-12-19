@@ -174,7 +174,7 @@ public class SubPixelRenderingTest {
 	@Test
 	public void testAtlasBasedFontRendererWithSubPixel() {
 		// Test the AtlasBasedFontRenderer with sub-pixel rendering
-		me.mdbell.awtea.gfx.SurfaceBackend backend = me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
+		me.mdbell.awtea.gfx.SurfaceBackend backend = me.mdbell.awtea.gfx.SurfaceBackendFactory.getDefault();
 		AtlasBasedFontRenderer renderer = new AtlasBasedFontRenderer(backend, 4, true);
 		Assert.assertNotNull(renderer, "Atlas renderer with sub-pixel should be created");
 

@@ -3,7 +3,7 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.Getter;
 import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
-import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.Surface;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLDocument;
@@ -110,7 +110,7 @@ public class THeavyCanvas {
 		eventManager = new TEventManager(canvasElement, container);
 
 		// Create surface for rendering
-		surface = DefaultSurfaceBackend.getDefault().createScreenSurface(
+		surface = SurfaceBackendFactory.createScreenSurface(
 			canvasElement.getWidth(),
 			canvasElement.getHeight(),
 			canvasElement
