@@ -13,11 +13,21 @@ The awtea project implements a flexible rendering system that supports multiple 
 **Use Case**: Direct rendering to HTML Canvas elements using WebGL 2.0
 
 **Characteristics**:
-- Hardware-accelerated rendering
+- Hardware-accelerated GPU rendering with native WebGL primitives
 - Optimal performance for screen display
 - Requires WebGL 2.0 support in the browser
 - Only available for screen surfaces (requires HTMLCanvasElement)
-- Uses GPU textures and shaders for all operations
+- Uses GPU shaders for all drawing operations (LINES, LINE_LOOP, LINE_STRIP, TRIANGLE_FAN)
+- Full primitive support including polygons, ovals, arcs, and compositing
+- Single draw call per shape for maximum performance
+
+**Rendering Approach**:
+- Lines: WebGL `LINES` primitive
+- Polygon outlines: WebGL `LINE_LOOP` primitive  
+- Filled polygons: WebGL `TRIANGLE_FAN` primitive
+- Ovals/Ellipses: Parametric vertex generation with adaptive segmentation
+- Arcs: Parametric curves with ~5° per segment
+- Rounded rectangles: Single vertex buffer with corner arcs
 
 **Supported Pixel Formats**: `FORMAT_INT_RGBA`
 
@@ -139,10 +149,21 @@ All backends support the following rendering operations through the command patt
 - **SET_COLOR** - Set foreground/background color
 - **SET_TRANSFORM** - Apply affine transformations
 - **SET_CLIP_RECT** - Set clipping rectangle
+- **SET_COMPOSITE** - Set alpha compositing mode (Porter-Duff rules)
 - **FILL_RECT** - Fill a rectangle
 - **DRAW_RECT** - Draw rectangle outline
 - **CLEAR_RECT** - Clear rectangle with background color
 - **DRAW_LINE** - Draw a line
+- **DRAW_POLYGON** - Draw polygon outline
+- **FILL_POLYGON** - Fill a polygon
+- **FILL_OVAL** - Fill an oval/ellipse
+- **DRAW_OVAL** - Draw oval/ellipse outline
+- **FILL_ARC** - Fill an arc (pie slice)
+- **DRAW_ARC** - Draw arc outline
+- **FILL_ROUND_RECT** - Fill a rounded rectangle
+- **DRAW_ROUND_RECT** - Draw rounded rectangle outline
+- **DRAW_POLYLINE** - Draw connected line segments
+- **COPY_AREA** - Copy a region of the surface
 - **BLIT_IMAGE** - Copy pixels from another surface (with scaling)
 
 ## Pixel Format Support
@@ -160,8 +181,16 @@ All backends support the following rendering operations through the command patt
 ## Performance Considerations
 
 ### WebGL Backend
-- **Best**: Hardware-accelerated, ideal for screen rendering
-- **Limitations**: Requires canvas context, overhead for small operations
+- **Best**: Hardware-accelerated GPU rendering, ideal for screen rendering and real-time graphics
+- **Advantages**: 
+  - Single draw call per shape (vs thousands for software rasterization)
+  - Native GPU primitives (LINES, TRIANGLE_FAN, etc.)
+  - Automatic anti-aliasing on supported hardware
+  - Parallel vertex processing
+- **Limitations**: 
+  - Requires canvas context
+  - Small overhead for simple operations (GPU setup cost)
+  - Screen-only (no offscreen pixel access)
 
 ### WASM Backend
 - **Best**: Complex rendering operations, offscreen buffers
