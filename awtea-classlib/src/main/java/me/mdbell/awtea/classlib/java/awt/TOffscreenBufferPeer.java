@@ -24,7 +24,8 @@ public class TOffscreenBufferPeer implements TSurfacePeer {
         try {
             TGraphics surface = root.getSurfaceGraphics();
 
-            root.update(surface);
+            root.update(g);
+
             surface.drawImage(buffer, 0, 0, null);
         } finally {
             g.dispose();
