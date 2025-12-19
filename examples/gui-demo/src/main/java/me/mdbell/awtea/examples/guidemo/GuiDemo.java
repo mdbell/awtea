@@ -5,6 +5,8 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -60,7 +62,7 @@ public class GuiDemo {
         leftPanel.setLayout(new BorderLayout(0, 10));
 
         DrawingCanvas canvas = new DrawingCanvas();
-        canvas.setPreferredSize(new Dimension(500, 540));
+        canvas.setPreferredSize(new Dimension(500, 460));
 
         // Add button panel to demonstrate TButton and TLabel
         Panel buttonPanel = new Panel();
@@ -132,7 +134,46 @@ public class GuiDemo {
 
         buttonPanel.add(statusLabel);
 
-        leftPanel.add(buttonPanel, BorderLayout.NORTH);
+        // Add text field panel to demonstrate TTextField
+        Panel textFieldPanel = new Panel();
+        textFieldPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        textFieldPanel.setBackground(new Color(250, 250, 250));
+
+        Label textFieldDemoLabel = new Label("TextField Demo:", Label.CENTER);
+        textFieldDemoLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        textFieldPanel.add(textFieldDemoLabel);
+
+        final TextField nameField = new TextField("Type your name here", 20);
+        textFieldPanel.add(nameField);
+
+        Button submitButton = new Button("Submit");
+        submitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String text = nameField.getText();
+                statusLabel.setText("Submitted: " + text);
+                System.out.println("Text submitted: " + text);
+            }
+        });
+        textFieldPanel.add(submitButton);
+
+        // Also handle Enter key in text field
+        nameField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String text = nameField.getText();
+                statusLabel.setText("Submitted via Enter: " + text);
+                System.out.println("Text submitted via Enter: " + text);
+            }
+        });
+
+        // Create a container for button and text field panels
+        Container topControlsPanel = new Container();
+        topControlsPanel.setLayout(new BorderLayout(0, 5));
+        topControlsPanel.add(buttonPanel, BorderLayout.NORTH);
+        topControlsPanel.add(textFieldPanel, BorderLayout.SOUTH);
+
+        leftPanel.add(topControlsPanel, BorderLayout.NORTH);
         leftPanel.add(canvas, BorderLayout.CENTER);
 
         Container infoPanel = new Container() {
@@ -150,8 +191,8 @@ public class GuiDemo {
                 g.drawString("Instructions:", 10, 20);
 
                 g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-                g.drawString("• Click on the left canvas to draw colored squares", 10, 40);
-                g.drawString("• Move your mouse to see real-time coordinates", 10, 55);
+                g.drawString("• Type in the text field and press Enter or Submit", 10, 40);
+                g.drawString("• Click on the canvas to draw colored squares", 10, 55);
                 g.drawString("• Hover over panels below to see enter/exit events", 10, 70);
                 g.drawString("• View graphics primitives and alpha blending on right", 10, 85);
 
