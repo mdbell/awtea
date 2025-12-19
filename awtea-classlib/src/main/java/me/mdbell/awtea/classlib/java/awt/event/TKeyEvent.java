@@ -1225,6 +1225,14 @@ public class TKeyEvent extends TInputEvent {
 			event.preventDefault(); // prevents focus change when tab is pressed inside the canvas
 		}
 
+		// Prevent default browser behavior for common keyboard shortcuts
+		// that components might want to handle (Ctrl/Meta + A/C/V/X/Z)
+		boolean isCtrlOrMeta = event.isCtrlKey() || event.isMetaKey();
+		if (isCtrlOrMeta && (key == KeyboardKey.A || key == KeyboardKey.C || 
+				key == KeyboardKey.V || key == KeyboardKey.X || key == KeyboardKey.Z)) {
+			event.preventDefault();
+		}
+
 		if (key == KeyboardKey.UNDEFINED) {
 			log.warn("Key not found: {} - {} - {}", event.getCode(), event.getKey(), event.getType());
 		}
