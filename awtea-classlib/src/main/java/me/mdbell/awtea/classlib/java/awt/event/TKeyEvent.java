@@ -1221,7 +1221,9 @@ public class TKeyEvent extends TInputEvent {
 		KeyEvent keyEvent = KeyEvent.fromType(event.getType());
 		KeyboardKey key = KeyboardKey.lookup(event.getCode());
 
-		if (key == KeyboardKey.TAB) {
+		// Prevent default browser behavior for TAB key on keydown to stop browser focus changes
+		// Only do this for keydown (KEY_PRESSED), not for other event types
+		if (key == KeyboardKey.TAB && keyEvent == KeyEvent.KEY_PRESSED) {
 			event.preventDefault(); // prevents focus change when tab is pressed inside the canvas
 		}
 
