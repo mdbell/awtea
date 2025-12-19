@@ -137,7 +137,8 @@ class WebGLRasterizer implements Rasterizer {
         int h = surface.getHeight();
 
         int cx = clip.x + tx;
-        int cy = clip.y + ty;
+        // Negate Y translation to match shader's coordinate system
+        int cy = clip.y - ty;
 
         gl.scissor(cx, h - (cy + clip.height), clip.width, clip.height);
     }
@@ -168,7 +169,8 @@ class WebGLRasterizer implements Rasterizer {
         int h = surface.getHeight();
 
         int cx = x + tx;
-        int cy = y + ty;
+        // Negate Y translation to match shader's coordinate system
+        int cy = y - ty;
 
         gl.enable(WebGLRenderingContext.SCISSOR_TEST);
         gl.scissor(cx, h - (cy + height), width, height);
