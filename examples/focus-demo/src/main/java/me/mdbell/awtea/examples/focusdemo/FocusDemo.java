@@ -1,15 +1,11 @@
 package me.mdbell.awtea.examples.focusdemo;
 
-import me.mdbell.awtea.classlib.java.applet.TApplet;
-import me.mdbell.awtea.classlib.java.awt.*;
-import me.mdbell.awtea.classlib.java.awt.event.TFocusEvent;
-import me.mdbell.awtea.classlib.java.awt.event.TFocusListener;
-import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
-import me.mdbell.awtea.classlib.java.awt.event.TKeyListener;
-
-import java.awt.Color;
-
-import org.teavm.classlib.java.awt.TDimension;
+import java.applet.Applet;
+import java.awt.*;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
 /**
  * Demo application showcasing the Focus Traversal System.
@@ -21,54 +17,54 @@ import org.teavm.classlib.java.awt.TDimension;
  * - Focus event handling
  * - Custom focus traversal policies
  */
-public class FocusDemo extends TApplet {
+public class FocusDemo extends Applet {
 
-    private TPanel mainPanel;
-    private TPanel infoPanel;
-    private TLabel statusLabel;
-    private TLabel instructionsLabel;
+    private Panel mainPanel;
+    private Panel infoPanel;
+    private Label statusLabel;
+    private Label instructionsLabel;
     private int focusChangeCount = 0;
 
     @Override
     public void init() {
-        setLayout(new TBorderLayout(10, 10));
+        setLayout(new BorderLayout(10, 10));
         setBackground(new Color(240, 240, 240));
 
         // Create title panel
-        TPanel titlePanel = createTitlePanel();
-        add(titlePanel, TBorderLayout.NORTH);
+        Panel titlePanel = createTitlePanel();
+        add(titlePanel, BorderLayout.NORTH);
 
         // Create main form panel with focusable components
         mainPanel = createMainPanel();
-        add(mainPanel, TBorderLayout.CENTER);
+        add(mainPanel, BorderLayout.CENTER);
 
         // Create info panel
         infoPanel = createInfoPanel();
-        add(infoPanel, TBorderLayout.SOUTH);
+        add(infoPanel, BorderLayout.SOUTH);
     }
 
-    private TPanel createTitlePanel() {
-        TPanel panel = new TPanel() {
+    private Panel createTitlePanel() {
+        Panel panel = new Panel() {
             @Override
-            public void paint(TGraphics g) {
+            public void paint(Graphics g) {
                 g.setColor(new Color(70, 130, 180)); // Steel blue
                 g.fillRect(0, 0, getWidth(), getHeight());
 
                 g.setColor(Color.WHITE);
-                g.setFont(new TFont("SansSerif", TFont.BOLD, 24));
+                g.setFont(new Font("SansSerif", Font.BOLD, 24));
                 g.drawString("Focus Traversal Demo", 10, 30);
 
-                g.setFont(new TFont("SansSerif", TFont.PLAIN, 14));
+                g.setFont(new Font("SansSerif", Font.PLAIN, 14));
                 g.drawString("Press TAB to navigate forward, Shift-TAB to navigate backward", 10, 50);
             }
         };
-        panel.setPreferredSize(new TDimension(800, 70));
+        panel.setPreferredSize(new Dimension(800, 70));
         return panel;
     }
 
-    private TPanel createMainPanel() {
-        TPanel panel = new TPanel();
-        panel.setLayout(new TGridLayout(5, 2, 10, 10));
+    private Panel createMainPanel() {
+        Panel panel = new Panel();
+        panel.setLayout(new GridLayout(5, 2, 10, 10));
         panel.setBackground(Color.WHITE);
 
         // Create a form with multiple focusable components
@@ -85,7 +81,7 @@ public class FocusDemo extends TApplet {
         panel.add(createFocusableButton("Country Input"));
 
         panel.add(createLabel(""));
-        TButton submitButton = createFocusableButton("Submit");
+        Button submitButton = createFocusableButton("Submit");
         submitButton.setBackground(new Color(70, 130, 180));
         submitButton.setForeground(Color.WHITE);
         panel.add(submitButton);
@@ -93,49 +89,49 @@ public class FocusDemo extends TApplet {
         return panel;
     }
 
-    private TLabel createLabel(String text) {
-        TLabel label = new TLabel(text);
+    private Label createLabel(String text) {
+        Label label = new Label(text);
         label.setForeground(Color.BLACK);
-        label.setFont(new TFont("SansSerif", TFont.PLAIN, 14));
+        label.setFont(new Font("SansSerif", Font.PLAIN, 14));
         return label;
     }
 
-    private TButton createFocusableButton(String text) {
-        TButton button = new TButton(text);
-        button.setFont(new TFont("SansSerif", TFont.PLAIN, 14));
+    private Button createFocusableButton(String text) {
+        Button button = new Button(text);
+        button.setFont(new Font("SansSerif", Font.PLAIN, 14));
 
         // Add focus listener to show visual feedback and update status
-        button.addFocusListener(new TFocusListener() {
+        button.addFocusListener(new FocusListener() {
             @Override
-            public void focusGained(TFocusEvent e) {
+            public void focusGained(FocusEvent e) {
                 button.setBackground(new Color(255, 255, 200)); // Light yellow
                 focusChangeCount++;
                 updateStatus("Component focused: " + button.getLabel() + " (Focus change #" + focusChangeCount + ")");
             }
 
             @Override
-            public void focusLost(TFocusEvent e) {
+            public void focusLost(FocusEvent e) {
                 button.setBackground(new Color(240, 240, 240)); // Light gray
             }
         });
 
         // Add key listener to show key events
-        button.addKeyListener(new TKeyListener() {
+        button.addKeyListener(new KeyListener() {
             @Override
-            public void keyPressed(TKeyEvent e) {
-                if (e.getKeyCode() != TKeyEvent.VK_TAB) {
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() != KeyEvent.VK_TAB) {
                     updateStatus("Key pressed on " + button.getLabel() + ": " + 
                                getKeyName(e.getKeyCode()));
                 }
             }
 
             @Override
-            public void keyReleased(TKeyEvent e) {
+            public void keyReleased(KeyEvent e) {
                 // Not used in this demo
             }
 
             @Override
-            public void keyTyped(TKeyEvent e) {
+            public void keyTyped(KeyEvent e) {
                 // Not used in this demo
             }
         });
@@ -144,35 +140,35 @@ public class FocusDemo extends TApplet {
     }
 
     private String getKeyName(int keyCode) {
-        if (keyCode == TKeyEvent.VK_ENTER) return "ENTER";
-        if (keyCode == TKeyEvent.VK_SPACE) return "SPACE";
-        if (keyCode == TKeyEvent.VK_ESCAPE) return "ESC";
-        if (keyCode >= TKeyEvent.VK_A && keyCode <= TKeyEvent.VK_Z) {
+        if (keyCode == KeyEvent.VK_ENTER) return "ENTER";
+        if (keyCode == KeyEvent.VK_SPACE) return "SPACE";
+        if (keyCode == KeyEvent.VK_ESCAPE) return "ESC";
+        if (keyCode >= KeyEvent.VK_A && keyCode <= KeyEvent.VK_Z) {
             return String.valueOf((char) keyCode);
         }
         return "Key " + keyCode;
     }
 
-    private TPanel createInfoPanel() {
-        TPanel panel = new TPanel();
-        panel.setLayout(new TBorderLayout());
+    private Panel createInfoPanel() {
+        Panel panel = new Panel();
+        panel.setLayout(new BorderLayout());
         panel.setBackground(new Color(250, 250, 250));
 
         // Instructions
-        instructionsLabel = new TLabel();
-        instructionsLabel.setFont(new TFont("SansSerif", TFont.BOLD, 12));
+        instructionsLabel = new Label();
+        instructionsLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
         instructionsLabel.setForeground(new Color(50, 50, 50));
-        panel.add(instructionsLabel, TBorderLayout.NORTH);
+        panel.add(instructionsLabel, BorderLayout.NORTH);
 
         // Status
-        statusLabel = new TLabel("Ready. Press TAB to start navigating.");
-        statusLabel.setFont(new TFont("SansSerif", TFont.PLAIN, 12));
+        statusLabel = new Label("Ready. Press TAB to start navigating.");
+        statusLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         statusLabel.setForeground(new Color(70, 70, 70));
-        panel.add(statusLabel, TBorderLayout.CENTER);
+        panel.add(statusLabel, BorderLayout.CENTER);
 
         updateInstructions();
 
-        panel.setPreferredSize(new TDimension(800, 50));
+        panel.setPreferredSize(new Dimension(800, 50));
         return panel;
     }
 
@@ -185,8 +181,8 @@ public class FocusDemo extends TApplet {
 
     private void updateInstructions() {
         if (instructionsLabel != null) {
-            TKeyboardFocusManager manager = TKeyboardFocusManager.getCurrentKeyboardFocusManager();
-            TComponent focusOwner = manager.getFocusOwner();
+            KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+            Component focusOwner = manager.getFocusOwner();
             String focusInfo = focusOwner != null ? 
                 "Current focus: " + getFocusOwnerName(focusOwner) : 
                 "No component has focus";
@@ -195,9 +191,9 @@ public class FocusDemo extends TApplet {
         }
     }
 
-    private String getFocusOwnerName(TComponent component) {
-        if (component instanceof TButton) {
-            return ((TButton) component).getLabel();
+    private String getFocusOwnerName(Component component) {
+        if (component instanceof Button) {
+            return ((Button) component).getLabel();
         }
         return component.getClass().getSimpleName();
     }
@@ -205,12 +201,12 @@ public class FocusDemo extends TApplet {
     @Override
     public void start() {
         // Give initial focus to the first button
-        TKeyboardFocusManager manager = TKeyboardFocusManager.getCurrentKeyboardFocusManager();
-        TContainer root = mainPanel.getFocusCycleRootAncestor();
+        KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        Container root = mainPanel.getFocusCycleRootAncestor();
         if (root != null) {
-            TFocusTraversalPolicy policy = root.getFocusTraversalPolicy();
+            FocusTraversalPolicy policy = root.getFocusTraversalPolicy();
             if (policy != null) {
-                TComponent first = policy.getFirstComponent(root);
+                Component first = policy.getFirstComponent(root);
                 if (first != null) {
                     first.requestFocus();
                 }
@@ -225,7 +221,7 @@ public class FocusDemo extends TApplet {
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 
         // Create and show the demo
-        TFrame frame = new TFrame();
+        Frame frame = new Frame();
         frame.setTitle("Focus Traversal Demo - awtea");
         frame.setSize(800, 500);
 
