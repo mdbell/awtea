@@ -3,6 +3,7 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.Getter;
 import lombok.Setter;
 import me.mdbell.awtea.classlib.java.awt.event.*;
+import me.mdbell.awtea.util.ThreadUtils;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
@@ -14,12 +15,15 @@ import org.teavm.classlib.java.awt.TDimension;
 
 /**
  * A single-line text input component that allows the user to edit text.
- * This is a lightweight component that renders itself using graphics primitives.
+ * This is a lightweight component that renders itself using graphics
+ * primitives.
  * 
  * <p>
- * The text field displays an editable text string with a blinking cursor (caret).
+ * The text field displays an editable text string with a blinking cursor
+ * (caret).
  * Users can type, delete, select, copy, paste, and navigate through the text.
- * When the Enter key is pressed, an {@link TActionEvent} is fired to registered listeners.
+ * When the Enter key is pressed, an {@link TActionEvent} is fired to registered
+ * listeners.
  * 
  * <p>
  * <strong>Features implemented:</strong>
@@ -132,6 +136,8 @@ public class TTextField extends TComponent {
 	 * Padding inside the text field (top and bottom).
 	 */
 	private static final int PADDING_Y = 7;
+
+	private static final int SELECTION_PADDING_Y = 3;
 
 	/**
 	 * Caret blink interval in milliseconds.
@@ -255,6 +261,7 @@ public class TTextField extends TComponent {
 			public void focusGained(TFocusEvent e) {
 				caretVisible = true; // Start with caret visible
 				lastCaretBlink = System.currentTimeMillis();
+				toggleCaret();
 				repaint();
 			}
 
@@ -359,7 +366,8 @@ public class TTextField extends TComponent {
 	}
 
 	/**
-	 * Adds the specified action listener to receive action events from this text field.
+	 * Adds the specified action listener to receive action events from this text
+	 * field.
 	 *
 	 * @param l the action listener
 	 */
@@ -532,7 +540,8 @@ public class TTextField extends TComponent {
 	}
 
 	/**
-	 * Handles navigation keys (arrows, Home, End) with optional Shift for selection.
+	 * Handles navigation keys (arrows, Home, End) with optional Shift for
+	 * selection.
 	 *
 	 * @param keyCode the key code
 	 * @param shift   whether Shift is pressed
@@ -735,7 +744,7 @@ public class TTextField extends TComponent {
 
 			if (clipRight > clipLeft) {
 				g.setColor(new Color(180, 200, 255)); // Light blue selection
-				g.fillRect(clipLeft, PADDING_Y, clipRight - clipLeft, h - 2 * PADDING_Y);
+				g.fillRect(clipLeft, SELECTION_PADDING_Y, clipRight - clipLeft, h - 2 * SELECTION_PADDING_Y);
 			}
 		}
 
@@ -756,15 +765,25 @@ public class TTextField extends TComponent {
 			int caretX = PADDING_X + fm.stringWidth(textBeforeCaret) - scrollOffset;
 
 			// Only draw caret if it's within visible bounds
-			if (caretX >= PADDING_X && caretX <= w - PADDING_X) {
+			if (caretX >= PADDING_X && caretX <= w) {
 				g.setColor(Color.BLACK);
-				g.drawLine(caretX, PADDING_Y, caretX, h - PADDING_Y);
+				g.drawLine(caretX, PADDING_Y / 2, caretX, h - PADDING_Y / 2);
 			}
 		}
 	}
 
+	private void toggleCaret() {
+		caretVisible = !caretVisible;
+
+		if (isFocusOwner() && editable) {
+			ThreadUtils.runOnce("Caret-blinker-" + hashCode(), this::toggleCaret, CARET_BLINK_INTERVAL);
+		}
+		repaint();
+	}
+
 	/**
-	 * Returns the preferred size of this text field based on columns or current text.
+	 * Returns the preferred size of this text field based on columns or current
+	 * text.
 	 *
 	 * @return the preferred dimensions of this text field
 	 */
@@ -852,8 +871,8 @@ public class TTextField extends TComponent {
 	 */
 	private boolean isFocusOwner() {
 		// Check with focus manager if available
-		me.mdbell.awtea.classlib.java.awt.awtea.TFocusManager focusManager = 
-			me.mdbell.awtea.classlib.java.awt.awtea.TFocusManager.get();
+		me.mdbell.awtea.classlib.java.awt.awtea.TFocusManager focusManager = me.mdbell.awtea.classlib.java.awt.awtea.TFocusManager
+				.get();
 		return focusManager != null && focusManager.getGlobalFocusOwner() == this;
 	}
 }
