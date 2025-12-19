@@ -139,6 +139,10 @@ public class THeavyCanvas {
 			.withKeyboard()
 			.withMouse()
 			.withMouseWheel();
+		
+		// Give the canvas DOM focus so keyboard events work immediately
+		canvasElement.focus();
+		
 		return this;
 	}
 
