@@ -751,27 +751,15 @@ public class TTextField extends TComponent {
 		g.drawString(text, PADDING_X - scrollOffset, textY);
 
 		// Draw caret if focused and editable
-		if (isFocusOwner() && editable) {
-			// Toggle caret visibility for blinking effect
-			long now = System.currentTimeMillis();
-			if (now - lastCaretBlink > CARET_BLINK_INTERVAL) {
-				caretVisible = !caretVisible;
-				lastCaretBlink = now;
-			}
+		if (isFocusOwner() && editable && caretVisible) {
+			String textBeforeCaret = text.substring(0, caretPosition);
+			int caretX = PADDING_X + fm.stringWidth(textBeforeCaret) - scrollOffset;
 
-			if (caretVisible) {
-				String textBeforeCaret = text.substring(0, caretPosition);
-				int caretX = PADDING_X + fm.stringWidth(textBeforeCaret) - scrollOffset;
-
-				// Only draw caret if it's within visible bounds
-				if (caretX >= PADDING_X && caretX <= w - PADDING_X) {
-					g.setColor(Color.BLACK);
-					g.drawLine(caretX, PADDING_Y, caretX, h - PADDING_Y);
-				}
+			// Only draw caret if it's within visible bounds
+			if (caretX >= PADDING_X && caretX <= w - PADDING_X) {
+				g.setColor(Color.BLACK);
+				g.drawLine(caretX, PADDING_Y, caretX, h - PADDING_Y);
 			}
-			
-			// Schedule repaint for next blink
-			repaint();
 		}
 	}
 
