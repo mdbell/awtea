@@ -7,7 +7,7 @@ import me.mdbell.awtea.classlib.java.awt.TImage;
 import me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics;
 import me.mdbell.awtea.classlib.java.awt.color.TColorSpace;
 import me.mdbell.awtea.font.FontRenderer;
-import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceContainer;
 import me.mdbell.awtea.instrument.Monitored;
@@ -80,7 +80,7 @@ public class TBufferedImage extends TImage implements FontRenderer.RasterTarget,
             throw new IllegalArgumentException("width/height must be > 0");
         }
 
-        this.surface = DefaultSurfaceBackend.getDefault().createCompatibleSurface(width, height, imageType);
+        this.surface = SurfaceBackendFactory.getDefault().createCompatibleSurface(width, height, imageType);
         if (this.surface == null) {
             throw new IllegalArgumentException("Unsupported imageType: " + imageType);
         }
@@ -109,7 +109,7 @@ public class TBufferedImage extends TImage implements FontRenderer.RasterTarget,
         this.height = raster.getHeight();
 
         this.imageType = inferImageType(cm, raster, alphaPremultiplied);
-        this.surface = DefaultSurfaceBackend.getDefault().createCompatibleSurface(cm, raster, isRasterPremultiplied, imageType);
+        this.surface = SurfaceBackendFactory.getDefault().createCompatibleSurface(cm, raster, isRasterPremultiplied, imageType);
     }
 
     private void init(Surface surface) {

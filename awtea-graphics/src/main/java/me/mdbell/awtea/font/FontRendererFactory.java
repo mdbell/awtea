@@ -1,5 +1,8 @@
 package me.mdbell.awtea.font;
 
+import me.mdbell.awtea.gfx.SurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
+
 /**
  * Factory for creating {@link FontRenderer} instances.
  * 
@@ -124,9 +127,8 @@ public class FontRendererFactory {
 				// Use atlas-based renderer for better memory efficiency
 				int supersample = getSupersampleFromProperty();
 				boolean subpixel = getSubpixelFromProperty();
-				me.mdbell.awtea.gfx.DefaultSurfaceBackend backend = 
-					me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
-				return new me.mdbell.awtea.font.AtlasBasedFontRenderer(backend, supersample, subpixel);
+				SurfaceBackend backend = SurfaceBackendFactory.getDefault();
+				return new AtlasBasedFontRenderer(backend, supersample, subpixel);
 			
 			case "raster":
 				// Use original raster renderer (for testing/comparison)
@@ -138,8 +140,8 @@ public class FontRendererFactory {
 				// Default to atlas-based for best performance
 				supersample = getSupersampleFromProperty();
 				subpixel = getSubpixelFromProperty();
-				backend = me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
-				return new me.mdbell.awtea.font.AtlasBasedFontRenderer(backend, supersample, subpixel);
+				backend = SurfaceBackendFactory.getDefault();
+				return new AtlasBasedFontRenderer(backend, supersample, subpixel);
 			
 			// Future renderer types can be added here:
 			// case "sdf":

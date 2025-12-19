@@ -1,7 +1,8 @@
 package me.mdbell.awtea.examples.animationdemo;
 
 import me.mdbell.awtea.Helper;
-import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.CompositeSurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.wasm.WasmDiagnostics;
 import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
 import me.mdbell.awtea.util.logging.LogLevel;
@@ -61,8 +62,8 @@ public class AnimationDemo {
         }
 
         try {
-            DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
-            return defaultBackend.getWasmBackend() != null;
+            WasmSurfaceBackend wasmBackend = SurfaceBackendFactory.getWasmBackendFromDefault();
+            return wasmBackend != null;
         } catch (Exception e) {
             return false;
         }
@@ -80,8 +81,7 @@ public class AnimationDemo {
         }
 
         try {
-            DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
-            WasmSurfaceBackend wasmBackend = defaultBackend.getWasmBackend();
+            WasmSurfaceBackend wasmBackend = SurfaceBackendFactory.getWasmBackendFromDefault();
             if (wasmBackend != null) {
                 return wasmBackend.getDiagnostics();
             }

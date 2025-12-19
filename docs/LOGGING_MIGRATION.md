@@ -30,7 +30,7 @@ Total System.out/err occurrences: 159
 
 3. **awtea-graphics** (~15 occurrences)
    - FontLoader, TrueTypeFont
-   - Rasterizers: WebGLRasterizer, WasmRasterizer, SurfaceLRUCache, DefaultSurfaceBackend
+   - Rasterizers: WebGLRasterizer, WasmRasterizer, SurfaceLRUCache
 
 ### Large File (Special Attention Needed)
 4. **awtea-util/ApiDiff.java** (~53 occurrences)
