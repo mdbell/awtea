@@ -1,7 +1,5 @@
 package me.mdbell.awtea.gfx;
 
-import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
-
 /**
  * A composite surface backend that implements the composite pattern with fallback support.
  * 
@@ -35,21 +33,6 @@ public class CompositeSurfaceBackend implements SurfaceBackend {
 	 */
 	public CompositeSurfaceBackend(SurfaceBackend[] backends) {
 		this.backends = backends;
-	}
-	
-	/**
-	 * Get the active WasmSurfaceBackend if one is loaded, or null otherwise.
-	 * Useful for accessing diagnostics when running with WASM renderer.
-	 * 
-	 * @return WasmSurfaceBackend instance, or null if not using WASM backend
-	 */
-	public WasmSurfaceBackend getWasmBackend() {
-		for (SurfaceBackend backend : backends) {
-			if (backend instanceof WasmSurfaceBackend) {
-				return (WasmSurfaceBackend) backend;
-			}
-		}
-		return null;
 	}
 	
 	@Override

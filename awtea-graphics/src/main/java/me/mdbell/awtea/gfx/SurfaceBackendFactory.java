@@ -45,6 +45,8 @@ public class SurfaceBackendFactory {
 	private static final String BACKEND_PROPERTY = "me.mdbell.awtea.gfx.backend";
 	
 	private static SurfaceBackend defaultInstance = null;
+	private static SurfaceBackend wasmInstance = null;
+	private static SurfaceBackend softwareInstance = null;
 	
 	private SurfaceBackendFactory() {
 		// Utility class - prevent instantiation
@@ -78,22 +80,30 @@ public class SurfaceBackendFactory {
 	/**
 	 * Get a software-only renderer backend.
 	 * This backend uses pure Java implementation without hardware acceleration.
+	 * Returns a singleton instance for efficiency.
 	 * 
-	 * @return a new software surface backend instance
+	 * @return the software surface backend instance
 	 */
 	public static SurfaceBackend getSoftwareBackend() {
-		return new SoftwareSurfaceBackend();
+		if (softwareInstance == null) {
+			softwareInstance = new SoftwareSurfaceBackend();
+		}
+		return softwareInstance;
 	}
 	
 	/**
 	 * Get a WASM renderer backend.
 	 * This backend uses native C code compiled to WebAssembly for high-performance rendering.
+	 * Returns a singleton instance for efficiency.
 	 * 
-	 * @return a new WASM surface backend instance
+	 * @return the WASM surface backend instance
 	 * @throws RuntimeException if the WASM module fails to load
 	 */
 	public static SurfaceBackend getWasmBackend() {
-		return new WasmSurfaceBackend();
+		if (wasmInstance == null) {
+			wasmInstance = new WasmSurfaceBackend();
+		}
+		return wasmInstance;
 	}
 	
 	/**
@@ -156,15 +166,14 @@ public class SurfaceBackendFactory {
 	}
 	
 	/**
-	 * Extract the WASM backend from the default backend if present.
-	 * This is useful for accessing WASM diagnostics when running with the default backend.
+	 * Get the WASM backend instance if it has been initialized.
+	 * This is useful for accessing WASM diagnostics when the WASM backend is in use.
 	 * 
-	 * @return the WasmSurfaceBackend instance from the default backend, or null if not present
+	 * @return the WasmSurfaceBackend instance if initialized, or null otherwise
 	 */
 	public static WasmSurfaceBackend getWasmBackendFromDefault() {
-		SurfaceBackend backend = getDefault();
-		if (backend instanceof CompositeSurfaceBackend) {
-			return ((CompositeSurfaceBackend) backend).getWasmBackend();
+		if (wasmInstance instanceof WasmSurfaceBackend) {
+			return (WasmSurfaceBackend) wasmInstance;
 		}
 		return null;
 	}
