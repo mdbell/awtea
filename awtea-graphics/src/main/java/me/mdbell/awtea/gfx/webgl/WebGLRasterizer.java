@@ -149,6 +149,8 @@ class WebGLRasterizer implements Rasterizer {
         // | m01 m11 0 |
         // | m02 m12 1 |
         // ---------------
+        // Note: Y translation needs to be negated because we're in bottom-up WebGL space
+        // but AWT transforms work in top-down space
         transformArray.set(0, (float) transform.getScaleX());
         transformArray.set(1, (float) transform.getShearY());
         transformArray.set(2, 0f);
@@ -156,7 +158,7 @@ class WebGLRasterizer implements Rasterizer {
         transformArray.set(4, (float) transform.getScaleY());
         transformArray.set(5, 0f);
         transformArray.set(6, (float) transform.getTranslateX());
-        transformArray.set(7, (float) transform.getTranslateY());
+        transformArray.set(7, (float) -transform.getTranslateY()); // Negate Y translation for WebGL space
         transformArray.set(8, 1f);
     }
 
