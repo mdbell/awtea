@@ -131,7 +131,7 @@ public class TTextField extends TComponent {
 	/**
 	 * Padding inside the text field (top and bottom).
 	 */
-	private static final int PADDING_Y = 3;
+	private static final int PADDING_Y = 5;
 
 	/**
 	 * Caret blink interval in milliseconds.
@@ -743,14 +743,9 @@ public class TTextField extends TComponent {
 		}
 		g.setColor(fgColor);
 
-		// Create a clip region for the text
-		TGraphics clippedG = g.create(PADDING_X, 0, w - 2 * PADDING_X, h);
-		clippedG.setFont(font);
-		clippedG.setColor(fgColor);
-
-		// Draw the text with scroll offset applied
-		clippedG.drawString(text, -scrollOffset, textY);
-		clippedG.dispose();
+		// Draw the text directly without creating a clipped graphics
+		// The text baseline should be positioned correctly
+		g.drawString(text, PADDING_X - scrollOffset, textY);
 
 		// Draw caret if focused and visible (blinking)
 		if (isFocusOwner() && caretVisible && editable) {
