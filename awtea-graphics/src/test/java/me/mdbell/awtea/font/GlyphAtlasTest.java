@@ -1,6 +1,6 @@
 package me.mdbell.awtea.font;
 
-import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
 import me.mdbell.awtea.test.Assert;
@@ -15,7 +15,7 @@ public class GlyphAtlasTest {
 	private TrueTypeFont testFont;
 
 	public GlyphAtlasTest() {
-		backend = DefaultSurfaceBackend.getDefault();
+		backend = SurfaceBackendFactory.getDefault();
 		// Load a test font (NotoSans is available)
 		try {
 			testFont = FontLoader.loadFont("NotoSans");

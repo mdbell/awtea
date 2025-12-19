@@ -22,7 +22,7 @@ This document provides comprehensive documentation for all system properties tha
   - `"software"` or `"java"` - Use pure Java software renderer
 - **Description**: Forces awtea to use a specific rendering backend instead of the default auto-selection. When not set, awtea tries backends in priority order (WASM first, then Software).
 - **Performance Impact**: WASM backend typically provides better performance than pure Java software rendering.
-- **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/gfx/DefaultSurfaceBackend.java:24`
+- **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/gfx/SurfaceBackendFactory.java`
 - **Since**: v0.1.0
 
 **Example:**

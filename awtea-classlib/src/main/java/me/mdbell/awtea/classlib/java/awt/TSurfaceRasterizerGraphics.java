@@ -6,7 +6,7 @@ import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.font.FontPeer;
-import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
@@ -99,7 +99,8 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     }
 
     /**
-     * Acquires a SurfaceCommand from the pool, or creates a new one if the pool is empty.
+     * Acquires a SurfaceCommand from the pool, or creates a new one if the pool is
+     * empty.
      * This reduces GC pressure during high-frequency rendering operations.
      * 
      * @return a SurfaceCommand instance ready to be configured
@@ -124,7 +125,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         }
         // Reset the command to clear any object references (images, transforms, etc.)
         cmd.reset();
-        
+
         // Only add to pool if we haven't exceeded the max size
         if (commandPool.size() < MAX_POOL_SIZE) {
             commandPool.offer(cmd);
@@ -167,9 +168,11 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     public void draw(TShape s) {
         // TODO: Implement full Shape drawing support
         // Currently unsupported - would require proper path stroking logic
-        // For now, specific shape types (Rectangle, Polygon, etc.) should use their specific draw methods
-        // @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#draw-java.awt.Shape-
-        
+        // For now, specific shape types (Rectangle, Polygon, etc.) should use their
+        // specific draw methods
+        // @see
+        // https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#draw-java.awt.Shape-
+
         // Partial support: If the shape is a known type, delegate to appropriate method
         if (s instanceof TRectangle) {
             TRectangle r = (TRectangle) s;
@@ -188,9 +191,11 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     public void fill(TShape s) {
         // TODO: Implement full Shape filling support
         // Currently unsupported - would require proper path filling logic
-        // For now, specific shape types (Rectangle, Polygon, etc.) should use their specific fill methods
-        // @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#fill-java.awt.Shape-
-        
+        // For now, specific shape types (Rectangle, Polygon, etc.) should use their
+        // specific fill methods
+        // @see
+        // https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#fill-java.awt.Shape-
+
         // Partial support: If the shape is a known type, delegate to appropriate method
         if (s instanceof TRectangle) {
             TRectangle r = (TRectangle) s;
@@ -558,11 +563,11 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         }
 
         // Create a surface for rendering the text using the backend
-        DefaultSurfaceBackend backend = DefaultSurfaceBackend.getDefault();
-        Surface textSurface = backend.createFontRenderSurface(surfaceWidth, surfaceHeight);
+        Surface textSurface = SurfaceBackendFactory.getTextBackend().createFontRenderSurface(surfaceWidth,
+                surfaceHeight);
 
         if (textSurface == null) {
-            // If surface creation failed, silently return
+            log.warn("Failed to create text surface for string: {}", str);
             return;
         }
 

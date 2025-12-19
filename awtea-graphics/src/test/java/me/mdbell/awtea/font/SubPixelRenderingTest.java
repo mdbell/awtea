@@ -1,5 +1,8 @@
 package me.mdbell.awtea.font;
 
+import me.mdbell.awtea.gfx.Surface;
+import me.mdbell.awtea.gfx.SurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.test.Assert;
 import me.mdbell.awtea.test.Test;
 import me.mdbell.awtea.util.GlyphRasterizer;
@@ -174,12 +177,12 @@ public class SubPixelRenderingTest {
 	@Test
 	public void testAtlasBasedFontRendererWithSubPixel() {
 		// Test the AtlasBasedFontRenderer with sub-pixel rendering
-		me.mdbell.awtea.gfx.SurfaceBackend backend = me.mdbell.awtea.gfx.DefaultSurfaceBackend.getDefault();
+		SurfaceBackend backend = SurfaceBackendFactory.getDefault();
 		AtlasBasedFontRenderer renderer = new AtlasBasedFontRenderer(backend, 4, true);
 		Assert.assertNotNull(renderer, "Atlas renderer with sub-pixel should be created");
 
 		// Create a test surface
-		me.mdbell.awtea.gfx.Surface surface = backend.createCompatibleSurface(
+		Surface surface = backend.createCompatibleSurface(
 			100, 50, java.awt.image.BufferedImage.TYPE_INT_ARGB);
 		Assert.assertNotNull(surface, "Test surface should be created");
 
