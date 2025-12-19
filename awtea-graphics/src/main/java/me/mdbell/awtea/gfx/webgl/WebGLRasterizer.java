@@ -67,7 +67,7 @@ class WebGLRasterizer implements Rasterizer {
         this.foreground = other.foreground;
         this.background = other.background;
         this.composite = other.composite;
-        this.clip = other.clip;
+        this.clip = new Rectangle(other.clip);
         updateTransformFloats(this.transform);
     }
 
@@ -132,14 +132,7 @@ class WebGLRasterizer implements Rasterizer {
         }
         gl.enable(WebGLRenderingContext.SCISSOR_TEST);
 
-        int tx = (int) transform.getTranslateX();
-        int ty = (int) transform.getTranslateY();
-        int h = surface.getHeight();
-
-        int cx = clip.x + tx;
-        int cy = clip.y + ty;
-
-        gl.scissor(cx, h - (cy + clip.height), clip.width, clip.height);
+        gl.scissor(clip.x, clip.y, clip.width, clip.height);
     }
 
     private void updateTransformFloats(AffineTransform transform) {
@@ -149,7 +142,8 @@ class WebGLRasterizer implements Rasterizer {
         // | m01 m11 0 |
         // | m02 m12 1 |
         // ---------------
-        // Note: Y translation needs to be negated because we're in bottom-up WebGL space
+        // Note: Y translation needs to be negated because we're in bottom-up WebGL
+        // space
         // but AWT transforms work in top-down space
         transformArray.set(0, (float) transform.getScaleX());
         transformArray.set(1, (float) transform.getShearY());
@@ -193,7 +187,9 @@ class WebGLRasterizer implements Rasterizer {
             gl.disable(WebGLRenderingContext.SCISSOR_TEST);
             return;
         }
-        this.clip = shape.getBounds();
+        Rectangle bounds = shape.getBounds();
+
+        this.clip = bounds;
         applyClip();
     }
 
@@ -263,6 +259,7 @@ class WebGLRasterizer implements Rasterizer {
 
     private void drawTexture(WebGLTexture texture, WebGLSurfaceBackend.SwizzleMode mode,
             int x, int y, int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
+        applyClip();
         backend.useTextureProgram(mode, surface.getWidth(), surface.getHeight(), this.transformArray);
 
         y = surface.getHeight() - y - srcH;
