@@ -145,19 +145,19 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		return null;
 	}
 
-	protected void useColorProgram(int width, int height, Float32Array transform) {
+	protected void useColorProgram(int width, int height) {
 		if (currentProgram != WebGLProgramType.COLOR) {
 			gl.useProgram(colorProgram);
 			currentProgram = WebGLProgramType.COLOR;
 		}
 		
-		// Apply state from context stack
+		// Apply state from context stack (updates transform array)
 		contextStack.apply();
 
 		gl.uniform2f(uResolutionLocColor,
 			(float) width,
 			(float) height);
-		gl.uniformMatrix3fv(uTransformLocColor, false, transform);
+		gl.uniformMatrix3fv(uTransformLocColor, false, contextStack.getTransformArray());
 
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, rectBuffer);
 		gl.enableVertexAttribArray(aPositionLocColor);
@@ -166,14 +166,14 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			false, 0, 0);
 	}
 
-	void useTextureProgram(SwizzleMode mode, int width, int height, Float32Array transform) {
+	void useTextureProgram(SwizzleMode mode, int width, int height) {
 
 		if (currentProgram != WebGLProgramType.TEXTURE) {
 			gl.useProgram(textureProgram);
 			currentProgram = WebGLProgramType.TEXTURE;
 		}
 		
-		// Apply state from context stack
+		// Apply state from context stack (updates transform array)
 		contextStack.apply();
 
 		gl.uniform2f(uResolutionLocTex,
@@ -181,7 +181,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			(float) height);
 
 		gl.uniformMatrix3fv(uTransformLocTex, false,
-			transform);
+			contextStack.getTransformArray());
 
 		gl.uniform1i(uSwizzleModeLoc, mode.ordinal());
 

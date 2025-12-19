@@ -2,6 +2,7 @@ package me.mdbell.awtea.gfx.webgl;
 
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.webgl.WebGL2RenderingContext;
 import org.teavm.jso.webgl.WebGLRenderingContext;
 
@@ -33,6 +34,9 @@ class WebGLContextStack {
     // Surface dimensions needed for clip application
     private int surfaceWidth;
     private int surfaceHeight;
+    
+    // Transform array for passing to shaders (in column-major order)
+    private final Float32Array transformArray = new Float32Array(9);
     
     /**
      * Snapshot of WebGL rendering state.
@@ -81,6 +85,7 @@ class WebGLContextStack {
     WebGLContextStack(WebGL2RenderingContext gl) {
         this.gl = gl;
         this.currentState = new WebGLState();
+        updateTransformArray(); // Initialize transform array with identity matrix
     }
     
     /**
@@ -113,6 +118,9 @@ class WebGLContextStack {
         
         log.trace("WebGLContextStack: Restoring state (stack depth: {})", stateStack.size());
         currentState = stateStack.pop();
+        
+        // Update transform array with restored transform
+        updateTransformArray();
         
         // Re-apply the restored state to WebGL context
         applyComposite(currentState.composite);
@@ -166,6 +174,7 @@ class WebGLContextStack {
      */
     void setTransform(java.awt.geom.AffineTransform transform) {
         currentState.transform.setTransform(transform);
+        updateTransformArray();
     }
     
     /**
@@ -173,6 +182,36 @@ class WebGLContextStack {
      */
     java.awt.geom.AffineTransform getTransform() {
         return currentState.transform;
+    }
+    
+    /**
+     * Gets the transform array in column-major format for shader uniforms.
+     */
+    Float32Array getTransformArray() {
+        return transformArray;
+    }
+    
+    /**
+     * Updates the transform array from the current transform.
+     * Matrix is in column-major order for WebGL:
+     * | m00 m10 0 |
+     * | m01 m11 0 |
+     * | m02 m12 1 |
+     * 
+     * Note: Y translation is negated because WebGL uses bottom-up coordinates
+     * while AWT uses top-down coordinates.
+     */
+    private void updateTransformArray() {
+        java.awt.geom.AffineTransform t = currentState.transform;
+        transformArray.set(0, (float) t.getScaleX());
+        transformArray.set(1, (float) t.getShearY());
+        transformArray.set(2, 0f);
+        transformArray.set(3, (float) t.getShearX());
+        transformArray.set(4, (float) t.getScaleY());
+        transformArray.set(5, 0f);
+        transformArray.set(6, (float) t.getTranslateX());
+        transformArray.set(7, (float) -t.getTranslateY()); // Negate Y translation for WebGL space
+        transformArray.set(8, 1f);
     }
     
     /**
@@ -263,14 +302,15 @@ class WebGLContextStack {
      * This applies state that can be set directly on the WebGL context:
      * - Composite/blend modes (glBlendFunc)
      * - Clip rectangle (glScissor)
-     * 
-     * Note: Transform is NOT applied here because it needs to be converted
-     * to Float32Array format by the rasterizer before being passed to shaders.
+     * - Transform array (updated for shader uniforms)
      * 
      * This is called automatically by useColorProgram() and useTextureProgram()
      * to ensure state consistency whenever a shader program is activated.
      */
     void apply() {
+        // Update transform array from current transform
+        updateTransformArray();
+        
         // Apply composite/blend mode
         applyComposite(currentState.composite);
         
