@@ -29,33 +29,18 @@ class WebGLRasterizer implements Rasterizer {
     private final WebGLSurface surface;
     private final WebGLFramebuffer framebuffer;
 
-    private final AffineTransform transform = new AffineTransform();
-    private transient final Float32Array transformArray = new Float32Array(9);
-    private Rectangle clip = null;
-
-    private Color foreground = Color.WHITE;
-    private Color background = Color.BLACK;
-
-    private Composite composite = AlphaComposite.SrcOver;
-
     private boolean pushToScreen = false;
-
-    // identity transform array for pushing to screen
-    private static final Float32Array identityTransformArray = Float32Array.fromJavaArray(new float[] {
-            1f, 0f, 0f,
-            0f, 1f, 0f,
-            0f, 0f, 1f
-    });
+    private final boolean isChildRasterizer;
 
     WebGLRasterizer(WebGLSurfaceBackend backend, WebGLSurface surface, boolean pushToScreen) {
         this.backend = backend;
         this.framebuffer = surface.framebuffer;
         this.gl = backend.gl;
         this.surface = surface;
-        transform.setToIdentity();
-        updateTransformFloats(transform);
-        this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
+        backend.contextStack.getTransform().setToIdentity();
+        backend.contextStack.setClip(new Rectangle(0, 0, surface.getWidth(), surface.getHeight()));
         this.pushToScreen = pushToScreen;
+        this.isChildRasterizer = false; // Root rasterizer
     }
 
     private WebGLRasterizer(WebGLRasterizer other) {
@@ -63,12 +48,10 @@ class WebGLRasterizer implements Rasterizer {
         this.framebuffer = other.framebuffer;
         this.backend = other.backend;
         this.gl = other.gl;
-        this.transform.setTransform(other.transform);
-        this.foreground = other.foreground;
-        this.background = other.background;
-        this.composite = other.composite;
-        this.clip = new Rectangle(other.clip);
-        updateTransformFloats(this.transform);
+        this.isChildRasterizer = true; // Child rasterizer
+        
+        // Save state on creation for isolation
+        backend.contextStack.save();
     }
 
     @Override
@@ -77,13 +60,20 @@ class WebGLRasterizer implements Rasterizer {
     }
 
     @Override
+    public void dispose() {
+        // Only restore state if this is a child rasterizer
+        if (isChildRasterizer) {
+            backend.contextStack.restore();
+        }
+    }
+
+    @Override
     public void reset() {
-        this.transform.setToIdentity();
-        updateTransformFloats(transform);
-        this.foreground = Color.WHITE;
-        this.background = Color.BLACK;
-        this.composite = AlphaComposite.SrcOver;
-        this.clip = new Rectangle(0, 0, surface.getWidth(), surface.getHeight());
+        backend.contextStack.getTransform().setToIdentity();
+        backend.contextStack.setForeground(Color.WHITE);
+        backend.contextStack.setBackground(Color.BLACK);
+        backend.contextStack.setComposite(AlphaComposite.SrcOver);
+        backend.contextStack.setClip(new Rectangle(0, 0, surface.getWidth(), surface.getHeight()));
     }
 
     private void fillRect(float x, float y, float width, float height) {
@@ -91,7 +81,6 @@ class WebGLRasterizer implements Rasterizer {
         y = h - (y + height); // flip Y coordinate
         useColorProgram();
 
-        setColor(foreground);
         backend.setRectBuffer(x, y, width, height);
 
         gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
@@ -109,54 +98,16 @@ class WebGLRasterizer implements Rasterizer {
         surface.markDirty();
     }
 
-    private void setColor(Color c) {
-        float r = c.getRed() / 255.0f;
-        float g = c.getGreen() / 255.0f;
-        float b = c.getBlue() / 255.0f;
-        float a = c.getAlpha() / 255.0f;
-
-        backend.setColor(r, g, b, a);
-    }
-
     private void useColorProgram() {
         int width = surface.getWidth();
         int height = surface.getHeight();
 
-        backend.useColorProgram(width, height, this.transformArray);
-    }
-
-    private void applyClip() {
-        if (clip == null) {
-            gl.disable(WebGLRenderingContext.SCISSOR_TEST);
-            return;
-        }
-        gl.enable(WebGLRenderingContext.SCISSOR_TEST);
-
-        gl.scissor(clip.x, clip.y, clip.width, clip.height);
-    }
-
-    private void updateTransformFloats(AffineTransform transform) {
-        // Matrix needs to be in column-major order:
-        // ---------------
-        // | m00 m10 0 |
-        // | m01 m11 0 |
-        // | m02 m12 1 |
-        // ---------------
-        // Note: Y translation needs to be negated because we're in bottom-up WebGL
-        // space
-        // but AWT transforms work in top-down space
-        transformArray.set(0, (float) transform.getScaleX());
-        transformArray.set(1, (float) transform.getShearY());
-        transformArray.set(2, 0f);
-        transformArray.set(3, (float) transform.getShearX());
-        transformArray.set(4, (float) transform.getScaleY());
-        transformArray.set(5, 0f);
-        transformArray.set(6, (float) transform.getTranslateX());
-        transformArray.set(7, (float) -transform.getTranslateY()); // Negate Y translation for WebGL space
-        transformArray.set(8, 1f);
+        backend.useColorProgram(width, height);
     }
 
     private void clearRect(int x, int y, int width, int height) {
+        AffineTransform transform = backend.contextStack.getTransform();
+        Color background = backend.contextStack.getBackground();
         int tx = (int) transform.getTranslateX();
         int ty = (int) transform.getTranslateY();
         int h = surface.getHeight();
@@ -176,21 +127,18 @@ class WebGLRasterizer implements Rasterizer {
             gl.clearColor(0f, 0f, 0f, 0f);
         }
         gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
-        applyClip(); // restore previous clip
-
+        // Clip will be restored by next useProgram call which applies state
+        
         surface.markDirty();
     }
 
     private void setClip(Shape shape) {
         if (shape == null) {
-            this.clip = null;
-            gl.disable(WebGLRenderingContext.SCISSOR_TEST);
+            backend.contextStack.setClip(null);
             return;
         }
         Rectangle bounds = shape.getBounds();
-
-        this.clip = bounds;
-        applyClip();
+        backend.contextStack.setClip(bounds);
     }
 
     private void drawImage(Object img, int x, int y, int width, int height) {
@@ -259,8 +207,7 @@ class WebGLRasterizer implements Rasterizer {
 
     private void drawTexture(WebGLTexture texture, WebGLSurfaceBackend.SwizzleMode mode,
             int x, int y, int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
-        applyClip();
-        backend.useTextureProgram(mode, surface.getWidth(), surface.getHeight(), this.transformArray);
+        backend.useTextureProgram(mode, surface.getWidth(), surface.getHeight());
 
         y = surface.getHeight() - y - srcH;
 
@@ -316,7 +263,6 @@ class WebGLRasterizer implements Rasterizer {
         // Use WebGL line primitive for efficient GPU rendering
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Create line vertices (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = {
@@ -339,7 +285,6 @@ class WebGLRasterizer implements Rasterizer {
         // Use WebGL LINE_LOOP for efficient GPU rendering
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Create vertices array (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = new float[npoints * 2];
@@ -362,7 +307,6 @@ class WebGLRasterizer implements Rasterizer {
         // Use WebGL TRIANGLE_FAN for efficient GPU polygon filling
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Create vertices array (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = new float[npoints * 2];
@@ -390,7 +334,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Generate ellipse vertices using parametric equations
         // Use enough segments for smooth appearance
@@ -426,7 +369,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Build rounded rectangle as a single triangle fan
         // Segments per corner arc
@@ -524,7 +466,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW
         // positive)
@@ -565,7 +506,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Generate ellipse vertices
         int segments = Math.max(32, (Math.max(rx, ry) / 2));
@@ -595,7 +535,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW
         // positive)
@@ -630,7 +569,6 @@ class WebGLRasterizer implements Rasterizer {
 
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Build rounded rectangle outline as a single line loop
         int segsPerCorner = Math.max(4, Math.max(rx, ry) / 4);
@@ -710,7 +648,6 @@ class WebGLRasterizer implements Rasterizer {
         // Use WebGL LINE_STRIP for efficient GPU rendering
         int h = surface.getHeight();
         useColorProgram();
-        setColor(foreground);
 
         // Create vertices array (flip Y coordinates to WebGL space)
         float[] verts = new float[npoints * 2];
@@ -732,6 +669,7 @@ class WebGLRasterizer implements Rasterizer {
         // operations)
         // Consider using software rendering for complex copyArea operations
 
+        java.awt.geom.AffineTransform transform = backend.contextStack.getTransform();
         int srcX = x + (int) transform.getTranslateX();
         int srcY = y + (int) transform.getTranslateY();
         int destX = srcX + dx;
@@ -768,57 +706,7 @@ class WebGLRasterizer implements Rasterizer {
     }
 
     private void setComposite(Composite composite) {
-        this.composite = composite != null ? composite : AlphaComposite.SrcOver;
-
-        // Update WebGL blend function based on composite
-        if (this.composite instanceof AlphaComposite) {
-            AlphaComposite ac = (AlphaComposite) this.composite;
-            int rule = ac.getRule();
-
-            // Map AlphaComposite rules to WebGL blend functions
-            switch (rule) {
-                case AlphaComposite.CLEAR:
-                    gl.blendFunc(WebGLRenderingContext.ZERO, WebGLRenderingContext.ZERO);
-                    break;
-                case AlphaComposite.SRC:
-                    gl.blendFunc(WebGLRenderingContext.ONE, WebGLRenderingContext.ZERO);
-                    break;
-                case AlphaComposite.DST:
-                    gl.blendFunc(WebGLRenderingContext.ZERO, WebGLRenderingContext.ONE);
-                    break;
-                case AlphaComposite.SRC_OVER:
-                    gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
-                    break;
-                case AlphaComposite.DST_OVER:
-                    gl.blendFunc(WebGLRenderingContext.ONE_MINUS_DST_ALPHA, WebGLRenderingContext.DST_ALPHA);
-                    break;
-                case AlphaComposite.SRC_IN:
-                    gl.blendFunc(WebGLRenderingContext.DST_ALPHA, WebGLRenderingContext.ZERO);
-                    break;
-                case AlphaComposite.DST_IN:
-                    gl.blendFunc(WebGLRenderingContext.ZERO, WebGLRenderingContext.SRC_ALPHA);
-                    break;
-                case AlphaComposite.SRC_OUT:
-                    gl.blendFunc(WebGLRenderingContext.ONE_MINUS_DST_ALPHA, WebGLRenderingContext.ZERO);
-                    break;
-                case AlphaComposite.DST_OUT:
-                    gl.blendFunc(WebGLRenderingContext.ZERO, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
-                    break;
-                case AlphaComposite.SRC_ATOP:
-                    gl.blendFunc(WebGLRenderingContext.DST_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
-                    break;
-                case AlphaComposite.DST_ATOP:
-                    gl.blendFunc(WebGLRenderingContext.ONE_MINUS_DST_ALPHA, WebGLRenderingContext.SRC_ALPHA);
-                    break;
-                case AlphaComposite.XOR:
-                    gl.blendFunc(WebGLRenderingContext.ONE_MINUS_DST_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
-                    break;
-                default:
-                    // Default to SRC_OVER
-                    gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
-                    break;
-            }
-        }
+        backend.contextStack.setComposite(composite);
     }
 
     @Override
@@ -828,30 +716,25 @@ class WebGLRasterizer implements Rasterizer {
         gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
         gl.framebufferTexture2D(WebGLRenderingContext.FRAMEBUFFER, WebGLRenderingContext.COLOR_ATTACHMENT0,
                 WebGLRenderingContext.TEXTURE_2D, this.surface.texture, 0);
-
-        gl.enable(WebGLRenderingContext.BLEND);
-        // Apply the current composite mode's blend function
-        setComposite(this.composite);
-
-        updateTransformFloats(this.transform);
-        applyClip();
+        
+        // Set surface dimensions for clip application
+        backend.contextStack.setSurfaceDimensions(surface.getWidth(), surface.getHeight());
 
         for (SurfaceCommand cmd : cmds) {
             switch (cmd.type) {
                 case SET_COLOR:
                     Color c = (Color) cmd.obj;
                     if (cmd.argCount > 0 && cmd.args[0] == 0) {
-                        this.foreground = c;
+                        backend.contextStack.setForeground(c);
                     } else if (cmd.argCount > 0 && cmd.args[0] == 1) {
-                        this.background = c;
+                        backend.contextStack.setBackground(c);
                     } else {
                         log.error("WebGLRasterizer: Unknown color target: {}", cmd.argCount > 0 ? cmd.args[0] : -1);
                     }
                     break;
                 case SET_TRANSFORM:
                     AffineTransform at = (AffineTransform) cmd.obj;
-                    this.transform.setTransform(at);
-                    updateTransformFloats(this.transform);
+                    backend.contextStack.setTransform((java.awt.geom.AffineTransform) at);
                     break;
                 case SET_CLIP_RECT:
                     setClip((Shape) cmd.obj);
@@ -935,10 +818,14 @@ class WebGLRasterizer implements Rasterizer {
 
         gl.activeTexture(WebGLRenderingContext.TEXTURE0);
         gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, surface.texture);
+        
+        // Save current transform and temporarily use identity for screen push
+        backend.contextStack.save();
+        backend.contextStack.getTransform().setToIdentity();
+        
         // no swizzling when pushing to screen, as the surface texture is already in
         // RGBA format
-        backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.NONE, surface.getWidth(), surface.getHeight(),
-                identityTransformArray);
+        backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.NONE, surface.getWidth(), surface.getHeight());
 
         // full-screen quad
 
@@ -962,5 +849,8 @@ class WebGLRasterizer implements Rasterizer {
 
         backend.uploadQuadVertices(verts, uvs);
         gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+        
+        // Restore previous transform
+        backend.contextStack.restore();
     }
 }
