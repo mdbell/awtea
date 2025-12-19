@@ -253,7 +253,7 @@ public class TTextField extends TComponent {
 		addFocusListener(new TFocusListener() {
 			@Override
 			public void focusGained(TFocusEvent e) {
-				caretVisible = true;
+				caretVisible = true; // Start with caret visible
 				lastCaretBlink = System.currentTimeMillis();
 				repaint();
 			}
@@ -750,8 +750,8 @@ public class TTextField extends TComponent {
 		// The text baseline should be positioned correctly
 		g.drawString(text, PADDING_X - scrollOffset, textY);
 
-		// Draw caret if focused and visible (blinking)
-		if (isFocusOwner() && caretVisible && editable) {
+		// Draw caret if focused and editable
+		if (isFocusOwner() && editable) {
 			// Toggle caret visibility for blinking effect
 			long now = System.currentTimeMillis();
 			if (now - lastCaretBlink > CARET_BLINK_INTERVAL) {
@@ -802,7 +802,7 @@ public class TTextField extends TComponent {
 			return new TDimension(width + 2 * PADDING_X, 25);
 		}
 
-		TFont font = g.getFont();
+		TFont font = getFont();
 		if (font == null) {
 			font = new TFont("SansSerif", TFont.PLAIN, 12);
 		}
