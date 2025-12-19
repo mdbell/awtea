@@ -9,6 +9,7 @@ import me.mdbell.awtea.classlib.java.awt.event.TFocusEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseWheelEvent;
+import me.mdbell.awtea.input.KeyboardKey;
 import me.mdbell.awtea.input.MouseButtonType;
 import me.mdbell.awtea.input.MouseEventType;
 import me.mdbell.awtea.util.ElementUtils;
@@ -186,11 +187,39 @@ public final class TEventManager implements AutoCloseable {
                     return;
                 }
                 KeyboardEvent ke = (KeyboardEvent) e;
+                
+                // Prevent default browser behavior for keys that components might handle
+                preventDefaultForSpecialKeys(ke);
+                
                 TKeyEvent awt = TKeyEvent.adapt(focusOwner, ke);
                 post(awt);
             }).track(registrations);
         }
         return this;
+    }
+    
+    /**
+     * Prevents default browser behavior for special keys and keyboard shortcuts
+     * that components typically want to handle themselves.
+     * 
+     * @param event the native keyboard event
+     */
+    private void preventDefaultForSpecialKeys(KeyboardEvent event) {
+        KeyboardKey key = KeyboardKey.lookup(event.getCode());
+        
+        // Prevent default for TAB to avoid focus change outside the canvas
+        if (key == KeyboardKey.TAB) {
+            event.preventDefault();
+            return;
+        }
+        
+        // Prevent default browser behavior for common keyboard shortcuts
+        // (Ctrl/Meta + A/C/V/X/Z) so components can handle them
+        boolean isCtrlOrMeta = event.isCtrlKey() || event.isMetaKey();
+        if (isCtrlOrMeta && (key == KeyboardKey.A || key == KeyboardKey.C || 
+                key == KeyboardKey.V || key == KeyboardKey.X || key == KeyboardKey.Z)) {
+            event.preventDefault();
+        }
     }
 
     /**
