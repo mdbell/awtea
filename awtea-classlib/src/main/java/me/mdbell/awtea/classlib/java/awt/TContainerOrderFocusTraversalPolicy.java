@@ -175,6 +175,7 @@ public class TContainerOrderFocusTraversalPolicy extends TFocusTraversalPolicy {
     protected boolean accept(TComponent component) {
         return component != null
                 && component.isVisible()
+                && component.isEnabled()
                 && component.isFocusable();
     }
 }

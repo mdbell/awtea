@@ -12,7 +12,7 @@ import static me.mdbell.awtea.test.Assert.*;
 /**
  * Tests for the Focus Traversal System.
  */
-public class TFocusTraversalTest {
+public class FocusTraversalTest {
 
     private TKeyboardFocusManager focusManager;
     private TFrame frame;

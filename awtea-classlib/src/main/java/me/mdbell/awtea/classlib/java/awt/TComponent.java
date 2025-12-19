@@ -47,6 +47,10 @@ public abstract class TComponent implements TImageObserver {
     private boolean focusTraversalKeysEnabled = true;
 
     @Getter
+    @Setter
+    private boolean enabled = true;
+
+    @Getter
     private boolean valid = false;
 
     @Getter

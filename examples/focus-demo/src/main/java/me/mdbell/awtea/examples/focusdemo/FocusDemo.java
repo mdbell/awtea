@@ -107,6 +107,7 @@ public class FocusDemo extends Applet {
                 button.setBackground(new Color(255, 255, 200)); // Light yellow
                 focusChangeCount++;
                 updateStatus("Component focused: " + button.getLabel() + " (Focus change #" + focusChangeCount + ")");
+                updateInstructions(); // Update instructions to show current focus
             }
 
             @Override
