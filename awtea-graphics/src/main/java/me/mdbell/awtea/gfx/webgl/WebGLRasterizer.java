@@ -415,7 +415,8 @@ class WebGLRasterizer implements Rasterizer {
         // Build rounded rectangle as a single triangle fan
         // Segments per corner arc
         int segsPerCorner = Math.max(4, Math.max(rx, ry) / 4);
-        int totalVerts = 1 + 4 * segsPerCorner + 4; // center + 4 corners + 4 straight edges
+        // Calculate correct vertex count: center + edges + corners (each corner is segsPerCorner+1 vertices)
+        int totalVerts = 1 + 2 + 4 * (segsPerCorner + 1) + 4 + 1; // center + 2 top edges + 4 corners + 4 edges + 1 closing
         float[] verts = new float[totalVerts * 2];
         
         // Center point
@@ -610,7 +611,8 @@ class WebGLRasterizer implements Rasterizer {
         
         // Build rounded rectangle outline as a single line loop
         int segsPerCorner = Math.max(4, Math.max(rx, ry) / 4);
-        int totalVerts = 4 + 4 * segsPerCorner; // 4 straight edges + 4 corners
+        // Calculate correct vertex count: corners (each is segsPerCorner+1) + edges
+        int totalVerts = 2 + 4 * (segsPerCorner + 1) + 4; // 2 top edge + 4 corners + 4 edges between corners
         float[] verts = new float[totalVerts * 2];
         
         int idx = 0;
