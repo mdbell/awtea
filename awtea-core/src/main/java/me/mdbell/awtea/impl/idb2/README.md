@@ -44,12 +44,14 @@ try (VirtualFileAccessor accessor = file.createAccessor(true, false, false)) {
 
 ## Key Features
 
-✅ **Blob Storage** - Entire files stored as Blobs (no chunking)  
+✅ **Blob Storage** - Files stored as Blobs with lazy chunk loading  
+✅ **Large File Support** - Handles 100MB+ files efficiently (64KB chunks)  
 ✅ **JSPromise API** - Clean async with `.await()` support  
 ✅ **Path Caching** - Up to 1000 normalized paths cached  
 ✅ **Adaptive Caching** - 64KB read/write buffers  
 ✅ **Statistics** - Performance monitoring built-in  
 ✅ **Batch Operations** - Single-transaction bulk ops  
+✅ **Low Memory** - Only modified chunks kept in memory  
 
 ## Database Schema
 
@@ -71,15 +73,17 @@ IndexedDBVirtualFileSystem2
 ## Performance
 
 - **Path normalization**: O(1) with caching
-- **File read**: Single IndexedDB get + Blob read
-- **File write**: Buffered writes, single Blob put on flush
+- **File read**: Lazy chunk loading from Blob (64KB chunks)
+- **File write**: Modified chunks in memory, single Blob reconstruction on flush
 - **Directory listing**: Indexed query on parent field
+- **Large files**: Minimal memory footprint (only modified chunks loaded)
 
 ## Documentation
 
 See `docs/INDEXEDDB_VFS_V2.md` for complete documentation including:
 - Detailed architecture
 - Usage examples
+- Large file support details
 - Migration guide from v1
 - Technical implementation notes
 
@@ -87,10 +91,11 @@ See `docs/INDEXEDDB_VFS_V2.md` for complete documentation including:
 
 | Feature | VFS v1 (idb) | VFS v2 (idb2) |
 |---------|--------------|---------------|
-| Storage | 8KB chunks | Single Blob |
+| Storage | 8KB chunks | Single Blob + lazy loading |
 | Database | `vfs` v2 | `vfs_v3` v3 |
 | Async API | Callbacks | JSPromise |
-| Random Access | Chunk lookup | Direct memory |
+| Random Access | Chunk lookup | Lazy chunk loading |
+| Large Files | Limited | 100MB+ supported |
 | Path Caching | No | Yes (1000 entries) |
 | Statistics | No | Yes (VFSStats) |
 | Batch Ops | No | Yes (VFSBatch) |

@@ -188,23 +188,33 @@ batch.execute(store).await();
 
 ### Advantages over VFS v1
 
-1. **Random Access**: Blob storage eliminates chunk lookup overhead
-2. **Write Performance**: Single Blob write instead of multiple chunk writes
-3. **Read Performance**: Entire file cached in memory for multiple reads
+1. **Random Access**: Blob storage with lazy chunk loading eliminates chunk lookup overhead
+2. **Write Performance**: Optimized chunk-based writes, single Blob reconstruction on flush
+3. **Read Performance**: Lazy loading - only reads needed portions of file from Blob
 4. **Code Clarity**: JSPromise.await() provides synchronous-style code without callbacks
 5. **Metadata Efficiency**: Timestamps and size stored directly (no chunk iteration)
+6. **Large File Support**: Supports files of any size with 64KB chunk-based lazy loading
 
 ### Memory Considerations
 
-- **Files loaded entirely in memory** during access (via `IndexedDBVirtualFileAccessor2`)
-- Best for small to medium files (< 10MB)
-- Large files may benefit from streaming or chunked approaches
-- Caching layer adds 64KB overhead per open file (32KB read + 32KB write buffers)
+- **Lazy Loading Architecture**: Only modified chunks kept in memory (64KB per chunk)
+- **Efficient for Large Files**: Supports 100MB+ files with minimal memory footprint
+- **Read-on-Demand**: Unmodified chunks read from Blob only when accessed
+- **Write Buffering**: Modified chunks kept in memory until flush
+- **Caching Layer**: Adds 64KB overhead per open file (32KB read + 32KB write buffers)
+
+### File Size Support
+
+- **Small Files (< 1MB)**: Entire file may be in memory if all chunks accessed
+- **Medium Files (1-10MB)**: Only accessed/modified chunks in memory
+- **Large Files (10MB-100MB+)**: Minimal memory usage with lazy loading
+- **Maximum**: Limited only by browser's IndexedDB quota (typically several GB)
 
 ### Caching Behavior
 
-- **Write Buffer**: 32KB, auto-flushes when full or on close
-- **Read Cache**: 32KB, adaptive prefetching
+- **Write Buffer**: 32KB in caching layer, auto-flushes when full or on close
+- **Read Cache**: 32KB in caching layer, adaptive prefetching
+- **Chunk Size**: 64KB per chunk in base accessor
 - **Path Cache**: 1000 normalized paths
 - **Metadata Cache**: Per-accessor size and position caching
 
@@ -241,22 +251,21 @@ if (oldFile.isFile()) {
 
 ## Limitations
 
-1. **Browser Compatibility**: Requires IndexedDB and Blob API support
-2. **File Size**: Large files consume memory (loaded entirely into accessor)
-3. **Concurrent Access**: No file locking mechanism (last write wins)
-4. **Storage Quota**: Subject to browser IndexedDB storage limits
+1. **Browser Compatibility**: Requires IndexedDB and Blob API support (including Blob.slice())
+2. **Concurrent Access**: No file locking mechanism (last write wins)
+3. **Storage Quota**: Subject to browser IndexedDB storage limits (typically several GB)
+4. **Integer Position**: File positions limited to 32-bit integers (~2GB max position)
 
 ## Future Enhancements
 
 Potential improvements for future versions:
 
-- Streaming file access for large files
 - Compressed Blob storage
 - File locking and concurrent access control
-- Incremental writes (avoiding full file reload)
 - Background file sync/persistence
 - Encryption support
 - Transaction rollback support
+- Configurable chunk size for different workloads
 
 ## Debugging
 
@@ -301,6 +310,28 @@ Blob blob = createBlob(arr); // Uses: new Blob([arr])
 ArrayBuffer buffer = blob.arrayBuffer().await();
 byte[] data = convertArrayBufferToBytes(buffer); // Uses: new Uint8Array(buffer)
 ```
+
+### Blob Slicing for Large Files
+
+For large files, the VFS uses Blob's `slice()` method to read only needed portions:
+
+```java
+// Read a slice of a large Blob without loading entire file
+Blob slice = blob.slice(startOffset, endOffset);
+byte[] chunkData = readBlobData(slice).await();
+```
+
+This lazy-loading approach allows efficient handling of files larger than available memory.
+
+### Lazy Loading Architecture
+
+The accessor uses a chunk-based approach (64KB chunks):
+
+1. **Read**: Chunks read on-demand from Blob using `slice()`
+2. **Write**: Modified chunks kept in memory (HashMap)
+3. **Flush**: Reconstructs full file from original Blob + modified chunks
+
+This provides O(1) random access while maintaining low memory footprint for large files.
 
 ### Path Normalization
 

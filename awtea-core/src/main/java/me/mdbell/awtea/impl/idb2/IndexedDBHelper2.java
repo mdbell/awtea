@@ -304,6 +304,35 @@ public class IndexedDBHelper2 {
     }
     
     /**
+     * Read a slice of blob data (async)
+     * 
+     * @param blob the blob to read from
+     * @param start starting byte offset (inclusive)
+     * @param end ending byte offset (exclusive)
+     * @return promise resolving to byte array containing the slice
+     */
+    public static JSPromise<byte[]> readBlobSlice(FileEntry.Blob blob, int start, int end) {
+        if (start < 0 || end < start) {
+            throw new IllegalArgumentException("Invalid slice range: [" + start + ", " + end + ")");
+        }
+        
+        FileEntry.Blob slice = blob.slice(start, end);
+        return readBlobData(slice);
+    }
+    
+    /**
+     * Read a slice of blob data (sync via await)
+     * 
+     * @param blob the blob to read from
+     * @param start starting byte offset (inclusive)
+     * @param end ending byte offset (exclusive)
+     * @return byte array containing the slice
+     */
+    public static byte[] readBlobSliceSync(FileEntry.Blob blob, int start, int end) {
+        return readBlobSlice(blob, start, end).await();
+    }
+    
+    /**
      * Get VFS statistics
      */
     public static VFSStats getStats() {

@@ -152,5 +152,14 @@ public interface FileEntry extends JSObject {
          * @return promise resolving to ArrayBuffer
          */
         org.teavm.jso.core.JSPromise<ArrayBuffer> arrayBuffer();
+        
+        /**
+         * Create a new Blob containing a subset of this blob's data
+         * @param start starting byte offset (inclusive)
+         * @param end ending byte offset (exclusive)
+         * @return new Blob containing the slice
+         */
+        @org.teavm.jso.JSBody(params = {"start", "end"}, script = "return this.slice(start, end);")
+        Blob slice(int start, int end);
     }
 }
