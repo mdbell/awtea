@@ -70,6 +70,12 @@ tasks.register("buildAwtRasterWasm") {
 
     // 3. Declare output
     outputs.file("$projectDir/build/wasm/awt_raster.wasm")
+    
+    // Only build WASM when buildWasm property is explicitly set
+    // This makes WASM compilation opt-in for builds
+    onlyIf {
+        buildWasm
+    }
 
     doLast {
         val sourceList = cSources.map { "src/main/native/${it.name}" }

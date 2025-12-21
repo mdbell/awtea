@@ -43,7 +43,7 @@ Modular font rendering with `FontRenderer` interface and `FontPeer` bridge:
 ./gradlew build                                    # Build all modules (without WASM)
 ./gradlew build -PbuildWasm=true                   # Build all modules with WASM compilation
 ./gradlew :awtea-graphics:build                    # Build specific module (without WASM)
-./gradlew :examples:gui-demo:build                 # Build example (generates JS/HTML and WASM)
+./gradlew --no-daemon :examples:gui-demo:build -PbuildWasm=true    # Build example with WASM
 ./gradlew :examples:gui-demo:generateJavaScript    # Compile Java → JS via TeaVM
 ```
 
@@ -63,16 +63,17 @@ This requirement only applies to tasks that invoke TeaVM's JavaScript/WASM gener
 ### WASM Compilation (Native C → WASM)
 The `awtea-graphics` module compiles C rasterization code to WASM using Emscripten:
 ```bash
-./gradlew :awtea-graphics:buildAwtRasterWasm  # Compile src/main/native/*.c → build/wasm/awt_raster.wasm
+./gradlew :awtea-graphics:buildAwtRasterWasm -PbuildWasm=true  # Compile src/main/native/*.c → build/wasm/awt_raster.wasm
 ```
 **Key points:**
 - Uses `emcc` (Emscripten compiler) - requires dev container or local Emscripten SDK
 - C sources in `awtea-graphics/src/main/native/`
-- **WASM compilation is optional for library builds** - use `-PbuildWasm=true` to enable
-- When building libraries WITHOUT `-PbuildWasm=true`, WASM is not compiled or bundled into resources
-- Example builds automatically trigger WASM compilation (examples depend on `:awtea-graphics:buildAwtRasterWasm`)
+- **WASM compilation is opt-in** - requires `-PbuildWasm=true` flag
+- When building libraries WITHOUT `-PbuildWasm=true`, WASM is skipped (task marked as SKIPPED)
+- Example builds require `-PbuildWasm=true` to compile WASM
 - WASM file copied to example dist directories during example builds (loaded at runtime by examples)
 - Library development can proceed without Emscripten installed
+- **Workflow**: Build WASM once with `-PbuildWasm=true`, then it's reused for subsequent builds
 
 ### Code Generation (Required Before Build)
 Enums are code-generated from YAML schemas before compilation:
