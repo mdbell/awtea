@@ -25,6 +25,8 @@ typedef struct {
 } StackFrame;
 
 // Control stack tracking at compile time
+// Note: This is controlled by AWTEA_DEBUG_BUILD in awt_build_info.h
+// Can be overridden explicitly if needed
 #ifndef ENABLE_WASM_STACK_TRACKING
 #define ENABLE_WASM_STACK_TRACKING 1
 #endif

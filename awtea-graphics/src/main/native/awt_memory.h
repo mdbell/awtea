@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+// Control memory tracking at compile time
+// Note: This is controlled by AWTEA_DEBUG_BUILD in awt_build_info.h
+// Can be overridden explicitly if needed
 #ifndef ENABLE_WASM_MEMORY_TRACKING
 #define ENABLE_WASM_MEMORY_TRACKING 1
 #endif

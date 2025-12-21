@@ -46,6 +46,10 @@ var wasmOutputDir = file(layout.buildDirectory.dir("wasm"))
 
 var nativeSrcDir = file("${projectDir}/src/main/native/")
 
+// Build mode: 'debug' (default) or 'release'
+// Can be overridden with: ./gradlew -PwasmBuildMode=release buildAwtRasterWasm
+val wasmBuildMode = project.findProperty("wasmBuildMode")?.toString() ?: "debug"
+
 // Generate enums before building
 tasks.named("compileJava") {
     dependsOn(rootProject.tasks.named("generateEnums"))
@@ -67,27 +71,50 @@ tasks.register("buildAwtRasterWasm") {
     // 2. Declare inputs
     inputs.files(cSources)
     inputs.files(headerFiles)
+    inputs.property("buildMode", wasmBuildMode)
 
     // 3. Declare output
     outputs.file("$projectDir/build/wasm/awt_raster.wasm")
 
     doLast {
         val sourceList = cSources.map { "src/main/native/${it.name}" }
+        
+        val isDebug = wasmBuildMode == "debug"
+        
+        // Base arguments
+        val args = mutableListOf(
+            "emcc",
+            "-Isrc/main/native",
+            * sourceList.toTypedArray(),
+            "-s", "STANDALONE_WASM",
+            "-s", "WASM_BIGINT=1",
+            "-s", "ERROR_ON_UNDEFINED_SYMBOLS=0",
+            "-s", "INITIAL_MEMORY=134217728", // 128MB
+            "--no-entry",
+            "-o", "build/wasm/awt_raster.wasm"
+        )
+        
+        // Debug vs Release configuration
+        if (isDebug) {
+            println("Building WASM rasterizer in DEBUG mode")
+            args.addAll(listOf(
+                "-O1",                          // Minimal optimization for faster builds
+                "-g",                           // Include debug symbols
+                "-DAWTEA_DEBUG_BUILD=1",        // Master debug flag
+                "-DAWTEA_BUILD_VERSION=\"0.1.0-dev\""
+            ))
+        } else {
+            println("Building WASM rasterizer in RELEASE mode")
+            args.addAll(listOf(
+                "-O3",                          // Maximum optimization
+                "-DNDEBUG",                     // Disable C assertions
+                "-DAWTEA_DEBUG_BUILD=0",        // Master debug flag OFF
+                "-DAWTEA_BUILD_VERSION=\"0.1.0\""
+            ))
+        }
 
         exec {
-            commandLine(
-                "emcc",
-                "-Isrc/main/native",
-                * sourceList.toTypedArray(),   // ← all .c sources here
-                "-O2",
-                "-s", "STANDALONE_WASM",
-                "-s", "WASM_BIGINT=1",
-                "-s", "ERROR_ON_UNDEFINED_SYMBOLS=0",
-                "-s", "INITIAL_MEMORY=134217728", // 128MB
-                "-DENABLE_WASM_STACK_TRACKING=1",  // Enable stack tracking by default
-                "--no-entry",
-                "-o", "build/wasm/awt_raster.wasm"
-            )
+            commandLine(args)
         }
     }
 }

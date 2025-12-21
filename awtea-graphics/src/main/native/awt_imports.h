@@ -15,6 +15,8 @@ extern void wasm_report_memory_usage(size_t allocated_bytes, size_t alloc_count,
 extern void wasm_assertion_failed(const char* expr, const char* file, int line);
 
 // Assertion macro (can be disabled via ENABLE_WASM_ASSERTIONS=0)
+// Note: This is controlled by AWTEA_DEBUG_BUILD in awt_build_info.h
+// Can be overridden explicitly if needed
 #ifndef ENABLE_WASM_ASSERTIONS
 #define ENABLE_WASM_ASSERTIONS 1
 #endif

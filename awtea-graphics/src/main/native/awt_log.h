@@ -14,6 +14,8 @@
 #define LOG_MESSAGE_MAX_SIZE 512
 
 // Control logging at compile time
+// Note: This is controlled by AWTEA_DEBUG_BUILD in awt_build_info.h
+// Can be overridden explicitly if needed
 #ifndef ENABLE_WASM_LOGGING
 #define ENABLE_WASM_LOGGING 1
 #endif
