@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VFS Demo - IndexedDB VFS v2</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #764ba2;
+            margin-top: 30px;
+        }
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .info-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .info-box li {
+            margin: 5px 0;
+        }
+        #log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-info { color: #4ec9b0; }
+        .log-warn { color: #dcdcaa; }
+        .log-error { color: #f48771; }
+        .log-debug { color: #9cdcfe; }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status.running {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+        .status.complete {
+            background: #55efc4;
+            color: #00b894;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .feature strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ IndexedDB VFS v2 Demo</h1>
+        
+        <div class="info-box">
+            <h3>About This Demo</h3>
+            <p>This demo showcases the IndexedDB Virtual File System v2 implementation, which provides:</p>
+            <div class="feature-list">
+                <div class="feature">
+                    <strong>✅ Java I/O Compatibility</strong><br>
+                    Use standard java.io.* classes
+                </div>
+                <div class="feature">
+                    <strong>✅ Large File Support</strong><br>
+                    Handles 100MB+ files efficiently
+                </div>
+                <div class="feature">
+                    <strong>✅ Lazy Loading</strong><br>
+                    64KB chunks loaded on-demand
+                </div>
+                <div class="feature">
+                    <strong>✅ Random Access</strong><br>
+                    O(1) seeks with Blob slicing
+                </div>
+                <div class="feature">
+                    <strong>✅ Performance Stats</strong><br>
+                    Built-in monitoring
+                </div>
+                <div class="feature">
+                    <strong>✅ Persistent Storage</strong><br>
+                    Files saved in IndexedDB
+                </div>
+            </div>
+        </div>
+
+        <h2>Demo Sections</h2>
+        <ul>
+            <li><strong>Basic File Operations:</strong> Write and read text files</li>
+            <li><strong>Random Access:</strong> Structured data with seeks</li>
+            <li><strong>Large Files:</strong> 5MB file with lazy loading</li>
+            <li><strong>Statistics:</strong> Performance metrics</li>
+        </ul>
+
+        <div id="status-container">
+            <span class="status running">Demo Running...</span>
+        </div>
+
+        <h2>Console Output</h2>
+        <div id="log-container"></div>
+    </div>
+
+    <script type="module" src="js/vfs-demo.js"></script>
+    <script>
+        // Intercept console logs and display them
+        const logContainer = document.getElementById('log-container');
+        const statusContainer = document.getElementById('status-container');
+        
+        function addLog(level, message) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${level}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Override console methods
+        const originalLog = console.log;
+        const originalInfo = console.info;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog('info', args.join(' '));
+        };
+
+        console.info = function(...args) {
+            originalInfo.apply(console, args);
+            addLog('info', args.join(' '));
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog('warn', args.join(' '));
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('error', args.join(' '));
+        };
+
+        // Detect when demo is complete
+        setTimeout(() => {
+            const lastLog = logContainer.lastChild?.textContent || '';
+            if (lastLog.includes('Demo Complete')) {
+                statusContainer.innerHTML = '<span class="status complete">Demo Complete ✓</span>';
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
