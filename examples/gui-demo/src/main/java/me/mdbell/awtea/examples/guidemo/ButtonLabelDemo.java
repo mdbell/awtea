@@ -14,7 +14,7 @@ public class ButtonLabelDemo {
     private static int clickCount = 0;
 
     public static void main(String[] args) {
-        System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
+        System.setProperty("me.mdbell.awtea.wasm.module_path", "awt_raster.wasm");
         System.setProperty("me.mdbell.awtea.font.subpixel", "true");
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 

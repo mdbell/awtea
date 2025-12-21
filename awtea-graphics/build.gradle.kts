@@ -70,6 +70,12 @@ tasks.register("buildAwtRasterWasm") {
 
     // 3. Declare output
     outputs.file("$projectDir/build/wasm/awt_raster.wasm")
+    
+    // Only build WASM when buildWasm property is explicitly set
+    // This makes WASM compilation opt-in for builds
+    onlyIf {
+        buildWasm
+    }
 
     doLast {
         val sourceList = cSources.map { "src/main/native/${it.name}" }
@@ -92,12 +98,19 @@ tasks.register("buildAwtRasterWasm") {
     }
 }
 
-tasks.named<ProcessResources>("processResources") {
-    dependsOn("buildAwtRasterWasm")
+// Configuration property to control WASM compilation (default: false)
+// Enable with: ./gradlew build -PbuildWasm=true
+val buildWasm = project.findProperty("buildWasm")?.toString()?.toBoolean() ?: false
 
-    from(wasmOutputDir) {
-        include("awt_raster.wasm")
-        into("") // root of resources
+tasks.named<ProcessResources>("processResources") {
+    // Conditionally depend on WASM build if enabled
+    if (buildWasm) {
+        dependsOn("buildAwtRasterWasm")
+        
+        from(wasmOutputDir) {
+            include("awt_raster.wasm")
+            into("") // root of resources
+        }
     }
 }
 
@@ -106,7 +119,10 @@ tasks.register<Exec>("denoTest") {
     description = "Run Deno tests for WASM rasterizer in isolation"
     group = "verification"
     
-    dependsOn("buildAwtRasterWasm")
+    // Conditionally depend on WASM build
+    if (buildWasm || file("build/wasm/awt_raster.wasm").exists()) {
+        dependsOn("buildAwtRasterWasm")
+    }
     
     workingDir = file("src/test/deno")
     
@@ -116,7 +132,16 @@ tasks.register<Exec>("denoTest") {
     inputs.files(fileTree("src/test/deno") {
         include("*.ts")
     })
-    inputs.file("build/wasm/awt_raster.wasm")
+    
+    // Only declare WASM as input if it exists
+    if (file("build/wasm/awt_raster.wasm").exists()) {
+        inputs.file("build/wasm/awt_raster.wasm")
+    }
+    
+    // Only run if WASM is available
+    onlyIf {
+        file("build/wasm/awt_raster.wasm").exists()
+    }
 }
 
 // Optional: Hook into the check task to run Deno tests
@@ -203,7 +228,11 @@ tasks.register<Exec>("denoTestJava") {
     group = "verification"
     
     dependsOn("buildDenoJavaTests")
-    dependsOn("buildAwtRasterWasm")  // Ensure WASM file is built
+    
+    // Conditionally depend on WASM build
+    if (buildWasm || file("build/wasm/awt_raster.wasm").exists()) {
+        dependsOn("buildAwtRasterWasm")
+    }
     
     // Run from module root so Java code can find WASM at build/wasm/awt_raster.wasm
     workingDir = projectDir
@@ -214,11 +243,20 @@ tasks.register<Exec>("denoTestJava") {
     
     inputs.files(sourceSets["test"].allSource)
     inputs.file("${layout.buildDirectory.get()}/deno-tests/classes.js")
-    inputs.file("build/wasm/awt_raster.wasm")
+    
+    // Only declare WASM as input if it exists
+    if (file("build/wasm/awt_raster.wasm").exists()) {
+        inputs.file("build/wasm/awt_raster.wasm")
+    }
     
     // Set environment variable to help with file URL resolution
     environment("DENO_DIR", layout.buildDirectory.dir(".deno").get().asFile.absolutePath)
     environment("DENO_JOBS", "1")
+    
+    // Only run if WASM is available
+    onlyIf {
+        file("build/wasm/awt_raster.wasm").exists()
+    }
 }
 
 // Integrate Deno tests with the standard test task

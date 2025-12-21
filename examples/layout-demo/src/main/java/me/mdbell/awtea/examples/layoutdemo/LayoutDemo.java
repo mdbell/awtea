@@ -16,7 +16,7 @@ public class LayoutDemo {
 
     public static void main(String[] args) {
         LoggerFactory.setGlobalLevel(LogLevel.INFO);
-        System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
+        System.setProperty("me.mdbell.awtea.wasm.module_path", "awt_raster.wasm");
         System.setProperty("me.mdbell.awtea.font.subpixel", "true");
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 
