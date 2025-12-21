@@ -3,6 +3,7 @@ package me.mdbell.awtea.examples.animationdemo;
 import me.mdbell.awtea.Helper;
 import me.mdbell.awtea.gfx.CompositeSurfaceBackend;
 import me.mdbell.awtea.gfx.SurfaceBackendFactory;
+import me.mdbell.awtea.gfx.wasm.WasmBuildInfo;
 import me.mdbell.awtea.gfx.wasm.WasmDiagnostics;
 import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
 import me.mdbell.awtea.util.logging.LogLevel;
@@ -84,6 +85,28 @@ public class AnimationDemo {
             WasmSurfaceBackend wasmBackend = SurfaceBackendFactory.getWasmBackendFromDefault();
             if (wasmBackend != null) {
                 return wasmBackend.getDiagnostics();
+            }
+        } catch (Exception e) {
+            // Ignore - not running with WASM
+        }
+        return null;
+    }
+    
+    /**
+     * Get WASM build info if available.
+     * 
+     * @return WasmBuildInfo instance, or null if not available
+     */
+    private static WasmBuildInfo getWasmBuildInfo() {
+        // First check if running under TeaVM
+        if (!Helper.isTeaVM()) {
+            return null;
+        }
+
+        try {
+            WasmSurfaceBackend wasmBackend = SurfaceBackendFactory.getWasmBackendFromDefault();
+            if (wasmBackend != null) {
+                return wasmBackend.getBuildInfo();
             }
         } catch (Exception e) {
             // Ignore - not running with WASM
@@ -433,27 +456,38 @@ public class AnimationDemo {
          */
         private void drawWasmDiagnostics(Graphics g) {
             WasmDiagnostics diag = AnimationDemo.getWasmDiagnostics();
-            if (diag == null) {
+            WasmBuildInfo buildInfo = AnimationDemo.getWasmBuildInfo();
+            
+            if (diag == null && buildInfo == null) {
                 return; // Not running with WASM backend
             }
 
             int y = 65; // Position below ball count
+            int height = 70; // Increased height for build info
 
             // Background with rounded corners
             g.setColor(Color.WHITE);
-            g.fillRoundRect(5, y, 150, 55, 8, 8);
+            g.fillRoundRect(5, y, 180, height, 8, 8);
 
             // Border with rounded corners
             g.setColor(Color.BLACK);
-            g.drawRoundRect(5, y, 150, 55, 8, 8);
+            g.drawRoundRect(5, y, 180, height, 8, 8);
 
             // Text
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            g.drawString(String.format("Surf: %d/%d",
-                    diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + 15);
-            g.drawString(String.format("Ctx: %d/%d",
-                    diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + 30);
-            g.drawString(String.format("Mem: %.1f KB", diag.getAllocatedKB()), 10, y + 45);
+            
+            if (diag != null) {
+                g.drawString(String.format("Surf: %d/%d",
+                        diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + 15);
+                g.drawString(String.format("Ctx: %d/%d",
+                        diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + 30);
+                g.drawString(String.format("Mem: %.1f KB", diag.getAllocatedKB()), 10, y + 45);
+            }
+            
+            if (buildInfo != null) {
+                g.setFont(new Font("SansSerif", Font.PLAIN, 10));
+                g.drawString(String.format("WASM: %s", buildInfo.getVersion()), 10, y + 60);
+            }
         }
 
         /**
