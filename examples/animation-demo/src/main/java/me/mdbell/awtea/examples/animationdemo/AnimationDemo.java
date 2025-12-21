@@ -29,7 +29,7 @@ public class AnimationDemo {
 
     public static void main(String[] args) {
         // LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
-        // System.setProperty("me.mdbell.awtea.gfx.backend", "java");
+        System.setProperty("me.mdbell.awtea.gfx.backend", "wasm");
         System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
 
         // Create the main window
@@ -63,7 +63,7 @@ public class AnimationDemo {
         }
 
         try {
-            WasmSurfaceBackend wasmBackend = SurfaceBackendFactory.getWasmBackendFromDefault();
+            WasmSurfaceBackend wasmBackend = (WasmSurfaceBackend) SurfaceBackendFactory.getWasmBackend();
             return wasmBackend != null;
         } catch (Exception e) {
             return false;
@@ -77,21 +77,16 @@ public class AnimationDemo {
      */
     private static WasmDiagnostics getWasmDiagnostics() {
         // First check if running under TeaVM
-        if (!Helper.isTeaVM()) {
+        if (!isWasmBackendAvailable()) {
             return null;
         }
-
-        try {
-            WasmSurfaceBackend wasmBackend = SurfaceBackendFactory.getWasmBackendFromDefault();
-            if (wasmBackend != null) {
-                return wasmBackend.getDiagnostics();
-            }
-        } catch (Exception e) {
-            // Ignore - not running with WASM
+        WasmSurfaceBackend wasmBackend = (WasmSurfaceBackend) SurfaceBackendFactory.getWasmBackend();
+        if (wasmBackend != null) {
+            return wasmBackend.getDiagnostics();
         }
         return null;
     }
-    
+
     /**
      * Get WASM build info if available.
      * 
@@ -104,7 +99,7 @@ public class AnimationDemo {
         }
 
         try {
-            WasmSurfaceBackend wasmBackend = SurfaceBackendFactory.getWasmBackendFromDefault();
+            WasmSurfaceBackend wasmBackend = (WasmSurfaceBackend) SurfaceBackendFactory.getWasmBackend();
             if (wasmBackend != null) {
                 return wasmBackend.getBuildInfo();
             }
@@ -457,7 +452,7 @@ public class AnimationDemo {
         private void drawWasmDiagnostics(Graphics g) {
             WasmDiagnostics diag = AnimationDemo.getWasmDiagnostics();
             WasmBuildInfo buildInfo = AnimationDemo.getWasmBuildInfo();
-            
+
             if (diag == null && buildInfo == null) {
                 return; // Not running with WASM backend
             }
@@ -475,7 +470,7 @@ public class AnimationDemo {
 
             // Text
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            
+
             if (diag != null) {
                 g.drawString(String.format("Surf: %d/%d",
                         diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + 15);
@@ -483,7 +478,7 @@ public class AnimationDemo {
                         diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + 30);
                 g.drawString(String.format("Mem: %.1f KB", diag.getAllocatedKB()), 10, y + 45);
             }
-            
+
             if (buildInfo != null) {
                 g.setFont(new Font("SansSerif", Font.PLAIN, 10));
                 g.drawString(String.format("WASM: %s", buildInfo.getVersion()), 10, y + 60);

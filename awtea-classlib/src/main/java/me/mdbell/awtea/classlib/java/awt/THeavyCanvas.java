@@ -136,21 +136,25 @@ public class THeavyCanvas {
 	}
 
 	private Surface createScreenSurface() {
-		try {
-			SurfaceBackend webgl = SurfaceBackendFactory.getWebGLBackend(canvasElement);
-			Surface surface = webgl.createCompatibleSurface(getWidth(), getHeight(), Surface.FORMAT_INT_RGBA);
-			if (surface != null) {
-				// we use a composite backend as there are still some surfaces that webgl
-				// doesn't fully support (like text rendering)
-				CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[] {
-						webgl,
-						SurfaceBackendFactory.getDefault()
-				});
-				SurfaceBackendFactory.setDefault(compositeSurfaceBackend);
-				return surface;
+		String forced = System.getProperty("me.mdbell.awtea.gfx.backend");
+		if (forced == null || forced == "webgl") {
+
+			try {
+				SurfaceBackend webgl = SurfaceBackendFactory.getWebGLBackend(canvasElement);
+				Surface surface = webgl.createCompatibleSurface(getWidth(), getHeight(), Surface.FORMAT_INT_RGBA);
+				if (surface != null) {
+					// we use a composite backend as there are still some surfaces that webgl
+					// doesn't fully support (like text rendering)
+					CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[] {
+							webgl,
+							SurfaceBackendFactory.getDefault()
+					});
+					SurfaceBackendFactory.setDefault(compositeSurfaceBackend);
+					return surface;
+				}
+			} catch (Exception e) {
+				log.warn("Failed to create a webgl instance! Using default");
 			}
-		} catch (Exception e) {
-			log.warn("Failed to create a webgl instance! Using default");
 		}
 		return SurfaceBackendFactory.createScreenSurface(getWidth(), getHeight(), canvasElement);
 	}
