@@ -57,6 +57,15 @@ public class WasmSurfaceBackend implements SurfaceBackend {
                 buildInfo.getVersion(), buildInfo.getBuildDate(), buildInfo.getBuildTime());
         log.info("Build flags: {}", buildInfo.getBuildFlagsDescription());
         
+        // Log cached stack info for diagnostics
+        if (buildInfo.hasStackTracking()) {
+            log.info("Stack tracking enabled: buffer at 0x{} ({} frames cached at init)",
+                    Integer.toHexString(buildInfo.getStackInfoPtr()).toUpperCase(),
+                    buildInfo.getStackInfoCount());
+        } else {
+            log.info("Stack tracking disabled in this build");
+        }
+        
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
         this.surfacePool = new WasmSurfacePool(this);
         this.diagnostics = new WasmDiagnostics(this.exports);
