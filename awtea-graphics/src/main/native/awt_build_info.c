@@ -141,6 +141,8 @@ uint32_t get_build_flags_string_ptr(void) {
  */
 uint32_t get_stack_info_ptr(void) {
 #if ENABLE_WASM_STACK_TRACKING
+    // Stack tracking exports are guaranteed to be available when enabled
+    // See awt_stack.h for implementation
     return get_stack_buffer_ptr();
 #else
     return 0;
@@ -152,6 +154,8 @@ uint32_t get_stack_info_ptr(void) {
  */
 int get_stack_info_count(void) {
 #if ENABLE_WASM_STACK_TRACKING
+    // Stack tracking exports are guaranteed to be available when enabled
+    // See awt_stack.h for implementation
     return get_max_stack_depth();
 #else
     return 0;

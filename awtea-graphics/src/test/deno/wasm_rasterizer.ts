@@ -17,6 +17,7 @@
 import { PixelFormat } from "./generated/pixel-format.ts";
 import { SurfaceOperation } from "./generated/surface-operation.ts";
 import { CompositeMode } from "./generated/composite-mode.ts";
+import { decodeNullTerminatedString } from "./test_helpers.ts";
 
 // Color slot constants
 export const COLOR_FG = 0;
@@ -220,21 +221,6 @@ export class WasmRasterizer {
   }
   
   /**
-   * Print build information to console
-   * Helper to decode null-terminated strings from WASM memory
-   */
-  private decodeNullTerminatedString(ptr: number): string {
-    const memory = this.getMemory();
-    const view = new Uint8Array(memory.buffer);
-    let len = 0;
-    while (view[ptr + len] !== 0 && len < 1024) {
-      len++;
-    }
-    const bytes = view.slice(ptr, ptr + len);
-    return new TextDecoder().decode(bytes);
-  }
-  
-  /**
    * Print build information from WASM module
    */
   private printBuildInfo(): void {
@@ -255,10 +241,11 @@ export class WasmRasterizer {
       const flags = wasm.get_build_flags();
       const flagsStrPtr = wasm.get_build_flags_string_ptr();
       
-      const version = this.decodeNullTerminatedString(versionPtr);
-      const date = this.decodeNullTerminatedString(datePtr);
-      const time = this.decodeNullTerminatedString(timePtr);
-      const flagsStr = this.decodeNullTerminatedString(flagsStrPtr);
+      const memory = this.getMemory();
+      const version = decodeNullTerminatedString(memory, versionPtr);
+      const date = decodeNullTerminatedString(memory, datePtr);
+      const time = decodeNullTerminatedString(memory, timePtr);
+      const flagsStr = decodeNullTerminatedString(memory, flagsStrPtr);
       
       console.log("\n" + "=".repeat(60));
       console.log("WASM Rasterizer Build Information");

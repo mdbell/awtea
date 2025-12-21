@@ -9,25 +9,9 @@
  */
 
 import { WasmRasterizer } from "./wasm_rasterizer.ts";
+import { decodeNullTerminatedString } from "./test_helpers.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
-
-/**
- * Helper to decode null-terminated string from WASM memory
- */
-function decodeNullTerminatedString(
-  memory: WebAssembly.Memory,
-  ptr: number,
-): string {
-  const view = new Uint8Array(memory.buffer);
-  let len = 0;
-  while (view[ptr + len] !== 0 && len < 1024) {
-    // Safety limit
-    len++;
-  }
-  const bytes = view.slice(ptr, ptr + len);
-  return new TextDecoder().decode(bytes);
-}
 
 Deno.test("Build version export exists and returns valid pointer", async () => {
   const rasterizer = new WasmRasterizer();

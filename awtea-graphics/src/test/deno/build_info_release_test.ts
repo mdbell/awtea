@@ -11,36 +11,9 @@
  */
 
 import { WasmRasterizer } from "./wasm_rasterizer.ts";
+import { decodeNullTerminatedString } from "./test_helpers.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
-
-/**
- * Helper to decode null-terminated string from WASM memory
- */
-function decodeNullTerminatedString(
-  memory: WebAssembly.Memory,
-  ptr: number,
-): string {
-  const view = new Uint8Array(memory.buffer);
-  let len = 0;
-  while (view[ptr + len] !== 0 && len < 1024) {
-    len++;
-  }
-  const bytes = view.slice(ptr, ptr + len);
-  return new TextDecoder().decode(bytes);
-}
-
-/**
- * Helper to check if current build is a release build
- */
-async function isReleaseBuild(): Promise<boolean> {
-  const rasterizer = new WasmRasterizer();
-  await rasterizer.load(WASM_PATH);
-  const exports = rasterizer.getExportsPublic();
-  const flags = exports.get_build_flags();
-  const BUILD_FLAG_DEBUG = 1 << 0;
-  return (flags & BUILD_FLAG_DEBUG) === 0;
-}
 
 Deno.test("Release build has all debug flags disabled", async () => {
   const rasterizer = new WasmRasterizer();
