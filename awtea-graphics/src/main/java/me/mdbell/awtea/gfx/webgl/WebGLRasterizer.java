@@ -49,6 +49,7 @@ class WebGLRasterizer implements Rasterizer {
         this.backend = other.backend;
         this.gl = other.gl;
         this.isChildRasterizer = true; // Child rasterizer
+        this.pushToScreen = other.pushToScreen;
         
         // Save state on creation for isolation
         backend.contextStack.save();
@@ -809,8 +810,8 @@ class WebGLRasterizer implements Rasterizer {
     }
 
     private void pushToScreen() {
-        int width = gl.getCanvas().getWidth();
-        int height = gl.getCanvas().getHeight();
+        int width = surface.getWidth();
+        int height = surface.getHeight();
 
         gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, null);
 
@@ -825,7 +826,7 @@ class WebGLRasterizer implements Rasterizer {
         
         // no swizzling when pushing to screen, as the surface texture is already in
         // RGBA format
-        backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.NONE, surface.getWidth(), surface.getHeight());
+        backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.NONE, gl.getCanvas().getWidth(), gl.getCanvas().getHeight());
 
         // full-screen quad
 

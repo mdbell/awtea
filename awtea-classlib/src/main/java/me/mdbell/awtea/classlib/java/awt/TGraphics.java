@@ -9,7 +9,7 @@ import java.awt.*;
  * @see java.awt.Graphics
  */
 @ToString
-public abstract class TGraphics {
+public abstract class TGraphics implements AutoCloseable{
 
     protected TGraphics() {
 
@@ -91,6 +91,8 @@ public abstract class TGraphics {
     public void dispose() {
 
     }
+
+
 
     /**
      * Copies an area of the component by a distance specified by dx and dy.
@@ -402,12 +404,18 @@ public abstract class TGraphics {
         return clipBounds.intersects(x, y, width, height);
     }
 
+    @Override
+    public void close() throws Exception {
+        dispose();
+    }
+
     /**
      * Disposes of this graphics context once it is no longer referenced.
      * 
      * @see java.awt.Graphics#finalize()
      */
     @Override
+    @Deprecated
     protected void finalize() throws Throwable {
         try {
             dispose();
@@ -415,5 +423,4 @@ public abstract class TGraphics {
             super.finalize();
         }
     }
-
 }
