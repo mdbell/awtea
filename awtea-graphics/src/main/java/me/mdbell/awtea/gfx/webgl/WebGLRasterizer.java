@@ -1,6 +1,7 @@
 package me.mdbell.awtea.gfx.webgl;
 
 import me.mdbell.awtea.gfx.Rasterizer;
+import me.mdbell.awtea.gfx.PickingRasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import me.mdbell.awtea.gfx.SurfaceContainer;
@@ -20,7 +21,7 @@ import java.awt.geom.AffineTransform;
 import java.util.List;
 
 @Monitored.AllMethods
-class WebGLRasterizer implements Rasterizer {
+class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
     private static final Logger log = LoggerFactory.getLogger(WebGLRasterizer.class);
 
@@ -31,6 +32,13 @@ class WebGLRasterizer implements Rasterizer {
 
     private boolean pushToScreen = false;
     private final boolean isChildRasterizer;
+    
+    // Picking support: current component ID for dual rendering
+    // Each component sets its ID before painting, and all its paint operations
+    // are rendered to both the picking buffer (with ID color) and normal framebuffer
+    private static final int INVALID_COMPONENT_ID = 0;
+    private int activeComponentId = INVALID_COMPONENT_ID;
+    private boolean pickingEnabled = false;
 
     WebGLRasterizer(WebGLSurfaceBackend backend, WebGLSurface surface, boolean pushToScreen) {
         this.backend = backend;
@@ -50,9 +58,44 @@ class WebGLRasterizer implements Rasterizer {
         this.gl = other.gl;
         this.isChildRasterizer = true; // Child rasterizer
         this.pushToScreen = other.pushToScreen;
+        this.activeComponentId = other.activeComponentId;
+        this.pickingEnabled = other.pickingEnabled;
         
         // Save state on creation for isolation
         backend.contextStack.save();
+    }
+    
+    /**
+     * Sets the active component ID for picking buffer rendering.
+     * Call this before a component starts painting.
+     * 
+     * @param componentId the component ID
+     */
+    @Override
+    public void setActiveComponentId(int componentId) {
+        this.activeComponentId = componentId;
+        log.trace("Set active component ID to {}", componentId);
+    }
+    
+    /**
+     * Enables or disables picking buffer rendering.
+     * When enabled, all paint operations are duplicated to the picking buffer.
+     * 
+     * @param enabled true to enable picking rendering
+     */
+    @Override
+    public void setPickingEnabled(boolean enabled) {
+        this.pickingEnabled = enabled;
+    }
+    
+    /**
+     * Returns whether picking mode is currently enabled.
+     * 
+     * @return true if picking is enabled
+     */
+    @Override
+    public boolean isPickingEnabled() {
+        return pickingEnabled;
     }
 
     @Override
@@ -79,14 +122,145 @@ class WebGLRasterizer implements Rasterizer {
 
     private void fillRect(float x, float y, float width, float height) {
         int h = surface.getHeight();
-        y = h - (y + height); // flip Y coordinate
+        final float finalY = h - (y + height); // flip Y coordinate
+        final float finalX = x;
+        final float finalWidth = width;
+        final float finalHeight = height;
+        
+        // If picking is enabled, render to picking buffer first with ID color
+        if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
+            renderRectToPicking(activeComponentId, finalX, finalY, finalWidth, finalHeight);
+        }
+        
+        // Render to normal framebuffer with actual colors
         useColorProgram();
-
-        backend.setRectBuffer(x, y, width, height);
-
+        backend.setRectBuffer(finalX, finalY, finalWidth, finalHeight);
         gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
 
         surface.markDirty();
+    }
+    
+    /**
+     * Renders a rectangle to the picking buffer with the specified component ID color.
+     */
+    private void renderRectToPicking(int componentId, float x, float y, float width, float height) {
+        WebGLPickingBuffer pickingBuffer = backend.getPickingBuffer();
+        if (pickingBuffer == null) {
+            return;
+        }
+        
+        // Bind picking framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, pickingBuffer.getFramebuffer());
+        gl.viewport(0, 0, pickingBuffer.getWidth(), pickingBuffer.getHeight());
+        
+        // Encode component ID as color
+        float[] idColor = PickingColorEncoder.encodeId(componentId);
+        
+        // Use color program in picking mode
+        backend.useColorProgram(surface.getWidth(), surface.getHeight(), idColor);
+        backend.setRectBuffer(x, y, width, height);
+        gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+        
+        // Restore original framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
+        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+    }
+    
+    /**
+     * Executes a render operation on the picking buffer with the specified component ID color.
+     * Used for non-rectangle primitives (ovals, polygons, etc.)
+     */
+    private void renderToPicking(int componentId, Runnable renderOp) {
+        WebGLPickingBuffer pickingBuffer = backend.getPickingBuffer();
+        if (pickingBuffer == null) {
+            return;
+        }
+        
+        // Bind picking framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, pickingBuffer.getFramebuffer());
+        gl.viewport(0, 0, pickingBuffer.getWidth(), pickingBuffer.getHeight());
+        
+        // Encode component ID as color
+        float[] idColor = PickingColorEncoder.encodeId(componentId);
+        
+        // Use color program in picking mode
+        backend.useColorProgram(surface.getWidth(), surface.getHeight(), idColor);
+        
+        // Execute the render operation
+        renderOp.run();
+        
+        // Restore original framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
+        
+        // Restore viewport
+        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+    }
+    
+    /**
+     * Renders a texture to the picking buffer using PICKING swizzle mode.
+     * This ensures text and other surface-based content appears in the picking buffer
+     * with the component's ID color.
+     */
+    private void renderTextureToPickingBuffer(WebGLTexture texture, int x, int y, 
+            int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
+        WebGLPickingBuffer pickingBuffer = backend.getPickingBuffer();
+        if (pickingBuffer == null) {
+            return;
+        }
+        
+        // Bind picking framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, pickingBuffer.getFramebuffer());
+        gl.viewport(0, 0, pickingBuffer.getWidth(), pickingBuffer.getHeight());
+        
+        // Encode component ID as color for uniform
+        float[] idColor = PickingColorEncoder.encodeId(activeComponentId);
+        
+        // Use texture program with PICKING swizzle mode
+        backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.PICKING, 
+            surface.getWidth(), surface.getHeight(), idColor);
+        
+        // Flip Y for picking buffer
+        int flippedY = surface.getHeight() - y - srcH;
+        
+        // Setup vertices and UVs
+        float[] verts = {
+                x, flippedY,
+                x + width, flippedY,
+                x, flippedY + height,
+                x, flippedY + height,
+                x + width, flippedY,
+                x + width, flippedY + height
+        };
+
+        float[] uvs = {
+                0f, 1f,
+                1f, 1f,
+                0f, 0f,
+                0f, 0f,
+                1f, 1f,
+                1f, 0f
+        };
+
+        backend.uploadQuadVertices(verts, uvs);
+        
+        // Bind texture
+        gl.activeTexture(WebGLRenderingContext.TEXTURE0);
+        gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
+
+        if (pixelData != null) {
+            gl.texImage2D(WebGLRenderingContext.TEXTURE_2D, 0, WebGLRenderingContext.RGBA,
+                    srcW, srcH, 0, WebGLRenderingContext.RGBA,
+                    WebGLRenderingContext.UNSIGNED_BYTE, pixelData);
+        }
+
+        // Render to picking buffer
+        gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+        
+        // Restore original framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
+        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+        
+        gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
     }
 
     private void drawRect(float x, float y, float width, float height, float lineWidth) {
@@ -208,6 +382,13 @@ class WebGLRasterizer implements Rasterizer {
 
     private void drawTexture(WebGLTexture texture, WebGLSurfaceBackend.SwizzleMode mode,
             int x, int y, int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
+        
+        // If picking is enabled, render to picking buffer with PICKING swizzle mode
+        if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
+            renderTextureToPickingBuffer(texture, x, y, srcW, srcH, width, height, pixelData);
+        }
+        
+        // Always render to normal framebuffer
         backend.useTextureProgram(mode, surface.getWidth(), surface.getHeight());
 
         y = surface.getHeight() - y - srcH;
@@ -307,7 +488,6 @@ class WebGLRasterizer implements Rasterizer {
 
         // Use WebGL TRIANGLE_FAN for efficient GPU polygon filling
         int h = surface.getHeight();
-        useColorProgram();
 
         // Create vertices array (flip Y coordinates to WebGL space: Y=0 at bottom)
         float[] verts = new float[npoints * 2];
@@ -316,10 +496,22 @@ class WebGLRasterizer implements Rasterizer {
             verts[i * 2 + 1] = h - ypoints[i];
         }
 
+        // If picking is enabled, render to picking buffer first
+        if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
+            final float[] finalVerts = verts;
+            renderToPicking(activeComponentId, () -> {
+                ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+                gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+                gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, npoints);
+            });
+        }
+
+        // Render to normal framebuffer
+        useColorProgram();
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, npoints);
+        
         surface.markDirty();
     }
 
@@ -334,7 +526,6 @@ class WebGLRasterizer implements Rasterizer {
             return;
 
         int h = surface.getHeight();
-        useColorProgram();
 
         // Generate ellipse vertices using parametric equations
         // Use enough segments for smooth appearance
@@ -352,10 +543,23 @@ class WebGLRasterizer implements Rasterizer {
             verts[(i + 1) * 2 + 1] = (float) (h - (cy + ry * Math.sin(angle)));
         }
 
+        // If picking is enabled, render to picking buffer first
+        if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
+            final float[] finalVerts = verts;
+            final int finalSegments = segments;
+            renderToPicking(activeComponentId, () -> {
+                ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+                gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+                gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, finalSegments + 2);
+            });
+        }
+
+        // Render to normal framebuffer
+        useColorProgram();
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
+        
         surface.markDirty();
     }
 
@@ -369,7 +573,6 @@ class WebGLRasterizer implements Rasterizer {
         int ry = Math.min(arcHeight / 2, height / 2);
 
         int h = surface.getHeight();
-        useColorProgram();
 
         // Build rounded rectangle as a single triangle fan
         // Segments per corner arc
@@ -449,10 +652,24 @@ class WebGLRasterizer implements Rasterizer {
         verts[idx * 2 + 1] = h - y;
         idx++;
 
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(java.util.Arrays.copyOf(verts, idx * 2)).getBuffer();
-        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+        final int finalIdx = idx;
+        final float[] finalVerts = java.util.Arrays.copyOf(verts, idx * 2);
+        
+        // If picking is enabled, render to picking buffer first
+        if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
+            renderToPicking(activeComponentId, () -> {
+                ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+                gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+                gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, finalIdx);
+            });
+        }
 
+        // Render to normal framebuffer
+        useColorProgram();
+        ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+        gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, idx);
+        
         surface.markDirty();
     }
 
@@ -466,7 +683,6 @@ class WebGLRasterizer implements Rasterizer {
             return;
 
         int h = surface.getHeight();
-        useColorProgram();
 
         // Convert angles to radians (Java AWT uses degrees, 0 at 3 o'clock, CCW
         // positive)
@@ -488,10 +704,23 @@ class WebGLRasterizer implements Rasterizer {
             verts[(i + 1) * 2 + 1] = (float) (h - (cy - ry * Math.sin(angle)));
         }
 
+        // If picking is enabled, render to picking buffer first
+        if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
+            final float[] finalVerts = verts;
+            final int finalSegments = segments;
+            renderToPicking(activeComponentId, () -> {
+                ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+                gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
+                gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, finalSegments + 2);
+            });
+        }
+
+        // Render to normal framebuffer
+        useColorProgram();
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
-
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
+        
         surface.markDirty();
     }
 
@@ -853,5 +1082,8 @@ class WebGLRasterizer implements Rasterizer {
         
         // Restore previous transform
         backend.contextStack.restore();
+        
+        // Render picking buffer debug visualization if enabled
+        backend.renderPickingDebugIfEnabled(gl.getCanvas().getWidth(), gl.getCanvas().getHeight());
     }
 }

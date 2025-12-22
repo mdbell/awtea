@@ -1,10 +1,13 @@
 package me.mdbell.awtea.classlib.java.awt.awtea;
 
+import lombok.Getter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.TAWTEvent;
 import me.mdbell.awtea.classlib.java.awt.TComponent;
 import me.mdbell.awtea.classlib.java.awt.TContainer;
 import me.mdbell.awtea.classlib.java.awt.TToolkit;
+import me.mdbell.awtea.classlib.java.awt.awtea.THitTestStrategy;
+import me.mdbell.awtea.classlib.java.awt.awtea.TreeWalkHitTestStrategy;
 import me.mdbell.awtea.classlib.java.awt.event.TFocusEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseEvent;
@@ -42,6 +45,7 @@ public final class TEventManager implements AutoCloseable {
     public static final int SCROLL_AMOUNT = 3;
 
     private final HTMLElement element;
+    @Getter
     private final TContainer container;
 
     private final List<Registration> registrations;
@@ -53,11 +57,43 @@ public final class TEventManager implements AutoCloseable {
     // Track the component currently under the mouse for synthesizing enter/exit
     // events
     private TComponent componentUnderMouse = null;
+    
+    // Hit-testing strategy (tree-walk by default)
+    private THitTestStrategy componentHitStrategy;
 
     public TEventManager(HTMLElement element, TContainer container) {
         this.element = element;
         this.container = container;
         this.registrations = new LinkedList<>();
+        
+        // Initialize with tree-walk strategy (always available)
+        this.componentHitStrategy = new TreeWalkHitTestStrategy(container);
+        
+        log.debug("TEventManager initialized with tree-walk hit-test strategy");
+    }
+    
+    /**
+     * Sets the hit-testing strategy.
+     * This allows switching between tree-walk and GPU-based picking.
+     * 
+     * @param strategy the new hit-test strategy
+     */
+    public void setHitTestStrategy(THitTestStrategy strategy) {
+        if (this.componentHitStrategy != null) {
+            this.componentHitStrategy.dispose();
+        }
+        this.componentHitStrategy = strategy;
+        log.debug("Hit-test strategy changed to: {}", strategy.getClass().getSimpleName());
+    }
+    
+    /**
+     * Invalidates the hit-test strategy, forcing it to rebuild cached data.
+     * Should be called when the component hierarchy or layout changes.
+     */
+    public void invalidateHitTest() {
+        if (componentHitStrategy != null) {
+            componentHitStrategy.invalidate();
+        }
     }
 
     /**
@@ -220,6 +256,12 @@ public final class TEventManager implements AutoCloseable {
         lastMouseY = Integer.MIN_VALUE;
         // Reset component tracking
         componentUnderMouse = null;
+        
+        // Dispose hit-test strategy
+        if (componentHitStrategy != null) {
+            componentHitStrategy.dispose();
+            componentHitStrategy = null;
+        }
     }
 
     @Override
@@ -228,11 +270,14 @@ public final class TEventManager implements AutoCloseable {
     }
 
     private TComponent getComponentAt(Point p) {
-        TComponent component = container.getComponentAt(p.getX(), p.getY());
-        if (component == null) {
-            component = container;
+        // Strategy is always initialized in constructor, so this should never be null
+        // But we keep a null check for defensive programming
+        if (componentHitStrategy == null) {
+            log.warn("Hit-test strategy is null, falling back to direct container query");
+            TComponent component = container.getComponentAt(p.getX(), p.getY());
+            return (component != null) ? component : container;
         }
-        return component;
+        return componentHitStrategy.getComponentAt(p.getX(), p.getY());
     }
 
     private void post(TAWTEvent event) {

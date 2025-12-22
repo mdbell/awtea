@@ -70,3 +70,10 @@ void draw_polyline(SurfaceData* surface, SurfaceContext* context,
 void copy_area(SurfaceData* surface, SurfaceContext* context,
               int x, int y, int width, int height,
               int dx, int dy);
+
+// Edge table pool lifecycle management
+// Cleanup function for global edge table pool (call during shutdown/module unload)
+void cleanup_edge_table_pool(void);
+
+// Debug/stats export for pool state (returns number of tables in pool)
+int get_edge_table_pool_size(void);

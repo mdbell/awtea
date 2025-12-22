@@ -97,6 +97,43 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     public TGraphics create() {
         return new TSurfaceRasterizerGraphics(this);
     }
+    
+    /**
+     * Sets the active component ID for GPU-based picking.
+     * This is called before painting each component so the picking buffer
+     * knows which component painted which pixels.
+     * 
+     * @param componentId the component ID
+     */
+    public void setActiveComponentId(int componentId) {
+        // Check if rasterizer supports picking
+        if (rasterizer instanceof me.mdbell.awtea.gfx.PickingRasterizer) {
+            ((me.mdbell.awtea.gfx.PickingRasterizer) rasterizer).setActiveComponentId(componentId);
+        }
+    }
+    
+    /**
+     * Enables or disables picking mode on the rasterizer.
+     * 
+     * @param enabled true to enable picking mode
+     */
+    public void setPickingEnabled(boolean enabled) {
+        if (rasterizer instanceof me.mdbell.awtea.gfx.PickingRasterizer) {
+            ((me.mdbell.awtea.gfx.PickingRasterizer) rasterizer).setPickingEnabled(enabled);
+        }
+    }
+    
+    /**
+     * Returns whether picking mode is currently enabled.
+     * 
+     * @return true if picking is enabled
+     */
+    public boolean isPickingEnabled() {
+        if (rasterizer instanceof me.mdbell.awtea.gfx.PickingRasterizer) {
+            return ((me.mdbell.awtea.gfx.PickingRasterizer) rasterizer).isPickingEnabled();
+        }
+        return false;
+    }
 
     /**
      * Acquires a SurfaceCommand from the pool, or creates a new one if the pool is

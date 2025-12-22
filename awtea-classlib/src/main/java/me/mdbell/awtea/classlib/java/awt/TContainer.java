@@ -215,6 +215,9 @@ public class TContainer extends TComponent {
 
     @Override
     public void paint(TGraphics g) {
+        // Set this container's ID for picking if supported
+        setComponentIdForPicking(g, this);
+        
         for (TComponent child : children) {
             // Skip invisible components
             if (!child.isVisible()) {
@@ -241,6 +244,10 @@ public class TContainer extends TComponent {
                     // Then clip to the child's bounds in the child's coordinate system
                     // This ensures the clip is at (0, 0) relative to where the child will paint
                     childGfx.setClip(0, 0, width, height);
+                    
+                    // Set child's ID for picking
+                    setComponentIdForPicking(childGfx, child);
+                    
                     // Paint the child
                     child.paint(childGfx);
                 } finally {
@@ -248,6 +255,21 @@ public class TContainer extends TComponent {
                     childGfx.dispose();
                 }
             }
+        }
+    }
+    
+    /**
+     * Sets the component ID on the rasterizer for GPU picking support.
+     * This is called before painting each component to ensure the picking buffer
+     * captures which component painted which pixels.
+     * 
+     * @param g the graphics context
+     * @param component the component about to be painted
+     */
+    private static void setComponentIdForPicking(TGraphics g, TComponent component) {
+        if (g instanceof TSurfaceRasterizerGraphics) {
+            TSurfaceRasterizerGraphics srg = (TSurfaceRasterizerGraphics) g;
+            srg.setActiveComponentId(component.getComponentId());
         }
     }
 

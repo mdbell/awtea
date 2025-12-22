@@ -162,6 +162,10 @@ public class THeavyCanvas {
 			Surface surface = webgl.createScreenSurface(getWidth(), getHeight());
 			log.trace("Using WebGL surface backend for heavyweight canvas - dimensions: {}x{}", getWidth(),
 					getHeight());
+			
+			// Automatically enable GPU-based hit picking for WebGL backend
+			initializeWebGLPickingStrategy(webgl);
+			
 			// we use a composite backend as there are still some surfaces that webgl
 			// doesn't fully support (like text rendering)
 			CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[] {
@@ -174,6 +178,44 @@ public class THeavyCanvas {
 			log.warn("Failed to create a webgl instance! Using default");
 		}
 		return SurfaceBackendFactory.createScreenSurface(getWidth(), getHeight(), canvasElement);
+	}
+	
+	/**
+	 * Initializes GPU-based hit picking for WebGL backend.
+	 * This automatically enables O(1) hit-testing when using WebGL.
+	 * 
+	 * @param webgl the WebGL backend
+	 */
+	private void initializeWebGLPickingStrategy(WebGLSurfaceBackend webgl) {
+		try {
+			// Get the container from event manager
+			TContainer container = getContainerFromEventManager();
+			if (container == null) {
+				log.debug("Cannot initialize picking strategy - no container available");
+				return;
+			}
+			
+			// Create picking buffer strategy
+			me.mdbell.awtea.classlib.java.awt.awtea.TPickingBufferHitTestStrategy pickingStrategy =
+				new me.mdbell.awtea.classlib.java.awt.awtea.TPickingBufferHitTestStrategy(
+					webgl, container, getWidth(), getHeight()
+				);
+			
+			// Set on event manager
+			eventManager.setHitTestStrategy(pickingStrategy);
+			
+			log.info("GPU-based hit picking enabled for WebGL backend");
+		} catch (Exception e) {
+			log.warn("Failed to initialize GPU picking strategy: {}", e.getMessage());
+			// Fallback to tree-walk strategy (already initialized by default)
+		}
+	}
+	
+	/**
+	 * Gets the container from the event manager using reflection-free approach.
+	 */
+	private TContainer getContainerFromEventManager() {
+		return eventManager.getContainer();
 	}
 
 	/**
