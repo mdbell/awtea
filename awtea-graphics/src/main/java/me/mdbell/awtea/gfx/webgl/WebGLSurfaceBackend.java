@@ -15,8 +15,10 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	final WebGL2RenderingContext gl;
 	final WebGLContextStack contextStack;
 
-	//TODO: maybe refactor this to move programs to their own class (a.la. WebGLProgramManager/WebGLRenderer)
-	// the element would live there, and the backend would just create surfaces with references to the renderer
+	// TODO: maybe refactor this to move programs to their own class (a.la.
+	// WebGLProgramManager/WebGLRenderer)
+	// the element would live there, and the backend would just create surfaces with
+	// references to the renderer
 
 	private final WebGLProgram colorProgram;
 	private final WebGLProgram textureProgram;
@@ -34,7 +36,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	private final WebGLUniformLocation uResolutionLocTex;
 	private final WebGLUniformLocation uTransformLocTex;
 	private final WebGLUniformLocation uTextureLoc;
-	private final WebGLUniformLocation uPickingColorLoc;  // Picking color uniform
+	private final WebGLUniformLocation uPickingColorLoc; // Picking color uniform
 
 	private final int aPositionLocTex;
 	private final int aTexCoordLocTex;
@@ -48,7 +50,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
 	private final Float32Array rectBufferArray = new Float32Array(12);
 	private final ArrayBuffer rectArrayBuffer = rectBufferArray.getBuffer();
-	
+
 	// Picking buffer for GPU-based hit testing
 	private WebGLPickingBuffer pickingBuffer;
 
@@ -62,7 +64,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
 		gl.enable(WebGLRenderingContext.BLEND);
 		gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
-		
+
 		// Initialize the context stack for state management
 		this.contextStack = new WebGLContextStack(gl);
 
@@ -76,8 +78,9 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		this.uResolutionLocColor = gl.getUniformLocation(colorProgram, "u_resolution");
 		this.uColorLoc = gl.getUniformLocation(colorProgram, "u_color");
 		this.uTransformLocColor = gl.getUniformLocation(colorProgram, "u_transform");
-		
-		// Set the color uniform location in the context stack for automatic color application
+
+		// Set the color uniform location in the context stack for automatic color
+		// application
 		this.contextStack.setColorUniformLocation(this.uColorLoc);
 
 		// texture program locations
@@ -141,7 +144,8 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	}
 
 	@Override
-	public Surface createCompatibleSurface(Object cm, Object raster, boolean isRasterPremultiplied, int bufferedImageType) {
+	public Surface createCompatibleSurface(Object cm, Object raster, boolean isRasterPremultiplied,
+			int bufferedImageType) {
 		return null;
 	}
 
@@ -155,48 +159,48 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			gl.useProgram(colorProgram);
 			currentProgram = WebGLProgramType.COLOR;
 		}
-		
+
 		// Apply state from context stack (updates transform array, blend, clip)
 		contextStack.apply();
-		
+
 		// Apply color uniform (only valid for color program)
 		contextStack.applyColorUniform();
 
 		gl.uniform2f(uResolutionLocColor,
-			(float) width,
-			(float) height);
+				(float) width,
+				(float) height);
 		gl.uniformMatrix3fv(uTransformLocColor, false, contextStack.getTransformArray());
 
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, rectBuffer);
 		gl.enableVertexAttribArray(aPositionLocColor);
 		gl.vertexAttribPointer(aPositionLocColor, 2,
-			WebGLRenderingContext.FLOAT,
-			false, 0, 0);
+				WebGLRenderingContext.FLOAT,
+				false, 0, 0);
 	}
 
 	void useTextureProgram(SwizzleMode mode, int width, int height) {
 		useTextureProgram(mode, width, height, null);
 	}
-	
+
 	void useTextureProgram(SwizzleMode mode, int width, int height, float[] pickingColor) {
 
 		if (currentProgram != WebGLProgramType.TEXTURE) {
 			gl.useProgram(textureProgram);
 			currentProgram = WebGLProgramType.TEXTURE;
 		}
-		
+
 		// Apply state from context stack (updates transform array)
 		contextStack.apply();
 
 		gl.uniform2f(uResolutionLocTex,
-			(float) width,
-			(float) height);
+				(float) width,
+				(float) height);
 
 		gl.uniformMatrix3fv(uTransformLocTex, false,
-			contextStack.getTransformArray());
+				contextStack.getTransformArray());
 
 		gl.uniform1i(uSwizzleModeLoc, mode.ordinal());
-		
+
 		// Set picking color if in picking mode
 		if (mode == SwizzleMode.PICKING && pickingColor != null) {
 			gl.uniform4f(uPickingColorLoc, pickingColor[0], pickingColor[1], pickingColor[2], 1.0f);
@@ -209,8 +213,8 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadTexCoordBuffer);
 		gl.enableVertexAttribArray(aTexCoordLocTex);
 		gl.vertexAttribPointer(aTexCoordLocTex, 2,
-			WebGLRenderingContext.FLOAT,
-			false, 0, 0);
+				WebGLRenderingContext.FLOAT,
+				false, 0, 0);
 	}
 
 	private WebGLProgram createProgram(WebGLRenderingContext gl, String vsSource, String fsSource) {
@@ -244,22 +248,23 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		TEXTURE
 	}
 
-	// TODO: it would be nice to remove this and just use Surface pixel format directly
+	// TODO: it would be nice to remove this and just use Surface pixel format
+	// directly
 	protected enum SwizzleMode {
 		NONE,
 		ARGB_TO_RGBA,
 		RGB_TO_RGBA,
 		BGR_TO_ABGR,
-		PICKING  // Special mode for picking buffer - outputs solid color from uniform
+		PICKING // Special mode for picking buffer - outputs solid color from uniform
 	}
-	
+
 	// Picking buffer management
-	
+
 	/**
 	 * Creates and initializes the picking buffer for GPU-based hit testing.
 	 * Should be called once when enabling picking for this backend.
 	 * 
-	 * @param width the picking buffer width
+	 * @param width  the picking buffer width
 	 * @param height the picking buffer height
 	 */
 	public void createPickingBuffer(int width, int height) {
@@ -267,9 +272,9 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			pickingBuffer.destroy();
 		}
 		pickingBuffer = new WebGLPickingBuffer(gl, width, height);
-		pickingBuffer.setBackend(this);  // Set backend reference for rendering
+		pickingBuffer.setBackend(this); // Set backend reference for rendering
 	}
-	
+
 	/**
 	 * Gets the picking buffer, creating it if necessary.
 	 * 
@@ -278,10 +283,11 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	public WebGLPickingBuffer getPickingBuffer() {
 		return pickingBuffer;
 	}
-	
+
 	/**
 	 * Checks if debug picking visualization mode is enabled via system property.
-	 * When enabled, the picking buffer debug visualization is rendered instead of normal output.
+	 * When enabled, the picking buffer debug visualization is rendered instead of
+	 * normal output.
 	 * 
 	 * @return true if me.mdbell.awtea.hit_test.debug_render is set to true
 	 */
@@ -289,12 +295,13 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		String prop = System.getProperty("me.mdbell.awtea.hit_test.debug_render");
 		return "true".equalsIgnoreCase(prop);
 	}
-	
+
 	/**
-	 * Renders the picking buffer debug visualization to the main framebuffer if enabled.
+	 * Renders the picking buffer debug visualization to the main framebuffer if
+	 * enabled.
 	 * This is called after normal rendering to potentially replace the output.
 	 * 
-	 * @param screenWidth the screen width
+	 * @param screenWidth  the screen width
 	 * @param screenHeight the screen height
 	 */
 	public void renderPickingDebugIfEnabled(int screenWidth, int screenHeight) {
@@ -302,76 +309,77 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			pickingBuffer.renderDebugVisualization(null, screenWidth, screenHeight);
 		}
 	}
-	
+
 	/**
 	 * Draws a texture to the screen at the specified position and size.
 	 * Used internally for debug visualization rendering.
 	 * 
-	 * @param texture the WebGL texture to draw
-	 * @param x the x position on screen
-	 * @param y the y position on screen
-	 * @param destWidth the destination width
+	 * @param texture    the WebGL texture to draw
+	 * @param x          the x position on screen
+	 * @param y          the y position on screen
+	 * @param destWidth  the destination width
 	 * @param destHeight the destination height
-	 * @param srcWidth the source texture width
-	 * @param srcHeight the source texture height
+	 * @param srcWidth   the source texture width
+	 * @param srcHeight  the source texture height
 	 */
-	public void drawDebugTexture(WebGLTexture texture, int x, int y, int destWidth, int destHeight, int srcWidth, int srcHeight) {
+	public void drawDebugTexture(WebGLTexture texture, int x, int y, int destWidth, int destHeight, int srcWidth,
+			int srcHeight) {
 		// Use texture program with NONE swizzle mode
 		useTextureProgram(SwizzleMode.NONE, destWidth, destHeight);
-		
+
 		// Bind texture
 		gl.activeTexture(WebGLRenderingContext.TEXTURE0);
 		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
-		
+
 		// Set up quad vertices for full screen
 		float[] vertices = {
-			x, y,
-			x + destWidth, y,
-			x, y + destHeight,
-			x, y + destHeight,
-			x + destWidth, y,
-			x + destWidth, y + destHeight
+				x, y,
+				x + destWidth, y,
+				x, y + destHeight,
+				x, y + destHeight,
+				x + destWidth, y,
+				x + destWidth, y + destHeight
 		};
-		
-		float[] texCoords = {
-			0, 0,
-			1, 0,
-			0, 1,
-			0, 1,
-			1, 0,
-			1, 1
+
+		float[] uvs = {
+				0f, 0f,
+				1f, 0f,
+				0f, 1f,
+				0f, 1f,
+				1f, 0f,
+				1f, 1f
 		};
-		
+
 		// Upload vertex data
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadBuffer);
-		gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, 
-			org.teavm.jso.typedarrays.Float32Array.fromJavaArray(vertices).getBuffer(), 
-			WebGLRenderingContext.DYNAMIC_DRAW);
+		gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER,
+				org.teavm.jso.typedarrays.Float32Array.fromJavaArray(vertices).getBuffer(),
+				WebGLRenderingContext.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(aPositionLocTex);
 		gl.vertexAttribPointer(aPositionLocTex, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
-		
+
 		// Upload texture coordinate data
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadTexCoordBuffer);
 		gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER,
-			org.teavm.jso.typedarrays.Float32Array.fromJavaArray(texCoords).getBuffer(),
-			WebGLRenderingContext.DYNAMIC_DRAW);
+				org.teavm.jso.typedarrays.Float32Array.fromJavaArray(uvs).getBuffer(),
+				WebGLRenderingContext.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(aTexCoordLocTex);
 		gl.vertexAttribPointer(aTexCoordLocTex, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
-		
+
 		// Draw
 		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
-		
+
 		// Cleanup
 		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
 	}
-	
+
 	/**
 	 * Checks if this backend has a picking buffer.
 	 */
 	public boolean hasPickingBuffer() {
 		return pickingBuffer != null;
 	}
-	
+
 	/**
 	 * Destroys the picking buffer and releases its resources.
 	 */
