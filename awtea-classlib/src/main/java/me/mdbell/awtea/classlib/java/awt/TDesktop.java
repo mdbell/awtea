@@ -30,9 +30,8 @@ public class TDesktop {
     }
     
     /**
-     * Tests whether this platform supports the given action.
-     * 
-     * @param action the action to test
+     * Tests whether this platform supports the Desktop API.
+     *
      * @return false always, as Desktop operations are not supported in browser
      */
     public static boolean isDesktopSupported() {

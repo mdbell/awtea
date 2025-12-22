@@ -405,7 +405,7 @@ public abstract class TGraphics implements AutoCloseable{
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         dispose();
     }
 

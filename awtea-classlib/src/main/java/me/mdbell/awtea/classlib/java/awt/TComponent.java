@@ -68,14 +68,22 @@ public abstract class TComponent implements TImageObserver {
 
     public TFontMetrics getFontMetrics(TFont font) {
         TGraphics g = getGraphics();
-        if(g == null) {
-            return null;
+        if (g != null) {
+            try {
+                return g.getFontMetrics(font);
+            } finally {
+                g.dispose();
+            }
         }
-        try{
-            return g.getFontMetrics(font);
-        }finally {
-            g.dispose();
+
+        // Fallback: delegate to parent component if available, to avoid surprising nulls
+        TContainer p = getParent();
+        if (p != null) {
+            return p.getFontMetrics(font);
         }
+
+        // No graphics and no parent to delegate to
+        return null;
     }
 
     public Color getBackground() {

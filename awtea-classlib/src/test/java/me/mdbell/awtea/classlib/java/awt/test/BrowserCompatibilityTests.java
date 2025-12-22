@@ -146,8 +146,8 @@ public class BrowserCompatibilityTests {
         TJFrame frame = new TJFrame();
         assertNotNull(frame, "JFrame should not be null");
         
-        TJFrame framedWithTitle = new TJFrame("Test");
-        assertNotNull(framedWithTitle, "JFrame with title should not be null");
+        TJFrame frameWithTitle = new TJFrame("Test");
+        assertNotNull(frameWithTitle, "JFrame with title should not be null");
         
         // Should not crash when setting default close operation
         frame.setDefaultCloseOperation(3); // JFrame.EXIT_ON_CLOSE

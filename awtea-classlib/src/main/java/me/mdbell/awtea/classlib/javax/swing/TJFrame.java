@@ -47,7 +47,7 @@ public class TJFrame extends TFrame {
     }
 
     public boolean isResizable() {
-        log.warn("TJFrame.isResizeable() is not supported in browser environment.");
+        log.warn("TJFrame.isResizable() is not supported in browser environment.");
         return false;
     }
 }

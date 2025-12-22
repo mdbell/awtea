@@ -63,12 +63,14 @@ public class TApplet extends TPanel {
 
 	public final void setStub(TAppletStub stub) {
 		this.stub = stub;
+		if (stub == null) {
+			this.heavyCanvas = null;
+			return;
+		}
 		this.heavyCanvas = createHeavyCanvas();
-		if(heavyCanvas != null){
+		if (heavyCanvas != null) {
 			super.setSize(heavyCanvas.getWidth(), heavyCanvas.getHeight());
-			if(stub != null){
-				stub.appletResize(heavyCanvas.getWidth(), heavyCanvas.getHeight());
-			}
+			stub.appletResize(heavyCanvas.getWidth(), heavyCanvas.getHeight());
 		}
 	}
 

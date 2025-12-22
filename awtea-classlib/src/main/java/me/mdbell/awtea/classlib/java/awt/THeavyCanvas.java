@@ -96,7 +96,6 @@ public class THeavyCanvas {
 	private final Surface surface;
 	private final TBufferedImage screenImg;
 
-	private TGraphics graphics;
 
 	/**
 	 * Creates a new heavyweight canvas with default initial size.
