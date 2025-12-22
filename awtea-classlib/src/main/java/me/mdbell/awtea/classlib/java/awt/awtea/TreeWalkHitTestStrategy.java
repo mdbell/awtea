@@ -17,7 +17,7 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
  * picking is not supported or disabled.
  * </p>
  */
-public class TreeWalkHitTestStrategy implements HitTestStrategy {
+public class TreeWalkHitTestStrategy implements THitTestStrategy {
     
     private static final Logger log = LoggerFactory.getLogger(TreeWalkHitTestStrategy.class);
     

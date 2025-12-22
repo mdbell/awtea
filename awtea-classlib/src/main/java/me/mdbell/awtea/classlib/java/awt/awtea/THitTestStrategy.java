@@ -11,9 +11,8 @@ import me.mdbell.awtea.classlib.java.awt.TComponent;
  * </p>
  * 
  * @see TreeWalkHitTestStrategy
- * @see me.mdbell.awtea.gfx.webgl.PickingBufferHitTestStrategy
  */
-public interface HitTestStrategy {
+public interface THitTestStrategy {
     
     /**
      * Finds the component at the specified coordinates.

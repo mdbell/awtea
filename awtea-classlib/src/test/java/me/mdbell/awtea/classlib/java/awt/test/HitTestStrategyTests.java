@@ -1,7 +1,7 @@
 package me.mdbell.awtea.classlib.java.awt.test;
 
 import me.mdbell.awtea.classlib.java.awt.*;
-import me.mdbell.awtea.classlib.java.awt.awtea.HitTestStrategy;
+import me.mdbell.awtea.classlib.java.awt.awtea.THitTestStrategy;
 import me.mdbell.awtea.classlib.java.awt.awtea.TreeWalkHitTestStrategy;
 import me.mdbell.awtea.test.Test;
 
@@ -62,7 +62,7 @@ public class HitTestStrategyTests {
         container.add(child2);
         
         // Create strategy
-        HitTestStrategy strategy = new TreeWalkHitTestStrategy(container);
+        THitTestStrategy strategy = new TreeWalkHitTestStrategy(container);
         
         // Test hit on child1
         TComponent hit1 = strategy.getComponentAt(50, 50);
@@ -97,7 +97,7 @@ public class HitTestStrategyTests {
         level1.add(level2);
         
         // Create strategy
-        HitTestStrategy strategy = new TreeWalkHitTestStrategy(root);
+        THitTestStrategy strategy = new TreeWalkHitTestStrategy(root);
         
         // Test hit on deepest level
         // level2 is at (50, 50) in level1, which is at (50, 50) in root
@@ -121,7 +121,7 @@ public class HitTestStrategyTests {
         child.setVisible(false);
         container.add(child);
         
-        HitTestStrategy strategy = new TreeWalkHitTestStrategy(container);
+        THitTestStrategy strategy = new TreeWalkHitTestStrategy(container);
         
         // Hit should go to container, not invisible child
         TComponent hit = strategy.getComponentAt(50, 50);
@@ -136,7 +136,7 @@ public class HitTestStrategyTests {
     @Test
     public void testStrategyInvalidation() {
         TPanel container = new TPanel();
-        HitTestStrategy strategy = new TreeWalkHitTestStrategy(container);
+        THitTestStrategy strategy = new TreeWalkHitTestStrategy(container);
         
         // Invalidation should not throw for tree-walk (it's a no-op)
         strategy.invalidate();

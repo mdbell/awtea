@@ -5,6 +5,8 @@ import me.mdbell.awtea.classlib.java.awt.TAWTEvent;
 import me.mdbell.awtea.classlib.java.awt.TComponent;
 import me.mdbell.awtea.classlib.java.awt.TContainer;
 import me.mdbell.awtea.classlib.java.awt.TToolkit;
+import me.mdbell.awtea.classlib.java.awt.awtea.THitTestStrategy;
+import me.mdbell.awtea.classlib.java.awt.awtea.TreeWalkHitTestStrategy;
 import me.mdbell.awtea.classlib.java.awt.event.TFocusEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseEvent;
@@ -55,7 +57,7 @@ public final class TEventManager implements AutoCloseable {
     private TComponent componentUnderMouse = null;
     
     // Hit-testing strategy (tree-walk by default)
-    private HitTestStrategy hitTestStrategy;
+    private THitTestStrategy componentHitStrategy;
 
     public TEventManager(HTMLElement element, TContainer container) {
         this.element = element;
@@ -63,7 +65,7 @@ public final class TEventManager implements AutoCloseable {
         this.registrations = new LinkedList<>();
         
         // Initialize with tree-walk strategy (always available)
-        this.hitTestStrategy = new TreeWalkHitTestStrategy(container);
+        this.componentHitStrategy = new TreeWalkHitTestStrategy(container);
         
         log.debug("TEventManager initialized with tree-walk hit-test strategy");
     }
@@ -74,11 +76,11 @@ public final class TEventManager implements AutoCloseable {
      * 
      * @param strategy the new hit-test strategy
      */
-    public void setHitTestStrategy(HitTestStrategy strategy) {
-        if (this.hitTestStrategy != null) {
-            this.hitTestStrategy.dispose();
+    public void setHitTestStrategy(THitTestStrategy strategy) {
+        if (this.componentHitStrategy != null) {
+            this.componentHitStrategy.dispose();
         }
-        this.hitTestStrategy = strategy;
+        this.componentHitStrategy = strategy;
         log.debug("Hit-test strategy changed to: {}", strategy.getClass().getSimpleName());
     }
     
@@ -87,8 +89,8 @@ public final class TEventManager implements AutoCloseable {
      * Should be called when the component hierarchy or layout changes.
      */
     public void invalidateHitTest() {
-        if (hitTestStrategy != null) {
-            hitTestStrategy.invalidate();
+        if (componentHitStrategy != null) {
+            componentHitStrategy.invalidate();
         }
     }
 
@@ -254,9 +256,9 @@ public final class TEventManager implements AutoCloseable {
         componentUnderMouse = null;
         
         // Dispose hit-test strategy
-        if (hitTestStrategy != null) {
-            hitTestStrategy.dispose();
-            hitTestStrategy = null;
+        if (componentHitStrategy != null) {
+            componentHitStrategy.dispose();
+            componentHitStrategy = null;
         }
     }
 
@@ -266,7 +268,7 @@ public final class TEventManager implements AutoCloseable {
     }
 
     private TComponent getComponentAt(Point p) {
-        if (hitTestStrategy == null) {
+        if (componentHitStrategy == null) {
             // Fallback to direct container query if no strategy set
             TComponent component = container.getComponentAt(p.getX(), p.getY());
             if (component == null) {
@@ -274,7 +276,7 @@ public final class TEventManager implements AutoCloseable {
             }
             return component;
         }
-        return hitTestStrategy.getComponentAt(p.getX(), p.getY());
+        return componentHitStrategy.getComponentAt(p.getX(), p.getY());
     }
 
     private void post(TAWTEvent event) {
