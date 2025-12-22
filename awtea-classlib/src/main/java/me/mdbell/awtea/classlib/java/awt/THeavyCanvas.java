@@ -2,30 +2,44 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import lombok.Getter;
 import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
+import me.mdbell.awtea.classlib.java.awt.awtea.peer.TFrameFloatingPeer;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
-import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
+import me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
+import me.mdbell.awtea.gfx.CompositeSurfaceBackend;
 import me.mdbell.awtea.gfx.Surface;
+import me.mdbell.awtea.gfx.SurfaceBackend;
+
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 
 /**
  * THeavyCanvas: Heavyweight Hardware-Backed Canvas Component
  *
- * <p>A heavyweight canvas component that manages its own HTML canvas element,
+ * <p>
+ * A heavyweight canvas component that manages its own HTML canvas element,
  * surface (hardware/software rendering backend), and event handling.
  * This component provides a unified, consistent implementation for all
- * heavyweight window peers (Frame, Dialog, Applet windows, etc.).</p>
+ * heavyweight window peers (Frame, Dialog, Applet windows, etc.).
+ * </p>
  *
- * <p><b>Key Features:</b></p>
+ * <p>
+ * <b>Key Features:</b>
+ * </p>
  * <ul>
- *   <li>Owns and manages an HTMLCanvasElement</li>
- *   <li>Manages a dedicated Surface instance for rendering</li>
- *   <li>Handles native events via TEventManager</li>
- *   <li>Supports resizing with proper surface lifecycle management</li>
- *   <li>Provides a TGraphics context for AWT rendering</li>
+ * <li>Owns and manages an HTMLCanvasElement</li>
+ * <li>Manages a dedicated Surface instance for rendering</li>
+ * <li>Handles native events via TEventManager</li>
+ * <li>Supports resizing with proper surface lifecycle management</li>
+ * <li>Provides a TGraphics context for AWT rendering</li>
  * </ul>
  *
- * <p><b>Usage:</b></p>
+ * <p>
+ * <b>Usage:</b>
+ * </p>
+ * 
  * <pre>{@code
  * // Create a heavyweight canvas for a container
  * THeavyCanvas canvas = new THeavyCanvas(document, container);
@@ -43,13 +57,17 @@ import org.teavm.jso.dom.html.HTMLDocument;
  * canvas.destroy();
  * }</pre>
  *
- * <p>This component is intended for use by heavyweight peers like
- * TFrameFloatingPeer and reduces code duplication across peer implementations.</p>
+ * <p>
+ * This component is intended for use by heavyweight peers like
+ * TFrameFloatingPeer and reduces code duplication across peer implementations.
+ * </p>
  *
  * @see TCanvas The lightweight canvas component for embedding in AWT containers
  * @see TFrameFloatingPeer Example heavyweight peer using THeavyCanvas
  */
 public class THeavyCanvas {
+
+	private static final Logger log = LoggerFactory.getLogger(THeavyCanvas.class);
 
 	/**
 	 * -- GETTER --
@@ -82,7 +100,8 @@ public class THeavyCanvas {
 	 * Creates a new heavyweight canvas with default initial size.
 	 *
 	 * @param document  The HTML document to create the canvas element in
-	 * @param container The AWT container that owns this canvas (for event dispatching)
+	 * @param container The AWT container that owns this canvas (for event
+	 *                  dispatching)
 	 */
 	public THeavyCanvas(HTMLDocument document, TContainer container) {
 		this(document, container, 10, 10);
@@ -92,7 +111,8 @@ public class THeavyCanvas {
 	 * Creates a new heavyweight canvas with specified initial size.
 	 *
 	 * @param document  The HTML document to create the canvas element in
-	 * @param container The AWT container that owns this canvas (for event dispatching)
+	 * @param container The AWT container that owns this canvas (for event
+	 *                  dispatching)
 	 * @param width     Initial width in pixels
 	 * @param height    Initial height in pixels
 	 */
@@ -110,25 +130,103 @@ public class THeavyCanvas {
 		eventManager = new TEventManager(canvasElement, container);
 
 		// Create surface for rendering
-		surface = DefaultSurfaceBackend.getDefault().createScreenSurface(
-			canvasElement.getWidth(),
-			canvasElement.getHeight(),
-			canvasElement
-		);
+		surface = createScreenSurface();
 
 		// Create buffered image wrapper
 		screenImg = new TBufferedImage(surface);
+	}
+
+	public THeavyCanvas(HTMLCanvasElement canvasElement, TContainer container) {
+		this(canvasElement, container, canvasElement.getWidth(), canvasElement.getHeight());
+	}
+
+	public THeavyCanvas(HTMLCanvasElement canvasElement, TContainer container, int width, int height) {
+		this.canvasElement = canvasElement;
+
+		// Create event manager
+		eventManager = new TEventManager(canvasElement, container);
+
+		canvasElement.setWidth(width);
+		canvasElement.setHeight(height);
+
+		// Create surface for rendering
+		surface = createScreenSurface();
+
+		// Create buffered image wrapper
+		screenImg = new TBufferedImage(surface);
+	}
+
+	private Surface createScreenSurface() {
+		try {
+			WebGLSurfaceBackend webgl = (WebGLSurfaceBackend) SurfaceBackendFactory.getWebGLBackend(canvasElement);
+			Surface surface = webgl.createScreenSurface(getWidth(), getHeight());
+			log.trace("Using WebGL surface backend for heavyweight canvas - dimensions: {}x{}", getWidth(),
+					getHeight());
+			
+			// Automatically enable GPU-based hit picking for WebGL backend
+			initializeWebGLPickingStrategy(webgl);
+			
+			// we use a composite backend as there are still some surfaces that webgl
+			// doesn't fully support (like text rendering)
+			CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[] {
+					webgl,
+					SurfaceBackendFactory.getDefault()
+			});
+			SurfaceBackendFactory.setDefault(compositeSurfaceBackend);
+			return surface;
+		} catch (Exception e) {
+			log.warn("Failed to create a webgl instance! Using default");
+		}
+		return SurfaceBackendFactory.createScreenSurface(getWidth(), getHeight(), canvasElement);
+	}
+	
+	/**
+	 * Initializes GPU-based hit picking for WebGL backend.
+	 * This automatically enables O(1) hit-testing when using WebGL.
+	 * 
+	 * @param webgl the WebGL backend
+	 */
+	private void initializeWebGLPickingStrategy(WebGLSurfaceBackend webgl) {
+		try {
+			// Get the container from event manager
+			TContainer container = getContainerFromEventManager();
+			if (container == null) {
+				log.debug("Cannot initialize picking strategy - no container available");
+				return;
+			}
+			
+			// Create picking buffer strategy
+			me.mdbell.awtea.classlib.java.awt.awtea.TPickingBufferHitTestStrategy pickingStrategy =
+				new me.mdbell.awtea.classlib.java.awt.awtea.TPickingBufferHitTestStrategy(
+					webgl, container, getWidth(), getHeight()
+				);
+			
+			// Set on event manager
+			eventManager.setHitTestStrategy(pickingStrategy);
+			
+			log.info("GPU-based hit picking enabled for WebGL backend");
+		} catch (Exception e) {
+			log.warn("Failed to initialize GPU picking strategy: {}", e.getMessage());
+			// Fallback to tree-walk strategy (already initialized by default)
+		}
+	}
+	
+	/**
+	 * Gets the container from the event manager using reflection-free approach.
+	 */
+	private TContainer getContainerFromEventManager() {
+		return eventManager.getContainer();
 	}
 
 	/**
 	 * Configures standard event handling for a heavyweight canvas.
 	 * This sets up:
 	 * <ul>
-	 *   <li>Context menu suppression</li>
-	 *   <li>Focus events</li>
-	 *   <li>Keyboard events</li>
-	 *   <li>Mouse events</li>
-	 *   <li>Mouse wheel events</li>
+	 * <li>Context menu suppression</li>
+	 * <li>Focus events</li>
+	 * <li>Keyboard events</li>
+	 * <li>Mouse events</li>
+	 * <li>Mouse wheel events</li>
 	 * </ul>
 	 *
 	 * @return This canvas instance for method chaining

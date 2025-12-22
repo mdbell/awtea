@@ -27,6 +27,8 @@ public class WasmSurfaceBackend implements SurfaceBackend {
     
     private final WasmDiagnostics diagnostics;
     
+    private final WasmBuildInfo buildInfo;
+    
     // Cache for capacity warning thresholds to avoid frequent checks
     private long lastCapacityWarningTime = 0;
     private static final long CAPACITY_WARNING_INTERVAL_MS = 5000; // Warn at most once per 5 seconds
@@ -46,6 +48,24 @@ public class WasmSurfaceBackend implements SurfaceBackend {
                 env).await();
         // Initialize the surface system (sets all contexts to free state)
         this.exports.initSurfaceSystem();
+        
+        // Cache build information at initialization
+        this.buildInfo = new WasmBuildInfo(this.exports);
+        
+        // Log build information
+        log.info("Loaded WASM rasterizer: {} built on {} at {}", 
+                buildInfo.getVersion(), buildInfo.getBuildDate(), buildInfo.getBuildTime());
+        log.info("Build flags: {}", buildInfo.getBuildFlagsDescription());
+        
+        // Log cached stack info for diagnostics
+        if (buildInfo.hasStackTracking()) {
+            log.info("Stack tracking enabled: buffer at 0x{} ({} frames cached at init)",
+                    Integer.toHexString(buildInfo.getStackInfoPtr()).toUpperCase(),
+                    buildInfo.getStackInfoCount());
+        } else {
+            log.info("Stack tracking disabled in this build");
+        }
+        
         this.surfaceCache = new SurfaceLRUCache(this, getSurfaceCacheSize());
         this.surfacePool = new WasmSurfacePool(this);
         this.diagnostics = new WasmDiagnostics(this.exports);
@@ -168,6 +188,16 @@ public class WasmSurfaceBackend implements SurfaceBackend {
      */
     public WasmDiagnostics getDiagnostics() {
         return diagnostics;
+    }
+    
+    /**
+     * Get build information about the WASM module.
+     * Provides version, build timestamp, and debug flag information.
+     * 
+     * @return The WasmBuildInfo instance
+     */
+    public WasmBuildInfo getBuildInfo() {
+        return buildInfo;
     }
 
     @Override

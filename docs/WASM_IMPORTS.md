@@ -1,6 +1,6 @@
 # WASM Imports Documentation
 
-This document describes the WASM import functions available for debugging, profiling, and diagnostics in the AWT rasterizer module.
+This document describes the WASM import functions and export functions available for debugging, profiling, and diagnostics in the AWT rasterizer module.
 
 ## Overview
 
@@ -11,7 +11,172 @@ The AWT rasterizer WASM module uses host-provided imports for various runtime fe
 3. **Memory Tracking** - Manual memory usage reporting
 4. **Assertion Handling** - Better C-side debugging with assertion macros
 
+The module also provides diagnostic exports for build information and debugging. All build info exports are declared in `awt_build_info.h`.
+
 All features are independent and can be used together or separately as needed.
+
+## Build Information Exports
+
+The WASM module exports build metadata that can be queried at runtime for diagnostics and environment validation.
+
+### Overview
+
+Build information is exposed through exported functions that return pointers to static strings or bit-packed integers. This allows the host to:
+- Verify module version compatibility
+- Identify debug vs release builds
+- Display build timestamps for debugging
+- Determine which debug features are enabled
+
+### Build Version
+
+**Export:** `get_build_version_ptr()`
+
+```c
+uint32_t get_build_version_ptr(void);
+```
+
+Returns a pointer to a null-terminated version string (e.g., "0.1.0-dev" for debug builds, "0.1.0" for release builds).
+
+**TypeScript Usage:**
+```typescript
+const versionPtr = wasmExports.get_build_version_ptr();
+const version = decodeNullTerminatedString(memory, versionPtr);
+console.log(`WASM Version: ${version}`);
+```
+
+### Build Date and Time
+
+**Exports:** `get_build_date_ptr()`, `get_build_time_ptr()`
+
+```c
+uint32_t get_build_date_ptr(void);
+uint32_t get_build_time_ptr(void);
+```
+
+Return pointers to null-terminated strings containing the build date and time (set via `__DATE__` and `__TIME__` compiler macros).
+
+**Example Output:** "Dec 21 2025" and "17:16:15"
+
+### Build Flags (Bit-Packed)
+
+**Export:** `get_build_flags()`
+
+```c
+uint32_t get_build_flags(void);
+```
+
+Returns a 32-bit integer with bit-packed build configuration flags:
+
+| Bit | Flag | Description |
+|-----|------|-------------|
+| 0 | `BUILD_FLAG_DEBUG` | Debug build (vs release) |
+| 1 | `BUILD_FLAG_STACK_TRACKING` | Stack tracking enabled |
+| 2 | `BUILD_FLAG_ASSERTIONS` | Assertions enabled |
+| 3 | `BUILD_FLAG_LOGGING` | Logging enabled |
+| 4 | `BUILD_FLAG_MEMORY_TRACKING` | Memory tracking enabled |
+
+**TypeScript Usage:**
+```typescript
+const flags = wasmExports.get_build_flags();
+const isDebug = (flags & 0x01) !== 0;
+const hasStackTracking = (flags & 0x02) !== 0;
+console.log(`Debug: ${isDebug}, Stack Tracking: ${hasStackTracking}`);
+```
+
+### Build Flags (Human-Readable)
+
+**Export:** `get_build_flags_string_ptr()`
+
+```c
+uint32_t get_build_flags_string_ptr(void);
+```
+
+Returns a pointer to a human-readable description of the build flags.
+
+**Example Output:**
+- Debug build: `"DEBUG +STACK +ASSERT +LOG +MEMTRACK"`
+- Release build: `"RELEASE"`
+- Minimal build: `"RELEASE (minimal)"`
+
+### Stack Info Initialization
+
+**Exports:** `get_stack_info_ptr()`, `get_stack_info_count()`
+
+```c
+uint32_t get_stack_info_ptr(void);
+int get_stack_info_count(void);
+```
+
+Return the pointer to the stack trace buffer and its size. These can be called **at initialization time** and cached, allowing safe access to stack information even after a crash.
+
+**TypeScript Usage:**
+```typescript
+// Cache at initialization
+const stackPtr = wasmExports.get_stack_info_ptr();
+const stackCount = wasmExports.get_stack_info_count();
+
+// Later, even after crash, can read stack from cached pointer
+if (stackPtr !== 0) {
+  const stackFrames = readStackFrames(memory, stackPtr, stackCount);
+  console.log("Last known call stack:", stackFrames);
+}
+```
+
+**Note:** In release builds (with `AWTEA_DEBUG_BUILD=0`), these return 0 since stack tracking is disabled.
+
+### Build Configuration
+
+The WASM module supports two build modes controlled by the master `AWTEA_DEBUG_BUILD` flag:
+
+#### Debug Mode (default)
+
+```bash
+./gradlew :awtea-graphics:buildAwtRasterWasm
+# or explicitly:
+./gradlew :awtea-graphics:buildAwtRasterWasm -PwasmBuildMode=debug
+```
+
+**Compilation flags:**
+- `-O1` - Minimal optimization for faster builds
+- `-g` - Include debug symbols
+- `-DAWTEA_DEBUG_BUILD=1` - Master debug flag ON
+- `-DAWTEA_BUILD_VERSION="0.1.0-dev"`
+
+**Features enabled:**
+- Stack tracking (`ENABLE_WASM_STACK_TRACKING=1`)
+- Assertions (`ENABLE_WASM_ASSERTIONS=1`)
+- Logging (`ENABLE_WASM_LOGGING=1`)
+- Memory tracking (`ENABLE_WASM_MEMORY_TRACKING=1`)
+
+#### Release Mode
+
+```bash
+./gradlew :awtea-graphics:buildAwtRasterWasm -PwasmBuildMode=release
+```
+
+**Compilation flags:**
+- `-O3` - Maximum optimization
+- `-DNDEBUG` - Disable C standard assertions
+- `-DAWTEA_DEBUG_BUILD=0` - Master debug flag OFF
+- `-DAWTEA_BUILD_VERSION="0.1.0"`
+
+**Features disabled:**
+- All debug features are compiled out (zero overhead)
+- Stack tracking disabled
+- Assertions disabled (compile to no-ops)
+- Logging disabled (compile to no-ops)
+- Memory tracking disabled
+
+### Individual Flag Override
+
+While the master `AWTEA_DEBUG_BUILD` flag controls the default, individual features can be explicitly overridden at compile time:
+
+```bash
+# Example: Release build but keep stack tracking
+emcc -DAWTEA_DEBUG_BUILD=0 -DENABLE_WASM_STACK_TRACKING=1 ...
+```
+
+This is useful for specialized builds that need specific diagnostics in production.
 
 ## Logging
 

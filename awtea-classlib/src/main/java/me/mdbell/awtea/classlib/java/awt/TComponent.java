@@ -14,6 +14,9 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import org.teavm.classlib.java.awt.TDimension;
@@ -24,6 +27,44 @@ import org.teavm.classlib.java.awt.TDimension;
 public abstract class TComponent implements TImageObserver {
 
     private static final Logger log = LoggerFactory.getLogger(TComponent.class);
+    
+    // Component ID management for GPU-based hit picking
+    private static final AtomicInteger nextComponentId = new AtomicInteger(1);
+    private static final Map<Integer, TComponent> componentRegistry = new ConcurrentHashMap<>();
+    
+    @Getter
+    private final int componentId;
+    
+    /**
+     * Looks up a component by its unique ID.
+     * Used by GPU-based hit picking to resolve component IDs from picking buffer.
+     * 
+     * @param id the component ID
+     * @return the component with the specified ID, or null if not found
+     */
+    public static TComponent getComponentById(int id) {
+        return componentRegistry.get(id);
+    }
+    
+    /**
+     * Unregisters a component from the ID registry.
+     * Should be called when a component is permanently disposed.
+     * 
+     * @param component the component to unregister
+     */
+    static void unregisterComponent(TComponent component) {
+        if (component != null) {
+            componentRegistry.remove(component.componentId);
+        }
+    }
+    
+    /**
+     * Constructor that assigns a unique ID to this component.
+     */
+    public TComponent() {
+        this.componentId = nextComponentId.getAndIncrement();
+        componentRegistry.put(this.componentId, this);
+    }
 
     @Getter
     @Setter
@@ -73,7 +114,24 @@ public abstract class TComponent implements TImageObserver {
     TEventQueue.EventQueueItem[] eventCache;
 
     public TFontMetrics getFontMetrics(TFont font) {
-        return getGraphics().measureText(font);
+        TGraphics g = getGraphics();
+        if (g != null) {
+            try {
+                return g.getFontMetrics(font);
+            } finally {
+                g.dispose();
+            }
+        }
+
+        // Fallback: delegate to parent component if available, to avoid surprising
+        // nulls
+        TContainer p = getParent();
+        if (p != null) {
+            return p.getFontMetrics(font);
+        }
+
+        // No graphics and no parent to delegate to
+        return null;
     }
 
     public Color getBackground() {
@@ -502,7 +560,10 @@ public abstract class TComponent implements TImageObserver {
         boolean wasValid = this.isValid();
         valid = true;
         if (!wasValid) {
-            repaint();
+            // force the render to be sync, so no component pop-in
+            try (TGraphics g = getGraphics()) {
+                update(g);
+            }
         }
     }
 
@@ -580,5 +641,9 @@ public abstract class TComponent implements TImageObserver {
 
     public void fireFocusGained() {
         TToolkit.getEventQueue().postEvent(new TFocusEvent(this, TFocusEvent.FOCUS_GAINED));
+    }
+
+    public TRectangle getBounds() {
+        return new TRectangle(x, y, width, height);
     }
 }

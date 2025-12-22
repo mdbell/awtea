@@ -4,8 +4,10 @@ This document provides comprehensive documentation for all system properties tha
 
 ## Table of Contents
 - [Graphics and Rendering](#graphics-and-rendering)
+- [Hit-Testing](#hit-testing)
 - [Font Configuration](#font-configuration)
 - [WebAssembly (WASM)](#webassembly-wasm)
+- [Audio Configuration](#audio-configuration)
 - [Logging and Debugging](#logging-and-debugging)
 - [Standard AWT Properties](#standard-awt-properties)
 
@@ -22,7 +24,7 @@ This document provides comprehensive documentation for all system properties tha
   - `"software"` or `"java"` - Use pure Java software renderer
 - **Description**: Forces awtea to use a specific rendering backend instead of the default auto-selection. When not set, awtea tries backends in priority order (WASM first, then Software).
 - **Performance Impact**: WASM backend typically provides better performance than pure Java software rendering.
-- **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/gfx/DefaultSurfaceBackend.java:24`
+- **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/gfx/SurfaceBackendFactory.java`
 - **Since**: v0.1.0
 
 **Example:**
@@ -32,6 +34,64 @@ This document provides comprehensive documentation for all system properties tha
 
 # Force WASM renderer
 -Dme.mdbell.awtea.gfx.backend=wasm
+```
+
+---
+
+## Hit-Testing
+
+### `me.mdbell.awtea.hit_test.strategy`
+
+- **Type**: String (enum)
+- **Default**: `"auto"` (automatically enables GPU picking when WebGL is available)
+- **Valid Values**: 
+  - `"tree_walk"` - Force traditional recursive tree traversal (O(n) complexity)
+  - `"picking_buffer"` - Force GPU-based picking buffer (O(1) complexity, WebGL only)
+  - `"auto"` - Automatically select picking buffer if WebGL is available, otherwise use tree walk
+- **Description**: Controls the component hit-testing strategy used for mouse event dispatch. By default, GPU-based picking is **automatically enabled** when WebGL backend is detected (see `THeavyCanvas.initializeWebGLPickingStrategy()`). GPU-based picking provides O(1) hit-testing by rendering components to an off-screen buffer with unique ID colors, then reading the pixel at the mouse position. This is significantly faster for complex UIs with deep component hierarchies (>100 components).
+- **Performance Impact**: 
+  - Tree-walk: O(n) per hit-test, no memory overhead
+  - Picking buffer: O(1) per hit-test after initial build, uses canvas_width × canvas_height × 4 bytes of VRAM
+- **Code Location**: 
+  - `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/TEventManager.java`
+  - `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/THeavyCanvas.java` (auto-initialization)
+- **Since**: v0.3.0
+- **See Also**: [HIT_PICKING.md](HIT_PICKING.md) for detailed architecture documentation
+
+**Example:**
+```bash
+# Force GPU-based picking (requires WebGL)
+-Dme.mdbell.awtea.hit_test.strategy=picking_buffer
+
+# Force tree-walk strategy (disable GPU picking, always available, lower memory)
+-Dme.mdbell.awtea.hit_test.strategy=tree_walk
+
+# Auto-select based on WebGL availability (default behavior)
+-Dme.mdbell.awtea.hit_test.strategy=auto
+```
+
+### `me.mdbell.awtea.hit_test.debug_render`
+
+- **Type**: Boolean
+- **Default**: `false`
+- **Valid Values**: `true`, `false`
+- **Description**: Enables debug visualization mode for the GPU picking buffer. When enabled, the screen displays a color-coded representation of the picking buffer instead of normal rendering. Each component is rendered with a unique HSL color based on its ID, making it easy to visualize which components occupy which screen regions. This is useful for debugging hit-testing issues, verifying component bounds, and understanding the picking buffer's contents.
+- **Visual Effect**: 
+  - Each component gets a unique vivid color using golden ratio distribution for maximum distinction
+  - Background/empty regions appear black (component ID 0)
+  - Colors update when layout changes or components are added/removed
+- **Performance Impact**: Minimal - only affects rendering output when enabled, doesn't change hit-testing logic
+- **Requires**: GPU picking buffer must be enabled (`me.mdbell.awtea.hit_test.strategy=picking_buffer` or `auto` with WebGL)
+- **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/gfx/webgl/WebGLSurfaceBackend.java`
+- **Since**: v0.3.0
+
+**Example:**
+```bash
+# Enable debug visualization (requires WebGL + picking buffer)
+-Dme.mdbell.awtea.hit_test.debug_render=true
+
+# Typical debugging setup
+-Dme.mdbell.awtea.hit_test.strategy=picking_buffer -Dme.mdbell.awtea.hit_test.debug_render=true
 ```
 
 ---
@@ -146,6 +206,147 @@ This document provides comprehensive documentation for all system properties tha
 
 # Reduce cache to save memory
 -Dme.mdbell.awtea.wasm.surface_cache_size=50
+```
+
+---
+
+## Audio Configuration
+
+### `me.mdbell.awtea.sound.pcm.buffer_size`
+
+- **Type**: Integer
+- **Default**: `sample_rate * channels` (e.g., 88200 for 44.1kHz stereo)
+- **Valid Values**: Any positive integer
+- **Description**: Global fallback for PCM audio line buffer sizes. This value is used when no more specific size replacement matches. More specific properties (with size, rate, or channel filters) take precedence over this global setting. Subject to min/max constraints. Invalid values (non-positive or non-numeric) are silently ignored.
+- **Performance Impact**: Larger buffers provide more tolerance for timing variations but increase end-to-end latency. Smaller buffers reduce latency but require more precise timing.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:35`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Use 176400 samples as fallback for any unmatched buffer sizes
+-Dme.mdbell.awtea.sound.pcm.buffer_size=176400
+```
+
+### `me.mdbell.awtea.sound.pcm.buffer_size.<size>`
+
+- **Type**: Integer (property suffix is the requested buffer size)
+- **Default**: Not set (no replacement)
+- **Valid Values**: Any positive integer
+- **Description**: Replaces a specific requested buffer size with a different value. When an audio line is opened with a buffer size matching `<size>`, it will be replaced with the configured value. This allows targeted adjustment of problematic buffer sizes without affecting all audio lines. Takes precedence over the global fallback. Subject to min/max constraints.
+- **Performance Impact**: Allows fine-tuning specific buffer sizes that may cause issues.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:53`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Replace 4096-sample buffers with 1024 samples
+-Dme.mdbell.awtea.sound.pcm.buffer_size.4096=1024
+
+# Make 8192-sample buffers larger
+-Dme.mdbell.awtea.sound.pcm.buffer_size.8192=16384
+```
+
+### `me.mdbell.awtea.sound.pcm.buffer_size.<size>.<rate>`
+
+- **Type**: Integer (property suffix is buffer size + sample rate)
+- **Default**: Not set (no replacement)
+- **Valid Values**: Any positive integer
+- **Description**: Replaces a specific requested buffer size only when the audio format has a matching sample rate. This provides more targeted control than size-only replacement. Takes precedence over size-only replacements and global fallback. Sample rate is rounded to nearest integer. Subject to min/max constraints.
+- **Performance Impact**: Allows different buffer size adjustments for different sample rates (e.g., 44100 Hz vs 48000 Hz).
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:53`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Replace 4096-sample buffers with 2048 samples, but only for 44.1kHz audio
+-Dme.mdbell.awtea.sound.pcm.buffer_size.4096.44100=2048
+
+# Different replacement for 48kHz audio
+-Dme.mdbell.awtea.sound.pcm.buffer_size.4096.48000=3072
+```
+
+### `me.mdbell.awtea.sound.pcm.buffer_size.<size>.<rate>.<channels>`
+
+- **Type**: Integer (property suffix is buffer size + sample rate + channel count)
+- **Default**: Not set (no replacement)
+- **Valid Values**: Any positive integer
+- **Description**: Replaces a specific requested buffer size only when the audio format matches both sample rate and channel count. This is the most specific filter available and has highest priority. Takes precedence over all other buffer size properties. Sample rate is rounded to nearest integer. Subject to min/max constraints.
+- **Performance Impact**: Allows very precise buffer size control for specific audio configurations.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:53`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Replace 4096-sample buffers with 1024 samples for 44.1kHz stereo only
+-Dme.mdbell.awtea.sound.pcm.buffer_size.4096.44100.2=1024
+
+# Different replacement for 44.1kHz mono
+-Dme.mdbell.awtea.sound.pcm.buffer_size.4096.44100.1=2048
+
+# And for 48kHz stereo
+-Dme.mdbell.awtea.sound.pcm.buffer_size.4096.48000.2=1536
+```
+
+### `me.mdbell.awtea.sound.pcm.buffer_size.min`
+
+- **Type**: Integer
+- **Default**: No minimum (unconstrained)
+- **Valid Values**: Any positive integer
+- **Description**: Enforces a minimum buffer size for PCM audio lines. After all size replacements are applied, if the resulting buffer size is smaller than this value, it will be increased to meet the minimum. This ensures adequate buffering to prevent underruns. Applied last after all other properties. Invalid values are silently ignored.
+- **Performance Impact**: Prevents overly small buffers that could cause audio glitches, at the cost of slightly increased latency.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:41`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Ensure all buffers are at least 22050 samples
+-Dme.mdbell.awtea.sound.pcm.buffer_size.min=22050
+```
+
+### `me.mdbell.awtea.sound.pcm.buffer_size.max`
+
+- **Type**: Integer
+- **Default**: No maximum (unconstrained)
+- **Valid Values**: Any positive integer
+- **Description**: Enforces a maximum buffer size for PCM audio lines. After all size replacements are applied, if the resulting buffer size is larger than this value, it will be reduced to meet the maximum. This limits latency and memory usage. Applied last after all other properties. Invalid values are silently ignored.
+- **Performance Impact**: Caps latency and memory usage, but may increase the risk of audio underruns if the maximum is too restrictive.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:47`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Limit all buffers to at most 176400 samples
+-Dme.mdbell.awtea.sound.pcm.buffer_size.max=176400
+```
+
+### Buffer Size Configuration Priority
+
+When multiple buffer size properties are configured, they are applied in the following priority order (highest to lowest):
+
+1. **Size + Rate + Channel Replacement** (`me.mdbell.awtea.sound.pcm.buffer_size.<size>.<rate>.<channels>`) - Most specific, highest priority
+2. **Size + Rate Replacement** (`me.mdbell.awtea.sound.pcm.buffer_size.<size>.<rate>`) - Rate-specific
+3. **Size-Only Replacement** (`me.mdbell.awtea.sound.pcm.buffer_size.<size>`) - Size-specific
+4. **Global Fallback** (`me.mdbell.awtea.sound.pcm.buffer_size`) - Lowest priority, used when no specific match
+5. **Requested Size** - The size provided via `open(AudioFormat, int)` or calculated default (only if none of the above match)
+6. **Min/Max Constraints** - Applied last to clamp the final value
+
+**Example:**
+```bash
+# Comprehensive buffer size configuration
+-Dme.mdbell.awtea.sound.pcm.buffer_size=8192 \
+-Dme.mdbell.awtea.sound.pcm.buffer_size.min=2048 \
+-Dme.mdbell.awtea.sound.pcm.buffer_size.max=176400 \
+-Dme.mdbell.awtea.sound.pcm.buffer_size.4096=8192 \
+-Dme.mdbell.awtea.sound.pcm.buffer_size.4096.44100=2048 \
+-Dme.mdbell.awtea.sound.pcm.buffer_size.4096.44100.2=1024
+
+# In this example:
+# - Any 4096-sample 44.1kHz stereo buffer → 1024 samples (most specific - wins!)
+# - Any other 4096-sample 44.1kHz buffer → 2048 samples
+# - Any other 4096-sample buffer → 8192 samples
+# - Any other unmatched buffer → 8192 samples (global fallback)
+# - All buffers are clamped between 2048 and 176400 samples
 ```
 
 ---

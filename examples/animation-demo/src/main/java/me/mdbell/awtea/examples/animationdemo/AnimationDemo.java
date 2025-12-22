@@ -1,12 +1,20 @@
 package me.mdbell.awtea.examples.animationdemo;
 
 import me.mdbell.awtea.Helper;
-import me.mdbell.awtea.gfx.DefaultSurfaceBackend;
+import me.mdbell.awtea.gfx.CompositeSurfaceBackend;
+import me.mdbell.awtea.gfx.SurfaceBackendFactory;
+import me.mdbell.awtea.gfx.wasm.WasmBuildInfo;
 import me.mdbell.awtea.gfx.wasm.WasmDiagnostics;
 import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
+import me.mdbell.awtea.util.StubAppletStub;
 import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
+import org.teavm.jso.JSExport;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
+
+import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -25,32 +33,62 @@ import java.util.Random;
  */
 public class AnimationDemo {
 
+    private static OnVisibleCallback onVisible = null;
+
+    @JSFunctor
+    private interface OnVisibleCallback extends JSObject {
+        void invoke();
+    }
+
+    @JSExport
+    public static void setOpenCallback(OnVisibleCallback callback) {
+        onVisible = callback;
+    }
+
     public static void main(String[] args) {
-        // LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
-        // System.setProperty("me.mdbell.awtea.gfx.backend", "java");
+        System.setProperty("me.mdbell.awtea.gfx.backend", "wasm");
         System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
 
-        // Create the main window
-        Frame frame = new Frame();
-        frame.setTitle("Animation Demo - awtea Example");
-        frame.setSize(800, 600);
+        String canvasId = args.length > 0 ? args[0] : "animation-demo";
+        String level = args.length > 1 ? args[1] : null;
+
+        if (level != null) {
+            LoggerFactory.setGlobalLevel(LogLevel.parse(level));
+        }
+
+        // Tells the Applet instance we're heavyweight, and want to render directly to a
+        // canvas
+        System.setProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId", canvasId);
+
+        // Create the applet
+        Applet applet = new Applet();
+        applet.setStub(new StubAppletStub());
+        applet.setLayout(new BorderLayout());
 
         // Create and add the animation canvas
         AnimationCanvas canvas = new AnimationCanvas();
+        canvas.setPreferredSize(new Dimension(800, 600));
 
-        canvas.setSize(800, 600);
+        applet.add(canvas, BorderLayout.CENTER);
+        applet.setSize(800, 600);
 
-        frame.add(canvas);
+        // Initialize and show
+        applet.init();
+        applet.start();
+        applet.setVisible(true);
 
-        // Show the window
-        frame.setVisible(true);
+        // Notify that we're ready to display
+        if (onVisible != null) {
+            onVisible.invoke();
+        }
 
         // Start animation loop
         canvas.startAnimation();
     }
-    
+
     /**
      * Check if we're running under TeaVM with WASM backend loaded.
+     * 
      * @return true if WASM diagnostics are available
      */
     private static boolean isWasmBackendAvailable() {
@@ -58,30 +96,47 @@ public class AnimationDemo {
         if (!Helper.isTeaVM()) {
             return false;
         }
-        
+
         try {
-            DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
-            return defaultBackend.getWasmBackend() != null;
+            WasmSurfaceBackend wasmBackend = (WasmSurfaceBackend) SurfaceBackendFactory.getWasmBackend();
+            return wasmBackend != null;
         } catch (Exception e) {
             return false;
         }
     }
-    
+
     /**
      * Get WASM diagnostics if available.
+     * 
      * @return WasmDiagnostics instance, or null if not available
      */
     private static WasmDiagnostics getWasmDiagnostics() {
         // First check if running under TeaVM
+        if (!isWasmBackendAvailable()) {
+            return null;
+        }
+        WasmSurfaceBackend wasmBackend = (WasmSurfaceBackend) SurfaceBackendFactory.getWasmBackend();
+        if (wasmBackend != null) {
+            return wasmBackend.getDiagnostics();
+        }
+        return null;
+    }
+
+    /**
+     * Get WASM build info if available.
+     * 
+     * @return WasmBuildInfo instance, or null if not available
+     */
+    private static WasmBuildInfo getWasmBuildInfo() {
+        // First check if running under TeaVM
         if (!Helper.isTeaVM()) {
             return null;
         }
-        
+
         try {
-            DefaultSurfaceBackend defaultBackend = DefaultSurfaceBackend.getDefault();
-            WasmSurfaceBackend wasmBackend = defaultBackend.getWasmBackend();
+            WasmSurfaceBackend wasmBackend = (WasmSurfaceBackend) SurfaceBackendFactory.getWasmBackend();
             if (wasmBackend != null) {
-                return wasmBackend.getDiagnostics();
+                return wasmBackend.getBuildInfo();
             }
         } catch (Exception e) {
             // Ignore - not running with WASM
@@ -349,14 +404,14 @@ public class AnimationDemo {
             int height = getHeight();
 
             // Create offscreen buffer if needed
-            if (offscreenImage == null ||
-                    offscreenImage.getWidth(null) != width ||
-                    offscreenImage.getHeight(null) != height) {
-                offscreenImage = createImage(width, height);
-                if (offscreenImage != null) {
-                    offscreenGraphics = offscreenImage.getGraphics();
-                }
-            }
+            // if (offscreenImage == null ||
+            // offscreenImage.getWidth(null) != width ||
+            // offscreenImage.getHeight(null) != height) {
+            // offscreenImage = createImage(width, height);
+            // if (offscreenImage != null) {
+            // offscreenGraphics = offscreenImage.getGraphics();
+            // }
+            // }
 
             // Use offscreen graphics if available, otherwise draw directly
             Graphics drawGraphics = offscreenGraphics != null ? offscreenGraphics : g;
@@ -386,7 +441,7 @@ public class AnimationDemo {
 
             // Draw FPS counter
             drawFPSCounter(drawGraphics);
-            
+
             // Draw WASM diagnostics (if available)
             drawWasmDiagnostics(drawGraphics);
 
@@ -425,33 +480,67 @@ public class AnimationDemo {
             g.setFont(new Font("SansSerif", Font.BOLD, 14));
             g.drawString(String.format("FPS: %.1f", fps), 10, 22);
         }
-        
+
         /**
          * Draws WASM diagnostics below the FPS counter (if available).
          */
         private void drawWasmDiagnostics(Graphics g) {
             WasmDiagnostics diag = AnimationDemo.getWasmDiagnostics();
-            if (diag == null) {
+            WasmBuildInfo buildInfo = AnimationDemo.getWasmBuildInfo();
+
+            if (diag == null && buildInfo == null) {
                 return; // Not running with WASM backend
             }
-            
+
             int y = 65; // Position below ball count
-            
+
+            // Calculate dynamic height based on enabled features
+            int lineHeight = 15;
+            int lines = 2; // Surf + Ctx lines always present
+            boolean hasMemoryTracking = buildInfo != null && buildInfo.hasMemoryTracking();
+            if (hasMemoryTracking) {
+                lines++; // Add memory line
+            }
+            if (buildInfo != null) {
+                lines++; // Add version line
+            }
+            int height = lines * lineHeight + 10; // Base padding
+
+            // Calculate dynamic width based on content
+            // Memory tracking with peak adds extra width
+            int width = hasMemoryTracking ? 220 : 150;
+
             // Background with rounded corners
             g.setColor(Color.WHITE);
-            g.fillRoundRect(5, y, 150, 55, 8, 8);
-            
+            g.fillRoundRect(5, y, width, height, 8, 8);
+
             // Border with rounded corners
             g.setColor(Color.BLACK);
-            g.drawRoundRect(5, y, 150, 55, 8, 8);
-            
+            g.drawRoundRect(5, y, width, height, 8, 8);
+
             // Text
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            g.drawString(String.format("Surf: %d/%d", 
-                    diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + 15);
-            g.drawString(String.format("Ctx: %d/%d", 
-                    diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + 30);
-            g.drawString(String.format("Mem: %.1f KB", diag.getAllocatedKB()), 10, y + 45);
+
+            int currentLine = 1;
+            if (diag != null) {
+                g.drawString(String.format("Surf: %d/%d",
+                        diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + currentLine * lineHeight);
+                currentLine++;
+                g.drawString(String.format("Ctx: %d/%d",
+                        diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + currentLine * lineHeight);
+                currentLine++;
+
+                if (hasMemoryTracking) {
+                    g.drawString(String.format("Mem: %.1f KB (Peak: %.1f KB)", diag.getAllocatedKB(), diag.getPeakKB()),
+                            10, y + currentLine * lineHeight);
+                    currentLine++;
+                }
+            }
+
+            if (buildInfo != null) {
+                g.setFont(new Font("SansSerif", Font.PLAIN, 10));
+                g.drawString(String.format("WASM: %s", buildInfo.getVersion()), 10, y + currentLine * lineHeight);
+            }
         }
 
         /**

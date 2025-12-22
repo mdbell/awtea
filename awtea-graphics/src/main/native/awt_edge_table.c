@@ -12,6 +12,13 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+// Edge table initial capacity constants
+// Active edge list: 16 edges - typical for simple polygons (4-8 edges intersecting scanline)
+// Scanline edge list: 4 edges - most scanlines have 2-4 edges starting
+// Lists grow dynamically by doubling when capacity is exceeded
+#define EDGE_TABLE_ACTIVE_INITIAL_CAPACITY 16
+#define EDGE_TABLE_SCANLINE_INITIAL_CAPACITY 4
+
 // Helper function to create an edge list
 static EdgeList* edge_list_create(int initial_capacity) {
     EdgeList* list = (EdgeList*)tracked_malloc(sizeof(EdgeList));
@@ -124,8 +131,8 @@ EdgeTable* edge_table_create(int min_y, int max_y, int width, int height) {
         et->scanlines[i].capacity = 0;
     }
     
-    // Initialize active edge list
-    et->active.edges = (EdgeNode*)tracked_malloc(sizeof(EdgeNode) * 16);
+    // Initialize active edge list with defined capacity
+    et->active.edges = (EdgeNode*)tracked_malloc(sizeof(EdgeNode) * EDGE_TABLE_ACTIVE_INITIAL_CAPACITY);
     if (!et->active.edges) {
         log_error("Failed to allocate active edge list");
         tracked_free(et->scanlines);
@@ -134,7 +141,7 @@ EdgeTable* edge_table_create(int min_y, int max_y, int width, int height) {
         return NULL;
     }
     et->active.count = 0;
-    et->active.capacity = 16;
+    et->active.capacity = EDGE_TABLE_ACTIVE_INITIAL_CAPACITY;
     
     log_trace("Created edge table: min_y=%d, max_y=%d, width=%d, height=%d", 
              min_y, max_y, width, height);
@@ -221,14 +228,14 @@ void edge_table_add_edge(EdgeTable* et, int y1, float x1, int y2, float x2) {
     if (scanline_idx >= 0 && scanline_idx < (et->max_y - et->min_y + 1)) {
         EdgeList* list = &et->scanlines[scanline_idx];
         
-        // Allocate edge array if needed
+        // Allocate edge array if needed (lazy initialization per scanline)
         if (list->edges == NULL) {
-            list->edges = (EdgeNode*)tracked_malloc(sizeof(EdgeNode) * 4);
+            list->edges = (EdgeNode*)tracked_malloc(sizeof(EdgeNode) * EDGE_TABLE_SCANLINE_INITIAL_CAPACITY);
             if (!list->edges) {
                 log_error("Failed to allocate edge list for scanline %d", y1);
                 return;
             }
-            list->capacity = 4;
+            list->capacity = EDGE_TABLE_SCANLINE_INITIAL_CAPACITY;
             list->count = 0;
         }
         

@@ -1,17 +1,27 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.geom.TPathIterator;
 import me.mdbell.awtea.classlib.java.awt.geom.TPoint2D;
 import me.mdbell.awtea.classlib.java.awt.geom.TRectangle2D;
 
-
 /**
  * @see java.awt.Rectangle
  */
+@ToString
+@EqualsAndHashCode
 public class TRectangle implements TShape {
 
 	public int x, y, width, height;
+
+	public TRectangle(TRectangle other) {
+		this.x = other.x;
+		this.y = other.y;
+		this.width = other.width;
+		this.height = other.height;
+	}
 
 	public TRectangle() {
 		this(0, 0, 0, 0);
@@ -41,19 +51,19 @@ public class TRectangle implements TShape {
 	@Override
 	public boolean contains(double x, double y) {
 		return x >= this.x && x < this.x + this.width &&
-			y >= this.y && y < this.y + this.height;
+				y >= this.y && y < this.y + this.height;
 	}
 
 	public boolean contains(int x, int y) {
 		return x >= this.x && x < this.x + this.width &&
-			y >= this.y && y < this.y + this.height;
+				y >= this.y && y < this.y + this.height;
 	}
 
 	public boolean contains(int x, int y, int w, int h) {
 		return contains(x, y) &&
-			contains(x + w, y) &&
-			contains(x, y + h) &&
-			contains(x + w, y + h);
+				contains(x + w, y) &&
+				contains(x, y + h) &&
+				contains(x + w, y + h);
 	}
 
 	@Override
@@ -67,9 +77,9 @@ public class TRectangle implements TShape {
 			return false;
 		}
 		return (x + w > this.x &&
-			y + h > this.y &&
-			x < this.x + this.width &&
-			y < this.y + this.height);
+				y + h > this.y &&
+				x < this.x + this.width &&
+				y < this.y + this.height);
 	}
 
 	@Override
@@ -80,9 +90,9 @@ public class TRectangle implements TShape {
 	@Override
 	public boolean contains(double x, double y, double w, double h) {
 		return contains(x, y) &&
-			contains(x + w, y) &&
-			contains(x, y + h) &&
-			contains(x + w, y + h);
+				contains(x + w, y) &&
+				contains(x, y + h) &&
+				contains(x + w, y + h);
 	}
 
 	@Override
@@ -117,10 +127,14 @@ public class TRectangle implements TShape {
 		int rx2 = rx1 + width;
 		int ry2 = ry1 + height;
 
-		if (tx1 < rx1) tx1 = rx1;
-		if (ty1 < ry1) ty1 = ry1;
-		if (tx2 > rx2) tx2 = rx2;
-		if (ty2 > ry2) ty2 = ry2;
+		if (tx1 < rx1)
+			tx1 = rx1;
+		if (ty1 < ry1)
+			ty1 = ry1;
+		if (tx2 > rx2)
+			tx2 = rx2;
+		if (ty2 > ry2)
+			ty2 = ry2;
 
 		tx2 -= tx1;
 		ty2 -= ty1;

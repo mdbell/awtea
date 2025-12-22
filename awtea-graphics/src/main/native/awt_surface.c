@@ -77,7 +77,8 @@ int reset_surface(int surface_id, int layer, int width, int height, PixelFormat 
             log_warn("reset_surface: surface %d has %d active references, may cause issues",
                     surface_id, surface->ref_count);
         }
-        free((void*)(uintptr_t)surface->ptr);
+        // Use tracked_free to maintain memory accounting consistency
+        tracked_free((void*)(uintptr_t)surface->ptr);
     }
 
     memset(surface, 0, sizeof(SurfaceData));

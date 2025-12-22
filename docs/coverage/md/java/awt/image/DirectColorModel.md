@@ -1,11 +1,11 @@
-# Class: `DirectColorModel` ![Coverage](https://img.shields.io/badge/coverage-15.4%25-red)
+# Class: `DirectColorModel` ![Coverage](https://img.shields.io/badge/coverage-19.2%25-red)
 
 **Full Name:** `java.awt.image.DirectColorModel`
 
-**Coverage:** 4 / 26 (15.4%)
+**Coverage:** 5 / 26 (19.2%)
 
 ```
-[███████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 15.4%
+[█████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 19.2%
 ```
 
 ## ✓ Implemented Methods
@@ -41,9 +41,6 @@
 
 - `public java.awt.image.DirectColorModel(int, int, int, int)`
 - `public java.awt.image.DirectColorModel(int, int, int, int, int)`
-
-## ✗ Missing Constructors
-
 - `public java.awt.image.DirectColorModel(java.awt.color.ColorSpace, int, int, int, int, int, boolean, int)`
 
 

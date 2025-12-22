@@ -28,6 +28,137 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 	 */
 	private static final double MAX_QUEUE_SECONDS = 0.075;
 
+	/**
+	 * System property to configure default PCM audio line buffer size (global override).
+	 * Valid values: positive integers (default: sample rate * channels)
+	 */
+	private static final String BUFFER_SIZE_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size";
+
+	/**
+	 * System property to configure minimum PCM audio line buffer size.
+	 * Valid values: positive integers (default: no minimum)
+	 */
+	private static final String BUFFER_SIZE_MIN_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size.min";
+
+	/**
+	 * System property to configure maximum PCM audio line buffer size.
+	 * Valid values: positive integers (default: no maximum)
+	 */
+	private static final String BUFFER_SIZE_MAX_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size.max";
+
+	/**
+	 * System property prefix for buffer size replacements.
+	 * Format: me.mdbell.awtea.sound.pcm.buffer_size.<requested_size>[.<sample_rate>][.<channels>]=<new_size>
+	 * 
+	 * Examples:
+	 * - me.mdbell.awtea.sound.pcm.buffer_size.4096=1024 (any 4096 buffer)
+	 * - me.mdbell.awtea.sound.pcm.buffer_size.4096.44100=2048 (4096 buffers at 44100 Hz)
+	 * - me.mdbell.awtea.sound.pcm.buffer_size.4096.44100.2=1024 (4096 buffers at 44100 Hz stereo)
+	 * 
+	 * More specific filters take precedence over less specific ones.
+	 */
+	private static final String BUFFER_SIZE_REPLACE_PREFIX = "me.mdbell.awtea.sound.pcm.buffer_size.";
+
+	/**
+	 * Cached PCM buffer size override from system property, or -1 if not set.
+	 * When > 0, this value is used to override ALL buffer sizes (both default and explicitly provided).
+	 */
+	private static final int BUFFER_SIZE_OVERRIDE = getIntProperty(BUFFER_SIZE_PROPERTY);
+
+	/**
+	 * Cached minimum buffer size constraint, or -1 if not set.
+	 */
+	private static final int BUFFER_SIZE_MIN = getIntProperty(BUFFER_SIZE_MIN_PROPERTY);
+
+	/**
+	 * Cached maximum buffer size constraint, or -1 if not set.
+	 */
+	private static final int BUFFER_SIZE_MAX = getIntProperty(BUFFER_SIZE_MAX_PROPERTY);
+
+	/**
+	 * Get a positive integer from a system property.
+	 * @param propertyName the property name
+	 * @return the value if valid positive integer, -1 if not set or invalid
+	 */
+	private static int getIntProperty(String propertyName) {
+		String valueStr = System.getProperty(propertyName);
+		if (valueStr != null) {
+			try {
+				int value = Integer.parseInt(valueStr);
+				if (value > 0) {
+					return value;
+				}
+			} catch (NumberFormatException e) {
+				// Fall through to not set
+			}
+		}
+		return -1; // Not set or invalid
+	}
+
+	/**
+	 * Determine the actual buffer size to use based on configuration.
+	 * Priority order (highest to lowest):
+	 * 1. Size + rate + channel-specific replacement (me.mdbell.awtea.sound.pcm.buffer_size.<size>.<rate>.<channels>)
+	 * 2. Size + rate-specific replacement (me.mdbell.awtea.sound.pcm.buffer_size.<size>.<rate>)
+	 * 3. Size-specific replacement (me.mdbell.awtea.sound.pcm.buffer_size.<size>)
+	 * 4. Global override (me.mdbell.awtea.sound.pcm.buffer_size)
+	 * 5. Requested buffer size (unchanged)
+	 * 6. Min/max constraints applied last
+	 * 
+	 * @param format the audio format (may be null)
+	 * @param requestedSize the requested buffer size
+	 * @return the actual buffer size to use
+	 */
+	private static int determineBufferSize(AudioFormat format, int requestedSize) {
+		int bufferSize = -1;
+
+		// Try increasingly specific property matches (most specific first)
+		if (format != null) {
+			int sampleRate = (int) Math.round(format.getSampleRate());
+			int channels = format.getChannels();
+
+			// Try: size + rate + channels (most specific - highest priority)
+			String fullProperty = BUFFER_SIZE_REPLACE_PREFIX + requestedSize + "." + sampleRate + "." + channels;
+			bufferSize = getIntProperty(fullProperty);
+			
+			// Try: size + rate
+			if (bufferSize < 0) {
+				String rateProperty = BUFFER_SIZE_REPLACE_PREFIX + requestedSize + "." + sampleRate;
+				bufferSize = getIntProperty(rateProperty);
+			}
+			
+			// Try: size only
+			if (bufferSize < 0) {
+				String sizeProperty = BUFFER_SIZE_REPLACE_PREFIX + requestedSize;
+				bufferSize = getIntProperty(sizeProperty);
+			}
+		} else {
+			// No format available, only check size-specific replacement
+			String sizeProperty = BUFFER_SIZE_REPLACE_PREFIX + requestedSize;
+			bufferSize = getIntProperty(sizeProperty);
+		}
+
+		// If no specific replacement found, check global override (lowest priority)
+		if (bufferSize < 0 && BUFFER_SIZE_OVERRIDE > 0) {
+			bufferSize = BUFFER_SIZE_OVERRIDE;
+		}
+
+		// If still no match, use requested size
+		if (bufferSize < 0) {
+			bufferSize = requestedSize;
+		}
+
+		// Apply min/max constraints last
+		if (BUFFER_SIZE_MIN > 0 && bufferSize < BUFFER_SIZE_MIN) {
+			bufferSize = BUFFER_SIZE_MIN;
+		}
+		if (BUFFER_SIZE_MAX > 0 && bufferSize > BUFFER_SIZE_MAX) {
+			bufferSize = BUFFER_SIZE_MAX;
+		}
+
+		return bufferSize;
+	}
+
     /***
      * The global audio context.
      */
@@ -345,21 +476,25 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 
     @Override
 	public void open(AudioFormat format, int bufferSize) throws LineUnavailableException {
+		// Determine actual buffer size based on configuration
+		int actualBufferSize = determineBufferSize(format, bufferSize);
+		
 		this.format = format;
-		this.audioBuffer = new CircularAudioBuffer(bufferSize);
+		this.audioBuffer = new CircularAudioBuffer(actualBufferSize);
 		this.closed = false;
 		this.running = false;
 		this.nextStartTime = 0;
 		this.writeEpoch++;
 
-		if (sampleScratch == null || sampleScratch.length < bufferSize) {
-			sampleScratch = new float[bufferSize];
+		if (sampleScratch == null || sampleScratch.length < actualBufferSize) {
+			sampleScratch = new float[actualBufferSize];
 		}
 	}
 
     @Override
     public void open(AudioFormat format) throws LineUnavailableException {
-        this.open(format, (int) (format.getSampleRate() * format.getChannels()));
+        int defaultBufferSize = (int) (format.getSampleRate() * format.getChannels());
+        this.open(format, defaultBufferSize);
     }
 
     @Override

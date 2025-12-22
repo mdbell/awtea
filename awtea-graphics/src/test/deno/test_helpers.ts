@@ -9,6 +9,32 @@ import { assertEquals } from "@std/assert";
 import { WasmRasterizer } from "./wasm_rasterizer.ts";
 
 /**
+ * Maximum length for null-terminated strings read from WASM memory
+ * Used as a safety limit to prevent infinite loops
+ */
+export const MAX_STRING_LENGTH = 1024;
+
+/**
+ * Decode a null-terminated string from WASM memory
+ * 
+ * @param memory - The WASM memory instance
+ * @param ptr - Pointer to the start of the string in WASM memory
+ * @returns The decoded string
+ */
+export function decodeNullTerminatedString(
+  memory: WebAssembly.Memory,
+  ptr: number,
+): string {
+  const view = new Uint8Array(memory.buffer);
+  let len = 0;
+  while (view[ptr + len] !== 0 && len < MAX_STRING_LENGTH) {
+    len++;
+  }
+  const bytes = view.slice(ptr, ptr + len);
+  return new TextDecoder().decode(bytes);
+}
+
+/**
  * Compare two pixel values as unsigned 32-bit integers
  * 
  * JavaScript bitwise operations are signed, so we convert to unsigned
