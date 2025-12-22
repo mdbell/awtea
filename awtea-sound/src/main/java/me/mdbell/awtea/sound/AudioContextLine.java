@@ -390,9 +390,7 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 
     @Override
     public void open(AudioFormat format) throws LineUnavailableException {
-        int defaultBufferSize = BUFFER_SIZE_OVERRIDE > 0 
-            ? BUFFER_SIZE_OVERRIDE 
-            : (int) (format.getSampleRate() * format.getChannels());
+        int defaultBufferSize = BUFFER_SIZE_OVERRIDE > 0 ? BUFFER_SIZE_OVERRIDE : (int) (format.getSampleRate() * format.getChannels());
         this.open(format, defaultBufferSize);
     }
 

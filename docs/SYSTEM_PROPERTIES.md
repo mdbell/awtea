@@ -160,7 +160,7 @@ This document provides comprehensive documentation for all system properties tha
 - **Valid Values**: Any positive integer
 - **Description**: Configures the buffer size for MIDI audio rendering. This controls the amount of PCM data buffered during MIDI synthesis. Larger values can improve performance by reducing buffer underruns but may increase latency. Smaller values reduce latency but may cause audio glitches if the system cannot keep up with real-time rendering. Invalid values (non-positive or non-numeric) are silently ignored and the default is used.
 - **Performance Impact**: Larger buffers use more memory but reduce the risk of audio underruns. Smaller buffers reduce latency but require more frequent buffer fills.
-- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/midi/MIDI.java:58`
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/midi/MIDI.java:62`
 - **Since**: v0.1.0
 
 **Example:**
@@ -179,7 +179,7 @@ This document provides comprehensive documentation for all system properties tha
 - **Valid Values**: Any positive integer
 - **Description**: Configures the default buffer size for PCM audio lines (SourceDataLine). This determines the size of the circular buffer used for audio playback. The buffer holds audio samples waiting to be played. Larger buffers can accommodate more buffering but increase latency. Smaller buffers reduce latency but may cause underruns if audio data cannot be written fast enough. This property sets the default size used when opening a line without an explicit buffer size. Invalid values (non-positive or non-numeric) are silently ignored and the format-specific default is used.
 - **Performance Impact**: Larger buffers provide more tolerance for timing variations but increase end-to-end latency. Smaller buffers reduce latency but require more precise timing.
-- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:360`
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:35`
 - **Since**: v0.1.0
 
 **Example:**
