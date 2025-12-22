@@ -125,13 +125,33 @@
     </div>
 
     <div id="app-container">
-        <div class="loading">Loading awtea animation demo...</div>
+        <div class="loading" id="loadingMsg">
+            Loading awtea animation demo...
+        </div>
+        <canvas
+            width="800"
+            height="600"
+            id="animation-demo"
+            style="display: none"
+        >
+            Your browser doesn't support canvases :(
+        </canvas>
     </div>
 </div>
 <script type="module">
-    import { main } from './js/animation-demo.js';
+    import { main, setOpenCallback } from './js/animation-demo.js';
 
-    main([]);
+    function hideLoading() {
+        const loadingElem = document.getElementById("loadingMsg");
+        const canvasElem = document.getElementById("animation-demo");
+
+        loadingElem.style.display = "none";
+        canvasElem.style.display = "block";
+    }
+
+    setOpenCallback(hideLoading);
+
+    main(["animation-demo"]);
 </script>
 </body>
 </html>

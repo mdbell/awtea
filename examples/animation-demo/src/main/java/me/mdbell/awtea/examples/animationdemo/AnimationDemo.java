@@ -6,9 +6,15 @@ import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.wasm.WasmBuildInfo;
 import me.mdbell.awtea.gfx.wasm.WasmDiagnostics;
 import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
+import me.mdbell.awtea.util.StubAppletStub;
 import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
+import org.teavm.jso.JSExport;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
+
+import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -27,25 +33,49 @@ import java.util.Random;
  */
 public class AnimationDemo {
 
+    private static OnVisibleCallback onVisible = null;
+
+    @JSFunctor
+    private interface OnVisibleCallback extends JSObject {
+        void invoke();
+    }
+
+    @JSExport
+    public static void setOpenCallback(OnVisibleCallback callback) {
+        onVisible = callback;
+    }
+
     public static void main(String[] args) {
         // LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
         System.setProperty("me.mdbell.awtea.gfx.backend", "wasm");
         System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
 
-        // Create the main window
-        Frame frame = new Frame();
-        frame.setTitle("Animation Demo - awtea Example");
-        frame.setSize(800, 600);
-
+        String canvasId = args.length > 0 ? args[0] : "animation-demo";
+        
+        // Tells the Applet instance we're heavyweight, and want to render directly to a canvas
+        System.setProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId", canvasId);
+        
+        // Create the applet
+        Applet applet = new Applet();
+        applet.setStub(new StubAppletStub());
+        applet.setLayout(new BorderLayout());
+        
         // Create and add the animation canvas
         AnimationCanvas canvas = new AnimationCanvas();
-
-        canvas.setSize(800, 600);
-
-        frame.add(canvas);
-
-        // Show the window
-        frame.setVisible(true);
+        canvas.setPreferredSize(new Dimension(800, 600));
+        
+        applet.add(canvas, BorderLayout.CENTER);
+        applet.setSize(800, 600);
+        
+        // Initialize and show
+        applet.init();
+        applet.start();
+        applet.setVisible(true);
+        
+        // Notify that we're ready to display
+        if (onVisible != null) {
+            onVisible.invoke();
+        }
 
         // Start animation loop
         canvas.startAnimation();
