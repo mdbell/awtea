@@ -1,5 +1,6 @@
 #pragma once
 #include "awt_imports.h"
+#include "awt_build_info.h"
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -64,6 +65,10 @@ static inline void tracked_free(void* ptr) {
 }
 
 #else
+
+static inline void* tracked_realloc(void* ptr, size_t size) {
+    return realloc(ptr, size);
+}
 
 static inline void* tracked_malloc(size_t size) {
     return malloc(size);

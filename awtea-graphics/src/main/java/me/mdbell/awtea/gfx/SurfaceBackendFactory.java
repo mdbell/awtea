@@ -192,11 +192,11 @@ public class SurfaceBackendFactory {
 				case "wasm":
 				case "webassembly":
 					log.info("Forcing WASM backend via system property");
-					return new SurfaceBackend[] { new WasmSurfaceBackend() };
+					return new SurfaceBackend[] { getWasmBackend() };
 				case "software":
 				case "java":
 					log.info("Forcing Software backend via system property");
-					return new SurfaceBackend[] { new SoftwareSurfaceBackend() };
+					return new SurfaceBackend[] { getSoftwareBackend() };
 				default:
 					log.error("Unknown backend '{}", forcedBackend + "' specified in " +
 							BACKEND_PROPERTY + ". Using default priority.");
