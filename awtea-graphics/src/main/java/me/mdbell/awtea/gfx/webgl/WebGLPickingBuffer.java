@@ -2,6 +2,7 @@ package me.mdbell.awtea.gfx.webgl;
 
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.jso.webgl.WebGL2RenderingContext;
 import org.teavm.jso.webgl.WebGLFramebuffer;
@@ -37,6 +38,10 @@ public class WebGLPickingBuffer {
     private int width;
     private int height;
     private boolean dirty = true;
+    
+    // Cached pixel data to avoid reading from GPU on every hit-test
+    private Uint8Array pixelBytes;
+    private int[] pixels;
     
     /**
      * Creates a new picking buffer.
@@ -176,14 +181,27 @@ public class WebGLPickingBuffer {
     
     /**
      * Completes the picking pass (unbinds framebuffer).
+     * Reads all pixels from the picking buffer and caches them for fast lookups.
      */
     public void endPickingPass() {
+        // Read all pixels from the picking buffer once
+        int totalPixels = width * height * 4; // RGBA
+        pixelBytes = new Uint8Array(totalPixels);
+        gl.readPixels(0, 0, width, height, WebGLRenderingContext.RGBA, WebGLRenderingContext.UNSIGNED_BYTE, pixelBytes);
+        
+        // Alias the byte array to an int array for efficient access
+        // Any reads from pixels will be reflected from pixelBytes
+        pixels = new Int32Array(pixelBytes.getBuffer(), pixelBytes.getByteOffset(), pixelBytes.getByteLength() / 4).toJavaArray();
+        
         // Unbind framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
+        
+        log.trace("Cached {} pixels from picking buffer", totalPixels / 4);
     }
     
     /**
      * Reads the component ID at the specified pixel coordinates.
+     * Uses cached pixel data for fast O(1) lookups without GPU access.
      * 
      * @param x the x coordinate (in buffer space)
      * @param y the y coordinate (in buffer space)
@@ -195,23 +213,29 @@ public class WebGLPickingBuffer {
             return 0;
         }
         
-        // Bind picking framebuffer for reading
-        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
-        
-        // Read pixel at (x, y)
-        // Note: Y coordinate is already in WebGL space (flipped by rasterizer)
-        Uint8Array pixel = Uint8Array.create(4);
-        gl.readPixels(x, y, 1, 1, WebGLRenderingContext.RGBA, WebGLRenderingContext.UNSIGNED_BYTE, pixel);
-        
-        // Unbind framebuffer
-        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
-        
-        // Decode component ID from pixel
-        int[] pixelData = new int[4];
-        for (int i = 0; i < 4; i++) {
-            pixelData[i] = pixel.get(i);
+        // Check if we have cached pixel data
+        if (pixels == null) {
+            log.warn("Picking buffer pixels not cached - call endPickingPass() first");
+            return 0;
         }
         
+        // Calculate pixel index in the cached array
+        // Note: Y coordinate is already in WebGL space (flipped by rasterizer)
+        int pixelIndex = y * width + x;
+        
+        // Each pixel is 4 bytes (RGBA), stored as a single int in the aliased array
+        int pixelValue = pixels[pixelIndex];
+        
+        // Extract RGBA components from the packed int
+        // The int array view aliases the byte array, so byte order depends on endianness
+        // We need to extract individual bytes
+        int byteOffset = pixelIndex * 4;
+        int r = pixelBytes.get(byteOffset) & 0xFF;
+        int g = pixelBytes.get(byteOffset + 1) & 0xFF;
+        int b = pixelBytes.get(byteOffset + 2) & 0xFF;
+        int a = pixelBytes.get(byteOffset + 3) & 0xFF;
+        
+        int[] pixelData = new int[] { r, g, b, a };
         int componentId = PickingColorEncoder.decodeIdFromPixel(pixelData);
         
         log.trace("Picking buffer read at ({}, {}) -> component ID {}", x, y, componentId);
