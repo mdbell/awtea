@@ -47,6 +47,18 @@ public abstract class TComponent implements TImageObserver {
     }
     
     /**
+     * Unregisters a component from the ID registry.
+     * Should be called when a component is permanently disposed.
+     * 
+     * @param component the component to unregister
+     */
+    static void unregisterComponent(TComponent component) {
+        if (component != null) {
+            componentRegistry.remove(component.componentId);
+        }
+    }
+    
+    /**
      * Constructor that assigns a unique ID to this component.
      */
     public TComponent() {

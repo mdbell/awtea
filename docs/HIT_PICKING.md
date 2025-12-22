@@ -128,7 +128,7 @@ For a UI with 1000 components:
 private static final Map<Integer, TComponent> componentRegistry = new ConcurrentHashMap<>();
 ```
 
-Components automatically register on construction and should be unregistered on destruction (not yet implemented).
+Components automatically register on construction and can be unregistered via `TComponent.unregisterComponent()` when permanently disposed (currently manual, future enhancement: automatic cleanup in component lifecycle).
 
 ### WebGL Integration
 
@@ -142,8 +142,9 @@ The picking buffer integrates with the existing WebGL rendering pipeline:
 
 1. **WebGL 2.0 Required**: Picking buffer only works with WebGL backend (not WASM or Software)
 2. **Screen-Space Only**: Picking buffer matches canvas size (no sub-pixel precision)
-3. **Component Limit**: Maximum 16,777,215 components (RGB encoding limit)
+3. **Component Limit**: Maximum 16,777,214 components (IDs 1-16,777,215, ID 0 reserved for "no component")
 4. **Memory**: Requires VRAM for off-screen framebuffer (4 bytes per pixel)
+5. **Manual Cleanup**: Component registry cleanup currently manual via `TComponent.unregisterComponent()` (automatic lifecycle integration is a future enhancement)
 
 ## Future Enhancements
 

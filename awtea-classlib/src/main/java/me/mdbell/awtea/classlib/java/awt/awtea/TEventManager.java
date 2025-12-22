@@ -268,13 +268,12 @@ public final class TEventManager implements AutoCloseable {
     }
 
     private TComponent getComponentAt(Point p) {
+        // Strategy is always initialized in constructor, so this should never be null
+        // But we keep a null check for defensive programming
         if (componentHitStrategy == null) {
-            // Fallback to direct container query if no strategy set
+            log.warn("Hit-test strategy is null, falling back to direct container query");
             TComponent component = container.getComponentAt(p.getX(), p.getY());
-            if (component == null) {
-                component = container;
-            }
-            return component;
+            return (component != null) ? component : container;
         }
         return componentHitStrategy.getComponentAt(p.getX(), p.getY());
     }
