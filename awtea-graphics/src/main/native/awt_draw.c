@@ -8,6 +8,9 @@
 #include "awt_edge_table.h"
 #include "awt_memory.h"
 
+// Default edge table pool initial capacity
+#define EDGE_TABLE_POOL_INITIAL_CAPACITY 4
+
 // Global edge table pool (lazy initialization)
 static EdgeTablePool* g_edge_table_pool = NULL;
 
@@ -477,8 +480,9 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
 // Helper function to ensure edge table pool is initialized
 static void ensure_edge_table_pool(void) {
     if (g_edge_table_pool == NULL) {
-        g_edge_table_pool = edge_table_pool_create(4);
-        log_debug("Initialized global edge table pool");
+        g_edge_table_pool = edge_table_pool_create(EDGE_TABLE_POOL_INITIAL_CAPACITY);
+        log_debug("Initialized global edge table pool with capacity=%d", 
+                  EDGE_TABLE_POOL_INITIAL_CAPACITY);
     }
 }
 
@@ -1321,4 +1325,23 @@ void copy_area(SurfaceData* surface, SurfaceContext* context,
     
     log_debug("copy_area: completed");
     STACK_EXIT();
+}
+
+// Edge table pool lifecycle management functions
+
+// Cleanup function for global edge table pool
+// Should be called during module unload or application shutdown
+void cleanup_edge_table_pool(void) {
+    if (g_edge_table_pool != NULL) {
+        log_info("Cleaning up global edge table pool (count=%d)", 
+                 g_edge_table_pool->count);
+        edge_table_pool_destroy(g_edge_table_pool);
+        g_edge_table_pool = NULL;
+    }
+}
+
+// Export for WASM: Get current pool size (for debugging/monitoring)
+__attribute__((export_name("get_edge_table_pool_size")))
+int get_edge_table_pool_size(void) {
+    return (g_edge_table_pool != NULL) ? g_edge_table_pool->count : 0;
 }

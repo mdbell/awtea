@@ -5,8 +5,11 @@
 
 #if ENABLE_WASM_STACK_TRACKING
 
-// Thread-local storage for context strings (for temporary context formatting)
-// Using a small buffer pool to avoid allocations
+// Context string formatting buffer pool configuration
+// Pool of small buffers for temporary context string formatting to avoid allocations
+// Buffer size: 128 bytes - sufficient for typical context strings like "alloc 1024 bytes"
+// Pool size: 8 buffers - allows 8 concurrent context strings in circular fashion
+// Overflow policy: Buffers reused in circular order, caller must copy if persistence needed
 #define CONTEXT_BUFFER_POOL_SIZE 8
 #define CONTEXT_BUFFER_SIZE 128
 static char g_context_buffers[CONTEXT_BUFFER_POOL_SIZE][CONTEXT_BUFFER_SIZE];
@@ -120,16 +123,34 @@ int get_max_stack_depth(void) {
 }
 
 // Helper function to format context string for memory allocations
+// Uses snprintf for safe truncation - no overflow possible
 const char* stack_format_alloc_context(size_t bytes) {
     char* buf = get_context_buffer();
-    snprintf(buf, CONTEXT_BUFFER_SIZE, "alloc %zu bytes", bytes);
+    int written = snprintf(buf, CONTEXT_BUFFER_SIZE, "alloc %zu bytes", bytes);
+    
+    // Check for truncation (should be rare, but log if it happens)
+    if (written < 0 || written >= CONTEXT_BUFFER_SIZE) {
+        log_warn("stack_format_alloc_context: truncated output (needed %d bytes)", written);
+        // Ensure null termination (snprintf guarantees this, but be explicit)
+        buf[CONTEXT_BUFFER_SIZE - 1] = '\0';
+    }
+    
     return buf;
 }
 
 // Helper function to format context string for surface operations
+// Uses snprintf for safe truncation - no overflow possible
 const char* stack_format_surface_context(int id, int width, int height) {
     char* buf = get_context_buffer();
-    snprintf(buf, CONTEXT_BUFFER_SIZE, "surface %d (%dx%d)", id, width, height);
+    int written = snprintf(buf, CONTEXT_BUFFER_SIZE, "surface %d (%dx%d)", id, width, height);
+    
+    // Check for truncation (should be rare, but log if it happens)
+    if (written < 0 || written >= CONTEXT_BUFFER_SIZE) {
+        log_warn("stack_format_surface_context: truncated output (needed %d bytes)", written);
+        // Ensure null termination (snprintf guarantees this, but be explicit)
+        buf[CONTEXT_BUFFER_SIZE - 1] = '\0';
+    }
+    
     return buf;
 }
 
