@@ -32,11 +32,10 @@ class WebGLRasterizer implements Rasterizer {
     private boolean pushToScreen = false;
     private final boolean isChildRasterizer;
     
-    // Picking support: component ID stack for nested containers
-    // When rendering a container, we push its ID, render children, then pop
-    // This ensures child components inherit the parent's picking region
-    // The stack is SHARED between parent and child rasterizers
-    private final java.util.Stack<Integer> componentIdStack;
+    // Picking support: current component ID for dual rendering
+    // Each component sets its ID before painting, and all its paint operations
+    // are rendered to both the picking buffer (with ID color) and normal framebuffer
+    private int activeComponentId = 0;
     private boolean pickingEnabled = false;
 
     WebGLRasterizer(WebGLSurfaceBackend backend, WebGLSurface surface, boolean pushToScreen) {
@@ -48,11 +47,6 @@ class WebGLRasterizer implements Rasterizer {
         backend.contextStack.setClip(new Rectangle(0, 0, surface.getWidth(), surface.getHeight()));
         this.pushToScreen = pushToScreen;
         this.isChildRasterizer = false; // Root rasterizer
-        
-        // Create new stack for root rasterizer
-        this.componentIdStack = new java.util.Stack<>();
-        // Initialize with no component (ID 0)
-        componentIdStack.push(0);
     }
 
     private WebGLRasterizer(WebGLRasterizer other) {
@@ -62,43 +56,22 @@ class WebGLRasterizer implements Rasterizer {
         this.gl = other.gl;
         this.isChildRasterizer = true; // Child rasterizer
         this.pushToScreen = other.pushToScreen;
+        this.activeComponentId = other.activeComponentId;
         this.pickingEnabled = other.pickingEnabled;
-        
-        // Share the SAME stack instance with parent
-        // This ensures push/pop operations affect the shared state
-        this.componentIdStack = other.componentIdStack;
         
         // Save state on creation for isolation
         backend.contextStack.save();
     }
     
     /**
-     * Pushes a component ID onto the stack for picking.
-     * Call this when starting to render a component's content.
+     * Sets the active component ID for picking buffer rendering.
+     * Call this before a component starts painting.
      * 
      * @param componentId the component ID
      */
-    public void pushComponentId(int componentId) {
-        componentIdStack.push(componentId);
-        log.trace("Pushed component ID {} (stack depth: {})", componentId, componentIdStack.size());
-    }
-    
-    /**
-     * Pops the current component ID from the stack.
-     * Call this when done rendering a component's content.
-     */
-    public void popComponentId() {
-        if (componentIdStack.size() > 1) { // Keep at least the root 0
-            int poppedId = componentIdStack.pop();
-            log.trace("Popped component ID {} (stack depth: {})", poppedId, componentIdStack.size());
-        }
-    }
-    
-    /**
-     * Gets the current active component ID from the top of the stack.
-     */
-    private int getActiveComponentId() {
-        return componentIdStack.isEmpty() ? 0 : componentIdStack.peek();
+    public void setActiveComponentId(int componentId) {
+        this.activeComponentId = componentId;
+        log.trace("Set active component ID to {}", componentId);
     }
     
     /**
@@ -141,9 +114,8 @@ class WebGLRasterizer implements Rasterizer {
         final float finalHeight = height;
         
         // If picking is enabled, render to picking buffer first with ID color
-        int activeId = getActiveComponentId();
-        if (pickingEnabled && activeId != 0 && backend.hasPickingBuffer()) {
-            renderToPicking(activeId, () -> {
+        if (pickingEnabled && activeComponentId != 0 && backend.hasPickingBuffer()) {
+            renderToPicking(activeComponentId, () -> {
                 backend.setRectBuffer(finalX, finalY, finalWidth, finalHeight);
                 gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
             });
