@@ -153,25 +153,6 @@ This document provides comprehensive documentation for all system properties tha
 
 ## Audio Configuration
 
-### `me.mdbell.awtea.sound.midi.buffer_size`
-
-- **Type**: Integer
-- **Default**: `102400` (1024 * 100)
-- **Valid Values**: Any positive integer
-- **Description**: Configures the buffer size for MIDI audio rendering. This controls the amount of PCM data buffered during MIDI synthesis. Larger values can improve performance by reducing buffer underruns but may increase latency. Smaller values reduce latency but may cause audio glitches if the system cannot keep up with real-time rendering. Invalid values (non-positive or non-numeric) are silently ignored and the default is used.
-- **Performance Impact**: Larger buffers use more memory but reduce the risk of audio underruns. Smaller buffers reduce latency but require more frequent buffer fills.
-- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/midi/MIDI.java:62`
-- **Since**: v0.1.0
-
-**Example:**
-```bash
-# Increase buffer for smoother playback
--Dme.mdbell.awtea.sound.midi.buffer_size=204800
-
-# Reduce buffer for lower latency
--Dme.mdbell.awtea.sound.midi.buffer_size=51200
-```
-
 ### `me.mdbell.awtea.sound.pcm.buffer_size`
 
 - **Type**: Integer
