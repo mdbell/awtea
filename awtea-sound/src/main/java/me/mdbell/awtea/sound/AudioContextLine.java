@@ -29,10 +29,34 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 	private static final double MAX_QUEUE_SECONDS = 0.075;
 
 	/**
-	 * System property to configure default PCM audio line buffer size.
+	 * System property to configure default PCM audio line buffer size (global override).
 	 * Valid values: positive integers (default: sample rate * channels)
 	 */
 	private static final String BUFFER_SIZE_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size";
+
+	/**
+	 * System property to configure minimum PCM audio line buffer size.
+	 * Valid values: positive integers (default: no minimum)
+	 */
+	private static final String BUFFER_SIZE_MIN_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size.min";
+
+	/**
+	 * System property to configure maximum PCM audio line buffer size.
+	 * Valid values: positive integers (default: no maximum)
+	 */
+	private static final String BUFFER_SIZE_MAX_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size.max";
+
+	/**
+	 * System property to configure buffer size for specific sample rates.
+	 * Format: "rate1:size1,rate2:size2,..." (e.g., "44100:88200,48000:96000")
+	 */
+	private static final String BUFFER_SIZE_BY_RATE_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size.by_rate";
+
+	/**
+	 * System property to configure buffer size for specific channel counts.
+	 * Format: "channels1:size1,channels2:size2,..." (e.g., "1:44100,2:88200")
+	 */
+	private static final String BUFFER_SIZE_BY_CHANNELS_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size.by_channels";
 
 	/**
 	 * Cached PCM buffer size override from system property, or -1 if not set.
@@ -41,14 +65,35 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 	private static final int BUFFER_SIZE_OVERRIDE = getBufferSizeOverride();
 
 	/**
-	 * Get the PCM buffer size override from system properties with validation.
-	 * @return the buffer size if valid positive integer, -1 if not set or invalid
+	 * Cached minimum buffer size constraint, or -1 if not set.
 	 */
-	private static int getBufferSizeOverride() {
-		String bufferSizeStr = System.getProperty(BUFFER_SIZE_PROPERTY);
-		if (bufferSizeStr != null) {
+	private static final int BUFFER_SIZE_MIN = getIntProperty(BUFFER_SIZE_MIN_PROPERTY);
+
+	/**
+	 * Cached maximum buffer size constraint, or -1 if not set.
+	 */
+	private static final int BUFFER_SIZE_MAX = getIntProperty(BUFFER_SIZE_MAX_PROPERTY);
+
+	/**
+	 * Cached buffer size mappings by sample rate.
+	 */
+	private static final java.util.Map<Integer, Integer> BUFFER_SIZE_BY_RATE = parseIntMap(BUFFER_SIZE_BY_RATE_PROPERTY);
+
+	/**
+	 * Cached buffer size mappings by channel count.
+	 */
+	private static final java.util.Map<Integer, Integer> BUFFER_SIZE_BY_CHANNELS = parseIntMap(BUFFER_SIZE_BY_CHANNELS_PROPERTY);
+
+	/**
+	 * Get a positive integer from a system property.
+	 * @param propertyName the property name
+	 * @return the value if valid positive integer, -1 if not set or invalid
+	 */
+	private static int getIntProperty(String propertyName) {
+		String valueStr = System.getProperty(propertyName);
+		if (valueStr != null) {
 			try {
-				int value = Integer.parseInt(bufferSizeStr);
+				int value = Integer.parseInt(valueStr);
 				if (value > 0) {
 					return value;
 				}
@@ -57,6 +102,82 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 			}
 		}
 		return -1; // Not set or invalid
+	}
+
+	/**
+	 * Parse a map of integer to integer from a system property.
+	 * Format: "key1:value1,key2:value2,..."
+	 * @param propertyName the property name
+	 * @return the parsed map (empty if not set or invalid)
+	 */
+	private static java.util.Map<Integer, Integer> parseIntMap(String propertyName) {
+		java.util.Map<Integer, Integer> result = new java.util.HashMap<>();
+		String valueStr = System.getProperty(propertyName);
+		if (valueStr != null && !valueStr.trim().isEmpty()) {
+			try {
+				String[] pairs = valueStr.split(",");
+				for (String pair : pairs) {
+					String[] keyValue = pair.trim().split(":");
+					if (keyValue.length == 2) {
+						int key = Integer.parseInt(keyValue[0].trim());
+						int value = Integer.parseInt(keyValue[1].trim());
+						if (key > 0 && value > 0) {
+							result.put(key, value);
+						}
+					}
+				}
+			} catch (NumberFormatException e) {
+				// Ignore parsing errors, return empty map
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Get the PCM buffer size override from system properties with validation.
+	 * @return the buffer size if valid positive integer, -1 if not set or invalid
+	 */
+	private static int getBufferSizeOverride() {
+		return getIntProperty(BUFFER_SIZE_PROPERTY);
+	}
+
+	/**
+	 * Determine the actual buffer size to use based on configuration and constraints.
+	 * Priority order:
+	 * 1. Global override (me.mdbell.awtea.sound.pcm.buffer_size)
+	 * 2. Format-specific override by sample rate (me.mdbell.awtea.sound.pcm.buffer_size.by_rate)
+	 * 3. Format-specific override by channels (me.mdbell.awtea.sound.pcm.buffer_size.by_channels)
+	 * 4. Requested buffer size (clamped to min/max if set)
+	 * 
+	 * @param format the audio format
+	 * @param requestedSize the requested buffer size
+	 * @return the actual buffer size to use
+	 */
+	private static int determineBufferSize(AudioFormat format, int requestedSize) {
+		int bufferSize = requestedSize;
+
+		// Check for global override first
+		if (BUFFER_SIZE_OVERRIDE > 0) {
+			bufferSize = BUFFER_SIZE_OVERRIDE;
+		}
+		// Check for sample rate-specific override
+		else if (format != null && BUFFER_SIZE_BY_RATE.containsKey((int) format.getSampleRate())) {
+			bufferSize = BUFFER_SIZE_BY_RATE.get((int) format.getSampleRate());
+		}
+		// Check for channel-specific override
+		else if (format != null && BUFFER_SIZE_BY_CHANNELS.containsKey(format.getChannels())) {
+			bufferSize = BUFFER_SIZE_BY_CHANNELS.get(format.getChannels());
+		}
+
+		// Apply min/max constraints
+		if (BUFFER_SIZE_MIN > 0 && bufferSize < BUFFER_SIZE_MIN) {
+			bufferSize = BUFFER_SIZE_MIN;
+		}
+		if (BUFFER_SIZE_MAX > 0 && bufferSize > BUFFER_SIZE_MAX) {
+			bufferSize = BUFFER_SIZE_MAX;
+		}
+
+		return bufferSize;
 	}
 
     /***
@@ -376,8 +497,8 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 
     @Override
 	public void open(AudioFormat format, int bufferSize) throws LineUnavailableException {
-		// Override provided buffer size if system property is set
-		int actualBufferSize = BUFFER_SIZE_OVERRIDE > 0 ? BUFFER_SIZE_OVERRIDE : bufferSize;
+		// Determine actual buffer size based on configuration and constraints
+		int actualBufferSize = determineBufferSize(format, bufferSize);
 		
 		this.format = format;
 		this.audioBuffer = new CircularAudioBuffer(actualBufferSize);
@@ -393,7 +514,7 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 
     @Override
     public void open(AudioFormat format) throws LineUnavailableException {
-        int defaultBufferSize = BUFFER_SIZE_OVERRIDE > 0 ? BUFFER_SIZE_OVERRIDE : (int) (format.getSampleRate() * format.getChannels());
+        int defaultBufferSize = (int) (format.getSampleRate() * format.getChannels());
         this.open(format, defaultBufferSize);
     }
 

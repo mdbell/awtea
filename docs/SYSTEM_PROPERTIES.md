@@ -158,18 +158,98 @@ This document provides comprehensive documentation for all system properties tha
 - **Type**: Integer
 - **Default**: `sample_rate * channels` (e.g., 88200 for 44.1kHz stereo)
 - **Valid Values**: Any positive integer
-- **Description**: Configures the buffer size for PCM audio lines (SourceDataLine). This determines the size of the circular buffer used for audio playback. The buffer holds audio samples waiting to be played. Larger buffers can accommodate more buffering but increase latency. Smaller buffers reduce latency but may cause underruns if audio data cannot be written fast enough. **When this property is set, it overrides ALL buffer sizes, including those explicitly provided via `open(AudioFormat, int bufferSize)` calls.** This allows system-wide enforcement of buffer size limits. Invalid values (non-positive or non-numeric) are silently ignored and the provided or default buffer size is used.
+- **Description**: Global override for PCM audio line buffer sizes. When set, this value overrides ALL buffer sizes, including those explicitly provided via `open(AudioFormat, int bufferSize)` calls, and takes precedence over all other buffer size configuration properties. This allows system-wide enforcement of a specific buffer size. Invalid values (non-positive or non-numeric) are silently ignored.
 - **Performance Impact**: Larger buffers provide more tolerance for timing variations but increase end-to-end latency. Smaller buffers reduce latency but require more precise timing.
 - **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:35`
 - **Since**: v0.1.0
 
 **Example:**
 ```bash
-# Use a larger buffer for high sample rate audio
+# Force all audio lines to use 176400 samples
 -Dme.mdbell.awtea.sound.pcm.buffer_size=176400
+```
 
-# Use a smaller buffer for low-latency applications
--Dme.mdbell.awtea.sound.pcm.buffer_size=22050
+### `me.mdbell.awtea.sound.pcm.buffer_size.min`
+
+- **Type**: Integer
+- **Default**: No minimum (unconstrained)
+- **Valid Values**: Any positive integer
+- **Description**: Enforces a minimum buffer size for PCM audio lines. If the requested or calculated buffer size is smaller than this value, it will be increased to meet the minimum. This ensures adequate buffering to prevent underruns. Applied after format-specific overrides but only if no global override is set. Invalid values are silently ignored.
+- **Performance Impact**: Prevents overly small buffers that could cause audio glitches, at the cost of slightly increased latency.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:41`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Ensure all buffers are at least 22050 samples
+-Dme.mdbell.awtea.sound.pcm.buffer_size.min=22050
+```
+
+### `me.mdbell.awtea.sound.pcm.buffer_size.max`
+
+- **Type**: Integer
+- **Default**: No maximum (unconstrained)
+- **Valid Values**: Any positive integer
+- **Description**: Enforces a maximum buffer size for PCM audio lines. If the requested or calculated buffer size is larger than this value, it will be reduced to meet the maximum. This limits latency and memory usage. Applied after format-specific overrides but only if no global override is set. Invalid values are silently ignored.
+- **Performance Impact**: Caps latency and memory usage, but may increase the risk of audio underruns if the maximum is too restrictive.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:47`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Limit all buffers to at most 176400 samples
+-Dme.mdbell.awtea.sound.pcm.buffer_size.max=176400
+```
+
+### `me.mdbell.awtea.sound.pcm.buffer_size.by_rate`
+
+- **Type**: String (key-value pairs)
+- **Default**: Not set (no rate-specific overrides)
+- **Valid Values**: Comma-separated list of `sample_rate:buffer_size` pairs (e.g., `"44100:88200,48000:96000"`)
+- **Description**: Configures buffer sizes specific to certain sample rates. When opening an audio line, if the format's sample rate matches a configured rate, the corresponding buffer size is used instead of the requested size. This is useful for optimizing buffer sizes for different audio quality levels. Takes precedence over the requested buffer size but is overridden by the global override. Min/max constraints still apply. Invalid pairs are silently ignored.
+- **Performance Impact**: Allows fine-tuning buffer sizes based on sample rate characteristics.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:53`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Use 88200 samples for 44.1kHz audio, 96000 for 48kHz audio
+-Dme.mdbell.awtea.sound.pcm.buffer_size.by_rate="44100:88200,48000:96000"
+```
+
+### `me.mdbell.awtea.sound.pcm.buffer_size.by_channels`
+
+- **Type**: String (key-value pairs)
+- **Default**: Not set (no channel-specific overrides)
+- **Valid Values**: Comma-separated list of `channels:buffer_size` pairs (e.g., `"1:44100,2:88200"`)
+- **Description**: Configures buffer sizes specific to certain channel counts. When opening an audio line, if the format's channel count matches a configured count, the corresponding buffer size is used instead of the requested size. This is useful for providing different buffering for mono vs. stereo vs. surround audio. Takes precedence over the requested buffer size but is overridden by the global override and sample rate-specific overrides. Min/max constraints still apply. Invalid pairs are silently ignored.
+- **Performance Impact**: Allows fine-tuning buffer sizes based on channel count.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:59`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Use 44100 samples for mono, 88200 for stereo
+-Dme.mdbell.awtea.sound.pcm.buffer_size.by_channels="1:44100,2:88200"
+```
+
+### Buffer Size Configuration Priority
+
+When multiple buffer size properties are configured, they are applied in the following priority order:
+
+1. **Global Override** (`me.mdbell.awtea.sound.pcm.buffer_size`) - Highest priority, overrides everything
+2. **Sample Rate Override** (`me.mdbell.awtea.sound.pcm.buffer_size.by_rate`) - Applied if no global override
+3. **Channel Count Override** (`me.mdbell.awtea.sound.pcm.buffer_size.by_channels`) - Applied if no global or rate override
+4. **Requested Size** - The size provided via `open(AudioFormat, int)` or calculated default
+5. **Min/Max Constraints** - Applied last to clamp the final value
+
+**Example:**
+```bash
+# Comprehensive buffer size configuration
+-Dme.mdbell.awtea.sound.pcm.buffer_size.min=22050 \
+-Dme.mdbell.awtea.sound.pcm.buffer_size.max=176400 \
+-Dme.mdbell.awtea.sound.pcm.buffer_size.by_rate="44100:88200,48000:96000" \
+-Dme.mdbell.awtea.sound.pcm.buffer_size.by_channels="1:44100,2:88200"
 ```
 
 ---
