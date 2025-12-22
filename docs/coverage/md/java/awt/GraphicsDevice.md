@@ -1,11 +1,11 @@
-# Class: `GraphicsDevice` ![Coverage](https://img.shields.io/badge/coverage-77.8%25-green)
+# Class: `GraphicsDevice` ![Coverage](https://img.shields.io/badge/coverage-88.9%25-green)
 
 **Full Name:** `java.awt.GraphicsDevice`
 
-**Coverage:** 14 / 18 (77.8%)
+**Coverage:** 16 / 18 (88.9%)
 
 ```
-[██████████████████████████████████████░░░░░░░░░░░░] 77.8%
+[████████████████████████████████████████████░░░░░░] 88.9%
 ```
 
 ## ✓ Implemented Methods
@@ -19,14 +19,14 @@
 - `public int getAvailableAcceleratedMemory()`
 - `public java.awt.DisplayMode getDisplayMode()`
 - `public java.awt.DisplayMode[] getDisplayModes()`
+- `public java.awt.Window getFullScreenWindow()`
 - `public void setDisplayMode(java.awt.DisplayMode)`
+- `public void setFullScreenWindow(java.awt.Window)`
 
 ## ✗ Missing Methods
 
 - `public boolean isWindowTranslucencySupported(java.awt.GraphicsDevice$WindowTranslucency)`
 - `public java.awt.GraphicsConfiguration getBestConfiguration(java.awt.GraphicsConfigTemplate)`
-- `public java.awt.Window getFullScreenWindow()`
-- `public void setFullScreenWindow(java.awt.Window)`
 
 ## ✓ Implemented Fields
 
