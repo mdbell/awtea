@@ -31,6 +31,13 @@ class WebGLRasterizer implements Rasterizer {
 
     private boolean pushToScreen = false;
     private final boolean isChildRasterizer;
+    
+    // Picking support: component ID stack for nested containers
+    // When rendering a container, we push its ID, render children, then pop
+    // This ensures child components inherit the parent's picking region
+    // The stack is SHARED between parent and child rasterizers
+    private final java.util.Stack<Integer> componentIdStack;
+    private boolean pickingEnabled = false;
 
     WebGLRasterizer(WebGLSurfaceBackend backend, WebGLSurface surface, boolean pushToScreen) {
         this.backend = backend;
@@ -41,6 +48,11 @@ class WebGLRasterizer implements Rasterizer {
         backend.contextStack.setClip(new Rectangle(0, 0, surface.getWidth(), surface.getHeight()));
         this.pushToScreen = pushToScreen;
         this.isChildRasterizer = false; // Root rasterizer
+        
+        // Create new stack for root rasterizer
+        this.componentIdStack = new java.util.Stack<>();
+        // Initialize with no component (ID 0)
+        componentIdStack.push(0);
     }
 
     private WebGLRasterizer(WebGLRasterizer other) {
@@ -50,9 +62,53 @@ class WebGLRasterizer implements Rasterizer {
         this.gl = other.gl;
         this.isChildRasterizer = true; // Child rasterizer
         this.pushToScreen = other.pushToScreen;
+        this.pickingEnabled = other.pickingEnabled;
+        
+        // Share the SAME stack instance with parent
+        // This ensures push/pop operations affect the shared state
+        this.componentIdStack = other.componentIdStack;
         
         // Save state on creation for isolation
         backend.contextStack.save();
+    }
+    
+    /**
+     * Pushes a component ID onto the stack for picking.
+     * Call this when starting to render a component's content.
+     * 
+     * @param componentId the component ID
+     */
+    public void pushComponentId(int componentId) {
+        componentIdStack.push(componentId);
+        log.trace("Pushed component ID {} (stack depth: {})", componentId, componentIdStack.size());
+    }
+    
+    /**
+     * Pops the current component ID from the stack.
+     * Call this when done rendering a component's content.
+     */
+    public void popComponentId() {
+        if (componentIdStack.size() > 1) { // Keep at least the root 0
+            int poppedId = componentIdStack.pop();
+            log.trace("Popped component ID {} (stack depth: {})", poppedId, componentIdStack.size());
+        }
+    }
+    
+    /**
+     * Gets the current active component ID from the top of the stack.
+     */
+    private int getActiveComponentId() {
+        return componentIdStack.isEmpty() ? 0 : componentIdStack.peek();
+    }
+    
+    /**
+     * Enables or disables picking buffer rendering.
+     * When enabled, all paint operations are duplicated to the picking buffer.
+     * 
+     * @param enabled true to enable picking rendering
+     */
+    public void setPickingEnabled(boolean enabled) {
+        this.pickingEnabled = enabled;
     }
 
     @Override
@@ -79,14 +135,64 @@ class WebGLRasterizer implements Rasterizer {
 
     private void fillRect(float x, float y, float width, float height) {
         int h = surface.getHeight();
-        y = h - (y + height); // flip Y coordinate
+        final float finalY = h - (y + height); // flip Y coordinate
+        final float finalX = x;
+        final float finalWidth = width;
+        final float finalHeight = height;
+        
+        // If picking is enabled, render to picking buffer first with ID color
+        int activeId = getActiveComponentId();
+        if (pickingEnabled && activeId != 0 && backend.hasPickingBuffer()) {
+            renderToPicking(activeId, () -> {
+                backend.setRectBuffer(finalX, finalY, finalWidth, finalHeight);
+                gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+            });
+        }
+        
+        // Render to normal framebuffer with actual colors
         useColorProgram();
-
-        backend.setRectBuffer(x, y, width, height);
-
+        backend.setRectBuffer(finalX, finalY, finalWidth, finalHeight);
         gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
 
         surface.markDirty();
+    }
+    
+    /**
+     * Executes a render operation on the picking buffer with the specified component ID color.
+     */
+    private void renderToPicking(int componentId, Runnable renderOp) {
+        WebGLPickingBuffer pickingBuffer = backend.getPickingBuffer();
+        if (pickingBuffer == null) {
+            return;
+        }
+        
+        // Save current color
+        Color savedColor = backend.contextStack.getForeground();
+        
+        // Bind picking framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, pickingBuffer.getFramebuffer());
+        
+        // Set viewport to picking buffer size
+        gl.viewport(0, 0, pickingBuffer.getWidth(), pickingBuffer.getHeight());
+        
+        // Encode component ID as color
+        float[] idColor = PickingColorEncoder.encodeId(componentId);
+        backend.contextStack.setForegroundColor(idColor[0], idColor[1], idColor[2], 1.0f);
+        
+        // Setup color program for picking buffer
+        useColorProgram();
+        
+        // Execute the render operation
+        renderOp.run();
+        
+        // Restore original framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
+        
+        // Restore viewport
+        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+        
+        // Restore original color
+        backend.contextStack.setForeground(savedColor);
     }
 
     private void drawRect(float x, float y, float width, float height, float lineWidth) {

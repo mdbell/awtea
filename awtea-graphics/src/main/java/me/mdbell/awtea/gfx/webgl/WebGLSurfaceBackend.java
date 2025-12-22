@@ -47,6 +47,9 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
 	private final Float32Array rectBufferArray = new Float32Array(12);
 	private final ArrayBuffer rectArrayBuffer = rectBufferArray.getBuffer();
+	
+	// Picking buffer for GPU-based hit testing
+	private WebGLPickingBuffer pickingBuffer;
 
 	public WebGLSurfaceBackend(HTMLCanvasElement element) {
 		this.element = element;
@@ -236,6 +239,48 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		ARGB_TO_RGBA,
 		RGB_TO_RGBA,
 		BGR_TO_ABGR
+	}
+	
+	// Picking buffer management
+	
+	/**
+	 * Creates and initializes the picking buffer for GPU-based hit testing.
+	 * Should be called once when enabling picking for this backend.
+	 * 
+	 * @param width the picking buffer width
+	 * @param height the picking buffer height
+	 */
+	public void createPickingBuffer(int width, int height) {
+		if (pickingBuffer != null) {
+			pickingBuffer.destroy();
+		}
+		pickingBuffer = new WebGLPickingBuffer(gl, width, height);
+	}
+	
+	/**
+	 * Gets the picking buffer, creating it if necessary.
+	 * 
+	 * @return the picking buffer, or null if not initialized
+	 */
+	public WebGLPickingBuffer getPickingBuffer() {
+		return pickingBuffer;
+	}
+	
+	/**
+	 * Checks if this backend has a picking buffer.
+	 */
+	public boolean hasPickingBuffer() {
+		return pickingBuffer != null;
+	}
+	
+	/**
+	 * Destroys the picking buffer and releases its resources.
+	 */
+	public void destroyPickingBuffer() {
+		if (pickingBuffer != null) {
+			pickingBuffer.destroy();
+			pickingBuffer = null;
+		}
 	}
 
 	// Shaders
