@@ -458,31 +458,53 @@ public class AnimationDemo {
             }
 
             int y = 65; // Position below ball count
-            int height = 70; // Increased height for build info
+            
+            // Calculate dynamic height based on enabled features
+            int lineHeight = 15;
+            int lines = 2; // Surf + Ctx lines always present
+            boolean hasMemoryTracking = buildInfo != null && buildInfo.hasMemoryTracking();
+            if (hasMemoryTracking) {
+                lines++; // Add memory line
+            }
+            if (buildInfo != null) {
+                lines++; // Add version line
+            }
+            int height = lines * lineHeight + 10; // Base padding
+            
+            // Calculate dynamic width based on content
+            // Memory tracking with peak adds extra width
+            int width = hasMemoryTracking ? 220 : 150;
 
             // Background with rounded corners
             g.setColor(Color.WHITE);
-            g.fillRoundRect(5, y, 220, height, 8, 8);
+            g.fillRoundRect(5, y, width, height, 8, 8);
 
             // Border with rounded corners
             g.setColor(Color.BLACK);
-            g.drawRoundRect(5, y, 220, height, 8, 8);
+            g.drawRoundRect(5, y, width, height, 8, 8);
 
             // Text
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-
+            
+            int currentLine = 1;
             if (diag != null) {
                 g.drawString(String.format("Surf: %d/%d",
-                        diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + 15);
+                        diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + currentLine * lineHeight);
+                currentLine++;
                 g.drawString(String.format("Ctx: %d/%d",
-                        diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + 30);
-                g.drawString(String.format("Mem: %.1f KB (Peak: %.1f KB)", diag.getAllocatedKB(), diag.getPeakKB()),
-                        10, y + 45);
+                        diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + currentLine * lineHeight);
+                currentLine++;
+                
+                if (hasMemoryTracking) {
+                    g.drawString(String.format("Mem: %.1f KB (Peak: %.1f KB)", diag.getAllocatedKB(), diag.getPeakKB()),
+                            10, y + currentLine * lineHeight);
+                    currentLine++;
+                }
             }
 
             if (buildInfo != null) {
                 g.setFont(new Font("SansSerif", Font.PLAIN, 10));
-                g.drawString(String.format("WASM: %s", buildInfo.getVersion()), 10, y + 60);
+                g.drawString(String.format("WASM: %s", buildInfo.getVersion()), 10, y + currentLine * lineHeight);
             }
         }
 
