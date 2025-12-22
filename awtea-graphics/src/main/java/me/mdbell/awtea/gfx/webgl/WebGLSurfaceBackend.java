@@ -29,6 +29,8 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	private final WebGLUniformLocation uResolutionLocColor;
 	private final WebGLUniformLocation uColorLoc;
 	private final WebGLUniformLocation uTransformLocColor;
+	private final WebGLUniformLocation uPickingModeLocColor; // Picking mode uniform
+	private final WebGLUniformLocation uPickingColorLocColor; // Picking color uniform
 	private final int aPositionLocColor;
 
 	// uniforms / attribs for texture program
@@ -78,6 +80,8 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		this.uResolutionLocColor = gl.getUniformLocation(colorProgram, "u_resolution");
 		this.uColorLoc = gl.getUniformLocation(colorProgram, "u_color");
 		this.uTransformLocColor = gl.getUniformLocation(colorProgram, "u_transform");
+		this.uPickingModeLocColor = gl.getUniformLocation(colorProgram, "u_pickingMode");
+		this.uPickingColorLocColor = gl.getUniformLocation(colorProgram, "u_pickingColor");
 
 		// Set the color uniform location in the context stack for automatic color
 		// application
@@ -155,6 +159,10 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	}
 
 	protected void useColorProgram(int width, int height) {
+		useColorProgram(width, height, null);
+	}
+
+	protected void useColorProgram(int width, int height, float[] pickingColor) {
 		if (currentProgram != WebGLProgramType.COLOR) {
 			gl.useProgram(colorProgram);
 			currentProgram = WebGLProgramType.COLOR;
@@ -170,6 +178,14 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 				(float) width,
 				(float) height);
 		gl.uniformMatrix3fv(uTransformLocColor, false, contextStack.getTransformArray());
+
+		// Set picking mode: 1 if picking color provided, 0 otherwise
+		if (pickingColor != null) {
+			gl.uniform1i(uPickingModeLocColor, 1);
+			gl.uniform4f(uPickingColorLocColor, pickingColor[0], pickingColor[1], pickingColor[2], 1.0f);
+		} else {
+			gl.uniform1i(uPickingModeLocColor, 0);
+		}
 
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, rectBuffer);
 		gl.enableVertexAttribArray(aPositionLocColor);
