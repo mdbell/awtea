@@ -49,8 +49,8 @@ public class SurfaceBackendFactory {
 	private static final String BACKEND_PROPERTY = "me.mdbell.awtea.gfx.backend";
 
 	private static SurfaceBackend defaultInstance = null;
-	private static SurfaceBackend wasmInstance = null;
-	private static SurfaceBackend softwareInstance = null;
+	private static WasmSurfaceBackend wasmInstance = null;
+	private static SoftwareSurfaceBackend softwareInstance = null;
 
 	private SurfaceBackendFactory() {
 		// Utility class - prevent instantiation
@@ -65,7 +65,7 @@ public class SurfaceBackendFactory {
 	 */
 	public static SurfaceBackend getDefault() {
 		if (defaultInstance == null) {
-			SoftwareSurfaceBackend defaultBackend = new SoftwareSurfaceBackend();
+			SoftwareSurfaceBackend defaultBackend = getSoftwareBackend();
 			SurfaceBackend[] backends = createBackends(defaultBackend);
 			defaultInstance = new CompositeSurfaceBackend(backends);
 		}
@@ -89,7 +89,7 @@ public class SurfaceBackendFactory {
 	 * 
 	 * @return the software surface backend instance
 	 */
-	public static SurfaceBackend getSoftwareBackend() {
+	public static SoftwareSurfaceBackend getSoftwareBackend() {
 		if (softwareInstance == null) {
 			softwareInstance = new SoftwareSurfaceBackend();
 		}
@@ -105,7 +105,7 @@ public class SurfaceBackendFactory {
 	 * @return the WASM surface backend instance
 	 * @throws RuntimeException if the WASM module fails to load
 	 */
-	public static SurfaceBackend getWasmBackend() {
+	public static WasmSurfaceBackend getWasmBackend() {
 		if (wasmInstance == null) {
 			wasmInstance = new WasmSurfaceBackend();
 		}
@@ -178,20 +178,6 @@ public class SurfaceBackendFactory {
 	}
 
 	/**
-	 * Get the WASM backend instance if it has been initialized.
-	 * This is useful for accessing WASM diagnostics when the WASM backend is in
-	 * use.
-	 * 
-	 * @return the WasmSurfaceBackend instance if initialized, or null otherwise
-	 */
-	public static WasmSurfaceBackend getWasmBackendFromDefault() {
-		if (wasmInstance instanceof WasmSurfaceBackend) {
-			return (WasmSurfaceBackend) wasmInstance;
-		}
-		return null;
-	}
-
-	/**
 	 * Creates the backend array based on system property configuration.
 	 * If me.mdbell.awtea.gfx.backend is set, only that backend is used.
 	 * Otherwise, uses default priority: WASM > Software.
@@ -224,7 +210,7 @@ public class SurfaceBackendFactory {
 
 		// Try WASM backend first
 		try {
-			WasmSurfaceBackend wasmBackend = new WasmSurfaceBackend();
+			WasmSurfaceBackend wasmBackend = getWasmBackend();
 			backendList.add(wasmBackend);
 		} catch (Exception e) {
 			// WASM backend failed to load (e.g., wasm file not found on server)

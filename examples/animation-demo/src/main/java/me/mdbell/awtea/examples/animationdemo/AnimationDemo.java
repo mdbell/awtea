@@ -462,11 +462,11 @@ public class AnimationDemo {
 
             // Background with rounded corners
             g.setColor(Color.WHITE);
-            g.fillRoundRect(5, y, 180, height, 8, 8);
+            g.fillRoundRect(5, y, 220, height, 8, 8);
 
             // Border with rounded corners
             g.setColor(Color.BLACK);
-            g.drawRoundRect(5, y, 180, height, 8, 8);
+            g.drawRoundRect(5, y, 220, height, 8, 8);
 
             // Text
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
@@ -476,7 +476,8 @@ public class AnimationDemo {
                         diag.getActiveSurfaceCount(), diag.getMaxSurfaces()), 10, y + 15);
                 g.drawString(String.format("Ctx: %d/%d",
                         diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + 30);
-                g.drawString(String.format("Mem: %.1f KB", diag.getAllocatedKB()), 10, y + 45);
+                g.drawString(String.format("Mem: %.1f KB (Peak: %.1f KB)", diag.getAllocatedKB(), diag.getPeakKB()),
+                        10, y + 45);
             }
 
             if (buildInfo != null) {
