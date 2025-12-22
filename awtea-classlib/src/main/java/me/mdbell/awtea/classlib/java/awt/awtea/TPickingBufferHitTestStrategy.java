@@ -2,6 +2,7 @@ package me.mdbell.awtea.classlib.java.awt.awtea;
 
 import me.mdbell.awtea.classlib.java.awt.TComponent;
 import me.mdbell.awtea.classlib.java.awt.TContainer;
+import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.gfx.webgl.WebGLPickingBuffer;
 import me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend;
 import me.mdbell.awtea.util.logging.Logger;
@@ -102,42 +103,59 @@ public class TPickingBufferHitTestStrategy implements THitTestStrategy {
     /**
      * Rebuilds the picking buffer by re-rendering the component tree.
      * This triggers a complete render pass with picking mode enabled.
-     * 
-     * @throws UnsupportedOperationException until component paint integration is complete
      */
     private void rebuildPickingBuffer() {
-        throw new UnsupportedOperationException(
-            "Picking buffer rebuild not yet integrated with component paint lifecycle. " +
-            "This requires hooking into TComponent.paint() to call setActiveComponentId() " +
-            "and trigger a picking render pass."
-        );
-        
-        /* TODO: Implementation approach when integrated:
-        
         log.trace("Rebuilding picking buffer");
         
         // Begin picking pass
         pickingBuffer.beginPickingPass();
         
-        // Get graphics context for picking
+        // Get graphics context for rendering
         TGraphics g = rootContainer.getGraphics();
-        Rasterizer rasterizer = ... // get from graphics
+        if (g == null) {
+            log.warn("Cannot rebuild picking buffer - no graphics context available");
+            pickingBuffer.endPickingPass();
+            return;
+        }
         
-        // Enable picking mode
-        rasterizer.setPickingEnabled(true);
-        
-        // Recursively render component tree
-        renderComponentForPicking(rootContainer, rasterizer, g);
-        
-        // Disable picking mode
-        rasterizer.setPickingEnabled(false);
-        g.dispose();
-        
-        // End picking pass
-        pickingBuffer.endPickingPass();
+        try {
+            // Enable picking mode on the rasterizer
+            setPickingEnabled(g, true);
+            
+            // Render the entire component tree
+            // The paint() methods will call setActiveComponentId() for each component
+            rootContainer.paint(g);
+            
+            // Disable picking mode
+            setPickingEnabled(g, false);
+            
+        } finally {
+            g.dispose();
+            pickingBuffer.endPickingPass();
+        }
         
         log.trace("Picking buffer rebuild complete");
-        */
+    }
+    
+    /**
+     * Enables or disables picking mode on the rasterizer.
+     */
+    private void setPickingEnabled(TGraphics g, boolean enabled) {
+        if (g instanceof me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics) {
+            me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics srg = 
+                (me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics) g;
+            
+            // Use reflection to call setPickingEnabled on WebGLRasterizer
+            try {
+                Object rasterizer = srg.getClass().getDeclaredField("rasterizer").get(srg);
+                if (rasterizer.getClass().getName().contains("WebGLRasterizer")) {
+                    java.lang.reflect.Method method = rasterizer.getClass().getMethod("setPickingEnabled", boolean.class);
+                    method.invoke(rasterizer, enabled);
+                }
+            } catch (Exception e) {
+                log.trace("Could not set picking enabled: {}", e.getMessage());
+            }
+        }
     }
     
     @Override

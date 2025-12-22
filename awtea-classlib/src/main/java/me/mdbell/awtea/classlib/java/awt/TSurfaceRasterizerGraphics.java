@@ -97,6 +97,28 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     public TGraphics create() {
         return new TSurfaceRasterizerGraphics(this);
     }
+    
+    /**
+     * Sets the active component ID for GPU-based picking.
+     * This is called before painting each component so the picking buffer
+     * knows which component painted which pixels.
+     * 
+     * @param componentId the component ID
+     */
+    public void setActiveComponentId(int componentId) {
+        // Check if rasterizer is WebGLRasterizer and supports picking
+        // Use instanceof check with fully qualified name to avoid import cycle
+        if (rasterizer.getClass().getName().contains("WebGLRasterizer")) {
+            try {
+                // Use reflection to call setActiveComponentId
+                java.lang.reflect.Method method = rasterizer.getClass().getMethod("setActiveComponentId", int.class);
+                method.invoke(rasterizer, componentId);
+            } catch (Exception e) {
+                // Silently ignore - picking is optional
+                log.trace("Could not set active component ID: {}", e.getMessage());
+            }
+        }
+    }
 
     /**
      * Acquires a SurfaceCommand from the pool, or creates a new one if the pool is
