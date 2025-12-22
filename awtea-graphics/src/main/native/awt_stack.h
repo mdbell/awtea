@@ -10,6 +10,9 @@
 // even after the rasterizer crashes.
 
 // Maximum stack depth (circular buffer size)
+// Set to 256 frames to balance memory usage (8KB total) and debugging depth.
+// Circular buffer overwrites oldest entries when full, preserving recent context.
+// Each frame is 32 bytes, total buffer size: 256 * 32 = 8KB
 #define MAX_STACK_DEPTH 256
 
 // Stack frame structure (32 bytes per frame)

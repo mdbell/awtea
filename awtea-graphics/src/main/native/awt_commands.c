@@ -117,6 +117,7 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
             // Skip the command data
             if (!reader_skip(reader, length * 4)) {
                 log_error("render_awt: failed to skip unknown command at pos %zu", reader_position(reader));
+                STACK_EXIT_ERR(-6);
                 return -6;
             }
             commands_processed++;
@@ -129,6 +130,7 @@ int render_awt(int context_id, uint32_t cmdPtr, int bytesUsed) {
         if (result != 0) {
             log_error("Command %d (opcode=%d) failed with error %d", 
                       commands_processed + 1, opcode, result);
+            STACK_EXIT_ERR(-7);
             return -7;
         }
         stack_pop();

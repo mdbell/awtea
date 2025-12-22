@@ -14,7 +14,12 @@
 #include <string.h>
 #include "awt_log.h"
 
-// Buffer size: 32KB = 8192 words
+// Command buffer size: 32KB = 8192 words (4-byte units)
+// This size is chosen to balance memory usage and batching efficiency:
+// - Large enough to batch multiple drawing commands in a single render call
+// - Small enough to fit comfortably in typical WASM memory (128MB default)
+// - Power of 2 for efficient memory alignment
+// Overflow policy: Commands exceeding this size must be split across multiple render_awt() calls
 #define COMMAND_BUFFER_SIZE_WORDS 8192 
 
 // Command flags
