@@ -186,13 +186,6 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         // Use color program in picking mode
         backend.useColorProgram(surface.getWidth(), surface.getHeight(), idColor);
         
-        // Execute render operation
-        renderOp.run();
-        
-        // Restore original framebuffer
-        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
-        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
-    }
         // Execute the render operation
         renderOp.run();
         
@@ -201,9 +194,6 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         
         // Restore viewport
         gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
-        
-        // Restore original color
-        backend.contextStack.setForeground(savedColor);
     }
     
     /**
