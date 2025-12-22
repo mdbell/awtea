@@ -110,8 +110,7 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 	 * @return the actual buffer size to use
 	 */
 	private static int determineBufferSize(AudioFormat format, int requestedSize) {
-		int bufferSize = requestedSize;
-		boolean replaced = false;
+		int bufferSize = -1;
 
 		// Try increasingly specific property matches (most specific first)
 		if (format != null) {
@@ -120,42 +119,33 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 
 			// Try: size + rate + channels (most specific - highest priority)
 			String fullProperty = BUFFER_SIZE_REPLACE_PREFIX + requestedSize + "." + sampleRate + "." + channels;
-			int replacement = getIntProperty(fullProperty);
-			if (replacement > 0) {
-				bufferSize = replacement;
-				replaced = true;
-			}
+			bufferSize = getIntProperty(fullProperty);
+			
 			// Try: size + rate
-			else {
+			if (bufferSize < 0) {
 				String rateProperty = BUFFER_SIZE_REPLACE_PREFIX + requestedSize + "." + sampleRate;
-				replacement = getIntProperty(rateProperty);
-				if (replacement > 0) {
-					bufferSize = replacement;
-					replaced = true;
-				}
-				// Try: size only
-				else {
-					String sizeProperty = BUFFER_SIZE_REPLACE_PREFIX + requestedSize;
-					replacement = getIntProperty(sizeProperty);
-					if (replacement > 0) {
-						bufferSize = replacement;
-						replaced = true;
-					}
-				}
+				bufferSize = getIntProperty(rateProperty);
+			}
+			
+			// Try: size only
+			if (bufferSize < 0) {
+				String sizeProperty = BUFFER_SIZE_REPLACE_PREFIX + requestedSize;
+				bufferSize = getIntProperty(sizeProperty);
 			}
 		} else {
 			// No format available, only check size-specific replacement
 			String sizeProperty = BUFFER_SIZE_REPLACE_PREFIX + requestedSize;
-			int replacement = getIntProperty(sizeProperty);
-			if (replacement > 0) {
-				bufferSize = replacement;
-				replaced = true;
-			}
+			bufferSize = getIntProperty(sizeProperty);
 		}
 
 		// If no specific replacement found, check global override (lowest priority)
-		if (!replaced && BUFFER_SIZE_OVERRIDE > 0) {
+		if (bufferSize < 0 && BUFFER_SIZE_OVERRIDE > 0) {
 			bufferSize = BUFFER_SIZE_OVERRIDE;
+		}
+
+		// If still no match, use requested size
+		if (bufferSize < 0) {
+			bufferSize = requestedSize;
 		}
 
 		// Apply min/max constraints last
