@@ -45,13 +45,13 @@ public abstract class TGraphicsDevice {
         return new TDisplayMode[0];
     }
 
-//    public TWindow getFullScreenWindow() {
-//        return null;
-//    }
+    public TWindow getFullScreenWindow() {
+        return null;
+    }
 
-//    public void setFullScreenWindow(TWindow w) {
-//        throw new UnsupportedOperationException("Full-screen mode not supported");
-//    }
+    public void setFullScreenWindow(TWindow w) {
+        throw new UnsupportedOperationException("Full-screen mode not supported");
+    }
 
     public void setDisplayMode(TDisplayMode dm) {
         throw new UnsupportedOperationException("Display mode change not supported");

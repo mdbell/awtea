@@ -67,7 +67,23 @@ public abstract class TComponent implements TImageObserver {
     TEventQueue.EventQueueItem[] eventCache;
 
     public TFontMetrics getFontMetrics(TFont font) {
-        return getGraphics().measureText(font);
+        TGraphics g = getGraphics();
+        if (g != null) {
+            try {
+                return g.getFontMetrics(font);
+            } finally {
+                g.dispose();
+            }
+        }
+
+        // Fallback: delegate to parent component if available, to avoid surprising nulls
+        TContainer p = getParent();
+        if (p != null) {
+            return p.getFontMetrics(font);
+        }
+
+        // No graphics and no parent to delegate to
+        return null;
     }
 
     public Color getBackground() {
@@ -498,5 +514,9 @@ public abstract class TComponent implements TImageObserver {
 
     public void fireFocusGained() {
         TToolkit.getEventQueue().postEvent(new TFocusEvent(this, TFocusEvent.FOCUS_GAINED));
+    }
+
+    public TRectangle getBounds() {
+        return new TRectangle(x, y, width, height);
     }
 }

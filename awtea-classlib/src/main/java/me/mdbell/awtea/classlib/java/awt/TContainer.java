@@ -50,6 +50,15 @@ public class TContainer extends TComponent {
         return new TInsets(0, 0, 0, 0);
     }
 
+    /**
+     * Returns the current size of this container.
+     *
+     * @return a Dimension object indicating this container's size
+     */
+    public TDimension getSize() {
+        return new TDimension(getWidth(), getHeight());
+    }
+
     public TComponent add(TComponent component) {
         addImpl(component, null, -1);
         return component;
