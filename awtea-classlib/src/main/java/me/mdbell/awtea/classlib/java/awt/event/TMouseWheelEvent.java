@@ -30,4 +30,20 @@ public class TMouseWheelEvent extends TMouseEvent {
 		return null;
 	}
 
+	/**
+	 * Returns whether or not the Control modifier is down on this event.
+	 * @return whether or not the Control modifier is down on this event
+	 */
+	public boolean isControlDown() {
+		return (modifiers & CTRL_MASK) != 0;
+	}
+
+	/**
+	 * Returns whether or not the Shift modifier is down on this event.
+	 * @return whether or not the Shift modifier is down on this event
+	 */
+	public boolean isShiftDown() {
+		return (modifiers & SHIFT_MASK) != 0;
+	}
+
 }

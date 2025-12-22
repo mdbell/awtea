@@ -41,15 +41,41 @@ public class TDirectColorModel extends TColorModel {
 							int gMask,
 							int bMask,
 							int aMask) {
+		this(TColorSpace.getInstance(TColorSpace.CS_sRGB), bits, rMask, gMask, bMask, aMask, false, TDataBuffer.TYPE_INT);
+	}
+
+	/**
+	 * Extended constructor with ColorSpace parameter.
+	 * Constructs a DirectColorModel from the given masks specifying
+	 * which bits in an int pixel representation contain the red, green and blue color samples,
+	 * the alpha samples, and the color space.
+	 *
+	 * @param space the ColorSpace to use
+	 * @param bits the number of bits in the pixel values
+	 * @param rMask the mask indicating which bits represent the red color component
+	 * @param gMask the mask indicating which bits represent the green color component
+	 * @param bMask the mask indicating which bits represent the blue color component
+	 * @param aMask the mask indicating which bits represent the alpha component
+	 * @param isAlphaPremultiplied true if color samples are premultiplied by the alpha sample
+	 * @param transferType the type of array used to represent pixel values
+	 */
+	public TDirectColorModel(TColorSpace space,
+							 int bits,
+							 int rMask,
+							 int gMask,
+							 int bMask,
+							 int aMask,
+							 boolean isAlphaPremultiplied,
+							 int transferType) {
 		super(
 			bits,
 			aMask != 0 ? 4 : 3,          // numComponents
 			aMask != 0,                  // hasAlpha
-			false,                       // isAlphaPremultiplied (assume false for now)
+			isAlphaPremultiplied,        // isAlphaPremultiplied
 			aMask == 0
 				? OPAQUE
 				: TRANSLUCENT,           // transparency
-			TDataBuffer.TYPE_INT          // transferType
+			transferType                 // transferType
 		);
 
 		this.redMask   = rMask;
@@ -62,7 +88,7 @@ public class TDirectColorModel extends TColorModel {
 		this.blueShift  = computeShift(bMask);
 		this.alphaShift = computeShift(aMask);
 
-		this.colorSpace = TColorSpace.getInstance(TColorSpace.CS_sRGB);
+		this.colorSpace = space != null ? space : TColorSpace.getInstance(TColorSpace.CS_sRGB);
 	}
 
 	private static int computeShift(int mask) {

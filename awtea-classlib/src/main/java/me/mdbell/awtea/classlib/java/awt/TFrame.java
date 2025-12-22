@@ -106,4 +106,16 @@ public class TFrame extends TWindow {
         invalidate();
         validate();
     }
+
+    /**
+     * Releases all of the native screen resources used by this frame,
+     * its subcomponents, and all of its owned children.
+     * After this method is called, the frame and its resources will be
+     * removed and can no longer be used.
+     */
+    public void dispose() {
+        setVisible(false);
+        // In browser environment, just hide the frame
+        // Resources will be garbage collected automatically
+    }
 }
