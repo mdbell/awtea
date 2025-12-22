@@ -35,7 +35,8 @@ class WebGLRasterizer implements Rasterizer {
     // Picking support: current component ID for dual rendering
     // Each component sets its ID before painting, and all its paint operations
     // are rendered to both the picking buffer (with ID color) and normal framebuffer
-    private int activeComponentId = 0;
+    private static final int INVALID_COMPONENT_ID = 0;
+    private int activeComponentId = INVALID_COMPONENT_ID;
     private boolean pickingEnabled = false;
 
     WebGLRasterizer(WebGLSurfaceBackend backend, WebGLSurface surface, boolean pushToScreen) {
@@ -114,7 +115,7 @@ class WebGLRasterizer implements Rasterizer {
         final float finalHeight = height;
         
         // If picking is enabled, render to picking buffer first with ID color
-        if (pickingEnabled && activeComponentId != 0 && backend.hasPickingBuffer()) {
+        if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
             renderToPicking(activeComponentId, () -> {
                 backend.setRectBuffer(finalX, finalY, finalWidth, finalHeight);
                 gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);

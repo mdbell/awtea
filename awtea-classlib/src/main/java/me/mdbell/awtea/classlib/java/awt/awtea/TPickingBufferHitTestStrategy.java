@@ -102,28 +102,42 @@ public class TPickingBufferHitTestStrategy implements THitTestStrategy {
     /**
      * Rebuilds the picking buffer by re-rendering the component tree.
      * This triggers a complete render pass with picking mode enabled.
+     * 
+     * @throws UnsupportedOperationException until component paint integration is complete
      */
     private void rebuildPickingBuffer() {
+        throw new UnsupportedOperationException(
+            "Picking buffer rebuild not yet integrated with component paint lifecycle. " +
+            "This requires hooking into TComponent.paint() to call setActiveComponentId() " +
+            "and trigger a picking render pass."
+        );
+        
+        /* TODO: Implementation approach when integrated:
+        
         log.trace("Rebuilding picking buffer");
         
         // Begin picking pass
         pickingBuffer.beginPickingPass();
         
-        // Enable picking mode in all rasterizers
-        // TODO: This will be integrated with the rendering pipeline
-        // The approach:
-        // 1. Set picking enabled on the rasterizer
-        // 2. Walk component tree, for each component:
-        //    - Call rasterizer.setActiveComponentId(component.getId())
-        //    - Call component.paint(graphics) - renders with ID color to picking buffer
-        // 3. Disable picking mode
-        //
-        // For now, this is a placeholder for the integration point
+        // Get graphics context for picking
+        TGraphics g = rootContainer.getGraphics();
+        Rasterizer rasterizer = ... // get from graphics
+        
+        // Enable picking mode
+        rasterizer.setPickingEnabled(true);
+        
+        // Recursively render component tree
+        renderComponentForPicking(rootContainer, rasterizer, g);
+        
+        // Disable picking mode
+        rasterizer.setPickingEnabled(false);
+        g.dispose();
         
         // End picking pass
         pickingBuffer.endPickingPass();
         
         log.trace("Picking buffer rebuild complete");
+        */
     }
     
     @Override

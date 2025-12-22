@@ -94,7 +94,7 @@ public class WebGLPickingBuffer {
         gl.bindRenderbuffer(WebGLRenderingContext.RENDERBUFFER, depthBuffer);
         gl.renderbufferStorage(
             WebGLRenderingContext.RENDERBUFFER,
-            WebGL2RenderingContext.DEPTH_COMPONENT16,
+            WebGLRenderingContext.DEPTH_COMPONENT16,
             width,
             height
         );
