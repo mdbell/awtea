@@ -183,10 +183,12 @@ public final class TEventManager implements AutoCloseable {
             element.onEvent(type.getType(), e -> {
                 TComponent focusOwner = TFocusManager.get().getGlobalFocusOwner();
                 if (focusOwner == null) {
+                    log.debug("No focus Owner! Discarding event");
                     return;
                 }
                 KeyboardEvent ke = (KeyboardEvent) e;
                 TKeyEvent awt = TKeyEvent.adapt(focusOwner, ke);
+                log.debug("Dispatching key event {}", awt);
                 post(awt);
             }).track(registrations);
         }
@@ -197,6 +199,9 @@ public final class TEventManager implements AutoCloseable {
      * Attach focus / blur listeners, mapping to TFocusEvent.
      */
     public TEventManager withFocus() {
+
+        // need to ensure canvas is focusable
+        element.setAttribute("tabindex", "0");
 
         element.onEvent("focus", e -> {
             post(new TFocusEvent(container, TFocusEvent.FOCUS_GAINED));

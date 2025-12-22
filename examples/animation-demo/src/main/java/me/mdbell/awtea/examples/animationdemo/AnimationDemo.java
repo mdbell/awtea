@@ -46,32 +46,37 @@ public class AnimationDemo {
     }
 
     public static void main(String[] args) {
-        // LoggerFactory.setGlobalLevel(LogLevel.DEBUG);
         System.setProperty("me.mdbell.awtea.gfx.backend", "wasm");
         System.setProperty("me.mdbell.awtea.wasm.module_path", "/awtea-graphics/build/wasm/awt_raster.wasm");
 
         String canvasId = args.length > 0 ? args[0] : "animation-demo";
-        
-        // Tells the Applet instance we're heavyweight, and want to render directly to a canvas
+        String level = args.length > 1 ? args[1] : null;
+
+        if (level != null) {
+            LoggerFactory.setGlobalLevel(LogLevel.parse(level));
+        }
+
+        // Tells the Applet instance we're heavyweight, and want to render directly to a
+        // canvas
         System.setProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId", canvasId);
-        
+
         // Create the applet
         Applet applet = new Applet();
         applet.setStub(new StubAppletStub());
         applet.setLayout(new BorderLayout());
-        
+
         // Create and add the animation canvas
         AnimationCanvas canvas = new AnimationCanvas();
         canvas.setPreferredSize(new Dimension(800, 600));
-        
+
         applet.add(canvas, BorderLayout.CENTER);
         applet.setSize(800, 600);
-        
+
         // Initialize and show
         applet.init();
         applet.start();
         applet.setVisible(true);
-        
+
         // Notify that we're ready to display
         if (onVisible != null) {
             onVisible.invoke();
@@ -488,7 +493,7 @@ public class AnimationDemo {
             }
 
             int y = 65; // Position below ball count
-            
+
             // Calculate dynamic height based on enabled features
             int lineHeight = 15;
             int lines = 2; // Surf + Ctx lines always present
@@ -500,7 +505,7 @@ public class AnimationDemo {
                 lines++; // Add version line
             }
             int height = lines * lineHeight + 10; // Base padding
-            
+
             // Calculate dynamic width based on content
             // Memory tracking with peak adds extra width
             int width = hasMemoryTracking ? 220 : 150;
@@ -515,7 +520,7 @@ public class AnimationDemo {
 
             // Text
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            
+
             int currentLine = 1;
             if (diag != null) {
                 g.drawString(String.format("Surf: %d/%d",
@@ -524,7 +529,7 @@ public class AnimationDemo {
                 g.drawString(String.format("Ctx: %d/%d",
                         diag.getActiveContextCount(), diag.getMaxContexts()), 10, y + currentLine * lineHeight);
                 currentLine++;
-                
+
                 if (hasMemoryTracking) {
                     g.drawString(String.format("Mem: %.1f KB (Peak: %.1f KB)", diag.getAllocatedKB(), diag.getPeakKB()),
                             10, y + currentLine * lineHeight);
