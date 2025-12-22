@@ -76,7 +76,8 @@ public abstract class TComponent implements TImageObserver {
             }
         }
 
-        // Fallback: delegate to parent component if available, to avoid surprising nulls
+        // Fallback: delegate to parent component if available, to avoid surprising
+        // nulls
         TContainer p = getParent();
         if (p != null) {
             return p.getFontMetrics(font);
@@ -436,7 +437,10 @@ public abstract class TComponent implements TImageObserver {
         boolean wasValid = this.isValid();
         valid = true;
         if (!wasValid) {
-            repaint();
+            // force the render to be sync, so no component pop-in
+            try (TGraphics g = getGraphics()) {
+                update(g);
+            }
         }
     }
 

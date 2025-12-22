@@ -1,12 +1,21 @@
 package me.mdbell.awtea.examples.guidemo;
 
+import me.mdbell.awtea.util.StubAppletStub;
 import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
+import java.applet.Applet;
+import java.applet.AppletContext;
+import java.applet.AppletStub;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.URL;
+
+import org.teavm.jso.JSExport;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
 
 /**
  * Comprehensive GUI demo showcasing awtea features including:
@@ -20,6 +29,18 @@ public class GuiDemo {
 
     private static final Logger log = LoggerFactory.getLogger(GuiDemo.class);
 
+    private static OnVisibleCallback onVisible = null;
+
+    @JSFunctor
+    private interface OnVisibleCallback extends JSObject {
+        void invoke();
+    }
+
+    @JSExport
+    public static void setOpenCallback(OnVisibleCallback callback) {
+        onVisible = callback;
+    }
+
     public static void main(String[] args) {
 
         // LoggerFactory.setGlobalLevel(LogLevel.TRACE);
@@ -28,9 +49,17 @@ public class GuiDemo {
         System.setProperty("me.mdbell.awtea.font.subpixel", "true");
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 
+        String canvasId = args[0];
+
+        // Tells the Applet instance we're heavyweight, and want to render directly to a
+        // canvas
+        System.setProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId", canvasId);
+
         // Create the main window
-        Frame frame = new Frame();
-        frame.setTitle("GUI Demo - awtea Example");
+        Applet frame = new Applet();
+
+        frame.setStub(new StubAppletStub());
+
         frame.setLayout(new BorderLayout(10, 10));
 
         // Add title panel at the top
@@ -203,6 +232,10 @@ public class GuiDemo {
 
         // Show the window
         frame.setVisible(true);
+
+        if (onVisible != null) {
+            onVisible.invoke();
+        }
     }
 
     /**

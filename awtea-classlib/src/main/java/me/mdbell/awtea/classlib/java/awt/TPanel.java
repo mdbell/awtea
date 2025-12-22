@@ -41,11 +41,13 @@ public class TPanel extends TContainer {
      */
     @Override
     public void update(TGraphics g) {
-        // Clear background if color is set
-        Color bg = getBackground();
-        if (bg != null) {
-            g.setColor(bg);
-            g.fillRect(0, 0, getWidth(), getHeight());
+        try (TGraphics bgGfx = g.create()) {
+            // Clear background if color is set
+            Color bg = getBackground();
+            if (bg != null) {
+                bgGfx.setColor(bg);
+                bgGfx.fillRect(0, 0, getWidth(), getHeight());
+            }
         }
         // Now paint children
         paint(g);
