@@ -53,11 +53,43 @@ public final class TEventManager implements AutoCloseable {
     // Track the component currently under the mouse for synthesizing enter/exit
     // events
     private TComponent componentUnderMouse = null;
+    
+    // Hit-testing strategy (tree-walk by default)
+    private HitTestStrategy hitTestStrategy;
 
     public TEventManager(HTMLElement element, TContainer container) {
         this.element = element;
         this.container = container;
         this.registrations = new LinkedList<>();
+        
+        // Initialize with tree-walk strategy (always available)
+        this.hitTestStrategy = new TreeWalkHitTestStrategy(container);
+        
+        log.debug("TEventManager initialized with tree-walk hit-test strategy");
+    }
+    
+    /**
+     * Sets the hit-testing strategy.
+     * This allows switching between tree-walk and GPU-based picking.
+     * 
+     * @param strategy the new hit-test strategy
+     */
+    public void setHitTestStrategy(HitTestStrategy strategy) {
+        if (this.hitTestStrategy != null) {
+            this.hitTestStrategy.dispose();
+        }
+        this.hitTestStrategy = strategy;
+        log.debug("Hit-test strategy changed to: {}", strategy.getClass().getSimpleName());
+    }
+    
+    /**
+     * Invalidates the hit-test strategy, forcing it to rebuild cached data.
+     * Should be called when the component hierarchy or layout changes.
+     */
+    public void invalidateHitTest() {
+        if (hitTestStrategy != null) {
+            hitTestStrategy.invalidate();
+        }
     }
 
     /**
@@ -220,6 +252,12 @@ public final class TEventManager implements AutoCloseable {
         lastMouseY = Integer.MIN_VALUE;
         // Reset component tracking
         componentUnderMouse = null;
+        
+        // Dispose hit-test strategy
+        if (hitTestStrategy != null) {
+            hitTestStrategy.dispose();
+            hitTestStrategy = null;
+        }
     }
 
     @Override
@@ -228,11 +266,15 @@ public final class TEventManager implements AutoCloseable {
     }
 
     private TComponent getComponentAt(Point p) {
-        TComponent component = container.getComponentAt(p.getX(), p.getY());
-        if (component == null) {
-            component = container;
+        if (hitTestStrategy == null) {
+            // Fallback to direct container query if no strategy set
+            TComponent component = container.getComponentAt(p.getX(), p.getY());
+            if (component == null) {
+                component = container;
+            }
+            return component;
         }
-        return component;
+        return hitTestStrategy.getComponentAt(p.getX(), p.getY());
     }
 
     private void post(TAWTEvent event) {

@@ -14,6 +14,9 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import org.teavm.classlib.java.awt.TDimension;
@@ -24,6 +27,32 @@ import org.teavm.classlib.java.awt.TDimension;
 public abstract class TComponent implements TImageObserver {
 
     private static final Logger log = LoggerFactory.getLogger(TComponent.class);
+    
+    // Component ID management for GPU-based hit picking
+    private static final AtomicInteger nextComponentId = new AtomicInteger(1);
+    private static final Map<Integer, TComponent> componentRegistry = new ConcurrentHashMap<>();
+    
+    @Getter
+    private final int componentId;
+    
+    /**
+     * Looks up a component by its unique ID.
+     * Used by GPU-based hit picking to resolve component IDs from picking buffer.
+     * 
+     * @param id the component ID
+     * @return the component with the specified ID, or null if not found
+     */
+    public static TComponent getComponentById(int id) {
+        return componentRegistry.get(id);
+    }
+    
+    /**
+     * Constructor that assigns a unique ID to this component.
+     */
+    public TComponent() {
+        this.componentId = nextComponentId.getAndIncrement();
+        componentRegistry.put(this.componentId, this);
+    }
 
     @Getter
     @Setter
