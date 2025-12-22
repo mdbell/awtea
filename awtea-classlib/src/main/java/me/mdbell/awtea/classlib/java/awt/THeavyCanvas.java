@@ -5,6 +5,7 @@ import me.mdbell.awtea.classlib.java.awt.awtea.TEventManager;
 import me.mdbell.awtea.classlib.java.awt.awtea.peer.TFrameFloatingPeer;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.gfx.SurfaceBackendFactory;
+import me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import me.mdbell.awtea.gfx.CompositeSurfaceBackend;
@@ -135,26 +136,42 @@ public class THeavyCanvas {
 		screenImg = new TBufferedImage(surface);
 	}
 
-	private Surface createScreenSurface() {
-		String forced = System.getProperty("me.mdbell.awtea.gfx.backend");
-		if (forced == null || forced == "webgl") {
+	public THeavyCanvas(HTMLCanvasElement canvasElement, TContainer container) {
+		this(canvasElement, container, canvasElement.getWidth(), canvasElement.getHeight());
+	}
 
-			try {
-				SurfaceBackend webgl = SurfaceBackendFactory.getWebGLBackend(canvasElement);
-				Surface surface = webgl.createCompatibleSurface(getWidth(), getHeight(), Surface.FORMAT_INT_RGBA);
-				if (surface != null) {
-					// we use a composite backend as there are still some surfaces that webgl
-					// doesn't fully support (like text rendering)
-					CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[] {
-							webgl,
-							SurfaceBackendFactory.getDefault()
-					});
-					SurfaceBackendFactory.setDefault(compositeSurfaceBackend);
-					return surface;
-				}
-			} catch (Exception e) {
-				log.warn("Failed to create a webgl instance! Using default");
-			}
+	public THeavyCanvas(HTMLCanvasElement canvasElement, TContainer container, int width, int height) {
+		this.canvasElement = canvasElement;
+
+		// Create event manager
+		eventManager = new TEventManager(canvasElement, container);
+
+		canvasElement.setWidth(width);
+		canvasElement.setHeight(height);
+
+		// Create surface for rendering
+		surface = createScreenSurface();
+
+		// Create buffered image wrapper
+		screenImg = new TBufferedImage(surface);
+	}
+
+	private Surface createScreenSurface() {
+		try {
+			WebGLSurfaceBackend webgl = (WebGLSurfaceBackend) SurfaceBackendFactory.getWebGLBackend(canvasElement);
+			Surface surface = webgl.createScreenSurface(getWidth(), getHeight());
+			log.trace("Using WebGL surface backend for heavyweight canvas - dimensions: {}x{}", getWidth(),
+					getHeight());
+			// we use a composite backend as there are still some surfaces that webgl
+			// doesn't fully support (like text rendering)
+			CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[] {
+					webgl,
+					SurfaceBackendFactory.getDefault()
+			});
+			SurfaceBackendFactory.setDefault(compositeSurfaceBackend);
+			return surface;
+		} catch (Exception e) {
+			log.warn("Failed to create a webgl instance! Using default");
 		}
 		return SurfaceBackendFactory.createScreenSurface(getWidth(), getHeight(), canvasElement);
 	}

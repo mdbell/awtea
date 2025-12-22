@@ -131,16 +131,17 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, uvBuf, WebGLRenderingContext.STREAM_DRAW);
 	}
 
-	@Override
-	public Surface createCompatibleSurface(int width, int height, int bufferedImageType) {
-		if (bufferedImageType != Surface.FORMAT_INT_RGBA) {
-			return null;
-		}
+	public Surface createScreenSurface(int width, int height) {
 		return new WebGLSurface(this, width, height, true);
 	}
 
 	@Override
 	public Surface createCompatibleSurface(Object cm, Object raster, boolean isRasterPremultiplied, int bufferedImageType) {
+		return null;
+	}
+
+	@Override
+	public Surface createCompatibleSurface(int width, int height, int bufferedImageType) {
 		return null;
 	}
 

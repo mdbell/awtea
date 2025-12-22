@@ -160,8 +160,9 @@ public class SurfaceBackendFactory {
 	 * @return The created surface
 	 */
 	public static Surface createScreenSurface(int width, int height, HTMLCanvasElement canvas) {
+		log.info("Creating screen surface with WebGL backend - dimensions: {}x{}", width, height);
 		WebGLSurfaceBackend webGLBackend = new WebGLSurfaceBackend(canvas);
-		return webGLBackend.createCompatibleSurface(width, height, Surface.FORMAT_INT_RGBA);
+		return webGLBackend.createScreenSurface(width, height);
 	}
 
 	/**
