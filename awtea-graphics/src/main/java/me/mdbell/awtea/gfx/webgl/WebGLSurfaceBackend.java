@@ -34,6 +34,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	private final WebGLUniformLocation uResolutionLocTex;
 	private final WebGLUniformLocation uTransformLocTex;
 	private final WebGLUniformLocation uTextureLoc;
+	private final WebGLUniformLocation uPickingColorLoc;  // Picking color uniform
 
 	private final int aPositionLocTex;
 	private final int aTexCoordLocTex;
@@ -87,6 +88,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		this.uTransformLocTex = gl.getUniformLocation(textureProgram, "u_transform");
 		this.uSwizzleModeLoc = gl.getUniformLocation(textureProgram, "u_swizzleMode");
 		this.uTextureLoc = gl.getUniformLocation(textureProgram, "u_texture");
+		this.uPickingColorLoc = gl.getUniformLocation(textureProgram, "u_pickingColor");
 		gl.uniform1i(uTextureLoc, 0); // texture unit 0
 
 		// ---- buffers ----
@@ -173,6 +175,10 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	}
 
 	void useTextureProgram(SwizzleMode mode, int width, int height) {
+		useTextureProgram(mode, width, height, null);
+	}
+	
+	void useTextureProgram(SwizzleMode mode, int width, int height, float[] pickingColor) {
 
 		if (currentProgram != WebGLProgramType.TEXTURE) {
 			gl.useProgram(textureProgram);
@@ -190,6 +196,11 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			contextStack.getTransformArray());
 
 		gl.uniform1i(uSwizzleModeLoc, mode.ordinal());
+		
+		// Set picking color if in picking mode
+		if (mode == SwizzleMode.PICKING && pickingColor != null) {
+			gl.uniform4f(uPickingColorLoc, pickingColor[0], pickingColor[1], pickingColor[2], 1.0f);
+		}
 
 		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadBuffer);
 		gl.enableVertexAttribArray(aPositionLocTex);
@@ -238,7 +249,8 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 		NONE,
 		ARGB_TO_RGBA,
 		RGB_TO_RGBA,
-		BGR_TO_ABGR
+		BGR_TO_ABGR,
+		PICKING  // Special mode for picking buffer - outputs solid color from uniform
 	}
 	
 	// Picking buffer management

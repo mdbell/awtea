@@ -122,6 +122,18 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             ((me.mdbell.awtea.gfx.PickingRasterizer) rasterizer).setPickingEnabled(enabled);
         }
     }
+    
+    /**
+     * Returns whether picking mode is currently enabled.
+     * 
+     * @return true if picking is enabled
+     */
+    public boolean isPickingEnabled() {
+        if (rasterizer instanceof me.mdbell.awtea.gfx.PickingRasterizer) {
+            return ((me.mdbell.awtea.gfx.PickingRasterizer) rasterizer).isPickingEnabled();
+        }
+        return false;
+    }
 
     /**
      * Acquires a SurfaceCommand from the pool, or creates a new one if the pool is

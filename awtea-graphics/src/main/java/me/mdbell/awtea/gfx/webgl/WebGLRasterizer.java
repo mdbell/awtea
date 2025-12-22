@@ -87,6 +87,16 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
     public void setPickingEnabled(boolean enabled) {
         this.pickingEnabled = enabled;
     }
+    
+    /**
+     * Returns whether picking mode is currently enabled.
+     * 
+     * @return true if picking is enabled
+     */
+    @Override
+    public boolean isPickingEnabled() {
+        return pickingEnabled;
+    }
 
     @Override
     public Rasterizer create() {
@@ -169,6 +179,73 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         
         // Restore original color
         backend.contextStack.setForeground(savedColor);
+    }
+    
+    /**
+     * Renders a texture to the picking buffer using PICKING swizzle mode.
+     * This ensures text and other surface-based content appears in the picking buffer
+     * with the component's ID color.
+     */
+    private void renderTextureToPickingBuffer(WebGLTexture texture, int x, int y, 
+            int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
+        WebGLPickingBuffer pickingBuffer = backend.getPickingBuffer();
+        if (pickingBuffer == null) {
+            return;
+        }
+        
+        // Bind picking framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, pickingBuffer.getFramebuffer());
+        gl.viewport(0, 0, pickingBuffer.getWidth(), pickingBuffer.getHeight());
+        
+        // Encode component ID as color for uniform
+        float[] idColor = PickingColorEncoder.encodeId(activeComponentId);
+        
+        // Use texture program with PICKING swizzle mode
+        backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.PICKING, 
+            surface.getWidth(), surface.getHeight(), idColor);
+        
+        // Flip Y for picking buffer
+        int flippedY = surface.getHeight() - y - srcH;
+        
+        // Setup vertices and UVs
+        float[] verts = {
+                x, flippedY,
+                x + width, flippedY,
+                x, flippedY + height,
+                x, flippedY + height,
+                x + width, flippedY,
+                x + width, flippedY + height
+        };
+
+        float[] uvs = {
+                0f, 1f,
+                1f, 1f,
+                0f, 0f,
+                0f, 0f,
+                1f, 1f,
+                1f, 0f
+        };
+
+        backend.uploadQuadVertices(verts, uvs);
+        
+        // Bind texture
+        gl.activeTexture(WebGLRenderingContext.TEXTURE0);
+        gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
+
+        if (pixelData != null) {
+            gl.texImage2D(WebGLRenderingContext.TEXTURE_2D, 0, WebGLRenderingContext.RGBA,
+                    srcW, srcH, 0, WebGLRenderingContext.RGBA,
+                    WebGLRenderingContext.UNSIGNED_BYTE, pixelData);
+        }
+
+        // Render to picking buffer
+        gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+        
+        // Restore original framebuffer
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
+        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+        
+        gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
     }
 
     private void drawRect(float x, float y, float width, float height, float lineWidth) {
@@ -290,6 +367,13 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
     private void drawTexture(WebGLTexture texture, WebGLSurfaceBackend.SwizzleMode mode,
             int x, int y, int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
+        
+        // If picking is enabled, render to picking buffer with PICKING swizzle mode
+        if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
+            renderTextureToPickingBuffer(texture, x, y, srcW, srcH, width, height, pixelData);
+        }
+        
+        // Always render to normal framebuffer
         backend.useTextureProgram(mode, surface.getWidth(), surface.getHeight());
 
         y = surface.getHeight() - y - srcH;

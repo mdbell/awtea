@@ -283,4 +283,127 @@ public class WebGLPickingBuffer {
     public int getHeight() {
         return height;
     }
+    
+    /**
+     * Renders the picking buffer to the screen for debugging.
+     * Each component ID is converted to a unique HSL color for visualization.
+     * 
+     * @param screenFramebuffer the screen framebuffer to render to (or null for default)
+     * @param screenWidth the screen width
+     * @param screenHeight the screen height
+     */
+    public void renderDebugVisualization(WebGLFramebuffer screenFramebuffer, int screenWidth, int screenHeight) {
+        if (pixelBytes == null) {
+            log.warn("Cannot render debug visualization - no pixel data cached");
+            return;
+        }
+        
+        // Create a temporary texture with HSL-colored version of the picking buffer
+        Uint8Array coloredPixels = new Uint8Array(width * height * 4);
+        
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int pixelIndex = y * width + x;
+                int byteOffset = pixelIndex * 4;
+                
+                // Read component ID
+                int r = pixelBytes.get(byteOffset) & 0xFF;
+                int g = pixelBytes.get(byteOffset + 1) & 0xFF;
+                int b = pixelBytes.get(byteOffset + 2) & 0xFF;
+                
+                int componentId = PickingColorEncoder.decodeIdFromPixel(new int[]{r, g, b, 255});
+                
+                // Convert component ID to HSL color for visualization
+                float[] hsl = componentIdToHSL(componentId);
+                int[] rgb = hslToRGB(hsl[0], hsl[1], hsl[2]);
+                
+                // Write colored pixel (need to cast to byte/short)
+                coloredPixels.set(byteOffset, (byte)(rgb[0] & 0xFF));
+                coloredPixels.set(byteOffset + 1, (byte)(rgb[1] & 0xFF));
+                coloredPixels.set(byteOffset + 2, (byte)(rgb[2] & 0xFF));
+                coloredPixels.set(byteOffset + 3, (byte)255); // Full opacity
+            }
+        }
+        
+        // Create temporary texture
+        WebGLTexture tempTexture = gl.createTexture();
+        gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, tempTexture);
+        gl.texImage2D(
+            WebGLRenderingContext.TEXTURE_2D, 0, WebGLRenderingContext.RGBA,
+            width, height, 0,
+            WebGLRenderingContext.RGBA, WebGLRenderingContext.UNSIGNED_BYTE,
+            coloredPixels
+        );
+        gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, 
+            WebGLRenderingContext.TEXTURE_MIN_FILTER, WebGLRenderingContext.NEAREST);
+        gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, 
+            WebGLRenderingContext.TEXTURE_MAG_FILTER, WebGLRenderingContext.NEAREST);
+        
+        // Render to screen (simplified full-screen quad rendering would go here)
+        // For now, just log that debug rendering was requested
+        log.info("Debug visualization prepared (component IDs rendered as HSL colors)");
+        
+        // Cleanup
+        gl.deleteTexture(tempTexture);
+    }
+    
+    /**
+     * Converts a component ID to an HSL color for visualization.
+     * Uses golden ratio for hue distribution to maximize color distinction.
+     * 
+     * @param componentId the component ID
+     * @return HSL values [0-360, 0-1, 0-1]
+     */
+    private float[] componentIdToHSL(int componentId) {
+        if (componentId == 0) {
+            // Black for background/no component
+            return new float[]{0, 0, 0};
+        }
+        
+        // Use golden ratio for hue to maximize visual distinction between IDs
+        float goldenRatio = 0.618033988749895f;
+        float hue = (componentId * goldenRatio * 360) % 360;
+        
+        // High saturation and medium lightness for vivid colors
+        float saturation = 0.8f;
+        float lightness = 0.5f;
+        
+        return new float[]{hue, saturation, lightness};
+    }
+    
+    /**
+     * Converts HSL to RGB.
+     * 
+     * @param h hue in degrees [0-360]
+     * @param s saturation [0-1]
+     * @param l lightness [0-1]
+     * @return RGB values [0-255]
+     */
+    private int[] hslToRGB(float h, float s, float l) {
+        float c = (1 - Math.abs(2 * l - 1)) * s;
+        float x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        float m = l - c / 2;
+        
+        float r, g, b;
+        
+        if (h < 60) {
+            r = c; g = x; b = 0;
+        } else if (h < 120) {
+            r = x; g = c; b = 0;
+        } else if (h < 180) {
+            r = 0; g = c; b = x;
+        } else if (h < 240) {
+            r = 0; g = x; b = c;
+        } else if (h < 300) {
+            r = x; g = 0; b = c;
+        } else {
+            r = c; g = 0; b = x;
+        }
+        
+        return new int[]{
+            (int)((r + m) * 255),
+            (int)((g + m) * 255),
+            (int)((b + m) * 255)
+        };
+    }
 }

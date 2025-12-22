@@ -26,4 +26,11 @@ public interface PickingRasterizer {
      * @param enabled true to enable picking mode
      */
     void setPickingEnabled(boolean enabled);
+    
+    /**
+     * Returns whether picking mode is currently enabled.
+     * 
+     * @return true if picking is enabled
+     */
+    boolean isPickingEnabled();
 }
