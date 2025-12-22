@@ -34,6 +34,31 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 	 */
 	private static final String BUFFER_SIZE_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size";
 
+	/**
+	 * Cached PCM buffer size override from system property, or -1 if not set.
+	 * When > 0, this value is used as the default buffer size instead of sample_rate * channels.
+	 */
+	private static final int BUFFER_SIZE_OVERRIDE = getBufferSizeOverride();
+
+	/**
+	 * Get the PCM buffer size override from system properties with validation.
+	 * @return the buffer size if valid positive integer, -1 if not set or invalid
+	 */
+	private static int getBufferSizeOverride() {
+		String bufferSizeStr = System.getProperty(BUFFER_SIZE_PROPERTY);
+		if (bufferSizeStr != null) {
+			try {
+				int value = Integer.parseInt(bufferSizeStr);
+				if (value > 0) {
+					return value;
+				}
+			} catch (NumberFormatException e) {
+				// Fall through to not set
+			}
+		}
+		return -1; // Not set or invalid
+	}
+
     /***
      * The global audio context.
      */
@@ -365,18 +390,9 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 
     @Override
     public void open(AudioFormat format) throws LineUnavailableException {
-        int defaultBufferSize = (int) (format.getSampleRate() * format.getChannels());
-        String bufferSizeStr = System.getProperty(BUFFER_SIZE_PROPERTY);
-        if (bufferSizeStr != null) {
-            try {
-                int value = Integer.parseInt(bufferSizeStr);
-                if (value > 0) {
-                    defaultBufferSize = value;
-                }
-            } catch (NumberFormatException e) {
-                // Fall through to default
-            }
-        }
+        int defaultBufferSize = BUFFER_SIZE_OVERRIDE > 0 
+            ? BUFFER_SIZE_OVERRIDE 
+            : (int) (format.getSampleRate() * format.getChannels());
         this.open(format, defaultBufferSize);
     }
 
