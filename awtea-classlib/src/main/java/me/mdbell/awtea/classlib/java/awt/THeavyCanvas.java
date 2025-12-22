@@ -96,7 +96,6 @@ public class THeavyCanvas {
 	private final Surface surface;
 	private final TBufferedImage screenImg;
 
-
 	/**
 	 * Creates a new heavyweight canvas with default initial size.
 	 *
@@ -161,16 +160,17 @@ public class THeavyCanvas {
 		try {
 			WebGLSurfaceBackend webgl = (WebGLSurfaceBackend) SurfaceBackendFactory.getWebGLBackend(canvasElement);
 			Surface surface = webgl.createScreenSurface(getWidth(), getHeight());
-            log.trace("Using WebGL surface backend for heavyweight canvas - dimensions: {}x{}", getWidth(), getHeight());
-            // we use a composite backend as there are still some surfaces that webgl
-            // doesn't fully support (like text rendering)
-            CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[] {
-                    webgl,
-                    SurfaceBackendFactory.getDefault()
-            });
-            SurfaceBackendFactory.setDefault(compositeSurfaceBackend);
-            return surface;
-        } catch (Exception e) {
+			log.trace("Using WebGL surface backend for heavyweight canvas - dimensions: {}x{}", getWidth(),
+					getHeight());
+			// we use a composite backend as there are still some surfaces that webgl
+			// doesn't fully support (like text rendering)
+			CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[] {
+					webgl,
+					SurfaceBackendFactory.getDefault()
+			});
+			SurfaceBackendFactory.setDefault(compositeSurfaceBackend);
+			return surface;
+		} catch (Exception e) {
 			log.warn("Failed to create a webgl instance! Using default");
 		}
 		return SurfaceBackendFactory.createScreenSurface(getWidth(), getHeight(), canvasElement);

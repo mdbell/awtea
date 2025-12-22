@@ -338,13 +338,13 @@ static int handle_draw_polygon(SurfaceContext* ctx, SurfaceData* surface, Comman
     }
     
     // Allocate arrays for x and y coordinates
-    int* x_points = (int*)malloc(sizeof(int) * npoints);
-    int* y_points = (int*)malloc(sizeof(int) * npoints);
+    int* x_points = (int*)tracked_malloc(sizeof(int) * npoints);
+    int* y_points = (int*)tracked_malloc(sizeof(int) * npoints);
     
     if (!x_points || !y_points) {
         log_error("handle_draw_polygon: failed to allocate point arrays");
-        if (x_points) free(x_points);
-        if (y_points) free(y_points);
+        if (x_points) tracked_free(x_points);
+        if (y_points) tracked_free(y_points);
         reader_skip(reader, (length - 1) * 4);
         return -1;
     }
@@ -370,8 +370,8 @@ static int handle_draw_polygon(SurfaceContext* ctx, SurfaceData* surface, Comman
               x_points[0], y_points[0], ctx->argb[COLOR_FG]);
     
     // Free allocated memory
-    free(x_points);
-    free(y_points);
+    tracked_free(x_points);
+    tracked_free(y_points);
     
     log_debug("Drew polygon with %d points", npoints);
     return 0;
@@ -398,13 +398,13 @@ static int handle_fill_polygon(SurfaceContext* ctx, SurfaceData* surface, Comman
     }
     
     // Allocate arrays for x and y coordinates
-    int* x_points = (int*)malloc(sizeof(int) * npoints);
-    int* y_points = (int*)malloc(sizeof(int) * npoints);
+    int* x_points = (int*)tracked_malloc(sizeof(int) * npoints);
+    int* y_points = (int*)tracked_malloc(sizeof(int) * npoints);
     
     if (!x_points || !y_points) {
         log_error("handle_fill_polygon: failed to allocate point arrays");
-        if (x_points) free(x_points);
-        if (y_points) free(y_points);
+        if (x_points) tracked_free(x_points);
+        if (y_points) tracked_free(y_points);
         reader_skip(reader, (length - 1) * 4);  // Skip remaining data
         return -1;
     }
@@ -423,8 +423,8 @@ static int handle_fill_polygon(SurfaceContext* ctx, SurfaceData* surface, Comman
     fill_polygon(surface, ctx, x_points, y_points, npoints, ctx->argb[COLOR_FG]);
     
     // Free allocated memory
-    free(x_points);
-    free(y_points);
+    tracked_free(x_points);
+    tracked_free(y_points);
     
     log_debug("Filled polygon with %d points", npoints);
     return 0;
@@ -576,13 +576,13 @@ static int handle_draw_polyline(SurfaceContext* ctx, SurfaceData* surface, Comma
     }
     
     // Allocate arrays for x and y coordinates
-    int* x_points = (int*)malloc(sizeof(int) * npoints);
-    int* y_points = (int*)malloc(sizeof(int) * npoints);
+    int* x_points = (int*)tracked_malloc(sizeof(int) * npoints);
+    int* y_points = (int*)tracked_malloc(sizeof(int) * npoints);
     
     if (!x_points || !y_points) {
         log_error("handle_draw_polyline: failed to allocate point arrays");
-        if (x_points) free(x_points);
-        if (y_points) free(y_points);
+        if (x_points) tracked_free(x_points);
+        if (y_points) tracked_free(y_points);
         reader_skip(reader, (length - 1) * 4);
         return -1;
     }
@@ -601,8 +601,8 @@ static int handle_draw_polyline(SurfaceContext* ctx, SurfaceData* surface, Comma
     draw_polyline(surface, ctx, x_points, y_points, npoints, ctx->argb[COLOR_FG]);
     
     // Free allocated memory
-    free(x_points);
-    free(y_points);
+    tracked_free(x_points);
+    tracked_free(y_points);
     
     log_debug("Drew polyline with %d points", npoints);
     return 0;

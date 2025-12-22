@@ -100,4 +100,26 @@ interface WasmAwtRasterizerExports extends JSObject {
 	
 	@JSMethod("get_max_contexts")
 	int getMaxContexts();
+	
+	// Build information exports
+	@JSMethod("get_build_version_ptr")
+	int getBuildVersionPtr();
+	
+	@JSMethod("get_build_date_ptr")
+	int getBuildDatePtr();
+	
+	@JSMethod("get_build_time_ptr")
+	int getBuildTimePtr();
+	
+	@JSMethod("get_build_flags")
+	int getBuildFlags();
+	
+	@JSMethod("get_build_flags_string_ptr")
+	int getBuildFlagsStringPtr();
+	
+	@JSMethod("get_stack_info_ptr")
+	int getStackInfoPtr();
+	
+	@JSMethod("get_stack_info_count")
+	int getStackInfoCount();
 }

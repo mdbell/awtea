@@ -1,137 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animation Demo - awtea Example</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        h1 {
-            color: #333;
-        }
-        .info {
-            background-color: white;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        #app-container {
-            background-color: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .loading {
-            padding: 20px;
-            text-align: center;
-            color: #666;
-        }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .feature {
-            padding: 8px;
-            background-color: #f8f8f8;
-            border-radius: 3px;
-        }
-        .controls-section {
-            margin-top: 15px;
-            padding: 12px;
-            background-color: #e8f4f8;
-            border-left: 4px solid #4682b4;
-            border-radius: 3px;
-        }
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .control-item {
-            font-family: 'Courier New', monospace;
-            padding: 4px 8px;
-            background-color: white;
-            border-radius: 3px;
-        }
-        .key {
-            font-weight: bold;
-            color: #4682b4;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>awtea Animation Demo</h1>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Animation Demo - awtea Example</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 20px;
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            h1 {
+                color: #333;
+            }
+            .info {
+                background-color: white;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            #app-container {
+                background-color: white;
+                padding: 10px;
+                border-radius: 5px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                display: flex;
+                justify-content: space-around;
+            }
+            .loading {
+                padding: 20px;
+                text-align: center;
+                color: #666;
+            }
+            .features {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 10px;
+                margin-top: 10px;
+            }
+            .feature {
+                padding: 8px;
+                background-color: #f8f8f8;
+                border-radius: 3px;
+            }
+            .controls-section {
+                margin-top: 15px;
+                padding: 12px;
+                background-color: #e8f4f8;
+                border-left: 4px solid #4682b4;
+                border-radius: 3px;
+            }
+            .controls-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 8px;
+                margin-top: 10px;
+            }
+            .control-item {
+                font-family: "Courier New", monospace;
+                padding: 4px 8px;
+                background-color: white;
+                border-radius: 3px;
+            }
+            .key {
+                font-weight: bold;
+                color: #4682b4;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>awtea Animation Demo</h1>
 
-    <div class="info">
-        <h3>About this example</h3>
-        <p>
-            This comprehensive animation demo showcases real-time physics simulation and interactive controls in awtea.
-            Watch bouncing balls with realistic gravity and collision detection!
-        </p>
-        
-        <h4>Demonstrated Features:</h4>
-        <div class="features">
-            <div class="feature">✓ Frame-based animation loop (~60 FPS)</div>
-            <div class="feature">✓ Physics simulation with gravity</div>
-            <div class="feature">✓ Collision detection and bouncing</div>
-            <div class="feature">✓ FPS monitoring and performance tracking</div>
-            <div class="feature">✓ Mouse interaction (click to add balls)</div>
-            <div class="feature">✓ Keyboard controls (pause, reset, effects)</div>
-            <div class="feature">✓ Double buffering for smooth rendering</div>
-            <div class="feature">✓ Motion trails effect (optional)</div>
-            <div class="feature">✓ Velocity vector visualization</div>
-            <div class="feature">✓ Delta-time based physics</div>
-        </div>
+            <div class="info">
+                <h3>About this example</h3>
+                <p>
+                    This comprehensive animation demo showcases real-time
+                    physics simulation and interactive controls in awtea. Watch
+                    bouncing balls with realistic gravity and collision
+                    detection!
+                </p>
 
-        <div class="controls-section">
-            <h4 style="margin-top: 0;">Interactive Controls</h4>
-            
-            <strong>Mouse Controls:</strong>
-            <div class="controls-grid">
-                <div class="control-item"><span class="key">Left Click</span> - Add ball at cursor</div>
-                <div class="control-item"><span class="key">Right Click</span> - Add ball with velocity</div>
+                <h4>Demonstrated Features:</h4>
+                <div class="features">
+                    <div class="feature">
+                        ✓ Frame-based animation loop (~60 FPS)
+                    </div>
+                    <div class="feature">✓ Physics simulation with gravity</div>
+                    <div class="feature">
+                        ✓ Collision detection and bouncing
+                    </div>
+                    <div class="feature">
+                        ✓ FPS monitoring and performance tracking
+                    </div>
+                    <div class="feature">
+                        ✓ Mouse interaction (click to add balls)
+                    </div>
+                    <div class="feature">
+                        ✓ Keyboard controls (pause, reset, effects)
+                    </div>
+                    <div class="feature">
+                        ✓ Double buffering for smooth rendering
+                    </div>
+                    <div class="feature">✓ Motion trails effect (optional)</div>
+                    <div class="feature">✓ Velocity vector visualization</div>
+                    <div class="feature">✓ Delta-time based physics</div>
+                </div>
+
+                <div class="controls-section">
+                    <h4 style="margin-top: 0">Interactive Controls</h4>
+
+                    <strong>Mouse Controls:</strong>
+                    <div class="controls-grid">
+                        <div class="control-item">
+                            <span class="key">Left Click</span> - Add ball at
+                            cursor
+                        </div>
+                        <div class="control-item">
+                            <span class="key">Right Click</span> - Add ball with
+                            velocity
+                        </div>
+                    </div>
+
+                    <strong style="display: block; margin-top: 10px"
+                    >Keyboard Controls:</strong>
+                    <div class="controls-grid">
+                        <div class="control-item">
+                            <span class="key">SPACE</span> - Pause/unpause
+                            animation
+                        </div>
+                        <div class="control-item">
+                            <span class="key">C</span> - Clear all balls
+                        </div>
+                        <div class="control-item">
+                            <span class="key">R</span> - Reset to 15 random
+                            balls
+                        </div>
+                        <div class="control-item">
+                            <span class="key">T</span> - Toggle motion trails
+                        </div>
+                        <div class="control-item">
+                            <span class="key">V</span> - Toggle velocity vectors
+                        </div>
+                        <div class="control-item">
+                            <span class="key">+ / =</span> - Add one random ball
+                        </div>
+                        <div class="control-item">
+                            <span class="key">-</span> - Remove last ball
+                        </div>
+                    </div>
+                </div>
+
+                <p style="margin-top: 15px">
+                    <strong>Physics Details:</strong> The simulation applies 400
+                    pixels/second² downward gravity, with a 0.8 damping
+                    coefficient on wall bounces for realistic energy loss.
+                </p>
             </div>
 
-            <strong style="display: block; margin-top: 10px;">Keyboard Controls:</strong>
-            <div class="controls-grid">
-                <div class="control-item"><span class="key">SPACE</span> - Pause/unpause animation</div>
-                <div class="control-item"><span class="key">C</span> - Clear all balls</div>
-                <div class="control-item"><span class="key">R</span> - Reset to 15 random balls</div>
-                <div class="control-item"><span class="key">T</span> - Toggle motion trails</div>
-                <div class="control-item"><span class="key">V</span> - Toggle velocity vectors</div>
-                <div class="control-item"><span class="key">+ / =</span> - Add one random ball</div>
-                <div class="control-item"><span class="key">-</span> - Remove last ball</div>
+            <div id="app-container">
+                <div class="loading" id="loadingMsg">
+                    Loading awtea animation demo...
+                </div>
+                <canvas
+                    width="800"
+                    height="600"
+                    id="animation-demo"
+                    style="display: none"
+                >
+                    Your browser doesn't support canvases :(
+                </canvas>
             </div>
         </div>
+        <script type="module">
+            import { main, setOpenCallback } from "./js/animation-demo.js";
 
-        <p style="margin-top: 15px;">
-            <strong>Physics Details:</strong> The simulation applies 400 pixels/second² downward gravity,
-            with a 0.8 damping coefficient on wall bounces for realistic energy loss.
-        </p>
-    </div>
+            function hideLoading() {
+                const loadingElem = document.getElementById("loadingMsg");
+                const canvasElem = document.getElementById("animation-demo");
 
-    <div id="app-container">
-        <div class="loading">Loading awtea animation demo...</div>
-    </div>
-</div>
-<script type="module">
-    import { main } from './js/animation-demo.js';
+                loadingElem.style.display = "none";
+                canvasElem.style.display = "block";
+            }
 
-    main([]);
-</script>
-</body>
+            setOpenCallback(hideLoading);
+
+            main(["animation-demo", "debug"]);
+        </script>
+    </body>
 </html>

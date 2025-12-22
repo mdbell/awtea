@@ -1,4 +1,7 @@
 #pragma once
+
+#include "awt_build_info.h"
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -23,11 +26,6 @@ typedef struct {
     uint16_t ref_count;         // Surface reference count (2 bytes)
     uint16_t flags;             // Additional flags/state (2 bytes)
 } StackFrame;
-
-// Control stack tracking at compile time
-#ifndef ENABLE_WASM_STACK_TRACKING
-#define ENABLE_WASM_STACK_TRACKING 1
-#endif
 
 #if ENABLE_WASM_STACK_TRACKING
 
@@ -118,5 +116,9 @@ static inline void stack_tracer_destroy(StackTracer* tracer) {
 static inline uint32_t get_stack_buffer_ptr(void) { return 0; }
 static inline int get_stack_depth(void) { return 0; }
 static inline int get_max_stack_depth(void) { return 0; }
+static inline void stack_push_extended(const char* function_name, int line, const char* context,
+                        int32_t surface_id, int32_t context_id, 
+                        uint16_t operation_type, uint16_t command_index, uint16_t ref_count) { }
+static inline void stack_pop(void) { }
 
 #endif

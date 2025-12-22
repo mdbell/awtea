@@ -17,6 +17,7 @@
 import { PixelFormat } from "./generated/pixel-format.ts";
 import { SurfaceOperation } from "./generated/surface-operation.ts";
 import { CompositeMode } from "./generated/composite-mode.ts";
+import { decodeNullTerminatedString } from "./test_helpers.ts";
 
 // Color slot constants
 export const COLOR_FG = 0;
@@ -214,6 +215,50 @@ export class WasmRasterizer {
     // Initialize the surface system (sets contexts to free state)
     const wasm = this.getExports();
     wasm.init_surface_system();
+    
+    // Print build information for diagnostics
+    this.printBuildInfo();
+  }
+  
+  /**
+   * Print build information from WASM module
+   */
+  private printBuildInfo(): void {
+    try {
+      const wasm = this.getExports();
+      
+      // Check if build info exports exist
+      if (!wasm.get_build_version_ptr || !wasm.get_build_date_ptr || 
+          !wasm.get_build_time_ptr || !wasm.get_build_flags || 
+          !wasm.get_build_flags_string_ptr) {
+        // Old WASM module without build info exports
+        return;
+      }
+      
+      const versionPtr = wasm.get_build_version_ptr();
+      const datePtr = wasm.get_build_date_ptr();
+      const timePtr = wasm.get_build_time_ptr();
+      const flags = wasm.get_build_flags();
+      const flagsStrPtr = wasm.get_build_flags_string_ptr();
+      
+      const memory = this.getMemory();
+      const version = decodeNullTerminatedString(memory, versionPtr);
+      const date = decodeNullTerminatedString(memory, datePtr);
+      const time = decodeNullTerminatedString(memory, timePtr);
+      const flagsStr = decodeNullTerminatedString(memory, flagsStrPtr);
+      
+      console.log("\n" + "=".repeat(60));
+      console.log("WASM Rasterizer Build Information");
+      console.log("=".repeat(60));
+      console.log(`Version:     ${version}`);
+      console.log(`Built:       ${date} at ${time}`);
+      console.log(`Flags:       0x${flags.toString(16).padStart(8, "0")}`);
+      console.log(`Description: ${flagsStr}`);
+      console.log("=".repeat(60) + "\n");
+    } catch (e) {
+      // Silently ignore if build info is not available
+      console.log("[Note: Build info not available in this WASM module]");
+    }
   }
 
   /**
@@ -224,6 +269,23 @@ export class WasmRasterizer {
       throw new Error("WASM module not loaded. Call load() first.");
     }
     return this.wasmInstance.exports as any;
+  }
+
+  /**
+   * Get WASM exports (public accessor for tests)
+   */
+  getExportsPublic() {
+    return this.getExports();
+  }
+
+  /**
+   * Get WASM memory (public accessor for tests)
+   */
+  getMemory(): WebAssembly.Memory {
+    if (!this.wasmInstance) {
+      throw new Error("WASM module not loaded. Call load() first.");
+    }
+    return this.wasmInstance.exports.memory as WebAssembly.Memory;
   }
 
   /**

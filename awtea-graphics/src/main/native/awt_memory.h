@@ -1,8 +1,12 @@
 #pragma once
 #include "awt_imports.h"
+#include "awt_build_info.h"
 #include <stdlib.h>
 #include <stdint.h>
 
+// Control memory tracking at compile time
+// Note: This is controlled by AWTEA_DEBUG_BUILD in awt_build_info.h
+// Can be overridden explicitly if needed
 #ifndef ENABLE_WASM_MEMORY_TRACKING
 #define ENABLE_WASM_MEMORY_TRACKING 1
 #endif
@@ -61,6 +65,10 @@ static inline void tracked_free(void* ptr) {
 }
 
 #else
+
+static inline void* tracked_realloc(void* ptr, size_t size) {
+    return realloc(ptr, size);
+}
 
 static inline void* tracked_malloc(size_t size) {
     return malloc(size);

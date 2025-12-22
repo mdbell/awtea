@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "awt_imports.h"
+#include "awt_build_info.h"
 
 // Include auto-generated enum
 #include "generated/log_level.h"
@@ -12,11 +13,6 @@
 
 // Maximum size of a single log message
 #define LOG_MESSAGE_MAX_SIZE 512
-
-// Control logging at compile time
-#ifndef ENABLE_WASM_LOGGING
-#define ENABLE_WASM_LOGGING 1
-#endif
 
 #if ENABLE_WASM_LOGGING
 
