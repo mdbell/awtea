@@ -241,5 +241,5 @@ This refactoring eliminates dynamic allocation/freeing of command buffers by sto
 11 files changed, 571 insertions(+), 12 deletions(-)
 ```
 
-See [WASM_COMMAND_BUFFER_REFACTORING.md](docs/WASM_COMMAND_BUFFER_REFACTORING.md) for detailed documentation.
+See [WASM_COMMAND_BUFFER_REFACTORING.md](WASM_COMMAND_BUFFER_REFACTORING.md) for detailed documentation.
 
