@@ -1,6 +1,7 @@
 package me.mdbell.awtea.gfx.webgl;
 
 import me.mdbell.awtea.gfx.Rasterizer;
+import me.mdbell.awtea.gfx.PickingRasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import me.mdbell.awtea.gfx.SurfaceContainer;
@@ -20,7 +21,7 @@ import java.awt.geom.AffineTransform;
 import java.util.List;
 
 @Monitored.AllMethods
-class WebGLRasterizer implements Rasterizer {
+class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
     private static final Logger log = LoggerFactory.getLogger(WebGLRasterizer.class);
 
@@ -70,6 +71,7 @@ class WebGLRasterizer implements Rasterizer {
      * 
      * @param componentId the component ID
      */
+    @Override
     public void setActiveComponentId(int componentId) {
         this.activeComponentId = componentId;
         log.trace("Set active component ID to {}", componentId);
@@ -81,6 +83,7 @@ class WebGLRasterizer implements Rasterizer {
      * 
      * @param enabled true to enable picking rendering
      */
+    @Override
     public void setPickingEnabled(boolean enabled) {
         this.pickingEnabled = enabled;
     }

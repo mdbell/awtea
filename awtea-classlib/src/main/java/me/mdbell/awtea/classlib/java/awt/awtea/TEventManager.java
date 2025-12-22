@@ -1,5 +1,6 @@
 package me.mdbell.awtea.classlib.java.awt.awtea;
 
+import lombok.Getter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.TAWTEvent;
 import me.mdbell.awtea.classlib.java.awt.TComponent;
@@ -44,6 +45,7 @@ public final class TEventManager implements AutoCloseable {
     public static final int SCROLL_AMOUNT = 3;
 
     private final HTMLElement element;
+    @Getter
     private final TContainer container;
 
     private final List<Registration> registrations;

@@ -106,17 +106,20 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
      * @param componentId the component ID
      */
     public void setActiveComponentId(int componentId) {
-        // Check if rasterizer is WebGLRasterizer and supports picking
-        // Use instanceof check with fully qualified name to avoid import cycle
-        if (rasterizer.getClass().getName().contains("WebGLRasterizer")) {
-            try {
-                // Use reflection to call setActiveComponentId
-                java.lang.reflect.Method method = rasterizer.getClass().getMethod("setActiveComponentId", int.class);
-                method.invoke(rasterizer, componentId);
-            } catch (Exception e) {
-                // Silently ignore - picking is optional
-                log.trace("Could not set active component ID: {}", e.getMessage());
-            }
+        // Check if rasterizer supports picking
+        if (rasterizer instanceof me.mdbell.awtea.gfx.PickingRasterizer) {
+            ((me.mdbell.awtea.gfx.PickingRasterizer) rasterizer).setActiveComponentId(componentId);
+        }
+    }
+    
+    /**
+     * Enables or disables picking mode on the rasterizer.
+     * 
+     * @param enabled true to enable picking mode
+     */
+    public void setPickingEnabled(boolean enabled) {
+        if (rasterizer instanceof me.mdbell.awtea.gfx.PickingRasterizer) {
+            ((me.mdbell.awtea.gfx.PickingRasterizer) rasterizer).setPickingEnabled(enabled);
         }
     }
 

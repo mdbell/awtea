@@ -144,17 +144,7 @@ public class TPickingBufferHitTestStrategy implements THitTestStrategy {
         if (g instanceof me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics) {
             me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics srg = 
                 (me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics) g;
-            
-            // Use reflection to call setPickingEnabled on WebGLRasterizer
-            try {
-                Object rasterizer = srg.getClass().getDeclaredField("rasterizer").get(srg);
-                if (rasterizer.getClass().getName().contains("WebGLRasterizer")) {
-                    java.lang.reflect.Method method = rasterizer.getClass().getMethod("setPickingEnabled", boolean.class);
-                    method.invoke(rasterizer, enabled);
-                }
-            } catch (Exception e) {
-                log.trace("Could not set picking enabled: {}", e.getMessage());
-            }
+            srg.setPickingEnabled(enabled);
         }
     }
     
