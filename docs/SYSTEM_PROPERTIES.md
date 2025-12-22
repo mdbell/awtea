@@ -42,28 +42,30 @@ This document provides comprehensive documentation for all system properties tha
 ### `me.mdbell.awtea.hit_test.strategy`
 
 - **Type**: String (enum)
-- **Default**: `"tree_walk"`
+- **Default**: `"auto"` (automatically enables GPU picking when WebGL is available)
 - **Valid Values**: 
-  - `"tree_walk"` - Use traditional recursive tree traversal (O(n) complexity)
-  - `"picking_buffer"` - Use GPU-based picking buffer (O(1) complexity, WebGL only)
+  - `"tree_walk"` - Force traditional recursive tree traversal (O(n) complexity)
+  - `"picking_buffer"` - Force GPU-based picking buffer (O(1) complexity, WebGL only)
   - `"auto"` - Automatically select picking buffer if WebGL is available, otherwise use tree walk
-- **Description**: Controls the component hit-testing strategy used for mouse event dispatch. GPU-based picking provides O(1) hit-testing by rendering components to an off-screen buffer with unique ID colors, then reading the pixel at the mouse position. This is significantly faster for complex UIs with deep component hierarchies (>100 components), but requires WebGL 2.0 support.
+- **Description**: Controls the component hit-testing strategy used for mouse event dispatch. By default, GPU-based picking is **automatically enabled** when WebGL backend is detected (see `THeavyCanvas.initializeWebGLPickingStrategy()`). GPU-based picking provides O(1) hit-testing by rendering components to an off-screen buffer with unique ID colors, then reading the pixel at the mouse position. This is significantly faster for complex UIs with deep component hierarchies (>100 components).
 - **Performance Impact**: 
   - Tree-walk: O(n) per hit-test, no memory overhead
   - Picking buffer: O(1) per hit-test after initial build, uses canvas_width × canvas_height × 4 bytes of VRAM
-- **Code Location**: `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/TEventManager.java`
+- **Code Location**: 
+  - `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/TEventManager.java`
+  - `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/THeavyCanvas.java` (auto-initialization)
 - **Since**: v0.3.0
 - **See Also**: [HIT_PICKING.md](HIT_PICKING.md) for detailed architecture documentation
 
 **Example:**
 ```bash
-# Use GPU-based picking (fastest for complex UIs)
+# Force GPU-based picking (requires WebGL)
 -Dme.mdbell.awtea.hit_test.strategy=picking_buffer
 
-# Use tree-walk (always available, lower memory)
+# Force tree-walk strategy (disable GPU picking, always available, lower memory)
 -Dme.mdbell.awtea.hit_test.strategy=tree_walk
 
-# Auto-select based on WebGL availability (recommended)
+# Auto-select based on WebGL availability (default behavior)
 -Dme.mdbell.awtea.hit_test.strategy=auto
 ```
 
