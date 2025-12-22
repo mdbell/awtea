@@ -206,7 +206,7 @@ public class TButton extends TComponent {
 
 		// Draw border
 		g.setColor(new Color(100, 100, 100));
-		g.drawRect(0, 0, w - 1, h - 1);
+		g.drawRect(0, 0, w, h);
 
 		// Draw label text (centered)
 		if (label != null && !label.isEmpty()) {
