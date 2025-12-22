@@ -10,12 +10,28 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
 /**
  * GPU-based hit-testing strategy using an off-screen picking buffer.
  * <p>
- * This strategy uses the WebGL rasterizer's dual-rendering capability to render
- * all components to both the normal framebuffer AND a picking buffer. In the picking
- * buffer, each component is rendered with a unique color encoding its ID, allowing
- * O(1) hit-testing by reading a single pixel.
+ * This strategy uses dual-rendering to build a picking buffer where components
+ * are rendered with their ID encoded as an RGB color. Hit-testing is then O(1)
+ * by reading a single pixel from the picking buffer.
  * </p>
  * <p>
+ * <b>Rendering Approach:</b>
+ * The picking buffer is rebuilt when invalidated using a separate render pass:
+ * <ol>
+ *   <li>Enable picking mode on rasterizers</li>
+ *   <li>For each component: set its ID, call paint() - renders to picking buffer with ID color</li>
+ *   <li>Disable picking mode</li>
+ *   <li>Normal rendering continues as usual with actual colors</li>
+ * </ol>
+ * </p>
+ * <p>
+ * This means components render normally during picking rebuild - they call setColor(),
+ * fillRect(), etc. as usual. The rasterizer intercepts these operations and when
+ * picking is enabled, it renders to the picking buffer using the component ID color
+ * instead of the requested color.
+ * </p>
+ * <p>
+ * <b>Automatic Shape Support:</b>
  * Unlike traditional rectangular bounds testing, this approach automatically handles:
  * <ul>
  *   <li>Arbitrary component shapes (ovals, polygons, rounded rectangles, etc.)</li>
@@ -25,8 +41,7 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
  * </ul>
  * </p>
  * <p>
- * The picking buffer is lazily rebuilt when invalidated (e.g., due to layout changes).
- * Rebuilding happens by re-rendering all components with picking mode enabled.
+ * The picking buffer is lazily rebuilt only when invalidated (e.g., layout changes).
  * </p>
  */
 public class TPickingBufferHitTestStrategy implements THitTestStrategy {
@@ -86,7 +101,7 @@ public class TPickingBufferHitTestStrategy implements THitTestStrategy {
     
     /**
      * Rebuilds the picking buffer by re-rendering the component tree.
-     * This is done by triggering a repaint with picking mode enabled.
+     * This triggers a complete render pass with picking mode enabled.
      */
     private void rebuildPickingBuffer() {
         log.trace("Rebuilding picking buffer");
@@ -94,10 +109,16 @@ public class TPickingBufferHitTestStrategy implements THitTestStrategy {
         // Begin picking pass
         pickingBuffer.beginPickingPass();
         
-        // TODO: Trigger component tree re-render with picking enabled
-        // This will be integrated with TContainer.paint() to call
-        // rasterizer.pushComponentId() / popComponentId() / setPickingEnabled()
-        // For now, this is a placeholder - actual integration happens in TContainer
+        // Enable picking mode in all rasterizers
+        // TODO: This will be integrated with the rendering pipeline
+        // The approach:
+        // 1. Set picking enabled on the rasterizer
+        // 2. Walk component tree, for each component:
+        //    - Call rasterizer.setActiveComponentId(component.getId())
+        //    - Call component.paint(graphics) - renders with ID color to picking buffer
+        // 3. Disable picking mode
+        //
+        // For now, this is a placeholder for the integration point
         
         // End picking pass
         pickingBuffer.endPickingPass();
