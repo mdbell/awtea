@@ -95,6 +95,7 @@ public class THeavyCanvas {
 	@Getter
 	private final Surface surface;
 	private final TBufferedImage screenImg;
+	private WebGLSurfaceBackend webglBackend;  // Stored reference for debug rendering
 
 	/**
 	 * Creates a new heavyweight canvas with default initial size.
@@ -158,24 +159,25 @@ public class THeavyCanvas {
 
 	private Surface createScreenSurface() {
 		try {
-			WebGLSurfaceBackend webgl = (WebGLSurfaceBackend) SurfaceBackendFactory.getWebGLBackend(canvasElement);
-			Surface surface = webgl.createScreenSurface(getWidth(), getHeight());
+			webglBackend = (WebGLSurfaceBackend) SurfaceBackendFactory.getWebGLBackend(canvasElement);
+			Surface surface = webglBackend.createScreenSurface(getWidth(), getHeight());
 			log.trace("Using WebGL surface backend for heavyweight canvas - dimensions: {}x{}", getWidth(),
 					getHeight());
 			
 			// Automatically enable GPU-based hit picking for WebGL backend
-			initializeWebGLPickingStrategy(webgl);
+			initializeWebGLPickingStrategy(webglBackend);
 			
 			// we use a composite backend as there are still some surfaces that webgl
 			// doesn't fully support (like text rendering)
 			CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[] {
-					webgl,
+					webglBackend,
 					SurfaceBackendFactory.getDefault()
 			});
 			SurfaceBackendFactory.setDefault(compositeSurfaceBackend);
 			return surface;
 		} catch (Exception e) {
 			log.warn("Failed to create a webgl instance! Using default");
+			webglBackend = null;
 		}
 		return SurfaceBackendFactory.createScreenSurface(getWidth(), getHeight(), canvasElement);
 	}
@@ -256,6 +258,16 @@ public class THeavyCanvas {
 	 */
 	public TBufferedImage getBufferedImage() {
 		return screenImg;
+	}
+	
+	/**
+	 * Renders the picking buffer debug visualization if enabled via system property.
+	 * This should be called after all normal painting is complete.
+	 */
+	public void renderPickingDebugIfEnabled() {
+		if (webglBackend != null) {
+			webglBackend.renderPickingDebugIfEnabled(getWidth(), getHeight());
+		}
 	}
 
 	/**

@@ -30,6 +30,7 @@ public class WebGLPickingBuffer {
     private static final Logger log = LoggerFactory.getLogger(WebGLPickingBuffer.class);
     
     private final WebGL2RenderingContext gl;
+    private WebGLSurfaceBackend backend;  // Reference to backend for rendering
     
     private WebGLFramebuffer framebuffer;
     private WebGLTexture colorTexture;
@@ -42,6 +43,10 @@ public class WebGLPickingBuffer {
     // Cached pixel data to avoid reading from GPU on every hit-test
     private Uint8Array pixelBytes;
     private int[] pixels;
+    
+    // Debug visualization texture (lazy-created)
+    private WebGLTexture debugTexture;
+    private boolean debugTextureDirty = true;
     
     /**
      * Creates a new picking buffer.
@@ -56,6 +61,15 @@ public class WebGLPickingBuffer {
         this.height = height;
         
         createFramebuffer();
+    }
+    
+    /**
+     * Sets the backend reference for rendering operations.
+     * 
+     * @param backend the WebGL surface backend
+     */
+    public void setBackend(WebGLSurfaceBackend backend) {
+        this.backend = backend;
     }
     
     /**
@@ -196,6 +210,8 @@ public class WebGLPickingBuffer {
         // Unbind framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
         
+        debugTextureDirty = true;  // Debug visualization needs update
+        
         log.trace("Cached {} pixels from picking buffer", totalPixels / 4);
     }
     
@@ -259,6 +275,10 @@ public class WebGLPickingBuffer {
             gl.deleteRenderbuffer(depthBuffer);
             depthBuffer = null;
         }
+        if (debugTexture != null) {
+            gl.deleteTexture(debugTexture);
+            debugTexture = null;
+        }
         
         log.debug("Picking buffer destroyed");
     }
@@ -298,7 +318,39 @@ public class WebGLPickingBuffer {
             return;
         }
         
-        // Create a temporary texture with HSL-colored version of the picking buffer
+        // Create or update debug texture if dirty
+        if (debugTextureDirty || debugTexture == null) {
+            updateDebugTexture();
+        }
+        
+        // Clear the screen
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, screenFramebuffer);
+        gl.viewport(0, 0, screenWidth, screenHeight);
+        gl.clearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
+        
+        // Render the debug texture to screen using backend's texture rendering
+        if (backend != null) {
+            backend.drawDebugTexture(debugTexture, 0, 0, screenWidth, screenHeight, width, height);
+        } else {
+            log.warn("Cannot render debug visualization - backend not set");
+        }
+        
+        gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
+        
+        log.trace("Rendered picking buffer debug visualization");
+    }
+    
+    /**
+     * Updates the debug texture with HSL-colored version of picking buffer.
+     */
+    private void updateDebugTexture() {
+        // Create debug texture if needed
+        if (debugTexture == null) {
+            debugTexture = gl.createTexture();
+        }
+        
+        // Create HSL-colored version of the picking buffer
         Uint8Array coloredPixels = new Uint8Array(width * height * 4);
         
         for (int y = 0; y < height; y++) {
@@ -317,7 +369,7 @@ public class WebGLPickingBuffer {
                 float[] hsl = componentIdToHSL(componentId);
                 int[] rgb = hslToRGB(hsl[0], hsl[1], hsl[2]);
                 
-                // Write colored pixel (need to cast to byte/short)
+                // Write colored pixel
                 coloredPixels.set(byteOffset, (byte)(rgb[0] & 0xFF));
                 coloredPixels.set(byteOffset + 1, (byte)(rgb[1] & 0xFF));
                 coloredPixels.set(byteOffset + 2, (byte)(rgb[2] & 0xFF));
@@ -325,9 +377,8 @@ public class WebGLPickingBuffer {
             }
         }
         
-        // Create temporary texture
-        WebGLTexture tempTexture = gl.createTexture();
-        gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, tempTexture);
+        // Upload to texture
+        gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, debugTexture);
         gl.texImage2D(
             WebGLRenderingContext.TEXTURE_2D, 0, WebGLRenderingContext.RGBA,
             width, height, 0,
@@ -338,13 +389,11 @@ public class WebGLPickingBuffer {
             WebGLRenderingContext.TEXTURE_MIN_FILTER, WebGLRenderingContext.NEAREST);
         gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, 
             WebGLRenderingContext.TEXTURE_MAG_FILTER, WebGLRenderingContext.NEAREST);
+        gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
         
-        // Render to screen (simplified full-screen quad rendering would go here)
-        // For now, just log that debug rendering was requested
-        log.info("Debug visualization prepared (component IDs rendered as HSL colors)");
+        debugTextureDirty = false;
         
-        // Cleanup
-        gl.deleteTexture(tempTexture);
+        log.debug("Debug texture updated with HSL-colored picking buffer");
     }
     
     /**

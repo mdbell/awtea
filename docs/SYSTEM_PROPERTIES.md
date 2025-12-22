@@ -67,6 +67,30 @@ This document provides comprehensive documentation for all system properties tha
 -Dme.mdbell.awtea.hit_test.strategy=auto
 ```
 
+### `me.mdbell.awtea.hit_test.debug_render`
+
+- **Type**: Boolean
+- **Default**: `false`
+- **Valid Values**: `true`, `false`
+- **Description**: Enables debug visualization mode for the GPU picking buffer. When enabled, the screen displays a color-coded representation of the picking buffer instead of normal rendering. Each component is rendered with a unique HSL color based on its ID, making it easy to visualize which components occupy which screen regions. This is useful for debugging hit-testing issues, verifying component bounds, and understanding the picking buffer's contents.
+- **Visual Effect**: 
+  - Each component gets a unique vivid color using golden ratio distribution for maximum distinction
+  - Background/empty regions appear black (component ID 0)
+  - Colors update when layout changes or components are added/removed
+- **Performance Impact**: Minimal - only affects rendering output when enabled, doesn't change hit-testing logic
+- **Requires**: GPU picking buffer must be enabled (`me.mdbell.awtea.hit_test.strategy=picking_buffer` or `auto` with WebGL)
+- **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/gfx/webgl/WebGLSurfaceBackend.java`
+- **Since**: v0.3.0
+
+**Example:**
+```bash
+# Enable debug visualization (requires WebGL + picking buffer)
+-Dme.mdbell.awtea.hit_test.debug_render=true
+
+# Typical debugging setup
+-Dme.mdbell.awtea.hit_test.strategy=picking_buffer -Dme.mdbell.awtea.hit_test.debug_render=true
+```
+
 ---
 
 ## Font Configuration

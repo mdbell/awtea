@@ -267,6 +267,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			pickingBuffer.destroy();
 		}
 		pickingBuffer = new WebGLPickingBuffer(gl, width, height);
+		pickingBuffer.setBackend(this);  // Set backend reference for rendering
 	}
 	
 	/**
@@ -276,6 +277,92 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	 */
 	public WebGLPickingBuffer getPickingBuffer() {
 		return pickingBuffer;
+	}
+	
+	/**
+	 * Checks if debug picking visualization mode is enabled via system property.
+	 * When enabled, the picking buffer debug visualization is rendered instead of normal output.
+	 * 
+	 * @return true if me.mdbell.awtea.hit_test.debug_render is set to true
+	 */
+	public boolean isPickingDebugRenderEnabled() {
+		String prop = System.getProperty("me.mdbell.awtea.hit_test.debug_render");
+		return "true".equalsIgnoreCase(prop);
+	}
+	
+	/**
+	 * Renders the picking buffer debug visualization to the main framebuffer if enabled.
+	 * This is called after normal rendering to potentially replace the output.
+	 * 
+	 * @param screenWidth the screen width
+	 * @param screenHeight the screen height
+	 */
+	public void renderPickingDebugIfEnabled(int screenWidth, int screenHeight) {
+		if (pickingBuffer != null && isPickingDebugRenderEnabled()) {
+			pickingBuffer.renderDebugVisualization(null, screenWidth, screenHeight);
+		}
+	}
+	
+	/**
+	 * Draws a texture to the screen at the specified position and size.
+	 * Used internally for debug visualization rendering.
+	 * 
+	 * @param texture the WebGL texture to draw
+	 * @param x the x position on screen
+	 * @param y the y position on screen
+	 * @param destWidth the destination width
+	 * @param destHeight the destination height
+	 * @param srcWidth the source texture width
+	 * @param srcHeight the source texture height
+	 */
+	public void drawDebugTexture(WebGLTexture texture, int x, int y, int destWidth, int destHeight, int srcWidth, int srcHeight) {
+		// Use texture program with NONE swizzle mode
+		useTextureProgram(SwizzleMode.NONE, destWidth, destHeight);
+		
+		// Bind texture
+		gl.activeTexture(WebGLRenderingContext.TEXTURE0);
+		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
+		
+		// Set up quad vertices for full screen
+		float[] vertices = {
+			x, y,
+			x + destWidth, y,
+			x, y + destHeight,
+			x, y + destHeight,
+			x + destWidth, y,
+			x + destWidth, y + destHeight
+		};
+		
+		float[] texCoords = {
+			0, 0,
+			1, 0,
+			0, 1,
+			0, 1,
+			1, 0,
+			1, 1
+		};
+		
+		// Upload vertex data
+		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadBuffer);
+		gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, 
+			org.teavm.jso.typedarrays.Float32Array.fromJavaArray(vertices).getBuffer(), 
+			WebGLRenderingContext.DYNAMIC_DRAW);
+		gl.enableVertexAttribArray(aPositionLocTex);
+		gl.vertexAttribPointer(aPositionLocTex, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
+		
+		// Upload texture coordinate data
+		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadTexCoordBuffer);
+		gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER,
+			org.teavm.jso.typedarrays.Float32Array.fromJavaArray(texCoords).getBuffer(),
+			WebGLRenderingContext.DYNAMIC_DRAW);
+		gl.enableVertexAttribArray(aTexCoordLocTex);
+		gl.vertexAttribPointer(aTexCoordLocTex, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
+		
+		// Draw
+		gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+		
+		// Cleanup
+		gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
 	}
 	
 	/**
