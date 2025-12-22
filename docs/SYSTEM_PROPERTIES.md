@@ -6,6 +6,7 @@ This document provides comprehensive documentation for all system properties tha
 - [Graphics and Rendering](#graphics-and-rendering)
 - [Font Configuration](#font-configuration)
 - [WebAssembly (WASM)](#webassembly-wasm)
+- [Audio Configuration](#audio-configuration)
 - [Logging and Debugging](#logging-and-debugging)
 - [Standard AWT Properties](#standard-awt-properties)
 
@@ -146,6 +147,48 @@ This document provides comprehensive documentation for all system properties tha
 
 # Reduce cache to save memory
 -Dme.mdbell.awtea.wasm.surface_cache_size=50
+```
+
+---
+
+## Audio Configuration
+
+### `me.mdbell.awtea.sound.midi.buffer_size`
+
+- **Type**: Integer
+- **Default**: `102400` (1024 * 100)
+- **Valid Values**: Any positive integer
+- **Description**: Configures the buffer size for MIDI audio rendering. This controls the amount of PCM data buffered during MIDI synthesis. Larger values can improve performance by reducing buffer underruns but may increase latency. Smaller values reduce latency but may cause audio glitches if the system cannot keep up with real-time rendering. Invalid values (non-positive or non-numeric) are silently ignored and the default is used.
+- **Performance Impact**: Larger buffers use more memory but reduce the risk of audio underruns. Smaller buffers reduce latency but require more frequent buffer fills.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/midi/MIDI.java:58`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Increase buffer for smoother playback
+-Dme.mdbell.awtea.sound.midi.buffer_size=204800
+
+# Reduce buffer for lower latency
+-Dme.mdbell.awtea.sound.midi.buffer_size=51200
+```
+
+### `me.mdbell.awtea.sound.pcm.buffer_size`
+
+- **Type**: Integer
+- **Default**: `sample_rate * channels` (e.g., 88200 for 44.1kHz stereo)
+- **Valid Values**: Any positive integer
+- **Description**: Configures the default buffer size for PCM audio lines (SourceDataLine). This determines the size of the circular buffer used for audio playback. The buffer holds audio samples waiting to be played. Larger buffers can accommodate more buffering but increase latency. Smaller buffers reduce latency but may cause underruns if audio data cannot be written fast enough. This property sets the default size used when opening a line without an explicit buffer size. Invalid values (non-positive or non-numeric) are silently ignored and the format-specific default is used.
+- **Performance Impact**: Larger buffers provide more tolerance for timing variations but increase end-to-end latency. Smaller buffers reduce latency but require more precise timing.
+- **Code Location**: `awtea-sound/src/main/java/me/mdbell/awtea/sound/AudioContextLine.java:360`
+- **Since**: v0.1.0
+
+**Example:**
+```bash
+# Use a larger buffer for high sample rate audio
+-Dme.mdbell.awtea.sound.pcm.buffer_size=176400
+
+# Use a smaller buffer for low-latency applications
+-Dme.mdbell.awtea.sound.pcm.buffer_size=22050
 ```
 
 ---

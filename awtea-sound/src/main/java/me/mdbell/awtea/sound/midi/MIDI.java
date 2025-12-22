@@ -55,7 +55,36 @@ public class MIDI implements TinyMidiPCM.Options.OnPcmDataCallback, AutoCloseabl
      */
     public static final int REUSE_VOLUME = -1;
 
-    public static final int BUFFER_SIZE = 1024 * 100;
+    /**
+     * System property to configure MIDI buffer size.
+     * Valid values: positive integers (default: 102400)
+     */
+    private static final String BUFFER_SIZE_PROPERTY = "me.mdbell.awtea.sound.midi.buffer_size";
+
+    /**
+     * Default MIDI buffer size.
+     */
+    private static final int DEFAULT_BUFFER_SIZE = 1024 * 100;
+
+    /**
+     * Get the MIDI buffer size from system properties with validation.
+     */
+    private static int getBufferSizeFromProperty() {
+        String bufferSizeStr = System.getProperty(BUFFER_SIZE_PROPERTY);
+        if (bufferSizeStr != null) {
+            try {
+                int value = Integer.parseInt(bufferSizeStr);
+                if (value > 0) {
+                    return value;
+                }
+            } catch (NumberFormatException e) {
+                // Fall through to default
+            }
+        }
+        return DEFAULT_BUFFER_SIZE;
+    }
+
+    public static final int BUFFER_SIZE = getBufferSizeFromProperty();
 
     private static final AudioContext ctx = AudioUtils.getGlobalContext();
 

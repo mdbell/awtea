@@ -28,6 +28,12 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 	 */
 	private static final double MAX_QUEUE_SECONDS = 0.075;
 
+	/**
+	 * System property to configure default PCM audio line buffer size.
+	 * Valid values: positive integers (default: sample rate * channels)
+	 */
+	private static final String BUFFER_SIZE_PROPERTY = "me.mdbell.awtea.sound.pcm.buffer_size";
+
     /***
      * The global audio context.
      */
@@ -359,7 +365,19 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 
     @Override
     public void open(AudioFormat format) throws LineUnavailableException {
-        this.open(format, (int) (format.getSampleRate() * format.getChannels()));
+        int defaultBufferSize = (int) (format.getSampleRate() * format.getChannels());
+        String bufferSizeStr = System.getProperty(BUFFER_SIZE_PROPERTY);
+        if (bufferSizeStr != null) {
+            try {
+                int value = Integer.parseInt(bufferSizeStr);
+                if (value > 0) {
+                    defaultBufferSize = value;
+                }
+            } catch (NumberFormatException e) {
+                // Fall through to default
+            }
+        }
+        this.open(format, defaultBufferSize);
     }
 
     @Override
