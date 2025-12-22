@@ -1,5 +1,6 @@
 me.mdbell.awtea.instrument.detour.FieldDetour
 me.mdbell.awtea.instrument.detour.FileDetour
+me.mdbell.awtea.instrument.detour.FilesDetour
 me.mdbell.awtea.instrument.detour.RandomAccessFileDetour
 me.mdbell.awtea.instrument.detour.SystemDetour
 me.mdbell.awtea.instrument.detour.ThreadDetour

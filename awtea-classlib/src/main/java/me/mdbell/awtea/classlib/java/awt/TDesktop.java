@@ -39,4 +39,9 @@ public class TDesktop {
         log.warn("Desktop.isDesktopSupported() called - returning false for browser environment");
         return false;
     }
+
+    public void browse(java.net.URI uri) {
+        log.warn("Desktop.browse() called - Desktop operations are not supported in browser environment");
+        throw new UnsupportedOperationException("Desktop.browse() is not supported in browser environment.");
+    }
 }

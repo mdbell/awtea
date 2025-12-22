@@ -1,6 +1,8 @@
 package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.awtea.peer.TFrameFloatingPeer;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 
 /**
  * A {@code TFrame} is a top-level window with a title and a border.
@@ -15,6 +17,8 @@ import me.mdbell.awtea.classlib.java.awt.awtea.peer.TFrameFloatingPeer;
  * @see TWindow
  */
 public class TFrame extends TWindow {
+
+    private static final Logger log = LoggerFactory.getLogger(TFrame.class);
 
     private final TFrameFloatingPeer peer;
 
@@ -117,5 +121,10 @@ public class TFrame extends TWindow {
         setVisible(false);
         // In browser environment, just hide the frame
         // Resources will be garbage collected automatically
+    }
+
+    public void setUndecorated(boolean undecorated) {
+//        peer.setUndecorated(undecorated);
+        log.warn("TFrame.setUndecorated() is not supported in browser environment.");
     }
 }

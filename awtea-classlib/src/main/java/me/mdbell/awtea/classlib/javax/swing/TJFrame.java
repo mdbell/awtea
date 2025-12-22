@@ -45,4 +45,9 @@ public class TJFrame extends TFrame {
         // In browser environment, we can only hide the frame
         // Browser-based frames don't have native close buttons
     }
+
+    public boolean isResizable() {
+        log.warn("TJFrame.isResizeable() is not supported in browser environment.");
+        return false;
+    }
 }

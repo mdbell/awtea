@@ -100,6 +100,19 @@ public abstract class TMessageDigest {
      * Resets the digest for further use.
      */
     public abstract void reset();
+
+    public int getDigestLength() {
+        String upperAlg = algorithm.toUpperCase().replaceAll("-", "");
+        switch (upperAlg) {
+            case "SHA1":
+            case "SHA":
+                return 20; // SHA-1 produces 20 bytes
+            case "SHA256":
+                return 32; // SHA-256 produces 32 bytes
+            default:
+                return 0; // Unknown
+        }
+    }
     
     /**
      * Returns a string that identifies the algorithm.

@@ -7,6 +7,7 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /**
  * Detour for java.io.File methods that are not supported in browser environments.
@@ -23,7 +24,7 @@ public class FileDetour {
 	 * Returns null and logs a warning.
 	 */
 	@DetourMethod("toPath")
-	public static Object toPath(File file) {
+	public static Path toPath(File file) {
 		log.warn("File.toPath() called but java.nio.file.Path is not supported in browser environment. File: {}", file.getAbsolutePath());
 		throw new UnsupportedOperationException("File.toPath() is not supported in browser environment. Use File APIs directly instead.");
 	}
