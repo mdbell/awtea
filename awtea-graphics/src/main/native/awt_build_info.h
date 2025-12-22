@@ -5,6 +5,26 @@
  * 
  * This header provides build metadata and debug configuration exports
  * for diagnostics and environment validation.
+ * 
+ * Master Debug Build Flag:
+ *   AWTEA_DEBUG_BUILD controls all debug features globally.
+ *   - Set to 1 for debug builds (default unless NDEBUG is defined)
+ *   - Set to 0 for release builds (automatically when NDEBUG is defined)
+ *   - Can be overridden via compiler flag: -DAWTEA_DEBUG_BUILD=0
+ * 
+ * Individual Feature Flags:
+ *   Each feature can be independently controlled if needed, but defaults
+ *   to following AWTEA_DEBUG_BUILD:
+ *   - ENABLE_WASM_STACK_TRACKING: Stack trace buffer for crash debugging
+ *   - ENABLE_WASM_ASSERTIONS: Runtime assertion checks (WASM_ASSERT macro)
+ *   - ENABLE_WASM_LOGGING: Logging system (log_info, log_debug, etc.)
+ *   - ENABLE_WASM_MEMORY_TRACKING: Memory allocation tracking and reporting
+ * 
+ * Build Configuration:
+ *   Debug:   -O1 -g -DAWTEA_DEBUG_BUILD=1
+ *   Release: -O3 -DNDEBUG -DAWTEA_DEBUG_BUILD=0
+ * 
+ * See build.gradle.kts for the full Emscripten compiler configuration.
  */
 
 #include <stdint.h>
