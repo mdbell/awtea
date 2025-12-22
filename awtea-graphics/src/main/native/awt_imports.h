@@ -15,6 +15,9 @@ extern void wasm_report_memory_usage(size_t allocated_bytes, size_t alloc_count,
 
 // Assertion failure handler - called when assertions fail
 // Uses pointer+length for both expression and file for consistency with other imports
+// and to match the interface expected by JS/Deno host implementations.
+// Note: WASM_ASSERT uses strlen() on compile-time string literals which is acceptable
+// since they are null-terminated. The pointer+length pattern is for interface consistency.
 extern void wasm_assertion_failed(const char* expr_ptr, int expr_len, 
                                    const char* file_ptr, int file_len, 
                                    int line);

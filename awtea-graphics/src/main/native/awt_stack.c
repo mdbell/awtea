@@ -128,11 +128,10 @@ const char* stack_format_alloc_context(size_t bytes) {
     char* buf = get_context_buffer();
     int written = snprintf(buf, CONTEXT_BUFFER_SIZE, "alloc %zu bytes", bytes);
     
-    // Check for truncation (should be rare, but log if it happens)
-    if (written < 0 || written >= CONTEXT_BUFFER_SIZE) {
+    // Check for truncation (snprintf returns chars needed, not including null)
+    if (written >= CONTEXT_BUFFER_SIZE) {
         log_warn("stack_format_alloc_context: truncated output (needed %d bytes)", written);
-        // Ensure null termination (snprintf guarantees this, but be explicit)
-        buf[CONTEXT_BUFFER_SIZE - 1] = '\0';
+        // snprintf already ensures null termination within buffer size
     }
     
     return buf;
@@ -144,11 +143,10 @@ const char* stack_format_surface_context(int id, int width, int height) {
     char* buf = get_context_buffer();
     int written = snprintf(buf, CONTEXT_BUFFER_SIZE, "surface %d (%dx%d)", id, width, height);
     
-    // Check for truncation (should be rare, but log if it happens)
-    if (written < 0 || written >= CONTEXT_BUFFER_SIZE) {
+    // Check for truncation (snprintf returns chars needed, not including null)
+    if (written >= CONTEXT_BUFFER_SIZE) {
         log_warn("stack_format_surface_context: truncated output (needed %d bytes)", written);
-        // Ensure null termination (snprintf guarantees this, but be explicit)
-        buf[CONTEXT_BUFFER_SIZE - 1] = '\0';
+        // snprintf already ensures null termination within buffer size
     }
     
     return buf;
