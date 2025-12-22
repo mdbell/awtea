@@ -199,11 +199,9 @@ public class WebGLPickingBuffer {
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
         
         // Read pixel at (x, y)
-        // Note: WebGL coordinates have origin at bottom-left, so we need to flip Y
-        int glY = height - y - 1;
-        
+        // Note: Y coordinate is already in WebGL space (flipped by rasterizer)
         Uint8Array pixel = Uint8Array.create(4);
-        gl.readPixels(x, glY, 1, 1, WebGLRenderingContext.RGBA, WebGLRenderingContext.UNSIGNED_BYTE, pixel);
+        gl.readPixels(x, y, 1, 1, WebGLRenderingContext.RGBA, WebGLRenderingContext.UNSIGNED_BYTE, pixel);
         
         // Unbind framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
