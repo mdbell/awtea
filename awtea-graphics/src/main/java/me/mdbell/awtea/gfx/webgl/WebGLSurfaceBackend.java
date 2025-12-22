@@ -341,13 +341,15 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 				x + destWidth, y + destHeight
 		};
 
+		// Flip V coordinates because WebGL textures have (0,0) at bottom-left
+		// but we want to display with (0,0) at top-left
 		float[] uvs = {
-				0f, 0f,
-				1f, 0f,
-				0f, 1f,
-				0f, 1f,
-				1f, 0f,
-				1f, 1f
+				0f, 1f,  // top-left -> bottom-left in texture
+				1f, 1f,  // top-right -> bottom-right in texture
+				0f, 0f,  // bottom-left -> top-left in texture
+				0f, 0f,  // bottom-left -> top-left in texture
+				1f, 1f,  // top-right -> bottom-right in texture
+				1f, 0f   // bottom-right -> top-right in texture
 		};
 
 		// Upload vertex data
