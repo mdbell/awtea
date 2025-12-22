@@ -41,6 +41,11 @@ public class GuiDemo {
         onVisible = callback;
     }
 
+    @JSExport
+    public static void setProperty(String key, String value) {
+        System.setProperty(key, value);
+    }
+
     public static void main(String[] args) {
 
         // LoggerFactory.setGlobalLevel(LogLevel.TRACE);
@@ -50,6 +55,12 @@ public class GuiDemo {
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 
         String canvasId = args[0];
+
+        String level = args.length > 1 ? args[1] : null;
+
+        if (level != null) {
+            LoggerFactory.setGlobalLevel(LogLevel.parse(level));
+        }
 
         // Tells the Applet instance we're heavyweight, and want to render directly to a
         // canvas

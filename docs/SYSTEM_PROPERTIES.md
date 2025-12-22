@@ -4,6 +4,7 @@ This document provides comprehensive documentation for all system properties tha
 
 ## Table of Contents
 - [Graphics and Rendering](#graphics-and-rendering)
+- [Hit-Testing](#hit-testing)
 - [Font Configuration](#font-configuration)
 - [WebAssembly (WASM)](#webassembly-wasm)
 - [Logging and Debugging](#logging-and-debugging)
@@ -32,6 +33,64 @@ This document provides comprehensive documentation for all system properties tha
 
 # Force WASM renderer
 -Dme.mdbell.awtea.gfx.backend=wasm
+```
+
+---
+
+## Hit-Testing
+
+### `me.mdbell.awtea.hit_test.strategy`
+
+- **Type**: String (enum)
+- **Default**: `"auto"` (automatically enables GPU picking when WebGL is available)
+- **Valid Values**: 
+  - `"tree_walk"` - Force traditional recursive tree traversal (O(n) complexity)
+  - `"picking_buffer"` - Force GPU-based picking buffer (O(1) complexity, WebGL only)
+  - `"auto"` - Automatically select picking buffer if WebGL is available, otherwise use tree walk
+- **Description**: Controls the component hit-testing strategy used for mouse event dispatch. By default, GPU-based picking is **automatically enabled** when WebGL backend is detected (see `THeavyCanvas.initializeWebGLPickingStrategy()`). GPU-based picking provides O(1) hit-testing by rendering components to an off-screen buffer with unique ID colors, then reading the pixel at the mouse position. This is significantly faster for complex UIs with deep component hierarchies (>100 components).
+- **Performance Impact**: 
+  - Tree-walk: O(n) per hit-test, no memory overhead
+  - Picking buffer: O(1) per hit-test after initial build, uses canvas_width × canvas_height × 4 bytes of VRAM
+- **Code Location**: 
+  - `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/TEventManager.java`
+  - `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/THeavyCanvas.java` (auto-initialization)
+- **Since**: v0.3.0
+- **See Also**: [HIT_PICKING.md](HIT_PICKING.md) for detailed architecture documentation
+
+**Example:**
+```bash
+# Force GPU-based picking (requires WebGL)
+-Dme.mdbell.awtea.hit_test.strategy=picking_buffer
+
+# Force tree-walk strategy (disable GPU picking, always available, lower memory)
+-Dme.mdbell.awtea.hit_test.strategy=tree_walk
+
+# Auto-select based on WebGL availability (default behavior)
+-Dme.mdbell.awtea.hit_test.strategy=auto
+```
+
+### `me.mdbell.awtea.hit_test.debug_render`
+
+- **Type**: Boolean
+- **Default**: `false`
+- **Valid Values**: `true`, `false`
+- **Description**: Enables debug visualization mode for the GPU picking buffer. When enabled, the screen displays a color-coded representation of the picking buffer instead of normal rendering. Each component is rendered with a unique HSL color based on its ID, making it easy to visualize which components occupy which screen regions. This is useful for debugging hit-testing issues, verifying component bounds, and understanding the picking buffer's contents.
+- **Visual Effect**: 
+  - Each component gets a unique vivid color using golden ratio distribution for maximum distinction
+  - Background/empty regions appear black (component ID 0)
+  - Colors update when layout changes or components are added/removed
+- **Performance Impact**: Minimal - only affects rendering output when enabled, doesn't change hit-testing logic
+- **Requires**: GPU picking buffer must be enabled (`me.mdbell.awtea.hit_test.strategy=picking_buffer` or `auto` with WebGL)
+- **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/gfx/webgl/WebGLSurfaceBackend.java`
+- **Since**: v0.3.0
+
+**Example:**
+```bash
+# Enable debug visualization (requires WebGL + picking buffer)
+-Dme.mdbell.awtea.hit_test.debug_render=true
+
+# Typical debugging setup
+-Dme.mdbell.awtea.hit_test.strategy=picking_buffer -Dme.mdbell.awtea.hit_test.debug_render=true
 ```
 
 ---

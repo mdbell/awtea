@@ -93,7 +93,7 @@
             </div>
         </div>
         <script type="module">
-            import { main, setOpenCallback } from "./js/gui-demo.js";
+            import { main, setOpenCallback, setProperty } from "./js/gui-demo.js";
 
             function hideLoading() {
                 const loadingElem = document.getElementById("loadingMsg");
@@ -104,8 +104,9 @@
             }
 
             setOpenCallback(hideLoading);
+            setProperty("me.mdbell.awtea.hit_test.debug_render", "true");
 
-            main(["gui-demo"]);
+            main(["gui-demo", "trace"]);
         </script>
     </body>
 </html>

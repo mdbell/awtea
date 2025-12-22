@@ -159,6 +159,19 @@ class WebGLContextStack {
     }
     
     /**
+     * Sets the foreground color using RGBA components (for picking buffer).
+     * 
+     * @param r red component (0.0-1.0)
+     * @param g green component (0.0-1.0)
+     * @param b blue component (0.0-1.0)
+     * @param a alpha component (0.0-1.0)
+     */
+    void setForegroundColor(float r, float g, float b, float a) {
+        // Convert to Color
+        currentState.foreground = new Color(r, g, b, a);
+    }
+    
+    /**
      * Gets the current foreground color.
      */
     Color getForeground() {
