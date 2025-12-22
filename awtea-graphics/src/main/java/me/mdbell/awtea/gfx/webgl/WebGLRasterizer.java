@@ -1019,5 +1019,8 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         
         // Restore previous transform
         backend.contextStack.restore();
+        
+        // Render picking buffer debug visualization if enabled
+        backend.renderPickingDebugIfEnabled(gl.getCanvas().getWidth(), gl.getCanvas().getHeight());
     }
 }
