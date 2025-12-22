@@ -36,7 +36,7 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 
 	/**
 	 * Cached PCM buffer size override from system property, or -1 if not set.
-	 * When > 0, this value is used as the default buffer size instead of sample_rate * channels.
+	 * When > 0, this value is used to override ALL buffer sizes (both default and explicitly provided).
 	 */
 	private static final int BUFFER_SIZE_OVERRIDE = getBufferSizeOverride();
 
@@ -376,15 +376,18 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 
     @Override
 	public void open(AudioFormat format, int bufferSize) throws LineUnavailableException {
+		// Override provided buffer size if system property is set
+		int actualBufferSize = BUFFER_SIZE_OVERRIDE > 0 ? BUFFER_SIZE_OVERRIDE : bufferSize;
+		
 		this.format = format;
-		this.audioBuffer = new CircularAudioBuffer(bufferSize);
+		this.audioBuffer = new CircularAudioBuffer(actualBufferSize);
 		this.closed = false;
 		this.running = false;
 		this.nextStartTime = 0;
 		this.writeEpoch++;
 
-		if (sampleScratch == null || sampleScratch.length < bufferSize) {
-			sampleScratch = new float[bufferSize];
+		if (sampleScratch == null || sampleScratch.length < actualBufferSize) {
+			sampleScratch = new float[actualBufferSize];
 		}
 	}
 
