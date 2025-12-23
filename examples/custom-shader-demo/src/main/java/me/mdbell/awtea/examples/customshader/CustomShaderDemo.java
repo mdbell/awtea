@@ -144,6 +144,8 @@ public class CustomShaderDemo extends Applet {
     private void initializeShader(WebGLShaderContext ctx) {
         // Vertex shader with position and color attributes, plus animation
         String vertexShader =
+            "precision mediump float;\n" +
+            "\n" +
             "attribute vec2 a_position;\n" +
             "attribute vec3 a_color;\n" +
             "\n" +

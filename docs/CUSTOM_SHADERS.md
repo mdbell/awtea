@@ -76,6 +76,8 @@ Create and register a shader program with vertex and fragment shader sources:
 
 ```java
 String vertexShader = """
+    precision mediump float;
+    
     attribute vec2 a_position;
     uniform vec2 u_resolution;
     uniform mat3 u_transform;
@@ -214,6 +216,8 @@ shader.setUniform1f("u_time", System.currentTimeMillis() / 1000.0f);
 Here's a standard vertex shader that works with the engine's coordinate system and transformations:
 
 ```glsl
+precision mediump float;
+
 attribute vec2 a_position;
 uniform vec2 u_resolution;
 uniform mat3 u_transform;
@@ -396,16 +400,23 @@ See the `examples/custom-shader-demo` directory for a complete working example t
 
 ## Best Practices
 
-1. **Reuse Shaders**: Register shaders once and reuse them. Don't create new shaders every frame.
+1. **Precision Qualifiers**: Always specify precision in both vertex and fragment shaders to avoid linking errors:
+   ```glsl
+   // Add this at the top of BOTH vertex and fragment shaders
+   precision mediump float;
+   ```
+   Without matching precision qualifiers, shared uniforms (like `u_time`) will fail to link between shaders.
 
-2. **Cache Uniform Locations**: The `CustomShaderProgram` caches uniform/attribute locations automatically.
+2. **Reuse Shaders**: Register shaders once and reuse them. Don't create new shaders every frame.
 
-3. **Clean Up Resources**: Always dispose shaders when done:
+3. **Cache Uniform Locations**: The `CustomShaderProgram` caches uniform/attribute locations automatically.
+
+4. **Clean Up Resources**: Always dispose shaders when done:
    ```java
    backend.disposeAllCustomShaders();
    ```
 
-4. **Error Handling**: Wrap shader compilation in try-catch blocks:
+5. **Error Handling**: Wrap shader compilation in try-catch blocks:
    ```java
    try {
        CustomShaderProgram shader = backend.registerCustomShader(...);
@@ -414,14 +425,14 @@ See the `examples/custom-shader-demo` directory for a complete working example t
    }
    ```
 
-5. **Use Engine Uniforms**: Leverage engine-provided uniforms for consistency:
+6. **Use Engine Uniforms**: Leverage engine-provided uniforms for consistency:
    - Always use `u_transform` for proper coordinate transformations
    - Use `u_resolution` for screen-space calculations
    - Respect the engine's coordinate system (top-left origin, Y+ down)
 
-6. **Performance**: Minimize state changes. Batch draw calls that use the same shader.
+7. **Performance**: Minimize state changes. Batch draw calls that use the same shader.
 
-7. **Debugging**: Use browser developer tools to inspect WebGL errors. Enable WebGL error checking in development builds.
+8. **Debugging**: Use browser developer tools to inspect WebGL errors. Enable WebGL error checking in development builds.
 
 ## Limitations
 
