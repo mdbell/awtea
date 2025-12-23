@@ -50,6 +50,8 @@ typedef enum {
     CMD_DRAW_POLYLINE,
     // Copy area of surface with offset
     CMD_COPY_AREA,
+    // Execute custom rendering callback (e.g. for custom shaders)
+    CMD_RENDER_CALLBACK,
     // Number of standard commands
     CMD_COUNT,
 } SurfaceOperation;

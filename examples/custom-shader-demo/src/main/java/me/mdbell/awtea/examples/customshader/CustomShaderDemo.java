@@ -1,18 +1,13 @@
 package me.mdbell.awtea.examples.customshader;
 
-import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.webgl.CustomShaderProgram;
-import me.mdbell.awtea.gfx.webgl.WebGLRasterizer;
-import me.mdbell.awtea.gfx.webgl.WebGLSurface;
-import me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend;
+import me.mdbell.awtea.gfx.webgl.WebGLShaderContext;
 import me.mdbell.awtea.util.StubAppletStub;
 import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.JSExport;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.browser.AnimationFrameCallback;
-import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.typedarrays.Float32Array;
@@ -26,29 +21,24 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * Example demonstrating custom shader usage with a glowing animated triangle.
+ * Example demonstrating custom shader usage with command queueing.
  * This Applet shows how to:
- * - Register and compile custom GLSL shaders
- * - Set uniforms for animation and effects
- * - Upload and bind vertex data
- * - Render custom geometry with drawCustomGeometry
- * - Handle mouse events with AWT
+ * - Queue custom shader rendering callbacks within paint()
+ * - Use WebGLShaderContext to access the current rendering context
+ * - Intermix standard AWT drawing with custom shader rendering
  */
 public class CustomShaderDemo extends Applet {
 
-    private WebGLSurfaceBackend backend;
-    private WebGLSurface surface;
-    private WebGLRasterizer rasterizer;
-    private CustomShaderProgram glowShader;
-    
+    private HTMLCanvasElement canvas;
     private WebGLBuffer vertexBuffer;
     private WebGLBuffer colorBuffer;
     
     private long startTime;
     private boolean isAnimating = true;
+    private boolean mouseListenerAdded = false;
     
     private static OnVisibleCallback onVisible = null;
-    private HTMLCanvasElement canvas;
+    private static boolean shadersInitialized = false;
 
     @JSFunctor
     private interface OnVisibleCallback extends JSObject {
@@ -66,31 +56,7 @@ public class CustomShaderDemo extends Applet {
         
         setLayout(new BorderLayout());
         
-        // Create a canvas that will receive mouse events
-        Canvas renderCanvas = new Canvas() {
-            @Override
-            public void paint(Graphics g) {
-                // Draw instruction text overlay
-                g.setColor(new Color(255, 255, 255, 180));
-                g.setFont(new Font("SansSerif", Font.PLAIN, 14));
-                g.drawString("Click to pause/resume animation", 10, getHeight() - 10);
-            }
-        };
-        
-        // Add mouse listener using AWT events
-        renderCanvas.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                isAnimating = !isAnimating;
-                if (isAnimating) {
-                    startTime = System.currentTimeMillis();
-                }
-                System.out.println("Animation " + (isAnimating ? "resumed" : "paused"));
-            }
-        });
-        
-        add(renderCanvas, BorderLayout.CENTER);
-        
+        // Add the applet itself which will handle painting
         startTime = System.currentTimeMillis();
     }
 
@@ -108,29 +74,74 @@ public class CustomShaderDemo extends Applet {
             return;
         }
         
-        // Initialize WebGL backend and surface
-        backend = (WebGLSurfaceBackend) SurfaceBackendFactory.getWebGLBackend(canvas);
-        surface = (WebGLSurface) backend.createScreenSurface(
-            canvas.getWidth(), 
-            canvas.getHeight()
-        );
-        rasterizer = (WebGLRasterizer) surface.createRasterizer();
-        
-        // Initialize shader and geometry
-        initializeShader();
-        initializeGeometry();
-        
         // Notify that we're ready
         if (onVisible != null) {
             onVisible.invoke();
         }
         
         // Start animation loop
-        System.out.println("Animation loop starting...");
-        requestAnimationFrame();
+        scheduleRepaint();
     }
     
-    private void initializeShader() {
+    @Override
+    public void paint(Graphics g) {
+        // Draw some text before the shader (this will be rendered first)
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        g.drawString("Custom Shader Demo - Glowing Triangle", 10, 20);
+        g.drawString("Click to " + (isAnimating ? "pause" : "resume") + " animation", 10, 40);
+        
+        // Access the current WebGL context
+        WebGLShaderContext ctx = WebGLShaderContext.getCurrentContext();
+        if (ctx != null) {
+            // Initialize shaders on first paint
+            if (!shadersInitialized) {
+                initializeShader(ctx);
+                initializeGeometry(ctx);
+                shadersInitialized = true;
+            }
+            
+            // Get the custom shader
+            CustomShaderProgram shader = ctx.getShader("glowEffect");
+            if (shader != null) {
+                // Queue the shader callback - this will execute after text rendering
+                // but before any subsequent drawing commands
+                ctx.queueShaderCall(shader, (backend, rasterizer) -> {
+                    renderCustomGeometry(backend);
+                });
+            } else {
+                g.setColor(Color.RED);
+                g.drawString("Shader not found or failed to compile", 10, 60);
+            }
+        } else {
+            // Not using WebGL backend
+            g.setColor(Color.RED);
+            g.drawString("WebGL backend required for custom shaders", 10, 60);
+        }
+        
+        // Draw some text after the shader (this will be rendered after custom geometry)
+        g.drawString("FPS: ~60", 10, canvas != null ? canvas.getHeight() - 10 : 590);
+        
+        // Add mouse listener on first paint
+        if (!mouseListenerAdded) {
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    isAnimating = !isAnimating;
+                    if (isAnimating) {
+                        startTime = System.currentTimeMillis();
+                    }
+                    System.out.println("Animation " + (isAnimating ? "resumed" : "paused"));
+                }
+            });
+            mouseListenerAdded = true;
+        }
+    }
+    
+    /**
+     * Initialize the custom shader (called once on first paint).
+     */
+    private void initializeShader(WebGLShaderContext ctx) {
         // Vertex shader with position and color attributes, plus animation
         String vertexShader =
             "attribute vec2 a_position;\n" +
@@ -181,7 +192,7 @@ public class CustomShaderDemo extends Applet {
             "}\n";
         
         try {
-            glowShader = backend.registerCustomShader(
+            ctx.getBackend().registerCustomShader(
                 "glowEffect",
                 vertexShader,
                 fragmentShader
@@ -189,12 +200,14 @@ public class CustomShaderDemo extends Applet {
             System.out.println("Custom glow shader compiled successfully!");
         } catch (RuntimeException e) {
             System.err.println("Failed to compile glow shader: " + e.getMessage());
-            throw e;
         }
     }
     
-    private void initializeGeometry() {
-        WebGL2RenderingContext gl = backend.getGL();
+    /**
+     * Initialize geometry buffers (called once on first paint).
+     */
+    private void initializeGeometry(WebGLShaderContext ctx) {
+        WebGL2RenderingContext gl = ctx.getBackend().getGL();
         
         // Triangle vertices (3 vertices forming a large triangle)
         float cx = 400f, cy = 300f, size = 150f;
@@ -228,54 +241,52 @@ public class CustomShaderDemo extends Applet {
         System.out.println("Geometry initialized");
     }
     
-    private void render() {
-        if (backend == null || glowShader == null) {
+    /**
+     * Render custom geometry - this is called from the shader callback.
+     */
+    private void renderCustomGeometry(me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend backend) {
+        if (vertexBuffer == null || colorBuffer == null) {
             return;
         }
         
         WebGL2RenderingContext gl = backend.getGL();
+        CustomShaderProgram shader = backend.getActiveCustomShader();
         
-        // Clear the canvas
-        gl.clearColor(0.1f, 0.1f, 0.15f, 1.0f);
-        gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
+        if (shader == null) {
+            return;
+        }
         
         // Calculate time for animation
         float time = isAnimating ? (System.currentTimeMillis() - startTime) / 1000.0f : 0.0f;
         
-        // Activate custom shader
-        backend.activateCustomShader(glowShader);
-        
-        // Set uniforms
-        glowShader.setUniform2f("u_resolution", (float)canvas.getWidth(), (float)canvas.getHeight());
-        glowShader.setUniformMatrix3fv("u_transform", false, backend.getContextStack().getTransformArray());
-        glowShader.setUniform1f("u_time", time);
-        glowShader.setUniform1f("u_glowIntensity", 1.5f);
+        // Set uniforms (shader is already activated by the context)
+        shader.setUniform2f("u_resolution", (float)canvas.getWidth(), (float)canvas.getHeight());
+        shader.setUniformMatrix3fv("u_transform", false, backend.getContextStack().getTransformArray());
+        shader.setUniform1f("u_time", time);
+        shader.setUniform1f("u_glowIntensity", 1.5f);
         
         // Bind vertex position buffer
         gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, vertexBuffer);
-        glowShader.enableVertexAttribArray("a_position");
-        glowShader.vertexAttribPointer("a_position", 2, WebGLRenderingContext.FLOAT, false, 0, 0);
+        shader.enableVertexAttribArray("a_position");
+        shader.vertexAttribPointer("a_position", 2, WebGLRenderingContext.FLOAT, false, 0, 0);
         
         // Bind vertex color buffer
         gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, colorBuffer);
-        glowShader.enableVertexAttribArray("a_color");
-        glowShader.vertexAttribPointer("a_color", 3, WebGLRenderingContext.FLOAT, false, 0, 0);
+        shader.enableVertexAttribArray("a_color");
+        shader.vertexAttribPointer("a_color", 3, WebGLRenderingContext.FLOAT, false, 0, 0);
         
         // Draw the triangle
-        rasterizer.drawCustomGeometry(WebGLRenderingContext.TRIANGLES, 0, 3);
-        
-        // Deactivate custom shader
-        backend.deactivateCustomShader();
+        gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 3);
     }
     
-    private void requestAnimationFrame() {
-        Window.requestAnimationFrame(new AnimationFrameCallback() {
-            @Override
-            public void onAnimationFrame(double timestamp) {
-                render();
-                requestAnimationFrame();
-            }
-        });
+    /**
+     * Schedule periodic repaints for animation.
+     */
+    private void scheduleRepaint() {
+        org.teavm.jso.browser.Window.setTimeout(() -> {
+            repaint();
+            scheduleRepaint();
+        }, 16); // ~60fps
     }
 
     public static void main(String[] args) {

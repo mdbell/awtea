@@ -46,4 +46,6 @@ export enum SurfaceOperation {
   CMD_DRAW_POLYLINE = 18,
   /** Copy area of surface with offset */
   CMD_COPY_AREA = 19,
+  /** Execute custom rendering callback (e.g. for custom shaders) */
+  CMD_RENDER_CALLBACK = 20,
 }

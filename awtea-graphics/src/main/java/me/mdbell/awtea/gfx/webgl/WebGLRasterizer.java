@@ -997,6 +997,15 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
     public WebGLSurfaceBackend getBackend() {
         return backend;
     }
+    
+    private ShaderCallbackWrapper pendingCallback = null;
+    
+    @Override
+    public void queueRenderCallback(Object wrapper) {
+        if (wrapper instanceof ShaderCallbackWrapper) {
+            pendingCallback = (ShaderCallbackWrapper) wrapper;
+        }
+    }
 
     @Override
     public void rasterizeCommands(List<SurfaceCommand> cmds) {
@@ -1008,9 +1017,14 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         
         // Set surface dimensions for clip application
         backend.contextStack.setSurfaceDimensions(surface.getWidth(), surface.getHeight());
-
-        for (SurfaceCommand cmd : cmds) {
-            switch (cmd.type) {
+        
+        // Set up the shader context for this rendering pass
+        WebGLShaderContext context = new WebGLShaderContext(backend, this);
+        WebGLShaderContext.setCurrentContext(context);
+        
+        try {
+            for (SurfaceCommand cmd : cmds) {
+                switch (cmd.type) {
                 case SET_COLOR:
                     Color c = (Color) cmd.obj;
                     if (cmd.argCount > 0 && cmd.args[0] == 0) {
@@ -1083,6 +1097,9 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
                 case COPY_AREA:
                     copyArea(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
                     break;
+                case RENDER_CALLBACK:
+                    executeRenderCallback(cmd.obj);
+                    break;
                 case NO_OP:
                     // do nothing (shouldn't be in the command list in the first place)
                     break;
@@ -1091,9 +1108,53 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
                     break;
             }
         }
+        
+        // Execute any pending callback queued via queueRenderCallback()
+        if (pendingCallback != null) {
+            executeRenderCallback(pendingCallback);
+            pendingCallback = null;
+        }
 
         if (pushToScreen) {
             pushToScreen();
+        }
+        } finally {
+            // Clear the context after rendering
+            WebGLShaderContext.setCurrentContext(null);
+        }
+    }
+    
+    /**
+     * Executes a custom shader rendering callback.
+     * The shader is activated before the callback and deactivated afterwards.
+     */
+    private void executeRenderCallback(Object obj) {
+        if (!(obj instanceof ShaderCallbackWrapper)) {
+            log.error("RENDER_CALLBACK command received with invalid object type: {}", 
+                obj != null ? obj.getClass().getName() : "null");
+            return;
+        }
+        
+        ShaderCallbackWrapper wrapper = (ShaderCallbackWrapper) obj;
+        CustomShaderProgram shader = wrapper.getShader();
+        ShaderRenderCallback callback = wrapper.getCallback();
+        
+        if (shader == null || callback == null) {
+            log.error("RENDER_CALLBACK command received with null shader or callback");
+            return;
+        }
+        
+        // Activate the shader
+        backend.activateCustomShader(shader);
+        
+        try {
+            // Execute the callback
+            callback.render(backend, this);
+        } catch (Exception e) {
+            log.error("Error executing shader callback: {}", e.getMessage(), e);
+        } finally {
+            // Always deactivate the shader
+            backend.deactivateCustomShader();
         }
     }
 
