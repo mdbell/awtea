@@ -233,10 +233,14 @@ public class THeavyCanvas {
 	 */
 	public THeavyCanvas configureStandardEvents() {
 		eventManager.disableContextMenu()
-				.withFocus()
-				.withKeyboard()
-				.withMouse()
-				.withMouseWheel();
+			.withFocus()
+			.withKeyboard()
+			.withMouse()
+			.withMouseWheel();
+		
+		// Give the canvas DOM focus so keyboard events work immediately
+		canvasElement.focus();
+		
 		return this;
 	}
 

@@ -35,6 +35,8 @@ public class TApplet extends TPanel {
 
 	public TApplet() {
 		super();
+		// Applets should be focus cycle roots, like Windows
+		setFocusCycleRoot(true);
 	}
 
 	@Override

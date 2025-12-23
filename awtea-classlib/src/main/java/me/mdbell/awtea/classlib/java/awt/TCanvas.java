@@ -128,4 +128,12 @@ package me.mdbell.awtea.classlib.java.awt;
  */
 public class TCanvas extends TComponent {
 
+	/**
+	 * Creates a new canvas.
+	 * Canvas components are focusable by default in Java AWT.
+	 */
+	public TCanvas() {
+		setFocusable(true);
+	}
+
 }

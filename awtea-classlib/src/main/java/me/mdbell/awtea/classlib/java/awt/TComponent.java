@@ -83,7 +83,13 @@ public abstract class TComponent implements TImageObserver {
     private TDimension minimumSize;
 
     @Getter
-    private boolean focusable = true;
+    private boolean focusable = false;
+
+    private boolean focusTraversalKeysEnabled = true;
+
+    @Getter
+    @Setter
+    private boolean enabled = true;
 
     @Getter
     private boolean valid = false;
@@ -239,6 +245,12 @@ public abstract class TComponent implements TImageObserver {
     }
 
     protected void dispatchKeyEvent(TKeyEvent e) {
+        // First, check if this is a focus traversal key
+        if (TKeyboardFocusManager.getCurrentKeyboardFocusManager().processKeyEvent(this, e)) {
+            e.consume();
+            return;
+        }
+
         int id = e.getID();
         switch (id) {
             case TKeyEvent.KEY_PRESSED:
@@ -385,11 +397,81 @@ public abstract class TComponent implements TImageObserver {
     }
 
     public void requestFocus() {
-        TFocusManager.get().setGlobalFocusOwner(this);
+        TKeyboardFocusManager.getCurrentKeyboardFocusManager().setGlobalFocusOwner(this);
+    }
+
+    /**
+     * Returns whether focus traversal keys are enabled for this Component.
+     * Components for which focus traversal keys are disabled receive key
+     * events for focus traversal keys. Components for which focus traversal
+     * keys are enabled do not see these events; instead, the events are
+     * automatically converted to traversal operations.
+     *
+     * @return whether focus traversal keys are enabled for this Component
+     * @see #setFocusTraversalKeysEnabled
+     */
+    public boolean isFocusTraversalKeysEnabled() {
+        return focusTraversalKeysEnabled;
+    }
+
+    /**
+     * Transfers the focus to the next component, as though this Component were
+     * the focus owner.
+     *
+     * @see #requestFocus()
+     */
+    public void transferFocus() {
+        TKeyboardFocusManager.getCurrentKeyboardFocusManager().focusNextComponent(this);
+    }
+
+    /**
+     * Transfers the focus to the previous component, as though this Component
+     * were the focus owner.
+     *
+     * @see #requestFocus()
+     */
+    public void transferFocusBackward() {
+        TKeyboardFocusManager.getCurrentKeyboardFocusManager().focusPreviousComponent(this);
+    }
+
+    /**
+     * Transfers the focus up one focus traversal cycle. Typically, the focus
+     * owner is set to this Component's focus cycle root, and the current focus
+     * cycle root is set to the new focus owner's focus cycle root. If,
+     * however, this Component's focus cycle root is a Window, then the focus
+     * owner is set to the focus cycle root's default Component to focus, and
+     * the current focus cycle root is unchanged.
+     */
+    public void transferFocusUpCycle() {
+        TKeyboardFocusManager.getCurrentKeyboardFocusManager().upFocusCycle(this);
     }
 
     public void setFocusTraversalKeysEnabled(boolean focusTraversalKeysEnabled) {
+        this.focusTraversalKeysEnabled = focusTraversalKeysEnabled;
+    }
 
+    /**
+     * Returns the Container which is the focus cycle root of this Component's
+     * focus traversal cycle. Each focus traversal cycle has only a single
+     * focus cycle root and each Component which is not a Container belongs to
+     * only a single focus traversal cycle. Containers which are focus cycle
+     * roots belong to two cycles: one rooted at the Container itself, and one
+     * rooted at the Container's nearest focus-cycle-root ancestor. For such
+     * Containers, this method will return the Container's nearest focus-cycle-
+     * root ancestor.
+     *
+     * @return this Component's focus cycle root, or null if no ancestor is a
+     *         focus cycle root
+     */
+    public TContainer getFocusCycleRootAncestor() {
+        TContainer parent = this.parent;
+        while (parent != null) {
+            if (parent.isFocusCycleRoot()) {
+                return parent;
+            }
+            parent = parent.getParent();
+        }
+        return null;
     }
 
     public TGraphics getGraphics() {
