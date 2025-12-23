@@ -3,7 +3,6 @@ package me.mdbell.awtea.classlib.java.awt.event;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
@@ -14,9 +13,9 @@ import org.teavm.jso.dom.events.KeyboardEvent;
 /**
  * @see java.awt.event.KeyEvent
  * 
- * Note: The VK_ constants in this class match those defined in
- * {@link me.mdbell.awtea.input.KeyConstants}. They are redefined here
- * for compatibility with the java.awt.event.KeyEvent API.
+ *      Note: The VK_ constants in this class match those defined in
+ *      {@link me.mdbell.awtea.input.KeyConstants}. They are redefined here
+ *      for compatibility with the java.awt.event.KeyEvent API.
  */
 @Getter
 @ToString(callSuper = true)
@@ -35,8 +34,8 @@ public class TKeyEvent extends TInputEvent {
 	public static final int KEY_LAST = 402;
 
 	/**
-	 * The "key typed" event.  This event is generated when a character is
-	 * entered.  In the simplest case, it is produced by a single key press.
+	 * The "key typed" event. This event is generated when a character is
+	 * entered. In the simplest case, it is produced by a single key press.
 	 * Often, however, characters are produced by series of key presses, and
 	 * the mapping from key pressed events to key typed events may be
 	 * many-to-one or many-to-many.
@@ -47,13 +46,13 @@ public class TKeyEvent extends TInputEvent {
 	 * The "key pressed" event. This event is generated when a key
 	 * is pushed down.
 	 */
-	public static final int KEY_PRESSED = 1 + KEY_FIRST; //Event.KEY_PRESS
+	public static final int KEY_PRESSED = 1 + KEY_FIRST; // Event.KEY_PRESS
 
 	/**
 	 * The "key released" event. This event is generated when a key
 	 * is let up.
 	 */
-	public static final int KEY_RELEASED = 2 + KEY_FIRST; //Event.KEY_RELEASE
+	public static final int KEY_RELEASED = 2 + KEY_FIRST; // Event.KEY_RELEASE
 
 	/* Virtual key codes. */
 
@@ -667,7 +666,7 @@ public class TKeyEvent extends TInputEvent {
 	public static final int VK_META = 0x9D;
 
 	/**
-	 * Constant for the BACK_QUOTE  key.
+	 * Constant for the BACK_QUOTE key.
 	 */
 	public static final int VK_BACK_QUOTE = 0xC0;
 
@@ -935,8 +934,10 @@ public class TKeyEvent extends TInputEvent {
 	 */
 	public static final int VK_MODECHANGE = 0x001F;
 
-    /* replaced by VK_KANA_LOCK for Microsoft Windows and Solaris;
-       might still be used on other platforms */
+	/*
+	 * replaced by VK_KANA_LOCK for Microsoft Windows and Solaris;
+	 * might still be used on other platforms
+	 */
 	/**
 	 * Constant for the KANA lock key.
 	 *
@@ -944,8 +945,10 @@ public class TKeyEvent extends TInputEvent {
 	 **/
 	public static final int VK_KANA = 0x0015;
 
-    /* replaced by VK_INPUT_METHOD_ON_OFF for Microsoft Windows and Solaris;
-       might still be used for other platforms */
+	/*
+	 * replaced by VK_INPUT_METHOD_ON_OFF for Microsoft Windows and Solaris;
+	 * might still be used for other platforms
+	 */
 	/**
 	 * Constant for KANJI.
 	 *
@@ -1027,7 +1030,8 @@ public class TKeyEvent extends TInputEvent {
 
 	/**
 	 * Constant for the Japanese-Katakana function key.
-	 * This key switches to a Japanese input method and selects its Katakana input mode.
+	 * This key switches to a Japanese input method and selects its Katakana input
+	 * mode.
 	 *
 	 * @since 1.2
 	 */
@@ -1036,7 +1040,8 @@ public class TKeyEvent extends TInputEvent {
 
 	/**
 	 * Constant for the Japanese-Hiragana function key.
-	 * This key switches to a Japanese input method and selects its Hiragana input mode.
+	 * This key switches to a Japanese input method and selects its Hiragana input
+	 * mode.
 	 *
 	 * @since 1.2
 	 */
@@ -1045,7 +1050,8 @@ public class TKeyEvent extends TInputEvent {
 
 	/**
 	 * Constant for the Japanese-Roman function key.
-	 * This key switches to a Japanese input method and selects its Roman-Direct input mode.
+	 * This key switches to a Japanese input method and selects its Roman-Direct
+	 * input mode.
 	 *
 	 * @since 1.2
 	 */
@@ -1058,7 +1064,10 @@ public class TKeyEvent extends TInputEvent {
 	 *
 	 * @since 1.3
 	 */
-	/* Japanese PC 106 keyboard with special Windows driver - eisuu + Control; Japanese Solaris keyboard: kana */
+	/*
+	 * Japanese PC 106 keyboard with special Windows driver - eisuu + Control;
+	 * Japanese Solaris keyboard: kana
+	 */
 	public static final int VK_KANA_LOCK = 0x0106;
 
 	/**
@@ -1161,7 +1170,7 @@ public class TKeyEvent extends TInputEvent {
 	/**
 	 * A constant indicating that the key pressed or released is in
 	 * the left key location (there is more than one possible location
-	 * for this key).  Example: the left shift key.
+	 * for this key). Example: the left shift key.
 	 *
 	 * @since 1.4
 	 */
@@ -1170,7 +1179,7 @@ public class TKeyEvent extends TInputEvent {
 	/**
 	 * A constant indicating that the key pressed or released is in
 	 * the right key location (there is more than one possible location
-	 * for this key).  Example: the right shift key.
+	 * for this key). Example: the right shift key.
 	 *
 	 * @since 1.4
 	 */
@@ -1220,10 +1229,6 @@ public class TKeyEvent extends TInputEvent {
 	public static TKeyEvent adapt(TComponent component, KeyboardEvent event) {
 		KeyEvent keyEvent = KeyEvent.fromType(event.getType());
 		KeyboardKey key = KeyboardKey.lookup(event.getCode());
-
-		if (key == KeyboardKey.TAB) {
-			event.preventDefault(); // prevents focus change when tab is pressed inside the canvas
-		}
 
 		if (key == KeyboardKey.UNDEFINED) {
 			log.warn("Key not found: {} - {} - {}", event.getCode(), event.getKey(), event.getType());

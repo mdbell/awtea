@@ -28,6 +28,13 @@ public class TContainer extends TComponent {
     @Setter
     private boolean focusCycleRoot = false;
 
+    private TFocusTraversalPolicy focusTraversalPolicy;
+    private boolean focusTraversalPolicySet = false;
+
+    @Getter
+    @Setter
+    private boolean focusTraversalPolicyProvider = false;
+
     @Getter
     private TLayoutManager layoutMgr;
 
@@ -298,6 +305,73 @@ public class TContainer extends TComponent {
             }
         }
         return this;
+    }
+
+    /**
+     * Returns the focus traversal policy that will manage keyboard traversal
+     * of this Container's children, or null if this Container is not a focus
+     * cycle root. If no focus traversal policy has been explicitly set, then
+     * the default policy is returned.
+     *
+     * @return this Container's focus traversal policy, or null if this
+     *         Container is not a focus cycle root
+     * @see #setFocusTraversalPolicy
+     * @see #isFocusCycleRoot
+     */
+    public TFocusTraversalPolicy getFocusTraversalPolicy() {
+        if (!isFocusCycleRoot()) {
+            return null;
+        }
+        if (focusTraversalPolicy != null) {
+            return focusTraversalPolicy;
+        }
+        return TKeyboardFocusManager.getCurrentKeyboardFocusManager().getDefaultFocusTraversalPolicy();
+    }
+
+    /**
+     * Sets the focus traversal policy that will manage keyboard traversal of
+     * this Container's children, if this Container is a focus cycle root. The
+     * argument should be one of the predefined policies, such as
+     * {@link TDefaultFocusTraversalPolicy}, or a custom policy.
+     *
+     * @param policy the new focus traversal policy for this Container
+     * @see #getFocusTraversalPolicy
+     * @see #isFocusCycleRoot
+     */
+    public void setFocusTraversalPolicy(TFocusTraversalPolicy policy) {
+        this.focusTraversalPolicy = policy;
+        this.focusTraversalPolicySet = (policy != null);
+    }
+
+    /**
+     * Returns whether the focus traversal policy has been explicitly set for
+     * this Container. If this method returns false, this Container will
+     * inherit its focus traversal policy from its focus-cycle-root ancestor,
+     * or from the KeyboardFocusManager.
+     *
+     * @return true if the focus traversal policy has been explicitly set for
+     *         this Container; false otherwise
+     * @see #setFocusTraversalPolicy
+     */
+    public boolean isFocusTraversalPolicySet() {
+        return focusTraversalPolicySet;
+    }
+
+    /**
+     * Returns the focus cycle root ancestor of this Container, or null if no
+     * ancestor is a focus cycle root.
+     *
+     * @return the focus cycle root ancestor, or null
+     */
+    public TContainer getFocusCycleRootAncestor() {
+        TContainer parent = getParent();
+        while (parent != null) {
+            if (parent.isFocusCycleRoot()) {
+                return parent;
+            }
+            parent = parent.getParent();
+        }
+        return null;
     }
 
     @Override
