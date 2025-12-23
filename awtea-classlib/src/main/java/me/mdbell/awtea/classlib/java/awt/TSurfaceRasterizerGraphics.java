@@ -40,6 +40,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     protected transient boolean scheduled = false;
     protected transient boolean disposed = false;
+    
+    // Track if this Graphics instance set up a WebGL shader context
+    private transient boolean ownsShaderContext = false;
 
     private final List<SurfaceCommand> surfaceCommandsA = new ArrayList<>();
     private final List<SurfaceCommand> surfaceCommandsB = new ArrayList<>();
@@ -77,6 +80,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     public TSurfaceRasterizerGraphics(Rasterizer rasterizer) {
         this.rasterizer = rasterizer;
         reset();
+        initializeShaderContext();
     }
 
     protected TSurfaceRasterizerGraphics(TSurfaceRasterizerGraphics other) {
@@ -91,6 +95,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         // Don't copy disposed or scheduled state - new instance starts fresh
         this.disposed = false;
         this.scheduled = false;
+        initializeShaderContext();
     }
 
     @Override
@@ -182,6 +187,23 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         if (!scheduled) {
             scheduled = true;
             scheduleRasterize();
+        }
+    }
+    
+    /**
+     * Initializes the WebGL shader context if the rasterizer supports it.
+     * This makes the context available during paint() calls via getCurrentContext().
+     */
+    private void initializeShaderContext() {
+        // Check if this is a WebGL rasterizer
+        if (rasterizer instanceof me.mdbell.awtea.gfx.webgl.WebGLRasterizer) {
+            me.mdbell.awtea.gfx.webgl.WebGLRasterizer webglRasterizer = 
+                (me.mdbell.awtea.gfx.webgl.WebGLRasterizer) rasterizer;
+            me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend backend = webglRasterizer.getBackend();
+            me.mdbell.awtea.gfx.webgl.WebGLShaderContext context = 
+                new me.mdbell.awtea.gfx.webgl.WebGLShaderContext(backend, rasterizer);
+            me.mdbell.awtea.gfx.webgl.WebGLShaderContext.setCurrentContext(context);
+            ownsShaderContext = true;
         }
     }
 
@@ -765,6 +787,18 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         readList.clear();
 
         scheduled = false;
+        
+        // Clear WebGL shader context after flush completes (if we set it)
+        if (ownsShaderContext) {
+            clearShaderContext();
+        }
+    }
+    
+    /**
+     * Clears the WebGL shader context if it was set by this Graphics instance.
+     */
+    private void clearShaderContext() {
+        me.mdbell.awtea.gfx.webgl.WebGLShaderContext.setCurrentContext(null);
     }
 
     // Schedule rasterization on the next animation frame

@@ -12,9 +12,57 @@ The custom shader API allows you to:
 
 ## Basic Usage
 
-### 1. Get the WebGL Backend
+### Command Queueing Pattern (Recommended)
 
-Custom shaders are only available in the WebGL rendering backend. First, obtain access to the backend:
+The recommended way to use custom shaders is through the command queueing pattern within `paint(Graphics g)`. This ensures proper timing and integration with the rendering pipeline:
+
+```java
+public void paint(Graphics g) {
+    // Draw standard AWT content first
+    g.setColor(Color.WHITE);
+    g.drawString("Before shader", 10, 20);
+    
+    // Get the current WebGL shader context
+    WebGLShaderContext ctx = WebGLShaderContext.getCurrentContext();
+    if (ctx != null) {
+        // Initialize shader on first use
+        if (ctx.getShader("myShader") == null) {
+            ctx.getBackend().registerCustomShader("myShader", vertexSource, fragmentSource);
+        }
+        
+        // Queue custom shader rendering
+        CustomShaderProgram shader = ctx.getShader("myShader");
+        if (shader != null) {
+            ctx.queueShaderCall(shader, (backend, rasterizer) -> {
+                // Set uniforms
+                shader.setUniform2f("u_resolution", width, height);
+                shader.setUniform1f("u_time", elapsedSeconds);
+                
+                // Bind vertex data and draw
+                WebGL2RenderingContext gl = backend.getGL();
+                gl.bindBuffer(ARRAY_BUFFER, vertexBuffer);
+                shader.enableVertexAttribArray("a_position");
+                shader.vertexAttribPointer("a_position", 2, FLOAT, false, 0, 0);
+                rasterizer.drawCustomGeometry(TRIANGLES, 0, vertexCount);
+            });
+        }
+    }
+    
+    // Draw standard AWT content after
+    g.drawString("After shader", 10, 40);
+}
+```
+
+**Key Points:**
+- The context is automatically set up when the Graphics object is created (for WebGL backends)
+- `getCurrentContext()` returns null for non-WebGL backends
+- Shader callbacks are queued and executed at the correct point in the rendering pipeline
+- The shader is automatically activated before the callback and deactivated after
+- Commands queued in `paint()` are executed on the next animation frame
+
+### Direct API Usage (Advanced)
+
+For advanced use cases where you need direct control, you can access the backend directly:
 
 ```java
 // From a WebGLSurface's rasterizer
@@ -22,7 +70,7 @@ WebGLRasterizer rasterizer = (WebGLRasterizer) surface.createRasterizer();
 WebGLSurfaceBackend backend = rasterizer.getBackend();
 ```
 
-### 2. Register a Custom Shader
+### Register a Custom Shader
 
 Create and register a shader program with vertex and fragment shader sources:
 
@@ -55,9 +103,9 @@ CustomShaderProgram shader = backend.registerCustomShader(
 );
 ```
 
-### 3. Activate and Use the Shader
+### Activate and Use the Shader (Direct API)
 
-Activate the shader and set uniforms:
+For direct API usage (not using the command queueing pattern):
 
 ```java
 backend.activateCustomShader("myShader");
@@ -72,7 +120,7 @@ shader.setUniformMatrix3fv("u_transform", false,
     backend.getContextStack().getTransformArray());
 ```
 
-### 4. Upload Vertex Data and Render
+### Upload Vertex Data and Render (Direct API)
 
 ```java
 // Create and bind vertex buffer

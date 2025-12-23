@@ -1018,9 +1018,14 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         // Set surface dimensions for clip application
         backend.contextStack.setSurfaceDimensions(surface.getWidth(), surface.getHeight());
         
-        // Set up the shader context for this rendering pass
-        WebGLShaderContext context = new WebGLShaderContext(backend, this);
-        WebGLShaderContext.setCurrentContext(context);
+        // Set up the shader context for this rendering pass if not already set
+        // (TSurfaceRasterizerGraphics may have already set it during paint())
+        WebGLShaderContext existingContext = WebGLShaderContext.getCurrentContext();
+        boolean contextWasSet = existingContext != null;
+        if (!contextWasSet) {
+            WebGLShaderContext context = new WebGLShaderContext(backend, this);
+            WebGLShaderContext.setCurrentContext(context);
+        }
         
         try {
             for (SurfaceCommand cmd : cmds) {
@@ -1119,8 +1124,11 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             pushToScreen();
         }
         } finally {
-            // Clear the context after rendering
-            WebGLShaderContext.setCurrentContext(null);
+            // Only clear the context if we set it (not if TSurfaceRasterizerGraphics set it)
+            // TSurfaceRasterizerGraphics will clear it after flush() completes
+            if (!contextWasSet) {
+                WebGLShaderContext.setCurrentContext(null);
+            }
         }
     }
     

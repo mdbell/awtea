@@ -56,6 +56,10 @@ public class WebGLShaderContext {
      * Returns null if called outside of a WebGL rendering context or if
      * the current backend is not WebGL.
      * </p>
+     * <p>
+     * The context is automatically set up when the first drawing command is queued
+     * in a paint() method and remains available until the frame is fully rendered.
+     * </p>
      * 
      * @return the current shader context, or null if not available
      */
