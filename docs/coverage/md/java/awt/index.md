@@ -1,9 +1,9 @@
 # Package: `java.awt`
 
-**Coverage:** 400 / 639 (62.6%)
+**Coverage:** 433 / 721 (60.1%)
 
 ```
-[███████████████████████████████░░░░░░░░░░░░░░░░░░░] 62.6%
+[██████████████████████████████░░░░░░░░░░░░░░░░░░░░] 60.1%
 ```
 
 ## Classes
@@ -64,12 +64,28 @@
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%
 ```
 
+### [`ContainerOrderFocusTraversalPolicy`](ContainerOrderFocusTraversalPolicy.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 9 / 9 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
 ### [`Cursor`](Cursor.md) ![Coverage](https://img.shields.io/badge/coverage-84.0%25-green)
 
 **Coverage:** 21 / 25 (84.0%)
 
 ```
 [██████████████████████████████████████████░░░░░░░░] 84.0%
+```
+
+### [`DefaultFocusTraversalPolicy`](DefaultFocusTraversalPolicy.md) ![Coverage](https://img.shields.io/badge/coverage-50.0%25-yellow)
+
+**Coverage:** 1 / 2 (50.0%)
+
+```
+[█████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░] 50.0%
 ```
 
 ### [`Desktop`](Desktop.md) ![Coverage](https://img.shields.io/badge/coverage-12.0%25-red)
@@ -107,6 +123,14 @@
 ### [`FlowLayout`](FlowLayout.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
 **Coverage:** 22 / 22 (100.0%)
+
+```
+[██████████████████████████████████████████████████] 100.0%
+```
+
+### [`FocusTraversalPolicy`](FocusTraversalPolicy.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+
+**Coverage:** 7 / 7 (100.0%)
 
 ```
 [██████████████████████████████████████████████████] 100.0%
@@ -158,6 +182,14 @@
 
 ```
 [██████████████████████████████████████████████████] 100.0%
+```
+
+### [`KeyboardFocusManager`](KeyboardFocusManager.md) ![Coverage](https://img.shields.io/badge/coverage-25.0%25-orange)
+
+**Coverage:** 16 / 64 (25.0%)
+
+```
+[████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 25.0%
 ```
 
 ### [`LayoutManager`](LayoutManager.md) ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
