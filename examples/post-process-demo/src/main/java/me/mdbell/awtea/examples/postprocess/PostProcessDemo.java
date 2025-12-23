@@ -173,18 +173,16 @@ public class PostProcessDemo extends Applet {
         time += 0.016f; // Assume ~60fps
 
         // Add post-processing callback (executed once per frame at the end)
+        // The callback receives the current surface content and can apply effects to it
         ctx.addPostProcessCallback(() -> {
-            applyPostProcessing(ctx.getBackend());
+            applyPostProcessing(ctx.getBackend(), g);
         });
-        
-        // Draw UI on top (rendered after post-processing)
-        drawUI(g);
     }
 
     /**
      * Apply post-processing effects. Called via post-process callback at end of frame.
      */
-    private void applyPostProcessing(WebGLSurfaceBackend backend) {
+    private void applyPostProcessing(WebGLSurfaceBackend backend, Graphics g) {
         int width = canvas.getWidth();
         int height = canvas.getHeight();
 
@@ -201,10 +199,13 @@ public class PostProcessDemo extends Applet {
             finalOutput = sceneTarget;
         }
 
-        // Step 3: Blit to screen
-        blitToScreen(backend, finalOutput, width, height);
+        // Step 3: Blit to surface (currently bound framebuffer)
+        blitToSurface(backend, finalOutput, width, height);
 
-        // Step 4: Release output (if not the scene target)
+        // Step 4: Draw UI on top (after post-processed scene is on screen)
+        drawUI(g);
+
+        // Step 5: Release output (if not the scene target)
         if (finalOutput != sceneTarget) {
             pool.release(finalOutput);
         }
@@ -323,16 +324,15 @@ public class PostProcessDemo extends Applet {
         gl.deleteBuffer(buffer);
     }
 
-    private void blitToScreen(WebGLSurfaceBackend backend, RenderTarget target, int width, int height) {
+    private void blitToSurface(WebGLSurfaceBackend backend, RenderTarget target, int width, int height) {
+        // Don't bind any framebuffer - blit to currently bound framebuffer (the surface)
+        // This allows pushToScreen() to handle pushing the surface to screen
         WebGL2RenderingContext gl = backend.getGL();
-        
-        // Bind default framebuffer
-        gl.bindFramebuffer(org.teavm.jso.webgl.WebGLRenderingContext.FRAMEBUFFER, null);
         gl.viewport(0, 0, width, height);
 
-        // Use PostProcessContext for simple blit
+        // Use PostProcessContext for simple blit (output=null means currently bound framebuffer)
         PostProcessContext ctx = new PostProcessContext(backend);
-        ctx.blitSimple(target, null); // null output means screen
+        ctx.blitSimple(target, null);
     }
 
     private void drawUI(Graphics g) {
