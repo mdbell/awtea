@@ -203,8 +203,83 @@ public class TFont {
         return fontPeer.getFont();
     }
 
+    /**
+     * Get the FontMetrics for this font.
+     * 
+     * @return the FontMetrics for this font
+     * @deprecated This method creates metrics without rendering context awareness.
+     *             Use {@link TGraphics#getFontMetrics(TFont)} or 
+     *             {@link TToolkit#getFontMetrics(TFont)} instead to get context-aware metrics.
+     */
+    @Deprecated
     public TFontMetrics getFontMetrics() {
         return new TFontMetrics(this);
+    }
+    
+    /**
+     * Returns a LineMetrics object created with the specified String and
+     * FontRenderContext.
+     * 
+     * @param str the specified String
+     * @param frc the specified FontRenderContext
+     * @return a LineMetrics object created with the specified String and FontRenderContext
+     * @see java.awt.Font#getLineMetrics(String, java.awt.font.FontRenderContext)
+     */
+    public me.mdbell.awtea.classlib.java.awt.font.TLineMetrics getLineMetrics(String str, 
+            me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext frc) {
+        TFontMetrics metrics = new TFontMetrics(this, frc);
+        return metrics.getLineMetrics(str);
+    }
+    
+    /**
+     * Returns a LineMetrics object created with the specified arguments.
+     * 
+     * @param str the specified String
+     * @param beginIndex the initial offset in str
+     * @param limit the end offset in str
+     * @param frc the specified FontRenderContext
+     * @return a LineMetrics object created with the specified arguments
+     * @see java.awt.Font#getLineMetrics(String, int, int, java.awt.font.FontRenderContext)
+     */
+    public me.mdbell.awtea.classlib.java.awt.font.TLineMetrics getLineMetrics(String str, 
+            int beginIndex, int limit, me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext frc) {
+        String substring = str.substring(beginIndex, limit);
+        return getLineMetrics(substring, frc);
+    }
+    
+    /**
+     * Returns a LineMetrics object created with the specified CharacterIterator and
+     * FontRenderContext.
+     * 
+     * @param ci the specified CharacterIterator
+     * @param beginIndex the initial offset in ci
+     * @param limit the end offset in ci
+     * @param frc the specified FontRenderContext
+     * @return a LineMetrics object created with the specified arguments
+     * @see java.awt.Font#getLineMetrics(java.text.CharacterIterator, int, int, java.awt.font.FontRenderContext)
+     */
+    public me.mdbell.awtea.classlib.java.awt.font.TLineMetrics getLineMetrics(
+            java.text.CharacterIterator ci, int beginIndex, int limit, 
+            me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext frc) {
+        TFontMetrics metrics = new TFontMetrics(this, frc);
+        return metrics.getLineMetrics(ci, beginIndex, limit);
+    }
+    
+    /**
+     * Returns a LineMetrics object created with the specified character array and
+     * FontRenderContext.
+     * 
+     * @param chars an array of characters
+     * @param beginIndex the initial offset in chars
+     * @param limit the end offset in chars
+     * @param frc the specified FontRenderContext
+     * @return a LineMetrics object created with the specified arguments
+     * @see java.awt.Font#getLineMetrics(char[], int, int, java.awt.font.FontRenderContext)
+     */
+    public me.mdbell.awtea.classlib.java.awt.font.TLineMetrics getLineMetrics(char[] chars, 
+            int beginIndex, int limit, me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext frc) {
+        TFontMetrics metrics = new TFontMetrics(this, frc);
+        return metrics.getLineMetrics(chars, beginIndex, limit);
     }
 
     public TFont deriveFont(int newStyle) {

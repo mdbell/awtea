@@ -324,7 +324,15 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public TFontMetrics getFontMetrics(TFont f) {
-        return f.getFontMetrics();
+        // Create context-aware metrics using the current rendering context
+        // This is Graphics2D, so we can get the FontRenderContext
+        if (this instanceof TGraphics2D) {
+            me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext frc = 
+                ((TGraphics2D) this).getFontRenderContext();
+            return new TFontMetrics(f, frc);
+        }
+        // Fallback for non-Graphics2D contexts
+        return new TFontMetrics(f, null);
     }
 
     @Override
