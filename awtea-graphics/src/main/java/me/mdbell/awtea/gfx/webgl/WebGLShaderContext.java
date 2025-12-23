@@ -4,6 +4,9 @@ import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Context manager for WebGL custom shader operations within a paint() call.
  * <p>
@@ -30,6 +33,11 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
  *             // Shader is already activated and will be deactivated automatically
  *         });
  *     }
+ *     
+ *     // Add post-processing callback (executed once per frame at the end)
+ *     ctx.addPostProcessCallback(() -> {
+ *         applyPostProcessing();
+ *     });
  * 
  *     g.drawString("Hello Again!", 50, 100);
  * }
@@ -43,6 +51,7 @@ public class WebGLShaderContext {
 
     private final WebGLSurfaceBackend backend;
     private final Rasterizer rasterizer;
+    private final List<Runnable> postProcessCallbacks = new ArrayList<>();
 
     /**
      * Creates a new shader context for the given backend and rasterizer.
@@ -144,5 +153,60 @@ public class WebGLShaderContext {
      */
     public Rasterizer getRasterizer() {
         return rasterizer;
+    }
+    
+    /**
+     * Adds a post-processing callback to be executed once per frame after all rendering is complete.
+     * <p>
+     * Post-processing callbacks are invoked after all drawing commands have been processed
+     * but before the final result is pushed to the screen. This is ideal for applying effects
+     * like bloom, blur, color correction, etc.
+     * </p>
+     * <p>
+     * Multiple callbacks can be added and will be executed in the order they were added.
+     * Callbacks are cleared after execution, so they must be re-added each frame (in paint()) if needed.
+     * </p>
+     * 
+     * @param callback the post-processing callback to add
+     */
+    public void addPostProcessCallback(Runnable callback) {
+        if (callback == null) {
+            log.warn("Cannot add post-process callback: callback is null");
+            return;
+        }
+        postProcessCallbacks.add(callback);
+        log.trace("Added post-process callback (total: {})", postProcessCallbacks.size());
+    }
+    
+    /**
+     * Executes all registered post-processing callbacks and clears the list.
+     * This is called internally by the rasterizer after all commands are processed.
+     */
+    void executePostProcessCallbacks() {
+        if (postProcessCallbacks.isEmpty()) {
+            return;
+        }
+        
+        log.trace("Executing {} post-process callbacks", postProcessCallbacks.size());
+        
+        for (Runnable callback : postProcessCallbacks) {
+            try {
+                callback.run();
+            } catch (Exception e) {
+                log.error("Error executing post-process callback: {}", e.getMessage(), e);
+            }
+        }
+        
+        // Clear callbacks after execution
+        postProcessCallbacks.clear();
+    }
+    
+    /**
+     * Checks if there are any post-processing callbacks registered.
+     * 
+     * @return true if there are callbacks to execute
+     */
+    boolean hasPostProcessCallbacks() {
+        return !postProcessCallbacks.isEmpty();
     }
 }

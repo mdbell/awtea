@@ -172,10 +172,9 @@ public class PostProcessDemo extends Applet {
         
         time += 0.016f; // Assume ~60fps
 
-        // Queue post-processing callback using the circle shader
-        // (required by queueShaderCall - shader cannot be null)
-        ctx.queueShaderCall(circleShader, (backend, rasterizer) -> {
-            applyPostProcessing(backend);
+        // Add post-processing callback (executed once per frame at the end)
+        ctx.addPostProcessCallback(() -> {
+            applyPostProcessing(ctx.getBackend());
         });
         
         // Draw UI on top (rendered after post-processing)
@@ -183,13 +182,9 @@ public class PostProcessDemo extends Applet {
     }
 
     /**
-     * Apply post-processing effects. Called via shader callback.
+     * Apply post-processing effects. Called via post-process callback at end of frame.
      */
     private void applyPostProcessing(WebGLSurfaceBackend backend) {
-        // Deactivate the shader that was activated by queueShaderCall
-        // We'll manage our own shaders for post-processing
-        backend.deactivateCustomShader();
-        
         int width = canvas.getWidth();
         int height = canvas.getHeight();
 

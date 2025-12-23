@@ -1120,6 +1120,14 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             pendingCallback = null;
         }
 
+        // Execute post-processing callbacks (if this is the root rasterizer that owns the context)
+        if (pushToScreen && !isChildRasterizer) {
+            WebGLShaderContext ctx = WebGLShaderContext.getCurrentContext();
+            if (ctx != null) {
+                ctx.executePostProcessCallbacks();
+            }
+        }
+
         if (pushToScreen) {
             pushToScreen();
         }
