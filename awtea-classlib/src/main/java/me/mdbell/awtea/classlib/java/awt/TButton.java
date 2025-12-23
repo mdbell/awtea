@@ -87,6 +87,9 @@ public class TButton extends TComponent {
 	public TButton(String label) {
 		this.label = label;
 		this.actionCommand = label;
+		
+		// Buttons are focusable by default in Java AWT
+		setFocusable(true);
 
 		// Add mouse listener to handle button clicks
 		addMouseListener(new me.mdbell.awtea.classlib.java.awt.event.TMouseListener() {

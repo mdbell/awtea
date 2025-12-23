@@ -83,7 +83,7 @@ public abstract class TComponent implements TImageObserver {
     private TDimension minimumSize;
 
     @Getter
-    private boolean focusable = true;
+    private boolean focusable = false;
 
     private boolean focusTraversalKeysEnabled = true;
 
