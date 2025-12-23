@@ -6,12 +6,11 @@ import me.mdbell.awtea.classlib.java.awt.TAWTEvent;
 import me.mdbell.awtea.classlib.java.awt.TComponent;
 import me.mdbell.awtea.classlib.java.awt.TContainer;
 import me.mdbell.awtea.classlib.java.awt.TToolkit;
-import me.mdbell.awtea.classlib.java.awt.awtea.THitTestStrategy;
-import me.mdbell.awtea.classlib.java.awt.awtea.TreeWalkHitTestStrategy;
 import me.mdbell.awtea.classlib.java.awt.event.TFocusEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseWheelEvent;
+import me.mdbell.awtea.input.KeyboardKey;
 import me.mdbell.awtea.input.MouseButtonType;
 import me.mdbell.awtea.input.MouseEventType;
 import me.mdbell.awtea.util.ElementUtils;
@@ -57,7 +56,7 @@ public final class TEventManager implements AutoCloseable {
     // Track the component currently under the mouse for synthesizing enter/exit
     // events
     private TComponent componentUnderMouse = null;
-    
+
     // Hit-testing strategy (tree-walk by default)
     private THitTestStrategy componentHitStrategy;
 
@@ -65,13 +64,13 @@ public final class TEventManager implements AutoCloseable {
         this.element = element;
         this.container = container;
         this.registrations = new LinkedList<>();
-        
+
         // Initialize with tree-walk strategy (always available)
         this.componentHitStrategy = new TreeWalkHitTestStrategy(container);
-        
+
         log.debug("TEventManager initialized with tree-walk hit-test strategy");
     }
-    
+
     /**
      * Sets the hit-testing strategy.
      * This allows switching between tree-walk and GPU-based picking.
@@ -85,7 +84,7 @@ public final class TEventManager implements AutoCloseable {
         this.componentHitStrategy = strategy;
         log.debug("Hit-test strategy changed to: {}", strategy.getClass().getSimpleName());
     }
-    
+
     /**
      * Invalidates the hit-test strategy, forcing it to rebuild cached data.
      * Should be called when the component hierarchy or layout changes.
@@ -224,6 +223,11 @@ public final class TEventManager implements AutoCloseable {
                 }
                 KeyboardEvent ke = (KeyboardEvent) e;
                 TKeyEvent awt = TKeyEvent.adapt(focusOwner, ke);
+                // Prevent default browser behavior for TAB key to stop browser focus changes
+                // Do this for all TAB key events (keydown, keyup, keypress)
+                if (awt.getKey() == KeyboardKey.TAB) {
+                    e.preventDefault(); // prevents focus change when tab is pressed inside the canvas
+                }
                 log.debug("Dispatching key event {}", awt);
                 post(awt);
             }).track(registrations);
@@ -256,7 +260,7 @@ public final class TEventManager implements AutoCloseable {
         lastMouseY = Integer.MIN_VALUE;
         // Reset component tracking
         componentUnderMouse = null;
-        
+
         // Dispose hit-test strategy
         if (componentHitStrategy != null) {
             componentHitStrategy.dispose();

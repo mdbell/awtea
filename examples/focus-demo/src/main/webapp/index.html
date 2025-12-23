@@ -73,7 +73,7 @@
             <p class="subtitle">
                 Interactive keyboard navigation demonstration
             </p>
-            <canvas id="canvas" width="800" height="500"></canvas>
+            <canvas id="focus-canvas" width="800" height="500"></canvas>
             <div class="info">
                 <p><strong>How to use:</strong></p>
                 <ul>
@@ -90,7 +90,7 @@
         </div>
         <script type="module">
             import { main } from "./js/focus-demo.js";
-            main([]);
+            main(["focus-canvas"]);
         </script>
     </body>
 </html>

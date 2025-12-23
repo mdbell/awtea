@@ -1,5 +1,7 @@
 package me.mdbell.awtea.examples.focusdemo;
 
+import me.mdbell.awtea.util.StubAppletStub;
+
 import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.FocusEvent;
@@ -47,8 +49,6 @@ public class FocusDemo extends Applet {
         Panel panel = new Panel() {
             @Override
             public void paint(Graphics g) {
-                g.setColor(new Color(70, 130, 180)); // Steel blue
-                g.fillRect(0, 0, getWidth(), getHeight());
 
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("SansSerif", Font.BOLD, 24));
@@ -58,6 +58,7 @@ public class FocusDemo extends Applet {
                 g.drawString("Press TAB to navigate forward, Shift-TAB to navigate backward", 10, 50);
             }
         };
+        panel.setBackground(new Color(70, 130, 180));
         panel.setPreferredSize(new Dimension(800, 70));
         return panel;
     }
@@ -121,8 +122,8 @@ public class FocusDemo extends Applet {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() != KeyEvent.VK_TAB) {
-                    updateStatus("Key pressed on " + button.getLabel() + ": " + 
-                               getKeyName(e.getKeyCode()));
+                    updateStatus("Key pressed on " + button.getLabel() + ": " +
+                            getKeyName(e.getKeyCode()));
                 }
             }
 
@@ -141,9 +142,12 @@ public class FocusDemo extends Applet {
     }
 
     private String getKeyName(int keyCode) {
-        if (keyCode == KeyEvent.VK_ENTER) return "ENTER";
-        if (keyCode == KeyEvent.VK_SPACE) return "SPACE";
-        if (keyCode == KeyEvent.VK_ESCAPE) return "ESC";
+        if (keyCode == KeyEvent.VK_ENTER)
+            return "ENTER";
+        if (keyCode == KeyEvent.VK_SPACE)
+            return "SPACE";
+        if (keyCode == KeyEvent.VK_ESCAPE)
+            return "ESC";
         if (keyCode >= KeyEvent.VK_A && keyCode <= KeyEvent.VK_Z) {
             return String.valueOf((char) keyCode);
         }
@@ -184,9 +188,8 @@ public class FocusDemo extends Applet {
         if (instructionsLabel != null) {
             KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
             Component focusOwner = manager.getFocusOwner();
-            String focusInfo = focusOwner != null ? 
-                "Current focus: " + getFocusOwnerName(focusOwner) : 
-                "No component has focus";
+            String focusInfo = focusOwner != null ? "Current focus: " + getFocusOwnerName(focusOwner)
+                    : "No component has focus";
             instructionsLabel.setText(focusInfo);
             instructionsLabel.repaint();
         }
@@ -221,18 +224,18 @@ public class FocusDemo extends Applet {
         System.setProperty("me.mdbell.awtea.font.subpixel", "true");
         System.setProperty("me.mdbell.awtea.font.supersample", "4");
 
-        // Create and show the demo
-        Frame frame = new Frame();
-        frame.setTitle("Focus Traversal Demo - awtea");
-        frame.setSize(800, 500);
+        System.setProperty("me.mdbell.awtea.log.level", "debug");
 
+        System.setProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId", args[0]);
         FocusDemo demo = new FocusDemo();
+
+        demo.setStub(new StubAppletStub());
+
         demo.init();
         demo.setSize(800, 500);
-        
-        frame.add(demo);
-        frame.setVisible(true);
-        
+
+        demo.validate();
+
         demo.start();
     }
 }
