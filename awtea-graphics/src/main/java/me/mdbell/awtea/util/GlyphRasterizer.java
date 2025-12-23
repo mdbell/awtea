@@ -421,6 +421,36 @@ public final class GlyphRasterizer {
 		alphaMask[idx] = (byte) 0xFF;
 	}
 
+	/**
+	 * Convert sRGB color component to linear space (gamma expansion).
+	 * Uses the standard sRGB gamma curve with γ = 2.4.
+	 * 
+	 * @param srgb color component in sRGB space (0-255)
+	 * @return color component in linear space (0-255)
+	 */
+	private static int srgbToLinear(int srgb) {
+		float normalized = srgb / 255.0f;
+		float linear = (normalized <= 0.04045f) 
+			? normalized / 12.92f 
+			: (float) Math.pow((normalized + 0.055f) / 1.055f, 2.4f);
+		return (int) (linear * 255.0f);
+	}
+
+	/**
+	 * Convert linear color component to sRGB space (gamma compression).
+	 * Uses the standard sRGB gamma curve with γ = 2.4.
+	 * 
+	 * @param linear color component in linear space (0-255)
+	 * @return color component in sRGB space (0-255)
+	 */
+	private static int linearToSrgb(int linear) {
+		float normalized = linear / 255.0f;
+		float srgb = (normalized <= 0.0031308f) 
+			? normalized * 12.92f 
+			: (float) (1.055f * Math.pow(normalized, 1.0f / 2.4f) - 0.055f);
+		return Math.min(255, Math.max(0, (int) (srgb * 255.0f + 0.5f)));
+	}
+
 	private static void downsampleAndBlend(RasterTarget dest,
 										   byte[] alphaMask,
 										   int ssWidth,
@@ -499,10 +529,25 @@ public final class GlyphRasterizer {
 				int srcG = (src >>>  8) & 0xFF;
 				int srcB = (src       ) & 0xFF;
 
+				// Convert colors to linear space for gamma-corrected blending
+				int srcR_linear = srgbToLinear(srcR);
+				int srcG_linear = srgbToLinear(srcG);
+				int srcB_linear = srgbToLinear(srcB);
+
+				int glyphR_linear = srgbToLinear(glyphR);
+				int glyphG_linear = srgbToLinear(glyphG);
+				int glyphB_linear = srgbToLinear(glyphB);
+
+				// Blend in linear space
 				int outA = a + ((srcA * (255 - a)) / 255);
-				int outR = (glyphR * a + srcR * (255 - a)) / 255;
-				int outG = (glyphG * a + srcG * (255 - a)) / 255;
-				int outB = (glyphB * a + srcB * (255 - a)) / 255;
+				int outR_linear = (glyphR_linear * a + srcR_linear * (255 - a)) / 255;
+				int outG_linear = (glyphG_linear * a + srcG_linear * (255 - a)) / 255;
+				int outB_linear = (glyphB_linear * a + srcB_linear * (255 - a)) / 255;
+
+				// Convert back to sRGB space
+				int outR = linearToSrgb(outR_linear);
+				int outG = linearToSrgb(outG_linear);
+				int outB = linearToSrgb(outB_linear);
 
 				int outARGB = (outA << 24) | (outR << 16) | (outG << 8) | outB;
 				dest.setRGB(dx, dy, outARGB);
@@ -631,6 +676,15 @@ public final class GlyphRasterizer {
 				int srcG = (src >>>  8) & 0xFF;
 				int srcB = (src       ) & 0xFF;
 
+				// Convert colors to linear space for gamma-corrected blending
+				int srcR_linear = srgbToLinear(srcR);
+				int srcG_linear = srgbToLinear(srcG);
+				int srcB_linear = srgbToLinear(srcB);
+
+				int glyphR_linear = srgbToLinear(glyphR);
+				int glyphG_linear = srgbToLinear(glyphG);
+				int glyphB_linear = srgbToLinear(glyphB);
+
 				// Blend each color channel independently with its own coverage
 				// Combined alpha for each channel = glyph alpha * channel coverage / 255
 				int aR = (glyphA * coverageR) / 255;
@@ -641,10 +695,15 @@ public final class GlyphRasterizer {
 				int outA = Math.max(Math.max(aR, aG), aB);
 				outA = outA + ((srcA * (255 - outA)) / 255);
 
-				// Blend each color channel
-				int outR = aR > 0 ? (glyphR * aR + srcR * (255 - aR)) / 255 : srcR;
-				int outG = aG > 0 ? (glyphG * aG + srcG * (255 - aG)) / 255 : srcG;
-				int outB = aB > 0 ? (glyphB * aB + srcB * (255 - aB)) / 255 : srcB;
+				// Blend each color channel in linear space
+				int outR_linear = aR > 0 ? (glyphR_linear * aR + srcR_linear * (255 - aR)) / 255 : srcR_linear;
+				int outG_linear = aG > 0 ? (glyphG_linear * aG + srcG_linear * (255 - aG)) / 255 : srcG_linear;
+				int outB_linear = aB > 0 ? (glyphB_linear * aB + srcB_linear * (255 - aB)) / 255 : srcB_linear;
+
+				// Convert back to sRGB space
+				int outR = linearToSrgb(outR_linear);
+				int outG = linearToSrgb(outG_linear);
+				int outB = linearToSrgb(outB_linear);
 
 				int outARGB = (outA << 24) | (outR << 16) | (outG << 8) | outB;
 				dest.setRGB(dx, dy, outARGB);
