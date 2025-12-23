@@ -21,7 +21,7 @@ import java.awt.geom.AffineTransform;
 import java.util.List;
 
 @Monitored.AllMethods
-class WebGLRasterizer implements Rasterizer, PickingRasterizer {
+public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
     private static final Logger log = LoggerFactory.getLogger(WebGLRasterizer.class);
 
@@ -939,6 +939,74 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         backend.contextStack.setComposite(composite);
     }
 
+    /**
+     * Renders custom geometry using the currently active custom shader.
+     * This method provides low-level access to WebGL draw calls for advanced rendering.
+     * 
+     * @param mode the WebGL primitive type (e.g., WebGLRenderingContext.TRIANGLES)
+     * @param first the starting index in the enabled arrays
+     * @param count the number of vertices to render
+     * @throws IllegalStateException if no custom shader is active
+     */
+    public void drawCustomGeometry(int mode, int first, int count) {
+        if (backend.getActiveCustomShader() == null) {
+            throw new IllegalStateException("No custom shader is active. Call activateCustomShader() first.");
+        }
+        
+        gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, framebuffer);
+        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+        
+        // Apply context stack state (transform, clip, blend)
+        backend.contextStack.apply();
+        
+        gl.drawArrays(mode, first, count);
+        surface.markDirty();
+    }
+
+    /**
+     * Renders indexed custom geometry using the currently active custom shader.
+     * This method provides low-level access to WebGL indexed draw calls for advanced rendering.
+     * 
+     * @param mode the WebGL primitive type (e.g., WebGLRenderingContext.TRIANGLES)
+     * @param count the number of elements to render
+     * @param type the type of values in the element array buffer (e.g., WebGLRenderingContext.UNSIGNED_SHORT)
+     * @param offset the byte offset in the element array buffer
+     * @throws IllegalStateException if no custom shader is active
+     */
+    public void drawCustomElements(int mode, int count, int type, int offset) {
+        if (backend.getActiveCustomShader() == null) {
+            throw new IllegalStateException("No custom shader is active. Call activateCustomShader() first.");
+        }
+        
+        gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, framebuffer);
+        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+        
+        // Apply context stack state (transform, clip, blend)
+        backend.contextStack.apply();
+        
+        gl.drawElements(mode, count, type, offset);
+        surface.markDirty();
+    }
+
+    /**
+     * Gets the WebGLSurfaceBackend for advanced custom shader operations.
+     * Provides access to the WebGL context, custom shader management, and rendering state.
+     * 
+     * @return the WebGL surface backend
+     */
+    public WebGLSurfaceBackend getBackend() {
+        return backend;
+    }
+    
+    private ShaderCallbackWrapper pendingCallback = null;
+    
+    @Override
+    public void queueRenderCallback(Object wrapper) {
+        if (wrapper instanceof ShaderCallbackWrapper) {
+            pendingCallback = (ShaderCallbackWrapper) wrapper;
+        }
+    }
+
     @Override
     public void rasterizeCommands(List<SurfaceCommand> cmds) {
 
@@ -949,9 +1017,19 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         
         // Set surface dimensions for clip application
         backend.contextStack.setSurfaceDimensions(surface.getWidth(), surface.getHeight());
-
-        for (SurfaceCommand cmd : cmds) {
-            switch (cmd.type) {
+        
+        // Set up the shader context for this rendering pass if not already set
+        // (TSurfaceRasterizerGraphics may have already set it during paint())
+        WebGLShaderContext existingContext = WebGLShaderContext.getCurrentContext();
+        boolean contextWasSet = existingContext != null;
+        if (!contextWasSet) {
+            WebGLShaderContext context = new WebGLShaderContext(backend, this);
+            WebGLShaderContext.setCurrentContext(context);
+        }
+        
+        try {
+            for (SurfaceCommand cmd : cmds) {
+                switch (cmd.type) {
                 case SET_COLOR:
                     Color c = (Color) cmd.obj;
                     if (cmd.argCount > 0 && cmd.args[0] == 0) {
@@ -1024,6 +1102,9 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
                 case COPY_AREA:
                     copyArea(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
                     break;
+                case RENDER_CALLBACK:
+                    executeRenderCallback(cmd.obj);
+                    break;
                 case NO_OP:
                     // do nothing (shouldn't be in the command list in the first place)
                     break;
@@ -1032,9 +1113,56 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
                     break;
             }
         }
+        
+        // Execute any pending callback queued via queueRenderCallback()
+        if (pendingCallback != null) {
+            executeRenderCallback(pendingCallback);
+            pendingCallback = null;
+        }
 
         if (pushToScreen) {
             pushToScreen();
+        }
+        } finally {
+            // Only clear the context if we set it (not if TSurfaceRasterizerGraphics set it)
+            // TSurfaceRasterizerGraphics will clear it after flush() completes
+            if (!contextWasSet) {
+                WebGLShaderContext.setCurrentContext(null);
+            }
+        }
+    }
+    
+    /**
+     * Executes a custom shader rendering callback.
+     * The shader is activated before the callback and deactivated afterwards.
+     */
+    private void executeRenderCallback(Object obj) {
+        if (!(obj instanceof ShaderCallbackWrapper)) {
+            log.error("RENDER_CALLBACK command received with invalid object type: {}", 
+                obj != null ? obj.getClass().getName() : "null");
+            return;
+        }
+        
+        ShaderCallbackWrapper wrapper = (ShaderCallbackWrapper) obj;
+        CustomShaderProgram shader = wrapper.getShader();
+        ShaderRenderCallback callback = wrapper.getCallback();
+        
+        if (shader == null || callback == null) {
+            log.error("RENDER_CALLBACK command received with null shader or callback");
+            return;
+        }
+        
+        // Activate the shader
+        backend.activateCustomShader(shader);
+        
+        try {
+            // Execute the callback
+            callback.render(backend, this);
+        } catch (Exception e) {
+            log.error("Error executing shader callback: {}", e.getMessage(), e);
+        } finally {
+            // Always deactivate the shader
+            backend.deactivateCustomShader();
         }
     }
 

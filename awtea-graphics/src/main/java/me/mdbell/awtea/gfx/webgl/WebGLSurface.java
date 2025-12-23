@@ -10,7 +10,7 @@ import org.teavm.jso.webgl.WebGLFramebuffer;
 import org.teavm.jso.webgl.WebGLRenderingContext;
 import org.teavm.jso.webgl.WebGLTexture;
 
-class WebGLSurface implements Surface {
+public class WebGLSurface implements Surface {
 
 	private final WebGLSurfaceBackend backend;
 	private int width;

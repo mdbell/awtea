@@ -46,7 +46,9 @@ public enum Operation {
 	/** Draw connected line segments */
 	DRAW_POLYLINE(18),
 	/** Copy area of surface with offset */
-	COPY_AREA(19);
+	COPY_AREA(19),
+	/** Execute custom rendering callback (e.g. for custom shaders) */
+	RENDER_CALLBACK(20);
 
 	private final int value;
 

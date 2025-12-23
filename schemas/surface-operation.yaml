@@ -44,6 +44,8 @@ values:
     description: Draw connected line segments
   - name: COPY_AREA
     description: Copy area of surface with offset
+  - name: RENDER_CALLBACK
+    description: Execute custom rendering callback (e.g. for custom shaders)
   - name: COUNT
     c_only: true
     description: Number of standard commands

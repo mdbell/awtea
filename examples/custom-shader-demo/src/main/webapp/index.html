@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Shader Demo - awtea Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+        }
+        .info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #app-container {
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+        }
+        .loading {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .feature {
+            padding: 8px;
+            background-color: #f8f8f8;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Custom Shader Demo</h1>
+
+        <div class="info">
+            <h3>About this example</h3>
+            <p>
+                This example demonstrates the custom shader API for the WebGL rendering backend.
+                It shows a glowing triangle with animated wave distortion and pulsing glow effects.
+            </p>
+            <div class="features">
+                <div class="feature">✓ Custom GLSL vertex and fragment shaders</div>
+                <div class="feature">✓ Time-based wave animation</div>
+                <div class="feature">✓ Pulsing glow effect with color gradients</div>
+                <div class="feature">✓ Direct WebGL rendering via custom geometry</div>
+            </div>
+            <p style="margin-top: 15px">
+                <strong>Try it:</strong> Click the canvas to pause/resume the animation!
+            </p>
+        </div>
+
+        <div id="app-container">
+            <div class="loading" id="loadingMsg">
+                Loading custom shader demo...
+            </div>
+            <canvas
+                width="800"
+                height="600"
+                id="custom-shader-canvas"
+                style="display: none; border: 1px solid #ddd;"
+            >
+                Your browser doesn't support canvas :(
+            </canvas>
+        </div>
+    </div>
+    <script type="module">
+        import { main, setOpenCallback } from "./js/custom-shader-demo.js";
+
+        function hideLoading() {
+            const loadingElem = document.getElementById("loadingMsg");
+            const canvasElem = document.getElementById("custom-shader-canvas");
+
+            loadingElem.style.display = "none";
+            canvasElem.style.display = "block";
+        }
+
+        setOpenCallback(hideLoading);
+
+        main(["custom-shader-canvas"]);
+    </script>
+</body>
+</html>
