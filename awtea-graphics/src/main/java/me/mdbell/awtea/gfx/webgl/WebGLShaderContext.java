@@ -7,16 +7,21 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
 /**
  * Context manager for WebGL custom shader operations within a paint() call.
  * <p>
- * This class provides a ThreadLocal-like API for accessing the current WebGL context
- * during rendering operations. It allows queueing custom shader calls that will be
+ * This class provides a ThreadLocal-like API for accessing the current WebGL
+ * context
+ * during rendering operations. It allows queueing custom shader calls that will
+ * be
  * executed at the appropriate time in the rendering pipeline.
  * </p>
  * 
- * <p><b>Usage Example:</b></p>
+ * <p>
+ * <b>Usage Example:</b>
+ * </p>
+ * 
  * <pre>{@code
  * public void paint(Graphics g) {
  *     g.drawString("Hello World!", 50, 50);
- *     
+ * 
  *     WebGLShaderContext ctx = WebGLShaderContext.getCurrentContext();
  *     CustomShaderProgram shader = ctx.getShader("glow");
  *     if (shader != null) {
@@ -25,31 +30,31 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
  *             // Shader is already activated and will be deactivated automatically
  *         });
  *     }
- *     
+ * 
  *     g.drawString("Hello Again!", 50, 100);
  * }
  * }</pre>
  */
 public class WebGLShaderContext {
-    
+
     private static final Logger log = LoggerFactory.getLogger(WebGLShaderContext.class);
-    
+
     private static final ThreadLocal<WebGLShaderContext> currentContext = new ThreadLocal<>();
-    
+
     private final WebGLSurfaceBackend backend;
     private final Rasterizer rasterizer;
-    
+
     /**
      * Creates a new shader context for the given backend and rasterizer.
      * 
-     * @param backend the WebGL surface backend
+     * @param backend    the WebGL surface backend
      * @param rasterizer the rasterizer
      */
     public WebGLShaderContext(WebGLSurfaceBackend backend, Rasterizer rasterizer) {
         this.backend = backend;
         this.rasterizer = rasterizer;
     }
-    
+
     /**
      * Gets the current WebGL shader context for this thread/paint call.
      * <p>
@@ -66,7 +71,7 @@ public class WebGLShaderContext {
     public static WebGLShaderContext getCurrentContext() {
         return currentContext.get();
     }
-    
+
     /**
      * Sets the current shader context for this thread.
      * This is called internally by the rendering pipeline.
@@ -80,7 +85,7 @@ public class WebGLShaderContext {
             currentContext.set(context);
         }
     }
-    
+
     /**
      * Gets a registered custom shader by name.
      * 
@@ -90,31 +95,39 @@ public class WebGLShaderContext {
     public CustomShaderProgram getShader(String name) {
         return backend.getCustomShader(name);
     }
-    
+
     /**
-     * Queues a custom shader rendering callback to be executed in the rendering pipeline.
+     * Queues a custom shader rendering callback to be executed in the rendering
+     * pipeline.
      * <p>
-     * The callback will be executed after all previously queued drawing commands and before
-     * any subsequent commands. The shader will be activated before the callback is invoked
+     * The callback will be executed after all previously queued drawing commands
+     * and before
+     * any subsequent commands. The shader will be activated before the callback is
+     * invoked
      * and automatically deactivated afterwards.
      * </p>
      * 
-     * @param shader the shader to activate
+     * @param shader   the shader to activate
      * @param callback the rendering callback to execute
      */
     public void queueShaderCall(CustomShaderProgram shader, ShaderRenderCallback callback) {
-        if (shader == null || callback == null) {
-            log.warn("Cannot queue shader call: shader or callback is null");
+        if (shader == null) {
+            log.warn("Cannot queue shader call: shader is null");
             return;
         }
-        
+
+        if (callback == null) {
+            log.warn("Cannot queue shader call: callback is null");
+            return;
+        }
+
         // Create a wrapper object that holds both the shader and callback
         ShaderCallbackWrapper wrapper = new ShaderCallbackWrapper(shader, callback);
-        
+
         // Queue the command through the rasterizer
         rasterizer.queueRenderCallback(wrapper);
     }
-    
+
     /**
      * Gets the WebGL surface backend.
      * 
@@ -123,7 +136,7 @@ public class WebGLShaderContext {
     public WebGLSurfaceBackend getBackend() {
         return backend;
     }
-    
+
     /**
      * Gets the current rasterizer.
      * 

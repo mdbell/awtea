@@ -1,145 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post-Processing Demo - awtea</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background: #1a1a1a;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Post-Processing Demo - awtea</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 20px;
+                background: #1a1a1a;
+                color: #ffffff;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
 
-        h1 {
-            margin-bottom: 10px;
-            color: #4CAF50;
-        }
+            h1 {
+                margin-bottom: 10px;
+                color: #4caf50;
+            }
 
-        .info {
-            max-width: 800px;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #2a2a2a;
-            border-radius: 8px;
-            line-height: 1.6;
-        }
+            .info {
+                max-width: 800px;
+                margin-bottom: 20px;
+                padding: 15px;
+                background: #2a2a2a;
+                border-radius: 8px;
+                line-height: 1.6;
+            }
 
-        .info h2 {
-            margin-top: 0;
-            color: #81C784;
-        }
+            .info h2 {
+                margin-top: 0;
+                color: #81c784;
+            }
 
-        .controls {
-            background: #333;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-family: monospace;
-        }
+            .controls {
+                background: #333;
+                padding: 10px 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                font-family: monospace;
+            }
 
-        .controls kbd {
-            background: #555;
-            padding: 2px 6px;
-            border-radius: 3px;
-            margin: 0 2px;
-        }
+            .controls kbd {
+                background: #555;
+                padding: 2px 6px;
+                border-radius: 3px;
+                margin: 0 2px;
+            }
 
-        #canvas-container {
-            position: relative;
-            border: 2px solid #4CAF50;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
-        }
+            #canvas-container {
+                position: relative;
+                border: 2px solid #4caf50;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
+            }
 
-        #post-process-canvas {
-            display: block;
-            background: #000;
-        }
+            #post-process-canvas {
+                display: block;
+                background: #000;
+            }
 
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #4CAF50;
-            font-size: 1.5em;
-        }
+            #loading {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #4caf50;
+                font-size: 1.5em;
+            }
 
-        .hidden {
-            display: none;
-        }
+            .hidden {
+                display: none;
+            }
 
-        footer {
-            margin-top: 30px;
-            color: #888;
-            font-size: 0.9em;
-        }
+            footer {
+                margin-top: 30px;
+                color: #888;
+                font-size: 0.9em;
+            }
 
-        a {
-            color: #81C784;
-            text-decoration: none;
-        }
+            a {
+                color: #81c784;
+                text-decoration: none;
+            }
 
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <h1>🎨 Post-Processing Demo</h1>
-    
-    <div class="info">
-        <h2>WebGL Post-Processing with Bloom Effect</h2>
-        <p>
-            This demo showcases the <strong>awtea</strong> post-processing pipeline using
-            framebuffer objects (FBOs) for multi-pass rendering. The bloom effect creates
-            a glow around bright objects using threshold extraction, Gaussian blur, and
-            additive blending.
-        </p>
-        <p>
-            The scene is rendered to an offscreen render target, processed through the
-            bloom pipeline (3 passes), and composited to the screen. The
-            <code>RenderTargetPool</code> efficiently manages FBO allocation.
-        </p>
-    </div>
+            a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>🎨 Post-Processing Demo</h1>
 
-    <div class="controls">
-        <strong>Keyboard Controls:</strong><br>
-        <kbd>B</kbd> Toggle bloom effect on/off<br>
-        <kbd>+</kbd> / <kbd>-</kbd> Adjust bloom intensity<br>
-        <kbd>T</kbd> Cycle bloom threshold
-    </div>
+        <div class="info">
+            <h2>WebGL Post-Processing with Bloom Effect</h2>
+            <p>
+                This demo showcases the <strong>awtea</strong> post-processing
+                pipeline using framebuffer objects (FBOs) for multi-pass
+                rendering. The bloom effect creates a glow around bright objects
+                using threshold extraction, Gaussian blur, and additive
+                blending.
+            </p>
+            <p>
+                The scene is rendered to an offscreen render target, processed
+                through the bloom pipeline (3 passes), and composited to the
+                screen. The
+                <code>RenderTargetPool</code> efficiently manages FBO
+                allocation.
+            </p>
+        </div>
 
-    <div id="canvas-container">
-        <canvas id="post-process-canvas" width="800" height="600"></canvas>
-        <div id="loading">Loading...</div>
-    </div>
+        <div class="controls">
+            <strong>Keyboard Controls:</strong>
+            <br>
+            <kbd>B</kbd> Toggle bloom effect on/off<br>
+            <kbd>+</kbd> / <kbd>-</kbd> Adjust bloom intensity<br>
+            <kbd>T</kbd> Cycle bloom threshold
+        </div>
 
-    <footer>
-        Part of <a href="https://github.com/mdbell/awtea" target="_blank">awtea</a> -
-        Java AWT in the Browser via TeaVM
-    </footer>
+        <div id="canvas-container">
+            <canvas id="post-process-canvas" width="800" height="600"></canvas>
+            <div id="loading">Loading...</div>
+        </div>
 
-    <script type="module">
-        import { main } from './classes.js';
+        <footer>
+            Part of <a href="https://github.com/mdbell/awtea" target="_blank"
+            >awtea</a> - Java AWT in the Browser via TeaVM
+        </footer>
 
-        // Auto-start
-        main(['post-process-canvas']).then(module => {
-            module.exports.setOpenCallback(() => {
-                document.getElementById('loading').classList.add('hidden');
-                console.log('Post-processing demo loaded!');
+        <script type="module">
+            import { main, setOpenCallback } from "./js/post-process-demo.js";
+
+            setOpenCallback(() => {
+                document.getElementById("loading").classList.add("hidden");
+                console.log("Post-processing demo loaded!");
             });
-        }).catch(err => {
-            console.error('Failed to load demo:', err);
-            document.getElementById('loading').textContent = 'Failed to load: ' + err.message;
-        });
-    </script>
-</body>
+
+            // Auto-start
+            main(["post-process-canvas"]);
+        </script>
+    </body>
 </html>
