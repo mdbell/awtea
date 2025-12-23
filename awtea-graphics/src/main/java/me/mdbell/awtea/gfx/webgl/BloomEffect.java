@@ -152,7 +152,13 @@ public class BloomEffect implements PostProcessEffect {
         backend.getGL().bindTexture(WebGLRenderingContext.TEXTURE_2D, bloom.getTexture());
         
         ctx.setupFullscreenQuad(output.getWidth(), output.getHeight());
+        ctx.bindQuadAttributesToShader(combineShader);
+        
         backend.getGL().drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+        
+        // Disable vertex attributes to prevent conflicts
+        combineShader.disableVertexAttribArray("a_position");
+        combineShader.disableVertexAttribArray("a_texCoord");
         
         // Cleanup
         backend.getGL().activeTexture(WebGLRenderingContext.TEXTURE1);

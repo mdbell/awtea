@@ -239,6 +239,32 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 				WebGLRenderingContext.FLOAT,
 				false, 0, 0);
 	}
+	
+	/**
+	 * Disables the vertex attribute arrays used by the texture program.
+	 * This should be called after drawing with the texture program to prevent
+	 * WebGL warnings about enabled attributes without bound buffers.
+	 */
+	void disableTextureAttributes() {
+		gl.disableVertexAttribArray(aPositionLocTex);
+		gl.disableVertexAttribArray(aTexCoordLocTex);
+	}
+	
+	/**
+	 * Binds the quad buffers to a custom shader's vertex attributes.
+	 * This assumes the shader has "a_position" and "a_texCoord" attributes.
+	 * 
+	 * @param shader the custom shader to bind to
+	 */
+	void bindQuadBuffersToShader(CustomShaderProgram shader) {
+		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadBuffer);
+		shader.enableVertexAttribArray("a_position");
+		shader.vertexAttribPointer("a_position", 2, WebGLRenderingContext.FLOAT, false, 0, 0);
+		
+		gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadTexCoordBuffer);
+		shader.enableVertexAttribArray("a_texCoord");
+		shader.vertexAttribPointer("a_texCoord", 2, WebGLRenderingContext.FLOAT, false, 0, 0);
+	}
 
 	private WebGLProgram createProgram(WebGLRenderingContext gl, String vsSource, String fsSource) {
 		WebGLShader vs = compileShader(gl, WebGLRenderingContext.VERTEX_SHADER, vsSource);

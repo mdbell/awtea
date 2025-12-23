@@ -316,6 +316,9 @@ public class PostProcessDemo extends Applet {
         // Draw
         gl.drawArrays(org.teavm.jso.webgl.WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
         
+        // Disable attribute array to prevent conflicts with subsequent rendering
+        circleShader.disableVertexAttribArray("a_position");
+        
         // Cleanup
         gl.deleteBuffer(buffer);
     }

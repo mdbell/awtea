@@ -69,7 +69,10 @@ public class PostProcessContext {
         // Draw
         backend.getGL().drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
         
-        // Cleanup
+        // Cleanup - disable vertex attributes to prevent conflicts
+        backend.disableTextureAttributes();
+        
+        // Cleanup texture binding
         backend.getGL().bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
     }
     
@@ -96,6 +99,10 @@ public class PostProcessContext {
         backend.getGL().bindTexture(org.teavm.jso.webgl.WebGLRenderingContext.TEXTURE_2D, 
             input.getTexture());
         backend.getGL().drawArrays(org.teavm.jso.webgl.WebGLRenderingContext.TRIANGLES, 0, 6);
+        
+        // Cleanup - disable vertex attributes to prevent conflicts
+        backend.disableTextureAttributes();
+        
         backend.getGL().bindTexture(org.teavm.jso.webgl.WebGLRenderingContext.TEXTURE_2D, null);
     }
     
@@ -126,5 +133,15 @@ public class PostProcessContext {
         };
         
         backend.uploadQuadVertices(vertices, uvs);
+    }
+    
+    /**
+     * Binds the backend's quad buffers to a custom shader's vertex attributes.
+     * This should be called after setupFullscreenQuad() and after activating a custom shader.
+     * 
+     * @param shader the custom shader to bind attributes to
+     */
+    public void bindQuadAttributesToShader(CustomShaderProgram shader) {
+        backend.bindQuadBuffersToShader(shader);
     }
 }
