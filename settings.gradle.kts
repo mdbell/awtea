@@ -16,4 +16,5 @@ include("examples:hello-world")
 include("examples:gui-demo")
 include("examples:animation-demo")
 include("examples:layout-demo")
+include("examples:custom-shader-demo")
 
