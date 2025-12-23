@@ -186,6 +186,10 @@ public class PostProcessDemo extends Applet {
      * Apply post-processing effects. Called via shader callback.
      */
     private void applyPostProcessing(WebGLSurfaceBackend backend) {
+        // Deactivate the shader that was activated by queueShaderCall
+        // We'll manage our own shaders for post-processing
+        backend.deactivateCustomShader();
+        
         int width = canvas.getWidth();
         int height = canvas.getHeight();
 
