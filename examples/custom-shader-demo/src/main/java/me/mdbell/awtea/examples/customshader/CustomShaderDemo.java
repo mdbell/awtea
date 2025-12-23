@@ -34,21 +34,21 @@ import java.awt.event.MouseEvent;
  * - Render custom geometry with drawCustomGeometry
  * - Handle mouse events with AWT
  */
-public class CustomShaderDemo {
+public class CustomShaderDemo extends Applet {
 
-    private static WebGLSurfaceBackend backend;
-    private static WebGLSurface surface;
-    private static WebGLRasterizer rasterizer;
-    private static CustomShaderProgram glowShader;
+    private WebGLSurfaceBackend backend;
+    private WebGLSurface surface;
+    private WebGLRasterizer rasterizer;
+    private CustomShaderProgram glowShader;
     
-    private static WebGLBuffer vertexBuffer;
-    private static WebGLBuffer colorBuffer;
+    private WebGLBuffer vertexBuffer;
+    private WebGLBuffer colorBuffer;
     
-    private static long startTime;
-    private static boolean isAnimating = true;
+    private long startTime;
+    private boolean isAnimating = true;
     
     private static OnVisibleCallback onVisible = null;
-    private static HTMLCanvasElement canvas;
+    private HTMLCanvasElement canvas;
 
     @JSFunctor
     private interface OnVisibleCallback extends JSObject {
@@ -60,31 +60,11 @@ public class CustomShaderDemo {
         onVisible = callback;
     }
 
-    public static void main(String[] args) {
-        LoggerFactory.setGlobalLevel(LogLevel.INFO);
+    @Override
+    public void init() {
+        System.out.println("Initializing Custom Shader Demo Applet...");
         
-        System.out.println("Starting Custom Shader Demo...");
-        
-        // Get canvas ID from args
-        String canvasId = args.length > 0 ? args[0] : "custom-shader-canvas";
-        
-        // Set system property for canvas ID so the Applet uses this canvas
-        System.setProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId", canvasId);
-        
-        // Get the canvas element
-        HTMLDocument document = HTMLDocument.current();
-        canvas = (HTMLCanvasElement) document.getElementById(canvasId);
-        
-        if (canvas == null) {
-            System.err.println("Canvas element not found: " + canvasId);
-            return;
-        }
-        
-        // Create the Applet
-        Applet applet = new Applet();
-        applet.setStub(new StubAppletStub());
-        
-        applet.setLayout(new BorderLayout());
+        setLayout(new BorderLayout());
         
         // Create a canvas that will receive mouse events
         Canvas renderCanvas = new Canvas() {
@@ -93,7 +73,7 @@ public class CustomShaderDemo {
                 // Draw instruction text overlay
                 g.setColor(new Color(255, 255, 255, 180));
                 g.setFont(new Font("SansSerif", Font.PLAIN, 14));
-                g.drawString("Click to pause/resume animation", 10, canvas.getHeight() - 10);
+                g.drawString("Click to pause/resume animation", 10, getHeight() - 10);
             }
         };
         
@@ -109,9 +89,24 @@ public class CustomShaderDemo {
             }
         });
         
-        applet.add(renderCanvas, BorderLayout.CENTER);
-        applet.setSize(canvas.getWidth(), canvas.getHeight());
-        applet.setVisible(true);
+        add(renderCanvas, BorderLayout.CENTER);
+        
+        startTime = System.currentTimeMillis();
+    }
+
+    @Override
+    public void start() {
+        System.out.println("Starting Custom Shader Demo...");
+        
+        // Get the canvas element
+        HTMLDocument document = HTMLDocument.current();
+        String canvasId = System.getProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId", "custom-shader-canvas");
+        canvas = (HTMLCanvasElement) document.getElementById(canvasId);
+        
+        if (canvas == null) {
+            System.err.println("Canvas element not found: " + canvasId);
+            return;
+        }
         
         // Initialize WebGL backend and surface
         backend = (WebGLSurfaceBackend) SurfaceBackendFactory.getWebGLBackend(canvas);
@@ -120,8 +115,6 @@ public class CustomShaderDemo {
             canvas.getHeight()
         );
         rasterizer = (WebGLRasterizer) surface.createRasterizer();
-        
-        startTime = System.currentTimeMillis();
         
         // Initialize shader and geometry
         initializeShader();
@@ -137,7 +130,7 @@ public class CustomShaderDemo {
         requestAnimationFrame();
     }
     
-    private static void initializeShader() {
+    private void initializeShader() {
         // Vertex shader with position and color attributes, plus animation
         String vertexShader =
             "attribute vec2 a_position;\n" +
@@ -200,7 +193,7 @@ public class CustomShaderDemo {
         }
     }
     
-    private static void initializeGeometry() {
+    private void initializeGeometry() {
         WebGL2RenderingContext gl = backend.getGL();
         
         // Triangle vertices (3 vertices forming a large triangle)
@@ -235,7 +228,7 @@ public class CustomShaderDemo {
         System.out.println("Geometry initialized");
     }
     
-    private static void render() {
+    private void render() {
         if (backend == null || glowShader == null) {
             return;
         }
@@ -275,7 +268,7 @@ public class CustomShaderDemo {
         backend.deactivateCustomShader();
     }
     
-    private static void requestAnimationFrame() {
+    private void requestAnimationFrame() {
         Window.requestAnimationFrame(new AnimationFrameCallback() {
             @Override
             public void onAnimationFrame(double timestamp) {
@@ -283,5 +276,25 @@ public class CustomShaderDemo {
                 requestAnimationFrame();
             }
         });
+    }
+
+    public static void main(String[] args) {
+        LoggerFactory.setGlobalLevel(LogLevel.INFO);
+        
+        System.out.println("Starting Custom Shader Demo...");
+        
+        // Get canvas ID from args
+        String canvasId = args.length > 0 ? args[0] : "custom-shader-canvas";
+        
+        // Set system property for canvas ID so the Applet uses this canvas
+        System.setProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId", canvasId);
+        
+        // Create the Applet
+        CustomShaderDemo applet = new CustomShaderDemo();
+        applet.setStub(new StubAppletStub());
+        
+        // Initialize and start the applet
+        applet.init();
+        applet.start();
     }
 }
