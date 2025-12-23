@@ -21,7 +21,7 @@ import java.awt.geom.AffineTransform;
 import java.util.List;
 
 @Monitored.AllMethods
-class WebGLRasterizer implements Rasterizer, PickingRasterizer {
+public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
     private static final Logger log = LoggerFactory.getLogger(WebGLRasterizer.class);
 
@@ -937,6 +937,65 @@ class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
     private void setComposite(Composite composite) {
         backend.contextStack.setComposite(composite);
+    }
+
+    /**
+     * Renders custom geometry using the currently active custom shader.
+     * This method provides low-level access to WebGL draw calls for advanced rendering.
+     * 
+     * @param mode the WebGL primitive type (e.g., WebGLRenderingContext.TRIANGLES)
+     * @param first the starting index in the enabled arrays
+     * @param count the number of vertices to render
+     * @throws IllegalStateException if no custom shader is active
+     */
+    public void drawCustomGeometry(int mode, int first, int count) {
+        if (backend.getActiveCustomShader() == null) {
+            throw new IllegalStateException("No custom shader is active. Call activateCustomShader() first.");
+        }
+        
+        gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, framebuffer);
+        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+        
+        // Apply context stack state (transform, clip, blend)
+        backend.contextStack.apply();
+        
+        gl.drawArrays(mode, first, count);
+        surface.markDirty();
+    }
+
+    /**
+     * Renders indexed custom geometry using the currently active custom shader.
+     * This method provides low-level access to WebGL indexed draw calls for advanced rendering.
+     * 
+     * @param mode the WebGL primitive type (e.g., WebGLRenderingContext.TRIANGLES)
+     * @param count the number of elements to render
+     * @param type the type of values in the element array buffer (e.g., WebGLRenderingContext.UNSIGNED_SHORT)
+     * @param offset the byte offset in the element array buffer
+     * @throws IllegalStateException if no custom shader is active
+     */
+    public void drawCustomElements(int mode, int count, int type, int offset) {
+        if (backend.getActiveCustomShader() == null) {
+            throw new IllegalStateException("No custom shader is active. Call activateCustomShader() first.");
+        }
+        
+        gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, framebuffer);
+        gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
+        
+        // Apply context stack state (transform, clip, blend)
+        backend.contextStack.apply();
+        
+        gl.drawElements(mode, count, type, offset);
+        surface.markDirty();
+    }
+
+    /**
+     * Gets the WebGLSurfaceBackend for advanced custom shader operations.
+     * Provides access to the WebGL context, custom shader management, and rendering state.
+     * 
+     * @return the WebGL surface backend
+     */
+    public WebGLSurfaceBackend getBackend() {
+        return backend;
     }
 
     @Override

@@ -23,7 +23,7 @@ import java.util.Stack;
  *   <li>Clip rectangles</li>
  * </ul>
  */
-class WebGLContextStack {
+public class WebGLContextStack {
     
     private static final Logger log = LoggerFactory.getLogger(WebGLContextStack.class);
     
@@ -210,7 +210,7 @@ class WebGLContextStack {
     /**
      * Gets the transform array in column-major format for shader uniforms.
      */
-    Float32Array getTransformArray() {
+    public Float32Array getTransformArray() {
         return transformArray;
     }
     

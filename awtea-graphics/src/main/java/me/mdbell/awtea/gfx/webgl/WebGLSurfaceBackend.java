@@ -9,6 +9,9 @@ import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.webgl.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public final class WebGLSurfaceBackend implements SurfaceBackend {
 
 	private final HTMLCanvasElement element;
@@ -55,6 +58,10 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
 	// Picking buffer for GPU-based hit testing
 	private WebGLPickingBuffer pickingBuffer;
+
+	// Custom shader programs
+	private final Map<String, CustomShaderProgram> customShaders = new HashMap<>();
+	private CustomShaderProgram activeCustomShader = null;
 
 	public WebGLSurfaceBackend(HTMLCanvasElement element) {
 		this.element = element;
@@ -261,7 +268,8 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 	private enum WebGLProgramType {
 		NONE,
 		COLOR,
-		TEXTURE
+		TEXTURE,
+		CUSTOM
 	}
 
 	// TODO: it would be nice to remove this and just use Surface pixel format
@@ -406,6 +414,126 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 			pickingBuffer.destroy();
 			pickingBuffer = null;
 		}
+	}
+
+	// Custom Shader Management
+
+	/**
+	 * Registers a custom shader program for use in rendering.
+	 * 
+	 * @param name a unique name to identify this shader
+	 * @param vertexSource GLSL vertex shader source code
+	 * @param fragmentSource GLSL fragment shader source code
+	 * @return the created CustomShaderProgram
+	 * @throws RuntimeException if a shader with this name already exists or if compilation fails
+	 */
+	public CustomShaderProgram registerCustomShader(String name, String vertexSource, String fragmentSource) {
+		if (customShaders.containsKey(name)) {
+			throw new RuntimeException("Custom shader '" + name + "' is already registered");
+		}
+		
+		CustomShaderProgram shader = new CustomShaderProgram(gl, name, vertexSource, fragmentSource);
+		customShaders.put(name, shader);
+		return shader;
+	}
+
+	/**
+	 * Gets a registered custom shader by name.
+	 * 
+	 * @param name the shader name
+	 * @return the CustomShaderProgram, or null if not found
+	 */
+	public CustomShaderProgram getCustomShader(String name) {
+		return customShaders.get(name);
+	}
+
+	/**
+	 * Activates a custom shader for rendering. The shader will remain active
+	 * until another shader is activated or useColorProgram/useTextureProgram is called.
+	 * 
+	 * @param name the name of the shader to activate
+	 * @throws RuntimeException if the shader is not found
+	 */
+	public void activateCustomShader(String name) {
+		CustomShaderProgram shader = customShaders.get(name);
+		if (shader == null) {
+			throw new RuntimeException("Custom shader '" + name + "' not found");
+		}
+		activateCustomShader(shader);
+	}
+
+	/**
+	 * Activates a custom shader for rendering. The shader will remain active
+	 * until another shader is activated or useColorProgram/useTextureProgram is called.
+	 * 
+	 * @param shader the shader to activate
+	 */
+	public void activateCustomShader(CustomShaderProgram shader) {
+		shader.use();
+		activeCustomShader = shader;
+		currentProgram = WebGLProgramType.CUSTOM;
+	}
+
+	/**
+	 * Deactivates the current custom shader. The next rendering operation
+	 * will use the appropriate built-in shader.
+	 */
+	public void deactivateCustomShader() {
+		activeCustomShader = null;
+		currentProgram = WebGLProgramType.NONE;
+	}
+
+	/**
+	 * Gets the currently active custom shader, if any.
+	 * 
+	 * @return the active custom shader, or null if none is active
+	 */
+	public CustomShaderProgram getActiveCustomShader() {
+		return activeCustomShader;
+	}
+
+	/**
+	 * Unregisters and disposes a custom shader.
+	 * 
+	 * @param name the name of the shader to remove
+	 */
+	public void unregisterCustomShader(String name) {
+		CustomShaderProgram shader = customShaders.remove(name);
+		if (shader != null) {
+			if (activeCustomShader == shader) {
+				deactivateCustomShader();
+			}
+			shader.dispose();
+		}
+	}
+
+	/**
+	 * Disposes all custom shaders.
+	 */
+	public void disposeAllCustomShaders() {
+		for (CustomShaderProgram shader : customShaders.values()) {
+			shader.dispose();
+		}
+		customShaders.clear();
+		activeCustomShader = null;
+	}
+
+	/**
+	 * Gets the WebGL context for advanced custom rendering operations.
+	 * 
+	 * @return the WebGL2 rendering context
+	 */
+	public WebGL2RenderingContext getGL() {
+		return gl;
+	}
+
+	/**
+	 * Gets the context stack for accessing current transform, clip, and color state.
+	 * 
+	 * @return the WebGL context stack
+	 */
+	public WebGLContextStack getContextStack() {
+		return contextStack;
 	}
 
 	// Shaders
