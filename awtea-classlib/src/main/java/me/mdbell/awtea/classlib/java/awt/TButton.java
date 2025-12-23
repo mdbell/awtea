@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import me.mdbell.awtea.classlib.java.awt.event.TActionEvent;
 import me.mdbell.awtea.classlib.java.awt.event.TActionListener;
+import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
+import me.mdbell.awtea.classlib.java.awt.event.TKeyListener;
 import me.mdbell.awtea.classlib.java.awt.event.TMouseEvent;
 
 import java.awt.Color;
@@ -126,6 +128,52 @@ public class TButton extends TComponent {
 				if (pressed) {
 					pressed = false;
 					repaint();
+				}
+			}
+		});
+		
+		// Add key listener to handle keyboard activation (Enter and Space keys)
+		addKeyListener(new TKeyListener() {
+			@Override
+			public void keyTyped(TKeyEvent e) {
+				// Not used for button activation
+			}
+
+			@Override
+			public void keyPressed(TKeyEvent e) {
+				if (enabled) {
+					int keyCode = e.getKeyCode();
+					// Activate button on Enter or Space key
+					if (keyCode == TKeyEvent.VK_ENTER || keyCode == TKeyEvent.VK_SPACE) {
+						pressed = true;
+						repaint();
+					}
+				}
+			}
+
+			@Override
+			public void keyReleased(TKeyEvent e) {
+				if (pressed) {
+					int keyCode = e.getKeyCode();
+					// Fire action when Enter or Space is released
+					if (keyCode == TKeyEvent.VK_ENTER || keyCode == TKeyEvent.VK_SPACE) {
+						pressed = false;
+						repaint();
+						if (enabled) {
+							// Create and fire action event
+							String command = actionCommand != null ? actionCommand : label;
+							TActionEvent event = new TActionEvent(
+									TButton.this,
+									TActionEvent.ACTION_PERFORMED,
+									command,
+									e.getWhen(),
+									e.getModifiers());
+							
+							for (TActionListener listener : actionListeners) {
+								listener.actionPerformed(event);
+							}
+						}
+					}
 				}
 			}
 		});
