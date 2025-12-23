@@ -19,22 +19,24 @@ import java.awt.event.KeyEvent;
 /**
  * Example demonstrating post-processing effects with bloom.
  * Shows how to use RenderTarget, RenderTargetPool, and PostProcessPipeline
- * to apply multi-pass effects to rendered content.
+ * to apply multi-pass effects to rendered content within the AWT rendering pipeline.
  */
 public class PostProcessDemo extends Applet {
 
     private HTMLCanvasElement canvas;
-    private WebGLSurfaceBackend backend;
     private RenderTargetPool pool;
     private PostProcessPipeline pipeline;
     private RenderTarget sceneTarget;
     private BloomEffect bloomEffect;
+    private CustomShaderProgram circleShader;
 
     // Scene state
     private float time = 0;
     private boolean bloomEnabled = true;
     private float bloomThreshold = 0.6f;
     private float bloomIntensity = 1.5f;
+    
+    private boolean initialized = false;
     
     private static OnVisibleCallback onVisible = null;
 
@@ -93,7 +95,7 @@ public class PostProcessDemo extends Applet {
     public void start() {
         System.out.println("Starting Post-Process Demo...");
 
-        // Get canvas
+        // Get canvas for dimensions
         HTMLDocument document = HTMLDocument.current();
         String canvasId = System.getProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId",
                 "post-process-canvas");
@@ -104,23 +106,23 @@ public class PostProcessDemo extends Applet {
             return;
         }
 
-        // Initialize post-processing infrastructure
-        initializePostProcessing();
-
         // Notify ready
         if (onVisible != null) {
             onVisible.invoke();
         }
 
+        System.out.println("Controls: B=toggle bloom, +/- = intensity, T=cycle threshold");
+
         // Start render loop
         scheduleRepaint();
     }
 
-    private void initializePostProcessing() {
-        // Get WebGL context from backend (created by Applet)
-        // We need to access the underlying WebGLSurfaceBackend
-        // For this demo, we'll create our own backend instance
-        backend = new WebGLSurfaceBackend(canvas);
+    /**
+     * Initialize post-processing infrastructure using the WebGL context from AWT.
+     * This is called on first paint when the context is available.
+     */
+    private void initializePostProcessing(WebGLShaderContext ctx) {
+        WebGLSurfaceBackend backend = ctx.getBackend();
         WebGL2RenderingContext gl = backend.getGL();
         
         int width = canvas.getWidth();
@@ -144,27 +146,51 @@ public class PostProcessDemo extends Applet {
         
         pipeline.addEffect(bloomEffect);
 
+        // Initialize circle shader for rendering
+        initCircleShader(ctx);
+
+        initialized = true;
         System.out.println("Post-processing initialized");
-        System.out.println("Controls: B=toggle bloom, +/- = intensity, T=cycle threshold");
     }
 
     @Override
     public void paint(Graphics g) {
-        if (backend == null) {
+        // Get the WebGL shader context from the AWT rendering pipeline
+        WebGLShaderContext ctx = WebGLShaderContext.getCurrentContext();
+        
+        if (ctx == null) {
+            // Not using WebGL backend
             g.setColor(Color.WHITE);
-            g.drawString("Initializing...", 10, 20);
+            g.drawString("WebGL backend required for post-processing", 10, 20);
             return;
+        }
+        
+        // Initialize on first paint
+        if (!initialized) {
+            initializePostProcessing(ctx);
         }
         
         time += 0.016f; // Assume ~60fps
 
-        // Get dimensions
+        // Queue post-processing callback
+        ctx.queueShaderCall(null, (backend, rasterizer) -> {
+            applyPostProcessing(backend);
+        });
+        
+        // Draw UI on top (rendered after post-processing)
+        drawUI(g);
+    }
+
+    /**
+     * Apply post-processing effects. Called via shader callback.
+     */
+    private void applyPostProcessing(WebGLSurfaceBackend backend) {
         int width = canvas.getWidth();
         int height = canvas.getHeight();
 
         // Step 1: Render scene to offscreen target
         sceneTarget.bind();
-        renderScene(sceneTarget);
+        renderScene(backend, sceneTarget);
         sceneTarget.unbind();
 
         // Step 2: Apply post-processing (if enabled)
@@ -176,18 +202,15 @@ public class PostProcessDemo extends Applet {
         }
 
         // Step 3: Blit to screen
-        blitToScreen(finalOutput, width, height);
+        blitToScreen(backend, finalOutput, width, height);
 
         // Step 4: Release output (if not the scene target)
         if (finalOutput != sceneTarget) {
             pool.release(finalOutput);
         }
-        
-        // Draw UI on top
-        drawUI(g);
     }
 
-    private void renderScene(RenderTarget target) {
+    private void renderScene(WebGLSurfaceBackend backend, RenderTarget target) {
         // Clear to black
         target.clear(0, 0, 0, 1);
         
@@ -198,11 +221,6 @@ public class PostProcessDemo extends Applet {
         // Draw some bright animated shapes using simple shader
         float cx = width / 2.0f;
         float cy = height / 2.0f;
-        
-        // Use a simple custom shader for drawing circles
-        if (circleShader == null) {
-            initCircleShader();
-        }
         
         backend.activateCustomShader(circleShader);
         
@@ -234,9 +252,7 @@ public class PostProcessDemo extends Applet {
         backend.deactivateCustomShader();
     }
     
-    private CustomShaderProgram circleShader;
-    
-    private void initCircleShader() {
+    private void initCircleShader(WebGLShaderContext ctx) {
         String vertexShader =
             "precision mediump float;\n" +
             "attribute vec2 a_position;\n" +
@@ -255,7 +271,7 @@ public class PostProcessDemo extends Applet {
             "    gl_FragColor = u_color;\n" +
             "}\n";
         
-        circleShader = backend.registerCustomShader("circle", vertexShader, fragmentShader);
+        circleShader = ctx.getBackend().registerCustomShader("circle", vertexShader, fragmentShader);
     }
 
     private void drawCircle(WebGL2RenderingContext gl, int screenW, int screenH, 
@@ -304,7 +320,7 @@ public class PostProcessDemo extends Applet {
         gl.deleteBuffer(buffer);
     }
 
-    private void blitToScreen(RenderTarget target, int width, int height) {
+    private void blitToScreen(WebGLSurfaceBackend backend, RenderTarget target, int width, int height) {
         WebGL2RenderingContext gl = backend.getGL();
         
         // Bind default framebuffer
