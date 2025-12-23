@@ -78,14 +78,25 @@ public class PostProcessContext {
      * This is useful for copying without any effects.
      * 
      * @param input the input render target
-     * @param output the output render target (must be bound)
+     * @param output the output render target (must be bound), or null for screen
      */
     public void blitSimple(RenderTarget input, RenderTarget output) {
+        int width = output != null ? output.getWidth() : input.getWidth();
+        int height = output != null ? output.getHeight() : input.getHeight();
+        
         // Use texture program with no swizzling
         backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.NONE, 
-            output.getWidth(), output.getHeight());
+            width, height);
         
-        blit(input, output);
+        // Setup fullscreen quad
+        setupFullscreenQuad(width, height);
+        
+        // Bind input texture and draw
+        backend.getGL().activeTexture(org.teavm.jso.webgl.WebGLRenderingContext.TEXTURE0);
+        backend.getGL().bindTexture(org.teavm.jso.webgl.WebGLRenderingContext.TEXTURE_2D, 
+            input.getTexture());
+        backend.getGL().drawArrays(org.teavm.jso.webgl.WebGLRenderingContext.TRIANGLES, 0, 6);
+        backend.getGL().bindTexture(org.teavm.jso.webgl.WebGLRenderingContext.TEXTURE_2D, null);
     }
     
     /**
