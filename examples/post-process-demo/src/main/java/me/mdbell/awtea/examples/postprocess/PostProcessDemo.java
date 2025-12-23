@@ -172,8 +172,9 @@ public class PostProcessDemo extends Applet {
         
         time += 0.016f; // Assume ~60fps
 
-        // Queue post-processing callback
-        ctx.queueShaderCall(null, (backend, rasterizer) -> {
+        // Queue post-processing callback using the circle shader
+        // (required by queueShaderCall - shader cannot be null)
+        ctx.queueShaderCall(circleShader, (backend, rasterizer) -> {
             applyPostProcessing(backend);
         });
         
