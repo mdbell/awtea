@@ -57,7 +57,7 @@ public class TFontMetrics {
 		float size = font.getSize();
 		float ascentPx = ttf.getAscentPx(size);
 		float descentPx = ttf.getDescentPx(size);
-		float leadingPx = descentPx * .2f;
+		float leadingPx = ttf.getLineGapPx(size);
 		
 		// Store float values for precise calculations
 		this.ascentFloat = ascentPx;
@@ -104,7 +104,9 @@ public class TFontMetrics {
      * @see java.awt.FontMetrics#getMaxAscent()
      */
     public int getMaxAscent() {
-        return ascent; // For TrueType fonts, max ascent is typically same as ascent
+        // For most TrueType fonts, max ascent equals the regular ascent
+        // This could be enhanced to check actual glyph bounds if needed
+        return ascent;
     }
     
     /**
@@ -114,7 +116,9 @@ public class TFontMetrics {
      * @see java.awt.FontMetrics#getMaxDescent()
      */
     public int getMaxDescent() {
-        return descent; // For TrueType fonts, max descent is typically same as descent
+        // For most TrueType fonts, max descent equals the regular descent
+        // This could be enhanced to check actual glyph bounds if needed
+        return descent;
     }
     
     /**
@@ -124,8 +128,14 @@ public class TFontMetrics {
      * @see java.awt.FontMetrics#getMaxAdvance()
      */
     public int getMaxAdvance() {
-        // Could be computed from font tables (hmtx), but return -1 for now
-        return -1;
+        TrueTypeFont ttf = font.getFontPeer().getFont();
+        float maxAdvancePx = ttf.getMaxAdvancePx(font.getSize());
+        
+        if (fontRenderContext.usesFractionalMetrics()) {
+            return Math.round(maxAdvancePx);
+        } else {
+            return (int) maxAdvancePx;
+        }
     }
     
     /**
