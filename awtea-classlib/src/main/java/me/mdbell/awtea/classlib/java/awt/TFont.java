@@ -2,6 +2,8 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import lombok.Getter;
 import lombok.SneakyThrows;
+import me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext;
+import me.mdbell.awtea.classlib.java.awt.font.TLineMetrics;
 import me.mdbell.awtea.classlib.java.awt.image.TFontFormatException;
 import me.mdbell.awtea.font.FontLoader;
 import me.mdbell.awtea.font.FontPeer;
@@ -221,8 +223,7 @@ public class TFont {
      * @return a LineMetrics object created with the specified String and FontRenderContext
      * @see java.awt.Font#getLineMetrics(String, java.awt.font.FontRenderContext)
      */
-    public me.mdbell.awtea.classlib.java.awt.font.TLineMetrics getLineMetrics(String str, 
-            me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext frc) {
+    public TLineMetrics getLineMetrics(String str, TFontRenderContext frc) {
         TFontMetrics metrics = new TFontMetrics(this, frc);
         return metrics.getLineMetrics(str);
     }
@@ -237,8 +238,8 @@ public class TFont {
      * @return a LineMetrics object created with the specified arguments
      * @see java.awt.Font#getLineMetrics(String, int, int, java.awt.font.FontRenderContext)
      */
-    public me.mdbell.awtea.classlib.java.awt.font.TLineMetrics getLineMetrics(String str, 
-            int beginIndex, int limit, me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext frc) {
+    public TLineMetrics getLineMetrics(String str, 
+            int beginIndex, int limit, TFontRenderContext frc) {
         String substring = str.substring(beginIndex, limit);
         return getLineMetrics(substring, frc);
     }
@@ -254,9 +255,9 @@ public class TFont {
      * @return a LineMetrics object created with the specified arguments
      * @see java.awt.Font#getLineMetrics(java.text.CharacterIterator, int, int, java.awt.font.FontRenderContext)
      */
-    public me.mdbell.awtea.classlib.java.awt.font.TLineMetrics getLineMetrics(
+    public TLineMetrics getLineMetrics(
             java.text.CharacterIterator ci, int beginIndex, int limit, 
-            me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext frc) {
+            TFontRenderContext frc) {
         TFontMetrics metrics = new TFontMetrics(this, frc);
         return metrics.getLineMetrics(ci, beginIndex, limit);
     }
@@ -272,8 +273,8 @@ public class TFont {
      * @return a LineMetrics object created with the specified arguments
      * @see java.awt.Font#getLineMetrics(char[], int, int, java.awt.font.FontRenderContext)
      */
-    public me.mdbell.awtea.classlib.java.awt.font.TLineMetrics getLineMetrics(char[] chars, 
-            int beginIndex, int limit, me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext frc) {
+    public TLineMetrics getLineMetrics(char[] chars, 
+            int beginIndex, int limit, TFontRenderContext frc) {
         TFontMetrics metrics = new TFontMetrics(this, frc);
         return metrics.getLineMetrics(chars, beginIndex, limit);
     }
