@@ -212,13 +212,11 @@ public class FontRenderingContextTest {
     }
 
     @Test
-    public void testDeprecatedFontGetFontMetrics() {
+    public void testFontGetFontMetrics() {
         TFont font = new TFont("SansSerif", TFont.PLAIN, 12);
         
-        // This method is deprecated but should still work
-        @SuppressWarnings("deprecation")
         TFontMetrics metrics = font.getFontMetrics();
         
-        assertNotNull(metrics, "Deprecated method should still create FontMetrics");
+        assertNotNull(metrics, "Font.getFontMetrics() should create FontMetrics");
     }
 }

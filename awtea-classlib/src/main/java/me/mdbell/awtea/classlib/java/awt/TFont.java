@@ -207,11 +207,7 @@ public class TFont {
      * Get the FontMetrics for this font.
      * 
      * @return the FontMetrics for this font
-     * @deprecated This method creates metrics without rendering context awareness.
-     *             Use {@link TGraphics#getFontMetrics(TFont)} or 
-     *             {@link TToolkit#getFontMetrics(TFont)} instead to get context-aware metrics.
      */
-    @Deprecated
     public TFontMetrics getFontMetrics() {
         return new TFontMetrics(this);
     }

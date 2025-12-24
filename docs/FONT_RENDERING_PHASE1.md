@@ -29,17 +29,6 @@ Phase 1 focuses on making font metrics context-aware by introducing proper `Font
   - **With fractional metrics**: rounds to nearest pixel
   - **Without fractional metrics**: truncates (traditional behavior)
 
-**Migration Path:**
-```java
-// OLD (deprecated):
-TFontMetrics metrics = font.getFontMetrics();
-
-// NEW (preferred):
-TFontMetrics metrics = graphics.getFontMetrics(font);
-// or
-TFontMetrics metrics = toolkit.getFontMetrics(font);
-```
-
 ### 3. LineMetrics Support
 
 **`TLineMetrics`** (abstract base class) and **`TSimpleLineMetrics`** (concrete implementation) provide:
@@ -130,25 +119,6 @@ This affects:
 - Line height calculations
 - Text positioning accuracy
 - Overall text rendering quality
-
-## Deprecations
-
-### `TFont.getFontMetrics()`
-**Deprecated** because it creates metrics without rendering context awareness.
-
-**Why deprecated:**
-- Doesn't reflect actual rendering conditions
-- Can't account for anti-aliasing or fractional metrics
-- Not consistent with AWT design
-
-**Migration:**
-```java
-// Instead of:
-TFontMetrics metrics = font.getFontMetrics();
-
-// Use:
-TFontMetrics metrics = graphics.getFontMetrics(font);
-```
 
 ## Testing
 

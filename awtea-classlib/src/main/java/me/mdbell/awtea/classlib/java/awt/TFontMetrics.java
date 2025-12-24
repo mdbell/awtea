@@ -14,12 +14,6 @@ import java.text.CharacterIterator;
  * on a particular screen. This class is context-aware and reflects the rendering hints
  * (anti-aliasing, fractional metrics) from the Graphics or FontRenderContext it was created with.
  * 
- * <p><b>Migration Guide:</b></p>
- * <ul>
- *   <li>Old: {@code font.getFontMetrics()} - <b>Deprecated</b></li>
- *   <li>New: {@code graphics.getFontMetrics(font)} or {@code toolkit.getFontMetrics(font)}</li>
- * </ul>
- * 
  * @see java.awt.FontMetrics
  */
 @Getter
@@ -42,9 +36,7 @@ public class TFontMetrics {
 	 * This constructor is package-private and should only be called by Graphics or Toolkit.
 	 * 
 	 * @param font the font
-	 * @deprecated Use {@link TGraphics#getFontMetrics(TFont)} or {@link TToolkit#getFontMetrics(TFont)} instead
 	 */
-	@Deprecated
 	TFontMetrics(TFont font){
 		this(font, null);
 	}
