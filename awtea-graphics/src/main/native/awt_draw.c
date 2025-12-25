@@ -93,10 +93,8 @@ void draw_filled_rect(SurfaceData* surface, SurfaceContext* context,
                     fast_fill_scanline(framebuffer, j, stride, x0, x1, dst_color);
                 }
             } else if (context->composite_mode == COMPOSITE_CLEAR) {
-                // For CLEAR mode, write transparent pixels
-                uint8_t r, g, b, a;
-                unpack_pixel(&g_pixel_format_info[PIXEL_FORMAT_ARGB], 0x00000000, &r, &g, &b, &a);
-                uint32_t clear_color = pack_pixel(dstInfo, r, g, b, a);
+                // For CLEAR mode, write transparent pixels (all zeros)
+                uint32_t clear_color = 0x00000000;
                 
                 // FAST PATH: Use optimized scanline fills
                 for (int j = y0; j < y1; j++) {
