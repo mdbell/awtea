@@ -6,13 +6,25 @@
 #include "awt_log.h"
 #include "awt_stack.h"
 #include "awt_edge_table.h"
+#include "awt_edge_table_fixed.h"
 #include "awt_memory.h"
 
 // Default edge table pool initial capacity
 #define EDGE_TABLE_POOL_INITIAL_CAPACITY 4
 
+// Compile-time flag to choose between float and fixed-point rasterizer
+// Set to 1 for fixed-point (default), 0 for float
+#ifndef USE_FIXED_POINT_RASTERIZER
+#define USE_FIXED_POINT_RASTERIZER 1
+#endif
+
 // Global edge table pool (lazy initialization)
+// Use fixed-point version by default for performance
+#if USE_FIXED_POINT_RASTERIZER
+static EdgeTableFixedPool* g_edge_table_pool = NULL;
+#else
 static EdgeTablePool* g_edge_table_pool = NULL;
+#endif
 
 void draw_filled_rect(SurfaceData* surface, SurfaceContext* context,
                                     int x, int y,
@@ -480,9 +492,15 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
 // Helper function to ensure edge table pool is initialized
 static void ensure_edge_table_pool(void) {
     if (g_edge_table_pool == NULL) {
+#if USE_FIXED_POINT_RASTERIZER
+        g_edge_table_pool = edge_table_fixed_pool_create(EDGE_TABLE_POOL_INITIAL_CAPACITY);
+        log_debug("Initialized global FIXED-POINT edge table pool with capacity=%d",
+                  EDGE_TABLE_POOL_INITIAL_CAPACITY);
+#else
         g_edge_table_pool = edge_table_pool_create(EDGE_TABLE_POOL_INITIAL_CAPACITY);
         log_debug("Initialized global edge table pool with capacity=%d", 
                   EDGE_TABLE_POOL_INITIAL_CAPACITY);
+#endif
     }
 }
 
@@ -560,6 +578,30 @@ void fill_polygon(SurfaceData* surface, SurfaceContext* context,
     
     // Get edge table from pool
     ensure_edge_table_pool();
+#if USE_FIXED_POINT_RASTERIZER
+    EdgeTableFixed* et = edge_table_fixed_pool_acquire(g_edge_table_pool, min_y, max_y,
+                                                        surface->width, surface->height);
+    if (!et) {
+        log_error("fill_polygon: failed to acquire fixed-point edge table");
+        if (allocated_x) tracked_free(allocated_x);
+        if (allocated_y) tracked_free(allocated_y);
+        STACK_EXIT();
+        return;
+    }
+    
+    // Add all edges of the polygon using transformed points
+    for (int i = 0; i < n_points; i++) {
+        int next = (i + 1) % n_points;
+        edge_table_fixed_add_line(et, transformed_x[i], transformed_y[i],
+                                  transformed_x[next], transformed_y[next]);
+    }
+    
+    // Fill using edge table with even-odd rule
+    edge_table_fixed_fill(et, surface, context, color, FILL_RULE_EVENODD);
+    
+    // Return edge table to pool
+    edge_table_fixed_pool_release(g_edge_table_pool, et);
+#else
     EdgeTable* et = edge_table_pool_acquire(g_edge_table_pool, min_y, max_y,
                                             surface->width, surface->height);
     if (!et) {
@@ -582,6 +624,7 @@ void fill_polygon(SurfaceData* surface, SurfaceContext* context,
     
     // Return edge table to pool
     edge_table_pool_release(g_edge_table_pool, et);
+#endif
     
     // Free allocated transform arrays if any
     if (allocated_x) tracked_free(allocated_x);
@@ -636,6 +679,24 @@ void fill_oval(SurfaceData* surface, SurfaceContext* context,
     
     // Get edge table from pool
     ensure_edge_table_pool();
+#if USE_FIXED_POINT_RASTERIZER
+    EdgeTableFixed* et = edge_table_fixed_pool_acquire(g_edge_table_pool, min_y, max_y,
+                                                        surface->width, surface->height);
+    if (!et) {
+        log_error("fill_oval: failed to acquire fixed-point edge table");
+        STACK_EXIT();
+        return;
+    }
+    
+    // Add arc for full ellipse (0 to 2*PI)
+    edge_table_fixed_add_arc(et, cx, cy, rx, ry, 0.0, 2.0 * M_PI);
+    
+    // Fill using edge table
+    edge_table_fixed_fill(et, surface, context, color, FILL_RULE_EVENODD);
+    
+    // Return edge table to pool
+    edge_table_fixed_pool_release(g_edge_table_pool, et);
+#else
     EdgeTable* et = edge_table_pool_acquire(g_edge_table_pool, min_y, max_y,
                                             surface->width, surface->height);
     if (!et) {
@@ -652,6 +713,7 @@ void fill_oval(SurfaceData* surface, SurfaceContext* context,
     
     // Return edge table to pool
     edge_table_pool_release(g_edge_table_pool, et);
+#endif
     
     log_debug("fill_oval: completed");
     STACK_EXIT();
@@ -710,6 +772,33 @@ void fill_arc(SurfaceData* surface, SurfaceContext* context,
     
     // Get edge table from pool
     ensure_edge_table_pool();
+#if USE_FIXED_POINT_RASTERIZER
+    EdgeTableFixed* et = edge_table_fixed_pool_acquire(g_edge_table_pool, min_y, max_y,
+                                                        surface->width, surface->height);
+    if (!et) {
+        log_error("fill_arc: failed to acquire fixed-point edge table");
+        STACK_EXIT();
+        return;
+    }
+    
+    // Add arc
+    edge_table_fixed_add_arc(et, cx, cy, rx, ry, start_rad, end_rad);
+    
+    // Close the arc by adding lines from endpoints to center (pie slice)
+    int start_x = cx + (int)(rx * cos(start_rad));
+    int start_y = cy + (int)(ry * sin(start_rad));
+    int end_x = cx + (int)(rx * cos(end_rad));
+    int end_y = cy + (int)(ry * sin(end_rad));
+    
+    edge_table_fixed_add_line(et, end_x, end_y, cx, cy);
+    edge_table_fixed_add_line(et, cx, cy, start_x, start_y);
+    
+    // Fill using edge table
+    edge_table_fixed_fill(et, surface, context, color, FILL_RULE_EVENODD);
+    
+    // Return edge table to pool
+    edge_table_fixed_pool_release(g_edge_table_pool, et);
+#else
     EdgeTable* et = edge_table_pool_acquire(g_edge_table_pool, min_y, max_y,
                                             surface->width, surface->height);
     if (!et) {
@@ -735,6 +824,7 @@ void fill_arc(SurfaceData* surface, SurfaceContext* context,
     
     // Return edge table to pool
     edge_table_pool_release(g_edge_table_pool, et);
+#endif
     
     log_debug("fill_arc: completed");
     STACK_EXIT();
@@ -785,6 +875,50 @@ void fill_round_rect(SurfaceData* surface, SurfaceContext* context,
     
     // Get edge table from pool
     ensure_edge_table_pool();
+#if USE_FIXED_POINT_RASTERIZER
+    EdgeTableFixed* et = edge_table_fixed_pool_acquire(g_edge_table_pool, min_y, max_y,
+                                                        surface->width, surface->height);
+    if (!et) {
+        log_error("fill_round_rect: failed to acquire fixed-point edge table");
+        STACK_EXIT();
+        return;
+    }
+    
+    // Add four corner arcs and four straight edges
+    // Top edge
+    edge_table_fixed_add_line(et, x + rx, y, x + width - rx, y);
+    
+    // Top-right corner arc (0 to 90 degrees, or 0 to PI/2 radians)
+    edge_table_fixed_add_arc(et, x + width - rx, y + ry, rx, ry,
+                             -M_PI / 2.0, 0.0);
+    
+    // Right edge
+    edge_table_fixed_add_line(et, x + width, y + ry, x + width, y + height - ry);
+    
+    // Bottom-right corner arc (90 to 180 degrees, or PI/2 to PI radians)
+    edge_table_fixed_add_arc(et, x + width - rx, y + height - ry, rx, ry,
+                             0.0, M_PI / 2.0);
+    
+    // Bottom edge
+    edge_table_fixed_add_line(et, x + width - rx, y + height, x + rx, y + height);
+    
+    // Bottom-left corner arc (180 to 270 degrees, or PI to 3*PI/2 radians)
+    edge_table_fixed_add_arc(et, x + rx, y + height - ry, rx, ry,
+                             M_PI / 2.0, M_PI);
+    
+    // Left edge
+    edge_table_fixed_add_line(et, x, y + height - ry, x, y + ry);
+    
+    // Top-left corner arc (270 to 360 degrees, or 3*PI/2 to 2*PI radians)
+    edge_table_fixed_add_arc(et, x + rx, y + ry, rx, ry,
+                             M_PI, 3.0 * M_PI / 2.0);
+    
+    // Fill using edge table
+    edge_table_fixed_fill(et, surface, context, color, FILL_RULE_EVENODD);
+    
+    // Return edge table to pool
+    edge_table_fixed_pool_release(g_edge_table_pool, et);
+#else
     EdgeTable* et = edge_table_pool_acquire(g_edge_table_pool, min_y, max_y,
                                             surface->width, surface->height);
     if (!et) {
@@ -827,6 +961,7 @@ void fill_round_rect(SurfaceData* surface, SurfaceContext* context,
     
     // Return edge table to pool
     edge_table_pool_release(g_edge_table_pool, et);
+#endif
     
     log_debug("fill_round_rect: completed");
     STACK_EXIT();
@@ -918,6 +1053,28 @@ void fill_rect(SurfaceData* surface, SurfaceContext* context,
     
     // Get edge table from pool
     ensure_edge_table_pool();
+#if USE_FIXED_POINT_RASTERIZER
+    EdgeTableFixed* et = edge_table_fixed_pool_acquire(g_edge_table_pool, min_y, edge_table_max_y,
+                                                        surface->width, surface->height);
+    if (!et) {
+        log_error("fill_rect: failed to acquire fixed-point edge table");
+        STACK_EXIT();
+        return;
+    }
+    
+    // Add all four edges of the rectangle
+    for (int i = 0; i < 4; i++) {
+        int next = (i + 1) % 4;
+        edge_table_fixed_add_line(et, x_points[i], y_points[i],
+                                  x_points[next], y_points[next]);
+    }
+    
+    // Fill using edge table
+    edge_table_fixed_fill(et, surface, context, color, FILL_RULE_EVENODD);
+    
+    // Return edge table to pool
+    edge_table_fixed_pool_release(g_edge_table_pool, et);
+#else
     EdgeTable* et = edge_table_pool_acquire(g_edge_table_pool, min_y, edge_table_max_y,
                                             surface->width, surface->height);
     if (!et) {
@@ -938,6 +1095,7 @@ void fill_rect(SurfaceData* surface, SurfaceContext* context,
     
     // Return edge table to pool
     edge_table_pool_release(g_edge_table_pool, et);
+#endif
     
     log_debug("fill_rect: completed");
     STACK_EXIT();
@@ -1333,9 +1491,15 @@ void copy_area(SurfaceData* surface, SurfaceContext* context,
 // Should be called during module unload or application shutdown
 void cleanup_edge_table_pool(void) {
     if (g_edge_table_pool != NULL) {
+#if USE_FIXED_POINT_RASTERIZER
+        log_info("Cleaning up global FIXED-POINT edge table pool (count=%d)",
+                 g_edge_table_pool->count);
+        edge_table_fixed_pool_destroy(g_edge_table_pool);
+#else
         log_info("Cleaning up global edge table pool (count=%d)", 
                  g_edge_table_pool->count);
         edge_table_pool_destroy(g_edge_table_pool);
+#endif
         g_edge_table_pool = NULL;
     }
 }
