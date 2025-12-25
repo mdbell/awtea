@@ -8,6 +8,7 @@
 #include "awt_edge_table.h"
 #include "awt_edge_table_fixed.h"
 #include "awt_memory.h"
+#include "awt_fast_fill.h"
 
 // Default edge table pool initial capacity
 #define EDGE_TABLE_POOL_INITIAL_CAPACITY 4
@@ -53,18 +54,19 @@ void draw_filled_rect(SurfaceData* surface, SurfaceContext* context,
 
         // destination has no alpha -> convert/write directly
         if (dstInfo->mask_a == 0) {
-            SetPixelFunc set_pixel_func =
-                get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
-
             uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
             uint32_t stride = surface->stride / 4;
-
+            
+            // Convert color to destination format once
+            uint8_t r, g, b, a;
+            unpack_pixel(&g_pixel_format_info[PIXEL_FORMAT_ARGB], color, &r, &g, &b, &a);
+            uint32_t dst_color = pack_pixel(dstInfo, r, g, b, a);
+            
+            // FAST PATH: Use optimized scanline fills
             for (int j = y0; j < y1; j++) {
-                for (int i = x0; i < x1; i++) {
-                    set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, color);
-                }
+                fast_fill_scanline(framebuffer, j, stride, x0, x1, dst_color);
             }
-            log_debug("draw_filled_rect: wrote %d pixels", (x1-x0)*(y1-y0));
+            log_debug("draw_filled_rect: fast fill %d pixels", (x1-x0)*(y1-y0));
             STACK_EXIT();
             return;
         }
@@ -76,32 +78,38 @@ void draw_filled_rect(SurfaceData* surface, SurfaceContext* context,
                            (context->composite_mode != COMPOSITE_CLEAR);
         
         if (!needsBlending) {
+            uint32_t* framebuffer = (uint32_t*)(uintptr_t)surface->ptr;
+            uint32_t stride = surface->stride / 4;
+            
             // Fast path for SRC/DST/CLEAR modes
             if (context->composite_mode == COMPOSITE_SRC) {
-                SetPixelFunc set_pixel_func =
-                    get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
+                // Convert color to destination format once
+                uint8_t r, g, b, a;
+                unpack_pixel(&g_pixel_format_info[PIXEL_FORMAT_ARGB], color, &r, &g, &b, &a);
+                uint32_t dst_color = pack_pixel(dstInfo, r, g, b, a);
+                
+                // FAST PATH: Use optimized scanline fills
                 for (int j = y0; j < y1; j++) {
-                    for (int i = x0; i < x1; i++) {
-                        set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, color);
-                    }
+                    fast_fill_scanline(framebuffer, j, stride, x0, x1, dst_color);
                 }
             } else if (context->composite_mode == COMPOSITE_CLEAR) {
                 // For CLEAR mode, write transparent pixels
-                uint32_t clearColor = 0x00000000;
-                SetPixelFunc set_pixel_func =
-                    get_set_pixel_func(PIXEL_FORMAT_ARGB, surface->format);
+                uint8_t r, g, b, a;
+                unpack_pixel(&g_pixel_format_info[PIXEL_FORMAT_ARGB], 0x00000000, &r, &g, &b, &a);
+                uint32_t clear_color = pack_pixel(dstInfo, r, g, b, a);
+                
+                // FAST PATH: Use optimized scanline fills
                 for (int j = y0; j < y1; j++) {
-                    for (int i = x0; i < x1; i++) {
-                        set_pixel_func(surface, i, j, PIXEL_FORMAT_ARGB, clearColor);
-                    }
+                    fast_fill_scanline(framebuffer, j, stride, x0, x1, clear_color);
                 }
             }
             // For DST mode, don't draw anything
-            log_debug("draw_filled_rect: used fast path for mode %d", context->composite_mode);
+            log_debug("draw_filled_rect: used fast fill for mode %d", context->composite_mode);
+            STACK_EXIT();
             return;
         }
         
-        // Normal blending path
+        // Normal blending path (still needs per-pixel blending)
         for (int j = y0; j < y1; j++) {
             for (int i = x0; i < x1; i++) {
                 blend_pixel_composite(surface, i, j, PIXEL_FORMAT_ARGB, color,

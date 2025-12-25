@@ -4,6 +4,7 @@
 #include "awt_log.h"
 #include "awt_stack.h"
 #include "awt_imports.h"
+#include "awt_alpha_lut.h"
 
 SurfaceData g_surfaces[NUM_SURFACES];
 SurfaceContext g_contexts[NUM_CONTEXTS];
@@ -18,6 +19,9 @@ void init_surface_system(void) {
     
     // Initialize stack tracking system
     init_stack_tracking();
+    
+    // Initialize alpha blend lookup table (64KB)
+    init_alpha_blend_lut();
     
     log_info("Initialized surface system: %d surfaces, %d contexts", 
              NUM_SURFACES, NUM_CONTEXTS);
