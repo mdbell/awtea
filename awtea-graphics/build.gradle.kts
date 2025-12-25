@@ -96,17 +96,19 @@ tasks.register("buildAwtRasterWasm") {
         
         // Debug vs Release configuration
         if (isDebug) {
-            println("Building WASM rasterizer in DEBUG mode")
+            println("Building WASM rasterizer in DEBUG mode with SIMD")
             args.addAll(listOf(
                 "-O1",                          // Minimal optimization for faster builds
                 "-g",                           // Include debug symbols
+                "-msimd128",                    // Enable WebAssembly SIMD
                 "-DAWTEA_DEBUG_BUILD=1",        // Master debug flag
                 "-DAWTEA_BUILD_VERSION=\"0.1.0-dev\""
             ))
         } else {
-            println("Building WASM rasterizer in RELEASE mode")
+            println("Building WASM rasterizer in RELEASE mode with SIMD")
             args.addAll(listOf(
                 "-O3",                          // Maximum optimization
+                "-msimd128",                    // Enable WebAssembly SIMD
                 "-DNDEBUG",                     // Disable C assertions
                 "-DAWTEA_DEBUG_BUILD=0",        // Master debug flag OFF
                 "-DAWTEA_BUILD_VERSION=\"0.1.0\""

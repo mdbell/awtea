@@ -1,7 +1,19 @@
 #include "awt_fast_fill.h"
 #include "awt_log.h"
 #include "awt_util.h"
+#include "awt_simd.h"
 #include <string.h>
+
+// Compile-time flag to enable SIMD optimizations
+// Set to 1 to use SIMD (default if available)
+// Set to 0 for scalar-only fallback
+#ifndef USE_SIMD_FILLS
+#ifdef __wasm_simd128__
+#define USE_SIMD_FILLS 1
+#else
+#define USE_SIMD_FILLS 0
+#endif
+#endif
 
 // Fast scanline fill using optimized memory operations
 void fast_fill_scanline(uint32_t* framebuffer, int y, int stride,
@@ -10,8 +22,14 @@ void fast_fill_scanline(uint32_t* framebuffer, int y, int stride,
         return; // Nothing to fill
     }
     
-    uint32_t* row = &framebuffer[y * stride];
     int count = x_end - x_start;
+    
+#if USE_SIMD_FILLS
+    // SIMD path: Use vectorized fills for better performance
+    simd_fill_scanline(framebuffer, y, stride, x_start, x_end, color);
+#else
+    // Scalar path: Original implementation
+    uint32_t* row = &framebuffer[y * stride];
     
     // Strategy: Different approaches based on fill size
     if (count == 1) {
@@ -33,15 +51,6 @@ void fast_fill_scanline(uint32_t* framebuffer, int y, int stride,
         }
     } else {
         // Large fill: use optimized memory operations
-        // 
-        // On most platforms, the compiler will optimize this into:
-        // - WASM: bulk memory operations (memory.fill)
-        // - x86: REP STOSQ (hardware-accelerated)
-        // - ARM: NEON vectorized stores
-        //
-        // Note: Some platforms have wmemset for 4-byte fills, but it's not
-        // universally available. Simple loop is optimized by compiler.
-        
         uint32_t* dest = &row[x_start];
         
         // Write 4 pixels at a time when count is large
@@ -61,6 +70,7 @@ void fast_fill_scanline(uint32_t* framebuffer, int y, int stride,
             *dest++ = color;
         }
     }
+#endif
 }
 
 // Fast rectangle fill
