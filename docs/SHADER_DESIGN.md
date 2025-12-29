@@ -868,3 +868,321 @@ compute, and host integration scenarios.
   - Preserve backward compatibility.
   - Not compromise validation and safety guarantees.
   - Be clearly documented with sample usage and edge-case handling.
+
+## Assembler Specification
+
+This section describes the syntax and expectations for an assembler that
+compiles Awtea Shader Assembly Language (ASAL) into VM bytecode.
+
+---
+
+### High-Level Goals
+
+- Simple, human-readable syntax for shader authors and tools.
+- Direct mapping between assembly mnemonics and opcodes.
+- Support for constants, uniforms, inputs, labels, and comments.
+- Deterministic assembly: same input always produces same output.
+
+---
+
+### General Format
+
+- **One instruction per line** (except labels and directives).
+- **Whitespace** and **comments** (`;`, `#`, `//`) are ignored after an
+  instruction.
+- **Case-insensitive** for instructions and labels.
+- **Labels** end with a colon at the beginning of a line.
+
+---
+
+### Instruction Format
+
+```
+MNEMONIC [arg1 [arg2 ...]]    ; optional comment
+```
+
+- Instructions are taken verbatim from the opcode table.
+- Arguments are integers, names, or label references.
+
+**Examples:**
+
+```
+LOAD_INPUT 0            ; Push u
+LOAD_CONST 1
+MUL
+SET_COLOR
+END
+```
+
+### Labels
+
+- Labels mark code locations for jumps and branches.
+- Must begin at start of line and end with a colon.
+- Can be referenced as jump/call targets.
+
+**Example:**
+
+```
+loop_start:
+    LOAD_INPUT 0
+    LOAD_CONST 4
+    LT
+    JZ loop_end
+    ; ... body ...
+    JUMP loop_start
+loop_end:
+    END
+```
+
+---
+
+### Constants, Uniforms, and Inputs
+
+- Constants, uniforms, and input indices are referenced by numeric index or
+  macro.
+- Pseudo-ops like `.const`, `.uniform`, are permitted to define symbolic names.
+
+**Example:**
+
+Constants:
+
+```
+.const PI 0x0003243F      ; defines macro-like PI = 0x0003243F
+LOAD_CONST PI
+```
+
+Uniforms:
+
+```
+.uniform u_brightness ; defines a uniform - assemblier will emit a name -> index mapping
+LOAD_UNFORM u_brightness
+```
+
+Inputs:
+
+```
+; There is no .input psudo-op, instead there are reserved names like:
+LOAD_INPUT in_u
+LOAD_INPUT in_v
+```
+
+---
+
+### Sample Assembly Program
+
+```
+; Solid blue output
+LOAD_CONST 0         ; R = 0
+LOAD_CONST 0         ; G = 0
+LOAD_CONST 0xFF0000  ; B = 255.0 (fixed)
+LOAD_CONST 0x10000   ; A = 1.0 (fixed)
+SET_COLOR
+END
+```
+
+---
+
+### Pseudo-ops and Directives
+
+- **.const name value:** Defines a constant with a symbolic name.
+- **.uniform name index:** Maps a symbolic name to a uniform index.
+- **.surface name index:** Maps a symbolic name to a surface index.
+- **.include "file.asal"**: Include another file (tool-specific - may not be
+  present in inital impl).
+
+---
+
+### Comments
+
+- Start with `;`, `//` or `#`. Everything after either symbol is ignored until
+  end of line.
+
+```
+LOAD_INPUT 0    # u coordinate
+LOAD_INPUT 1    ; v coordinate
+//ABS           ; Commented out op
+```
+
+---
+
+### Example With Control Flow
+
+```
+.const WHITE 0x00FFFFFF
+.const OPAQUE 0x10000
+
+LOAD_INPUT in_u     ; u
+LOAD_CONST 0x8000   ; 0.5 in 16.16
+LT                  ; u < 0.5?
+LOAD_CONST WHITE
+LOAD_CONST 0        ; black
+SELECT
+LOAD_CONST OPAQUE
+SET_COLOR
+END
+```
+
+---
+
+### Encoding and Output
+
+- Assembler must output a binary file (or buffer) comprising a header (TBD:
+  format. Needs to include uniforms), followed by instructions in VM bytecode as
+  defined in the spec.
+- Label references are resolved into numeric addresses or offsets.
+- Optional: support outputting a listing file mapping source and bytecode.
+
+---
+
+### Error Reporting
+
+- The assembler should report:
+  - Line/column of syntax errors.
+  - Undefined label, macro, or pseudo-op references.
+  - Invalid opcode or argument.
+  - Stack underflow/overflow conditions detectable at assembly time.
+
+---
+
+### Extensibility
+
+- As new opcodes, pseudo-ops, or features are added to the VM spec,
+  corresponding assembler support must also be added.
+
+---
+
+### Example Tool Invocation
+
+```
+awtea-assemble my_shader.asal -o my_shader.bin
+```
+
+## Assembler Header Format
+
+This section specifies the binary header layout emitted by the assembler at the
+start of every Awtea Shader Bytecode file. This header precedes the actual
+bytecode and provides metadata to support loading, validation, linking, and
+runtime execution.
+
+---
+
+### Goals
+
+- Self-describing: allows runtime or tools to quickly identify shader type,
+  version, and required resources.
+- Extensible: room for future entries/sections.
+- Deterministic: always present, same layout for same assembler+spec revision.
+- Allows mapping from symbolic names (used in `.uniform`, `.surface`, `.const`
+  directives) to runtime indices.
+
+---
+
+### Header Layout (Initial Version)
+
+**All fields are little-endian unless otherwise noted. All sizes are in bytes.**
+
+| Offset | Size | Type                                           | Name/Description                          |
+| ------ | ---- | ---------------------------------------------- | ----------------------------------------- |
+| 0x00   | 4    | uint32_t                                       | Magic number (e.g. `0x41575453` = 'AWTS') |
+| 0x04   | 2    | uint16_t                                       | VM version (major.minor, e.g. 0x0100)     |
+| 0x06   | 2    | uint16_t                                       | Bytecode offset (from start of file)      |
+| 0x08   | 2    | uint16_t                                       | Number of constants (N_CONSTS)            |
+| 0x0A   | 2    | uint16_t                                       | Number of uniforms (N_UNIFORMS)           |
+| 0x0C   | 2    | uint16_t                                       | Number of inputs (N_INPUTS)               |
+| 0x0E   | 2    | uint16_t                                       | Number of surfaces (N_SURFACES)           |
+| 0x10   | 4*N  | int32_t[]                                      | Constants table (N = N_CONSTS)            |
+| 0xXX   | 4*M  | int32_t[]                                      | Uniform default values (M = N_UNIFORMS)   |
+| 0xYY   | ?    | Name table (see below)                         |                                           |
+| 0xZZ   | ...  | Bytecode section (begins at 'bytecode offset') |                                           |
+
+---
+
+### Name Table (Symbol Map)
+
+The Name table is optional, and if emitted from the assembler, names are stored
+here for each resource table, mapping symbolic name (from `.uniform name`, etc.)
+to table index.
+
+**Format:**
+
+The table is prefixed with
+
+| Offset | Size | Type    | Name/Description                     |
+| ------ | ---- | ------- | ------------------------------------ |
+| 0x00   | 1    | uint8   | The type of the symbol               |
+| 0x01   | 2    | uint16  | Position of the symbol in it's table |
+| 0x03   | 1    | uint8   | The Length of the name in bytes      |
+| 0x04   | n    | char[n] | The name of the symbol               |
+
+**Resource type values:**
+
+- 0 = Sentinel, end of list
+- 1 = constant
+- 2 = uniform
+- 3 = input
+- 4 = surface
+
+If names are not used, this section may be empty
+
+---
+
+### Example (Packed, canonical order):
+
+```
+[Magic] [Version] [Bytecode offset]
+[ConstCount] [UniformCount] [InputCount] [SurfaceCount]
+[Constants]                  -- N * 4 bytes
+[UniformDefaults]            -- M * 4 bytes
+{Name Table}
+[Bytecode Instructions...]   -- Starting at Bytecode offset
+```
+
+---
+
+### Minimal Example
+
+For a shader with 2 constants, 1 uniform, 2 inputs, 1 surface, and 12 bytes of
+bytecode:
+
+```
+Offset  Data
+0       0x53 0x54 0x57 0x41          ; Magic: 'AWTS'
+4       0x00 0x01                    ; VM version 1.0
+6       0x28 0x00                    ; Bytecode offset = 40
+8       0x02 0x00                    ; N_CONSTS = 2
+10      0x01 0x00                    ; N_UNIFORMS = 1
+12      0x02 0x00                    ; N_INPUTS = 2
+14      0x01 0x00                    ; N_SURFACES = 1
+16      [const0 4 bytes]
+20      [const1 4 bytes]
+24      [uniform0 default 4 bytes]
+28      [name table...]
+40      [bytecode...]
+```
+
+_(Offsets and field locations grow linearly with higher counts.)_
+
+---
+
+### Bytecode Section
+
+- All instructions are byte-packed as specified in the opcode table, with
+  arguments as defined (opcode, then args, then next opcode).
+- Label resolution is already performed; jumps/calls use numeric offsets.
+
+---
+
+### Future / Extensions
+
+- TBD
+
+---
+
+### Reading Procedure (Host/VM)
+
+1. Parse magic/version/offsets.
+2. Load constants, uniforms, inputs, surfaces.
+3. Build lookup tables for symbolic names (if present).
+4. Begin interpreting the bytecode at the indicated offset.
+
+---
