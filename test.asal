@@ -1,0 +1,22 @@
+.const delta 10
+
+; These are actually implict, and it's impossible to (re)define in_u/in_v
+.input in_u 0
+.input in_v 1
+
+.surface dest 0
+.surface src 1
+
+start:
+    LOAD_INPUT in_u
+    LOAD_INPUT in_v
+
+    LOAD_CONST delta
+
+    VEC_OP 2 ADD
+
+    SAMPLE_SURFACE src
+
+    ; No surface is provided to SET_COLOR - it will always operate on surface 0 (dest)
+    SET_COLOR
+    END

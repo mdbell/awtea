@@ -29,53 +29,91 @@ format**\
 
 ## Opcodes
 
-| Name                 | Code | Stack Args     | Stack Output        | Description                                                            |
-| -------------------- | ---- | -------------- | ------------------- | ---------------------------------------------------------------------- |
-| **Stack Load**       |      |                |                     |                                                                        |
-| LOAD_CONST _n_       | 0x01 |                | [const[n]]          | Pushes constant value (from shader's constant table)                   |
-| LOAD_UNIFORM _n_     | 0x02 |                | [uniform[n]]        | Pushes current uniform                                                 |
-| LOAD_INPUT _n_       | 0x03 |                | [input[n]]          | Per-pixel interpolators: u, v, screen_x, ...                           |
-| POP                  | 0x04 | [a]            | -                   | Discard top stack value                                                |
-| DUP                  | 0x05 | [a]            | [a, a]              | Duplicate top value                                                    |
-| SWAP                 | 0x06 | [a, b]         | [b, a]              | Swap top two                                                           |
-| **Arithmetic**       |      |                |                     | _All ops are fixed-point_                                              |
-| ADD                  | 0x10 | [a, b]         | [a+b]               | Fixed-point addition                                                   |
-| SUB                  | 0x11 | [a, b]         | [a-b]               | Fixed-point subtraction                                                |
-| MUL                  | 0x12 | [a, b]         | [a*b>>16]           | Fixed-point multiply (16.16)                                           |
-| DIV                  | 0x13 | [a, b]         | [a<<16/b]           | Fixed-point division (16.16)                                           |
-| MOD                  | 0x14 | [a, b]         | [a % b]             | Integer modulo                                                         |
-| NEG                  | 0x15 | [a]            | [-a]                | Fixed-point negation                                                   |
-| MIN                  | 0x16 | [a, b]         | [min(a,b)]          | Minimum value                                                          |
-| MAX                  | 0x17 | [a, b]         | [max(a,b)]          | Maximum value                                                          |
-| ABS                  | 0x18 | [a]            | [abs(a)]            | `a = a < 0 ? -a : a`                                                   |
-| CLAMP                | 0x19 | [a, b, c]      | [clamp(a,b,c)]      | clamps the value a between b (min) and c (max)                         |
-| SIGN                 | 0x1A | [a]            | [signum(a)]         | `a == 0 ? 0 : a < 0 ? -1 : 1`                                          |
-| MUL_VEC _n_          | 0x1B | [s, a, b, ...] | [a * s, b * s, ...] | pops the scalar off the stack, then multiples given values             |
-| ADD_VEC _n_          | 0x1C | [d, a, b, ...] | [a + d, b + d, ...] | pops the delta off the stack, then adds to the given values            |
-| **Comparison/Logic** |      |                |                     | _Results are int32—0 for false, 1 for true_                            |
-| EQ                   | 0x20 | [a, b]         | [a == b]            | Integer/fixed-point equality                                           |
-| NEQ                  | 0x21 | [a, b]         | [a != b]            | Inequality                                                             |
-| LT                   | 0x22 | [a, b]         | [a < b]             | Less-than                                                              |
-| LE                   | 0x23 | [a, b]         | [a <= b]            | Less-or-equal                                                          |
-| GT                   | 0x24 | [a, b]         | [a > b]             | Greater-than                                                           |
-| GE                   | 0x25 | [a, b]         | [a >= b]            | Greater-or-equal                                                       |
-| AND                  | 0x26 | [a, b]         | [a & b]             | Bitwise and                                                            |
-| OR                   | 0x27 | [a, b]         | [a \| b]            | Bitwise or                                                             |
-| NOT                  | 0x28 | [a]            | [~a]                | Bitwise not                                                            |
-| **Branch/Flow**      |      |                |                     | _Offsets are signed int16_                                             |
-| JUMP offset          | 0x30 |                |                     | Unconditional jump (relative)                                          |
-| JZ offset            | 0x31 | [a]            |                     | Jump relative if a==0 ("false")                                        |
-| JNZ offset           | 0x32 | [a]            |                     | Jump relative if a!=0 ("true")                                         |
-| CALL addr            | 0x33 |                |                     | Call subroutine (reserved - not impl)                                  |
-| RET                  | 0x34 |                |                     | Return from subroutine (reserved - not impl)                           |
-| CALL_NATIVE _n_      | 0x35 | [a, b, c, ..]  | [result]            | Calls native function _n_                                              |
-| **Conditional**      |      |                |                     | _TBD: Maybe expand this section, e.g `ISZERO`, `ISNEG` etc_            |
-| SELECT               | 0x40 | [cond, a, b]   | [cond?a:b]          | If cond (nonzero), push a else b                                       |
-| **Texture/Draw**     |      |                |                     | _Note that all surface operations do _not_ have an associated context_ |
-| SAMPLE_SURFACE n     | 0x50 | [u, v]         | [r,g,b,a]           | Sample surface n at (u,v), push 4 fixed-point RGBA [0-255<<16]         |
-| SET_COLOR            | 0x51 | [r,g,b,a]      |                     | Set output color (RGBA, int/fixed, top 4 stack vals)                   |
-| **Program**          |      |                |                     |                                                                        |
-| END                  | 0xFF |                |                     | End of program                                                         |
+| Name                 | Code | Stack Args          | Stack Output          | Description                                                            |
+| -------------------- | ---- | ------------------- | --------------------- | ---------------------------------------------------------------------- |
+| **Stack Load**       |      |                     |                       |                                                                        |
+| LOAD_CONST _n_       | 0x01 |                     | [const[n]]            | Pushes constant value (from shader's constant table)                   |
+| LOAD_UNIFORM _n_     | 0x02 |                     | [uniform[n]]          | Pushes current uniform                                                 |
+| LOAD_INPUT _n_       | 0x03 |                     | [input[n]]            | Per-pixel interpolators: u, v, screen_x, ...                           |
+| POP                  | 0x04 | [a]                 | -                     | Discard top stack value                                                |
+| DUP                  | 0x05 | [a]                 | [a, a]                | Duplicate top value                                                    |
+| SWAP                 | 0x06 | [a, b]              | [b, a]                | Swap top two                                                           |
+| **Arithmetic**       |      |                     |                       | _All ops are fixed-point_                                              |
+| ADD                  | 0x10 | [a, b]              | [a+b]                 | Fixed-point addition                                                   |
+| SUB                  | 0x11 | [a, b]              | [a-b]                 | Fixed-point subtraction                                                |
+| MUL                  | 0x12 | [a, b]              | [a*b>>16]             | Fixed-point multiply (16.16)                                           |
+| DIV                  | 0x13 | [a, b]              | [a<<16/b]             | Fixed-point division (16.16)                                           |
+| MOD                  | 0x14 | [a, b]              | [a % b]               | Integer modulo                                                         |
+| NEG                  | 0x15 | [a]                 | [-a]                  | Fixed-point negation                                                   |
+| MIN                  | 0x16 | [a, b]              | [min(a,b)]            | Minimum value                                                          |
+| MAX                  | 0x17 | [a, b]              | [max(a,b)]            | Maximum value                                                          |
+| ABS                  | 0x18 | [a]                 | [abs(a)]              | `a = a < 0 ? -a : a`                                                   |
+| CLAMP                | 0x19 | [a, b, c]           | [clamp(a,b,c)]        | clamps the value a between b (min) and c (max)                         |
+| SIGN                 | 0x1A | [a]                 | [signum(a)]           | `a == 0 ? 0 : a < 0 ? -1 : 1`                                          |
+| VEC_OP _n_ _op_      | 0x1B | [... x0 x1 x2 x3 s] | [... x0' x1' x2' x3'] | Vectorized op across n values                                          |
+| **Comparison/Logic** |      |                     |                       | _Results are int32—0 for false, 1 for true_                            |
+| EQ                   | 0x20 | [a, b]              | [a == b]              | Integer/fixed-point equality                                           |
+| NEQ                  | 0x21 | [a, b]              | [a != b]              | Inequality                                                             |
+| LT                   | 0x22 | [a, b]              | [a < b]               | Less-than                                                              |
+| LE                   | 0x23 | [a, b]              | [a <= b]              | Less-or-equal                                                          |
+| GT                   | 0x24 | [a, b]              | [a > b]               | Greater-than                                                           |
+| GE                   | 0x25 | [a, b]              | [a >= b]              | Greater-or-equal                                                       |
+| AND                  | 0x26 | [a, b]              | [a & b]               | Bitwise and                                                            |
+| OR                   | 0x27 | [a, b]              | [a \| b]              | Bitwise or                                                             |
+| NOT                  | 0x28 | [a]                 | [~a]                  | Bitwise not                                                            |
+| **Branch/Flow**      |      |                     |                       | _Offsets are signed int16_                                             |
+| JUMP offset          | 0x30 |                     |                       | Unconditional jump (relative)                                          |
+| JZ offset            | 0x31 | [a]                 |                       | Jump relative if a==0 ("false")                                        |
+| JNZ offset           | 0x32 | [a]                 |                       | Jump relative if a!=0 ("true")                                         |
+| CALL addr            | 0x33 |                     |                       | Call subroutine (reserved - not impl)                                  |
+| RET                  | 0x34 |                     |                       | Return from subroutine (reserved - not impl)                           |
+| CALL_NATIVE _n_      | 0x35 | [a, b, c, ..]       | [result]              | Calls native function _n_                                              |
+| **Conditional**      |      |                     |                       | _TBD: Maybe expand this section, e.g `ISZERO`, `ISNEG` etc_            |
+| SELECT               | 0x40 | [cond, a, b]        | [cond?a:b]            | If cond (nonzero), push a else b                                       |
+| **Texture/Draw**     |      |                     |                       | _Note that all surface operations do _not_ have an associated context_ |
+| SAMPLE_SURFACE n     | 0x50 | [u, v]              | [r,g,b,a]             | Sample surface n at (u,v), push 4 fixed-point RGBA [0-255<<16]         |
+| SET_COLOR            | 0x51 | [r,g,b,a]           |                       | Set output color (RGBA, int/fixed, top 4 stack vals)                   |
+| **Program**          |      |                     |                       |                                                                        |
+| END                  | 0xFF |                     |                       | End of program                                                         |
+
+### Vector Operations
+
+These are (sub) opcodes for the `VEC_OP` - they mirror their non-vector
+counterparts, but operate on `n` elements on top of the stack instead of single
+ops.
+
+| Code | Operation | Arguments  |
+| ---- | --------- | ---------- |
+| 0x01 | ADD       | [delta]    |
+| 0x02 | SUB       | [delta]    |
+| 0x03 | MUL       | [scalar]   |
+| 0x04 | DIV       | [scalar]   |
+| 0x05 | MOD       | [modulus]  |
+| 0x06 | NEG       | -          |
+| 0x07 | MIN       | -          |
+| 0x08 | MAX       | -          |
+| 0x09 | CLAMP     | [min, max] |
+| 0x0A | SIGN      | -          |
+
+#### Example
+
+```
+.const one 1
+.const two 2
+.const three 3
+.const delta 10
+
+LOAD_CONST one
+LOAD_CONST two
+LOAD_CONST three
+; stack before: [1, 2, 3]    (bottom to top)
+LOAD_CONST delta
+; stack before: [1, 2, 3, 10]   (bottom to top)
+
+VEC_OP 3 0x01   ; Apply ADD with delta=10 to 3 values
+
+; stack after: [11, 12, 13]
+```
 
 ---
 
