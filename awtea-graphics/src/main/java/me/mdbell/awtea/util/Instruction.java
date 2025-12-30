@@ -9,8 +9,9 @@ public enum Instruction {
     LOAD_UNIFORM(0x02, 2, 1),
     LOAD_INPUT(0x03, 2, 1),
     POP(0x04, -1),
-    DUP(0x05, 1),
+    DUP(0x05),
     SWAP(0x06),
+    DUP_X(0x07, 2, Integer.MAX_VALUE),
     // Arithmetic
     ADD(0x10, -1),
     SUB(0x11, -1),

@@ -2,14 +2,9 @@
 
 ## Overview
 
-This VM executes shaders on a stack machine using **fixed-point integer
-arithmetic** for all values.\
-Constants, uniforms, and pixel inputs are drawn from separate tables. The VM is
-extensible for SIMD in the future.
-
-**All numeric stack values are 32-bit signed integers in 16.16 fixed-point
-format**\
-(e.g., 0x00010000 = 1.0, 0x00008000 = 0.5, 0xFFFFFFFF = -0.0000153...)
+This VM executes shaders on a stack machine using 32-bit IEEE-754 floating-point
+arithmetic (float32) for all values. **All numeric stack values are 32-bit
+floats (e.g., 1.0f, 0.5f, -0.0f, etc.)**
 
 ## Constants
 
@@ -29,52 +24,53 @@ format**\
 
 ## Opcodes
 
-| Name                 | Code | Stack Args          | Stack Output          | Description                                                            |
-| -------------------- | ---- | ------------------- | --------------------- | ---------------------------------------------------------------------- |
-| **Stack Load**       |      |                     |                       |                                                                        |
-| LOAD_CONST _n_       | 0x01 |                     | [const[n]]            | Pushes constant value (from shader's constant table)                   |
-| LOAD_UNIFORM _n_     | 0x02 |                     | [uniform[n]]          | Pushes current uniform                                                 |
-| LOAD_INPUT _n_       | 0x03 |                     | [input[n]]            | Per-pixel interpolators: u, v, screen_x, ...                           |
-| POP                  | 0x04 | [a]                 | -                     | Discard top stack value                                                |
-| DUP                  | 0x05 | [a]                 | [a, a]                | Duplicate top value                                                    |
-| SWAP                 | 0x06 | [a, b]              | [b, a]                | Swap top two                                                           |
-| **Arithmetic**       |      |                     |                       | _All ops are fixed-point_                                              |
-| ADD                  | 0x10 | [a, b]              | [a+b]                 | Fixed-point addition                                                   |
-| SUB                  | 0x11 | [a, b]              | [a-b]                 | Fixed-point subtraction                                                |
-| MUL                  | 0x12 | [a, b]              | [a*b>>16]             | Fixed-point multiply (16.16)                                           |
-| DIV                  | 0x13 | [a, b]              | [a<<16/b]             | Fixed-point division (16.16)                                           |
-| MOD                  | 0x14 | [a, b]              | [a % b]               | Integer modulo                                                         |
-| NEG                  | 0x15 | [a]                 | [-a]                  | Fixed-point negation                                                   |
-| MIN                  | 0x16 | [a, b]              | [min(a,b)]            | Minimum value                                                          |
-| MAX                  | 0x17 | [a, b]              | [max(a,b)]            | Maximum value                                                          |
-| ABS                  | 0x18 | [a]                 | [abs(a)]              | `a = a < 0 ? -a : a`                                                   |
-| CLAMP                | 0x19 | [a, b, c]           | [clamp(a,b,c)]        | clamps the value a between b (min) and c (max)                         |
-| SIGN                 | 0x1A | [a]                 | [signum(a)]           | `a == 0 ? 0 : a < 0 ? -1 : 1`                                          |
-| VEC_OP _n_ _op_      | 0x1B | [... x0 x1 x2 x3 s] | [... x0' x1' x2' x3'] | Vectorized op across n values                                          |
-| **Comparison/Logic** |      |                     |                       | _Results are int32—0 for false, 1 for true_                            |
-| EQ                   | 0x20 | [a, b]              | [a == b]              | Integer/fixed-point equality                                           |
-| NEQ                  | 0x21 | [a, b]              | [a != b]              | Inequality                                                             |
-| LT                   | 0x22 | [a, b]              | [a < b]               | Less-than                                                              |
-| LE                   | 0x23 | [a, b]              | [a <= b]              | Less-or-equal                                                          |
-| GT                   | 0x24 | [a, b]              | [a > b]               | Greater-than                                                           |
-| GE                   | 0x25 | [a, b]              | [a >= b]              | Greater-or-equal                                                       |
-| AND                  | 0x26 | [a, b]              | [a & b]               | Bitwise and                                                            |
-| OR                   | 0x27 | [a, b]              | [a \| b]              | Bitwise or                                                             |
-| NOT                  | 0x28 | [a]                 | [~a]                  | Bitwise not                                                            |
-| **Branch/Flow**      |      |                     |                       | _Offsets are signed int16_                                             |
-| JUMP offset          | 0x30 |                     |                       | Unconditional jump (relative)                                          |
-| JZ offset            | 0x31 | [a]                 |                       | Jump relative if a==0 ("false")                                        |
-| JNZ offset           | 0x32 | [a]                 |                       | Jump relative if a!=0 ("true")                                         |
-| CALL addr            | 0x33 |                     |                       | Call subroutine (reserved - not impl)                                  |
-| RET                  | 0x34 |                     |                       | Return from subroutine (reserved - not impl)                           |
-| CALL_NATIVE _n_      | 0x35 | [a, b, c, ..]       | [result]              | Calls native function _n_                                              |
-| **Conditional**      |      |                     |                       | _TBD: Maybe expand this section, e.g `ISZERO`, `ISNEG` etc_            |
-| SELECT               | 0x40 | [cond, a, b]        | [cond?a:b]            | If cond (nonzero), push a else b                                       |
-| **Texture/Draw**     |      |                     |                       | _Note that all surface operations do _not_ have an associated context_ |
-| SAMPLE_SURFACE n     | 0x50 | [u, v]              | [r,g,b,a]             | Sample surface n at (u,v), push 4 fixed-point RGBA [0-255<<16]         |
-| SET_COLOR            | 0x51 | [r,g,b,a]           |                       | Set output color (RGBA, int/fixed, top 4 stack vals)                   |
-| **Program**          |      |                     |                       |                                                                        |
-| END                  | 0xFF |                     |                       | End of program                                                         |
+| Name                 | Code | Stack Args          | Stack Output          | Description                                                                |
+| -------------------- | ---- | ------------------- | --------------------- | -------------------------------------------------------------------------- |
+| **Stack Load**       |      |                     |                       |                                                                            |
+| LOAD_CONST _n_       | 0x01 |                     | [const[n]]            | Pushes constant value (from shader's constant table)                       |
+| LOAD_UNIFORM _n_     | 0x02 |                     | [uniform[n]]          | Pushes current uniform                                                     |
+| LOAD_INPUT _n_       | 0x03 |                     | [input[n]]            | Per-pixel interpolators: u, v, screen_x, ...                               |
+| POP                  | 0x04 | [a]                 | -                     | Discard top stack value                                                    |
+| DUP                  | 0x05 | [a]                 | [a, a]                | Duplicate top value                                                        |
+| SWAP                 | 0x06 | [a, b]              | [b, a]                | Swap top two values                                                        |
+| DUP_X _n_            | 0x07 | [a]                 | [a, ..., a]           | Duplicates the top value of the stack _n_ times                            |
+| **Arithmetic**       |      |                     |                       |                                                                            |
+| ADD                  | 0x10 | [a, b]              | [a+b]                 |                                                                            |
+| SUB                  | 0x11 | [a, b]              | [a-b]                 |                                                                            |
+| MUL                  | 0x12 | [a, b]              | [a*b]                 |                                                                            |
+| DIV                  | 0x13 | [a, b]              | [a/b]                 |                                                                            |
+| MOD                  | 0x14 | [a, b]              | [a % b]               |                                                                            |
+| NEG                  | 0x15 | [a]                 | [-a]                  |                                                                            |
+| MIN                  | 0x16 | [a, b]              | [min(a,b)]            | Minimum value                                                              |
+| MAX                  | 0x17 | [a, b]              | [max(a,b)]            | Maximum value                                                              |
+| ABS                  | 0x18 | [a]                 | [abs(a)]              | `a = a < 0 ? -a : a`                                                       |
+| CLAMP                | 0x19 | [a, b, c]           | [clamp(a,b,c)]        | clamps the value a between b (min) and c (max)                             |
+| SIGN                 | 0x1A | [a]                 | [signum(a)]           | `a == 0 ? 0 : a < 0 ? -1 : 1`                                              |
+| VEC_OP _n_ _op_      | 0x1B | [... x0 x1 x2 x3 s] | [... x0' x1' x2' x3'] | Vectorized op across n values                                              |
+| **Comparison/Logic** |      |                     |                       | _Results are 0 for false, 1 for true_                                      |
+| EQ                   | 0x20 | [a, b]              | [a == b]              |                                                                            |
+| NEQ                  | 0x21 | [a, b]              | [a != b]              | Inequality                                                                 |
+| LT                   | 0x22 | [a, b]              | [a < b]               | Less-than                                                                  |
+| LE                   | 0x23 | [a, b]              | [a <= b]              | Less-or-equal                                                              |
+| GT                   | 0x24 | [a, b]              | [a > b]               | Greater-than                                                               |
+| GE                   | 0x25 | [a, b]              | [a >= b]              | Greater-or-equal                                                           |
+| AND                  | 0x26 | [a, b]              | [a & b]               | Bitwise and                                                                |
+| OR                   | 0x27 | [a, b]              | [a \| b]              | Bitwise or                                                                 |
+| NOT                  | 0x28 | [a]                 | [~a]                  | Bitwise not                                                                |
+| **Branch/Flow**      |      |                     |                       | _Offsets are signed int16_                                                 |
+| JUMP offset          | 0x30 |                     |                       | Unconditional jump (relative)                                              |
+| JZ offset            | 0x31 | [a]                 |                       | Jump relative if a==0 ("false")                                            |
+| JNZ offset           | 0x32 | [a]                 |                       | Jump relative if a!=0 ("true")                                             |
+| CALL addr            | 0x33 |                     |                       | Call subroutine (reserved - not impl)                                      |
+| RET                  | 0x34 |                     |                       | Return from subroutine (reserved - not impl)                               |
+| CALL_NATIVE _n_      | 0x35 | [a, b, c, ..]       | [result]              | Calls native function _n_                                                  |
+| **Conditional**      |      |                     |                       | _TBD: Maybe expand this section, e.g `ISZERO`, `ISNEG` etc_                |
+| SELECT               | 0x40 | [cond, a, b]        | [cond?a:b]            | If cond (nonzero), push a else b                                           |
+| **Texture/Draw**     |      |                     |                       | _Note that all surface operations do _not_ have an associated context_     |
+| SAMPLE_SURFACE n     | 0x50 | [u, v]              | [r,g,b,a]             | Sample surface n at (u,v), push 4 floating channels in RGBA                |
+| SET_COLOR            | 0x51 | [r,g,b,a]           |                       | Set output color (RGBA, each channel is between 0.0-1.0, top 4 stack vals) |
+| **Program**          |      |                     |                       |                                                                            |
+| END                  | 0xFF |                     |                       | End of program                                                             |
 
 ### Vector Operations
 
@@ -127,15 +123,8 @@ behavior and makes it easier to extend the VM in future versions.
 
 ### Value Representation
 
-All values in the VM (stack, constants, uniforms, inputs, outputs) are **signed
-32-bit integers using a 16.16 fixed-point format**.
-
-- **Examples:**
-  - Integer 1.0 = `0x00010000`
-  - Fractional 0.5 = `0x00008000`
-  - Integer -2 = `0xFFFE0000`
-- All math, logic, and sampler operations expect/furnish values in this format
-  unless otherwise noted.
+All values in the VM (stack, constants, uniforms, inputs, outputs) are 32-bit
+floats
 
 ---
 
@@ -148,7 +137,7 @@ All values in the VM (stack, constants, uniforms, inputs, outputs) are **signed
 - Read-only.
 
 ```c
-int32_t constants[MAX_CONSTS];
+float constants[MAX_CONSTS];
 // Provided in the shader struct/header
 ```
 
@@ -159,7 +148,7 @@ int32_t constants[MAX_CONSTS];
 - Constant within a shading batch.
 
 ```c
-int32_t uniforms[MAX_UNIFORMS];
+float uniforms[MAX_UNIFORMS];
 // Provided by host/environment before draw/dispatch
 ```
 
@@ -168,12 +157,12 @@ int32_t uniforms[MAX_UNIFORMS];
 - Per-pixel (or per SIMD batch) data set by the rasterizer or host.
 - Indexed by `LOAD_INPUT`.
 - The set and interpretation of values is host- and shader-dependent, typically:
-  - INPUT_U: u coordinate (fixed-point, e.g., texture)
-  - INPUT_V: v coordinate (fixed-point, e.g., texture)
+  - INPUT_U: u coordinate (float, [0.0, 1.0])
+  - INPUT_V: v coordinate (float, [0.0, 1.0])
   - Future: x/y position, barycentrics, depth, etc.
 
 ```c
-int32_t inputs[MAX_INPUTS];
+float inputs[MAX_INPUTS];
 // Recomputed/calculated for each pixel (or batch)
 ```
 
@@ -184,7 +173,7 @@ int32_t inputs[MAX_INPUTS];
 - Stack overflow/underflow is a validation and runtime error.
 
 ```c
-int32_t stack[MAX_STACK_SIZE];
+float stack[MAX_STACK_SIZE];
 uint32_t sp; // stack pointer (top = stack[sp-1])
 ```
 
@@ -197,7 +186,7 @@ uint32_t sp; // stack pointer (top = stack[sp-1])
 
 ```c
 // C example, up to NATIVE_FUNC_COUNT
-int (*native_funcs[NATIVE_FUNC_COUNT])(int32_t* stack, int argc);
+float (*native_funcs[NATIVE_FUNC_COUNT])(ShaderContext* ctx, int argc);
 ```
 
 #### 6. Surfaces/Textures Descriptor Table
@@ -226,13 +215,13 @@ A typical execution context for the VM might look like:
 
 ```c
 typedef struct {
-    const int32_t* constants;
+    const float* constants;
     uint32_t const_count;
-    const int32_t* uniforms;
+    const float* uniforms;
     uint32_t uniform_count;
-    const int32_t* inputs;
+    const float* inputs;
     uint32_t input_count;
-    int32_t* stack;
+    float* stack;
     uint32_t stack_size;
     Surface* destSurface;
     // native function table, etc.
@@ -392,17 +381,16 @@ Inputs provide per-pixel or per-invocation data. These are passed via the
 
 #### Standard Input Conventions
 
-| Index | Macro      | Description                                | Source                        |
-| ----- | ---------- | ------------------------------------------ | ----------------------------- |
-| 0     | INPUT_U    | u coordinate (texture u, 16.16 fixed)      | Calculated by rasterizer/host |
-| 1     | INPUT_V    | v coordinate (texture v, 16.16 fixed)      | Calculated by rasterizer/host |
-| 2     | RESERVED_1 | reserved for future use (screen/logical X) | Calculated by rasterizer/host |
-| 3     | RESERVED_2 | reserved for future use (screen/logical Y) | Calculated by rasterizer/host |
-| 4+    | -          | Custom per-pixel varyings                  | As determined by host/shader  |
+| Index | Macro      | Description                                 | Source                        |
+| ----- | ---------- | ------------------------------------------- | ----------------------------- |
+| 0     | INPUT_U    | u coordinate (texture u, between 0.0 - 1.0) | Calculated by rasterizer/host |
+| 1     | INPUT_V    | v coordinate (texture v, between 0.0 - 1.0) | Calculated by rasterizer/host |
+| 2     | RESERVED_1 | reserved for future use (screen/logical X)  | Calculated by rasterizer/host |
+| 3     | RESERVED_2 | reserved for future use (screen/logical Y)  | Calculated by rasterizer/host |
+| 4+    | -          | Custom per-pixel varyings                   | As determined by host/shader  |
 
 - By default, only INPUT_U and INPUT_V are required; others may be enabled as
   your pipeline grows.
-- All input values are 32-bit signed integers in 16.16 fixed-point.
 - Inputs are provided by the rasterizer or calling host code for every pixel (or
   batch, when using SIMD).
 - Custom inputs can include barycentric coordinates, per-vertex attributes,
@@ -411,9 +399,9 @@ Inputs provide per-pixel or per-invocation data. These are passed via the
 #### Example: Rasterizer Fills Inputs Per Pixel
 
 ```c
-int32_t inputs[MAX_INPUTS];
-inputs[INPUT_U] = u_fp; // e.g. (x * 0x10000) / w
-inputs[INPUT_V] = v_fp; // e.g. (y * 0x10000) / h
+float inputs[MAX_INPUTS];
+inputs[INPUT_U] = x/ width;
+inputs[INPUT_V] = y / height;
 // Optionally: inputs[RESERVED_1] = ...; inputs[RESERVED_2] = ...;
 
 // Then, for each pixel:
@@ -430,10 +418,9 @@ The **primary output** of a shader invocation is the RGBA color, written via the
 #### SET_COLOR Behavior
 
 - `SET_COLOR` expects the top 4 stack values to be (in order):\
-  `[R (fixed), G (fixed), B (fixed), A (fixed)]`
-- The VM must clamp and convert each channel from 16.16 fixed-point
-  (`0x00000000` to `0x00FF0000` for 0..255) to 8-bit unsigned integer
-  (`0..255`).
+  `[R (normalized), G (normalized), B (normalized), A (normalized)]`
+- The VM must clamp and convert each channel from normalized floating values
+  (0.0 - 1.0) to bytes (0-255)
 - The converted and clamped RGBA values are written to the output surface,
   which, together with the pixel's coordinates, determines the final rendered
   value in the surface/framebuffer.
@@ -452,7 +439,7 @@ The **primary output** of a shader invocation is the RGBA color, written via the
 
 - **Uniforms**: Constant for a draw/dispatch; loaded with `LOAD_UNIFORM n`.
 - **Constants**: Built into compiled shader; loaded with `LOAD_CONST n`.
-- Both are int32 (16.16 fixed-point), and are read-only in the VM.
+- Both are floating point, and are read-only in the VM.
 
 ---
 
@@ -505,11 +492,9 @@ capabilities without expanding the core opcode set.
   pointers/callbacks.
 - Each entry follows a standard calling convention, e.g.:
   ```c
-  typedef int32_t (*AwteaNativeFunc)(ShaderContext* ctx, int argc);
+  typedef float (*AwteaNativeFunc)(ShaderContext* ctx, int argc);
   AwteaNativeFunc native_funcs[NATIVE_FUNC_COUNT];
   ```
-- For fixed-point VM, all arguments and return values are 32-bit signed, in
-  16.16 fixed-point, unless otherwise agreed.
 
 ---
 
@@ -527,11 +512,10 @@ capabilities without expanding the core opcode set.
 ### Function Signature
 
 ```c
-// Example: single-argument "sin" function for fixed-point
-int32_t fixed_sin(ShaderContext* ctx, int argc) {
+float my_sin(ShaderContext* ctx, int argc) {
     assert(argc == 1);
-    int32_t angle = pop_stack(ctx);  // Fixed-point input
-    return my_fixed_sin_impl(angle); // Implementation returns fixed-point
+    float angle = pop_stack(ctx);
+    return sin(angle);
 }
 ```
 
@@ -543,8 +527,8 @@ int32_t fixed_sin(ShaderContext* ctx, int argc) {
 
 ```c
 // Host code, before shader execution:
-native_funcs[0] = fixed_sin;
-native_funcs[1] = fixed_exp;
+native_funcs[0] = my_sin;
+native_funcs[1] = my_exp;
 // ... up to NATIVE_FUNC_COUNT
 ```
 
@@ -559,7 +543,7 @@ case OP_CALL_NATIVE: {
     int argc = ...;     // TBD: Determine argument count for fn_id
     assert(fn);         // Validation guarantees this
     assert(sp >= argc); // Sufficient stack arguments
-    int32_t result = fn(context, argc);
+    float result = fn(context, argc);
     push_stack(context, result);
     break;
 }
@@ -598,7 +582,7 @@ case OP_CALL_NATIVE: {
 ### Limitations
 
 - NATIVE_FUNC_COUNT is a build-time constant (can be extended).
-- Stack arguments and returns are always fixed-point 32-bit integers.
+- Stack arguments and returns are always floating point
 - No reentrant or recursive calls by default.
 
 ---
@@ -690,20 +674,16 @@ under/overflow or illegal memory/resource access.
 ## Limitations
 
 The current version of the Awtea Shaders Bytecode VM is designed to be simple,
-robust, and efficient for 2D raster shader execution with fixed-point
-arithmetic. As such, it comes with several intentional limitations. These are
-important to understand for both shader authors and VM integrators, as they
-define the baseline behavior and expectations for the system.
+robust, and efficient for 2D raster shader execution As such, it comes with
+several intentional limitations. These are important to understand for both
+shader authors and VM integrators, as they define the baseline behavior and
+expectations for the system.
 
 ---
 
 ### Arithmetic and Value Representation
 
-- **Fixed-point only:** All numeric operations are 32-bit signed integers in
-  16.16 fixed-point. There is no hardware or software floating-point support.
 - **No 64-bit or double-precision math.**
-- **Division/modulo:** Division and modulo by zero are validation/runtime
-  errors; no defined result for these cases.
 
 ---
 
@@ -763,8 +743,8 @@ define the baseline behavior and expectations for the system.
 
 - **No untrusted/dynamic code loading:** All native functions must be
   pre-registered at application build/initialization.
-- **No return of struct or non-int values:** Only int32 fixed-point return;
-  complex types must be emulated in multiple calls.
+- **No return of struct or non-int values:** Only float return; complex types
+  must be emulated in multiple calls.
 - **No recursion or callbacks from native back into VM.**
 - **Undefined behavior if stack discipline violated:** Native extensions must
   obey calling/stack convention.
@@ -850,8 +830,6 @@ compute, and host integration scenarios.
   build-time cap.
 - **Extended argument/return convention:** Support multiple returns or
   struct-like returns.
-- **Support non-int32 types:** Future versions could allow passing fixed-point
-  vectors, booleans, or even float if needed.
 
 #### 5. Surface and Sampling Model Extensions
 
@@ -987,7 +965,7 @@ loop_end:
 Constants:
 
 ```
-.const PI 0x0003243F      ; defines macro-like PI = 0x0003243F
+.const PI 3.1415927      ; defines macro-like PI = 3.1415927
 LOAD_CONST PI
 ```
 
@@ -1012,10 +990,10 @@ LOAD_INPUT in_v
 
 ```
 ; Solid blue output
-LOAD_CONST 0         ; R = 0
-LOAD_CONST 0         ; G = 0
-LOAD_CONST 0xFF0000  ; B = 255.0 (fixed)
-LOAD_CONST 0x10000   ; A = 1.0 (fixed)
+LOAD_CONST 0   ; R
+LOAD_CONST 0   ; G
+LOAD_CONST 1.0 ; B = 1.0 (blue)
+LOAD_CONST 1.0 ; A = 1.0 (opaque)
 SET_COLOR
 END
 ```
@@ -1048,14 +1026,18 @@ LOAD_INPUT 1    ; v coordinate
 ### Example With Control Flow
 
 ```
-.const WHITE 0x00FFFFFF
-.const OPAQUE 0x10000
+; WHITE = all color
+.const WHITE 1.0
+.const BLACK 0.0
+.const OPAQUE 1.0
 
-LOAD_INPUT in_u     ; u
-LOAD_CONST 0x8000   ; 0.5 in 16.16
-LT                  ; u < 0.5?
+LOAD_INPUT in_u
+LOAD_CONST 0.5
+LT               ; u < 0.5?
 LOAD_CONST WHITE
-LOAD_CONST 0        ; black
+DUP_X 3
+LOAD_CONST BLACK
+DUP_X 3
 SELECT
 LOAD_CONST OPAQUE
 SET_COLOR
@@ -1130,8 +1112,8 @@ runtime execution.
 | 0x0A   | 2    | uint16_t                                       | Number of uniforms (N_UNIFORMS)           |
 | 0x0C   | 2    | uint16_t                                       | Number of inputs (N_INPUTS)               |
 | 0x0E   | 2    | uint16_t                                       | Number of surfaces (N_SURFACES)           |
-| 0x10   | 4*N  | int32_t[]                                      | Constants table (N = N_CONSTS)            |
-| 0xXX   | 4*M  | int32_t[]                                      | Uniform default values (M = N_UNIFORMS)   |
+| 0x10   | 4*N  | float[]                                        | Constants table (N = N_CONSTS)            |
+| 0xXX   | 4*M  | float[]                                        | Uniform default values (M = N_UNIFORMS)   |
 | 0xYY   | ?    | Name table (see below)                         |                                           |
 | 0xZZ   | ...  | Bytecode section (begins at 'bytecode offset') |                                           |
 

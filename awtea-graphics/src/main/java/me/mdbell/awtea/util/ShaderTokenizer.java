@@ -3,7 +3,6 @@ package me.mdbell.awtea.util;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -11,7 +10,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import lombok.Builder;
@@ -20,7 +18,7 @@ import lombok.Value;
 public class ShaderTokenizer implements Iterator<ShaderTokenizer.Token> {
 
     public enum TokenType {
-        KEYWORD, DIRECTIVE, LABEL, IDENT, NUMBER, COLON, COMMA, COMMENT, NEWLINE, EOF
+        KEYWORD, DIRECTIVE, LABEL, IDENT, NUMBER, COLON, COMMA, COMMENT, NEWLINE, STRING, EOF
     }
 
     @Value
@@ -29,12 +27,12 @@ public class ShaderTokenizer implements Iterator<ShaderTokenizer.Token> {
         private TokenType type;
         private String text;
         private int line, col;
-        private int value;
+        private float value;
 
         @Override
         public String toString() {
             if (type == TokenType.NUMBER)
-                return String.format("(%s,'%s'=%d @%d:%d)", type, text, value, line, col);
+                return String.format("(%s,'%s'=%f @%d:%d)", type, text, value, line, col);
             return String.format("(%s,'%s' @%d:%d)", type, text, line, col);
         }
     }
@@ -149,7 +147,7 @@ public class ShaderTokenizer implements Iterator<ShaderTokenizer.Token> {
                 .build();
     }
 
-    private Token number(String raw, int line, int col, int value) {
+    private Token number(String raw, int line, int col, float value) {
         return Token.builder()
                 .type(TokenType.NUMBER)
                 .text(raw)
@@ -172,6 +170,15 @@ public class ShaderTokenizer implements Iterator<ShaderTokenizer.Token> {
         return Token.builder()
                 .type(TokenType.KEYWORD)
                 .text(word)
+                .line(line)
+                .col(col)
+                .build();
+    }
+
+    private Token string(String str, int line, int col) {
+        return Token.builder()
+                .type(TokenType.STRING)
+                .text(str)
                 .line(line)
                 .col(col)
                 .build();
@@ -232,14 +239,51 @@ public class ShaderTokenizer implements Iterator<ShaderTokenizer.Token> {
                 }
             }
 
+            // Strings
+            if (ch == '"') {
+                boolean escaped = false;
+                int end = cursor + 1;
+                char curr;
+                StringBuilder sb = new StringBuilder();
+                while (end < line.length()) {
+                    curr = line.charAt(end);
+                    end++;
+                    if (escaped) {
+                        sb.append(curr);
+                        escaped = false;
+                    } else if (curr == '\\') {
+                        escaped = true;
+                    } else if (curr == '"') {
+                        colNo += end - cursor;
+                        cursor = end;
+                        return string(sb.toString(), lineNo, startCol);
+                    } else {
+                        sb.append(curr);
+                    }
+                }
+            }
+
             // Directives
             if (ch == '.') {
                 int end = cursor + 1;
-                while (end < line.length() && Character.isLetter(line.charAt(end)))
+                char endChar;
+                while (end < line.length()
+                        && (Character.isLetter(endChar = line.charAt(end)) || Character.isDigit(endChar)))
                     end++;
                 String dir = line.substring(cursor, end);
                 cursor = end;
                 colNo += dir.length();
+
+                // if dir is _all_ digits, we treat it as a parse number (e.g .05)
+                if (dir.matches("^.\\d+$")) {
+                    try {
+                        float value = Float.parseFloat(dir);
+                        return number("." + dir, lineNo, startCol, value);
+                    } catch (Exception e) {
+                        // fallthrough to directive
+                    }
+                }
+
                 return directive(dir, lineNo, startCol);
             }
 
@@ -272,22 +316,9 @@ public class ShaderTokenizer implements Iterator<ShaderTokenizer.Token> {
                 cursor = end;
                 colNo += num.length();
 
-                int val = 0;
+                float val = 0;
                 try {
-                    if (num.matches("[-+]?0[xX][0-9a-fA-F]+")) {
-                        // strip out the 0x prefix
-                        num = num.substring(2);
-                        long asInt = Long.parseLong(num.replace("_", ""), 16);
-                        val = (int) (asInt << 16);
-                    } else if (num.matches("[-+]?[0-9]*\\.[0-9]+([eE][-+]?[0-9]+)?")) {
-                        double d = Double.parseDouble(num);
-                        val = (int) Math.round(d * 65536.0);
-                    } else if (num.matches("[-+]?[0-9]+")) {
-                        long asInt = Long.parseLong(num.replace("_", ""));
-                        val = (int) (asInt << 16);
-                    } else {
-                        return ident(num, lineNo, startCol);
-                    }
+                    val = Float.parseFloat(num);
                     return number(num, lineNo, startCol, val);
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -316,7 +347,9 @@ public class ShaderTokenizer implements Iterator<ShaderTokenizer.Token> {
             cursor++;
             colNo++;
         }
-        if (!done) {
+        if (!done)
+
+        {
             done = true;
             return eof(lineNo);
         }

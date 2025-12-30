@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.mdbell.awtea.util.ShaderTokenizer.Token;
+import me.mdbell.awtea.util.ShaderTokenizer.TokenType;
 import me.mdbell.awtea.util.ast.AstArg;
 import me.mdbell.awtea.util.ast.AstNode;
 import me.mdbell.awtea.util.ast.ConstNode;
@@ -76,7 +77,7 @@ public class ShaderParser {
                     Token nameTk = expect(ShaderTokenizer.TokenType.IDENT);
                     String name = nameTk.getText();
                     Token valueTk = expect(ShaderTokenizer.TokenType.NUMBER);
-                    int value = valueTk.getValue();
+                    float value = valueTk.getValue();
                     end = valueTk;
                     return new ConstNode(start, end, name, value);
                 }
@@ -84,8 +85,10 @@ public class ShaderParser {
                 // Count args until newline or comment or EOF
                 while (lookahead != null &&
                         (lookahead.getType() == ShaderTokenizer.TokenType.IDENT
-                                || lookahead.getType() == ShaderTokenizer.TokenType.NUMBER)) {
+                                || lookahead.getType() == ShaderTokenizer.TokenType.NUMBER
+                                || lookahead.getType() == TokenType.STRING)) {
                     ShaderTokenizer.Token t = lookahead;
+                    System.out.println(t);
                     dargs.add(t.getText());
                     end = lookahead;
                     lookahead = tokenizer.hasNext() ? tokenizer.next() : null;
@@ -104,7 +107,7 @@ public class ShaderParser {
                         continue;
                     }
                     ShaderTokenizer.Token t = lookahead;
-                    Integer value = t.getType() == ShaderTokenizer.TokenType.NUMBER ? t.getValue() : null;
+                    Float value = t.getType() == ShaderTokenizer.TokenType.NUMBER ? t.getValue() : null;
                     iargs.add(new AstArg(t.getText(), value));
                     end = lookahead;
                     lookahead = tokenizer.hasNext() ? tokenizer.next() : null;

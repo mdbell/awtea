@@ -8,9 +8,9 @@ import me.mdbell.awtea.util.ShaderTokenizer.Token;
 @ToString
 public class ConstNode extends AstNode {
     private final String name;
-    private final int value;
+    private final float value;
 
-    public ConstNode(Token start, Token end, String name, int value) {
+    public ConstNode(Token start, Token end, String name, float value) {
         super(start, end);
         this.name = name;
         this.value = value;

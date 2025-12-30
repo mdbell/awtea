@@ -9,5 +9,5 @@ import lombok.ToString;
 @ToString
 public class AstArg {
     private final String text;
-    private final Integer value;
+    private final Float value;
 }

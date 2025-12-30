@@ -1,4 +1,6 @@
-.const delta 10
+; Sample shader, translates all pixels up and right 10% from src to dest
+.include "math.asal"
+.const delta .10
 
 ; These are actually implict, and it's impossible to (re)define in_u/in_v
 .input in_u 0
