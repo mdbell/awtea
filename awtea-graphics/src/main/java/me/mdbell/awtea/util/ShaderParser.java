@@ -88,7 +88,6 @@ public class ShaderParser {
                                 || lookahead.getType() == ShaderTokenizer.TokenType.NUMBER
                                 || lookahead.getType() == TokenType.STRING)) {
                     ShaderTokenizer.Token t = lookahead;
-                    System.out.println(t);
                     dargs.add(t.getText());
                     end = lookahead;
                     lookahead = tokenizer.hasNext() ? tokenizer.next() : null;
