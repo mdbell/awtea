@@ -9,6 +9,9 @@
 #include "awt_edge_table_fixed.h"
 #include "awt_memory.h"
 #include "awt_fast_fill.h"
+#ifdef __wasm_simd128__
+#include "awt_simd.h"
+#endif
 
 // Default edge table pool initial capacity
 #define EDGE_TABLE_POOL_INITIAL_CAPACITY 4
@@ -333,13 +336,33 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
                     memcpy(dst_row, src_row, row_bytes);
                 }
             } else {
-                // Different formats: direct set without blending
-                for (int dst_y = startY; dst_y < endY; ++dst_y) {
-                    int src_y = dst_y - y;
-                    for (int dst_x = startX; dst_x < endX; ++dst_x) {
-                        int src_x = dst_x - x;
-                        uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
-                        set_pixel_func(dst, dst_x, dst_y, src->format, srcPixel);
+                // Different formats: use SIMD conversion for wide scanlines if available
+#ifdef __wasm_simd128__
+                int row_width = endX - startX;
+                if (row_width >= 16) {
+                    // SIMD path: process scanlines with SIMD pixel format conversion
+                    uint32_t* dst_pixels = (uint32_t*)(uintptr_t)dst->ptr;
+                    uint32_t  dst_stride = dst->stride / 4;
+                    
+                    for (int dst_y = startY; dst_y < endY; ++dst_y) {
+                        int src_y = dst_y - y;
+                        uint32_t* src_row = &src_pixels[src_y * src_stride + (startX - x)];
+                        uint32_t* dst_row = &dst_pixels[dst_y * dst_stride + startX];
+                        
+                        // Use SIMD for bulk of the scanline
+                        simd_convert_pixels(dst_row, src_row, row_width, src->format, dst->format);
+                    }
+                } else
+#endif
+                {
+                    // Scalar fallback for narrow scanlines or non-SIMD builds
+                    for (int dst_y = startY; dst_y < endY; ++dst_y) {
+                        int src_y = dst_y - y;
+                        for (int dst_x = startX; dst_x < endX; ++dst_x) {
+                            int src_x = dst_x - x;
+                            uint32_t srcPixel = src_pixels[src_y * src_stride + src_x];
+                            set_pixel_func(dst, dst_x, dst_y, src->format, srcPixel);
+                        }
                     }
                 }
             }
@@ -404,6 +427,29 @@ void blit_image(SurfaceData* dst, SurfaceContext* context, int src_surface_id, i
         uint32_t  dst_stride = dst->stride / 4;
         const PixelFormatInfo* dstInfo = &g_pixel_format_info[dst->format];
         
+#ifdef __wasm_simd128__
+        // SIMD blending path for SRC_OVER with matching formats and wide scanlines
+        int row_width = endX - startX;
+        if (context->composite_mode == COMPOSITE_SRC_OVER && 
+            context->composite_alpha >= 1.0f &&
+            src->format == dst->format &&
+            src->format == PIXEL_FORMAT_ARGB &&  // SIMD blend currently only supports ARGB
+            row_width >= 16) {
+            
+            // Use SIMD for SRC_OVER blending with matching ARGB formats
+            for (int dst_y = startY; dst_y < endY; ++dst_y) {
+                int src_y = dst_y - y;
+                uint32_t* src_row = &src_pixels[src_y * src_stride + (startX - x)];
+                uint32_t* dst_row = &dst_pixels[dst_y * dst_stride + startX];
+                
+                simd_blend_src_over_argb(dst_row, src_row, row_width);
+            }
+            STACK_EXIT();
+            return;
+        }
+#endif
+        
+        // Scalar blending fallback for all other cases
         for (int dst_y = startY; dst_y < endY; ++dst_y) {
             int src_y = dst_y - y;
             uint32_t* src_row = &src_pixels[src_y * src_stride];
