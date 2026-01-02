@@ -12,14 +12,27 @@ import { assertPixelEquals } from "./test_helpers.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";
 
-Deno.test("SIMD feature detection", async () => {
+// Build flag constants (must match awt_build_info.h)
+const BUILD_FLAG_SIMD = 1 << 5;
+
+Deno.test("SIMD feature detection via build flags", async () => {
     const rasterizer = new WasmRasterizer();
     await rasterizer.load(WASM_PATH);
     const exports = rasterizer.getExportsPublic();
     
+    // Check build flags
+    const buildFlags = exports.get_build_flags();
+    const hasSIMDFlag = (buildFlags & BUILD_FLAG_SIMD) !== 0;
+    console.log(`Build flags: 0x${buildFlags.toString(16)}`);
+    console.log(`SIMD build flag: ${hasSIMDFlag ? "YES" : "NO"}`);
+    
+    // Check runtime support
     const hasSIMD = exports.has_simd_support();
-    console.log(`SIMD support: ${hasSIMD ? "YES" : "NO"}`);
-    assertEquals(hasSIMD, 1, "SIMD should be available with -msimd128 flag");
+    console.log(`SIMD runtime support: ${hasSIMD ? "YES" : "NO"}`);
+    
+    // Both should match when compiled with -msimd128
+    assertEquals(hasSIMDFlag, true, "SIMD build flag should be set with -msimd128");
+    assertEquals(hasSIMD, 1, "SIMD runtime support should be available with -msimd128");
 });
 
 Deno.test("SIMD integration - fast fills use SIMD path", async () => {

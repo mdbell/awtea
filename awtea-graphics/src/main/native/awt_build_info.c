@@ -52,6 +52,10 @@ uint32_t get_build_flags(void) {
     flags |= BUILD_FLAG_MEMORY_TRACKING;
 #endif
 
+#ifdef __wasm_simd128__
+    flags |= BUILD_FLAG_SIMD;
+#endif
+
     return flags;
 }
 
@@ -97,6 +101,7 @@ static void init_build_flags_desc(void) {
     APPEND_FLAG_IF_SET(flags, BUILD_FLAG_ASSERTIONS, ASSERT);
     APPEND_FLAG_IF_SET(flags, BUILD_FLAG_LOGGING, LOG);
     APPEND_FLAG_IF_SET(flags, BUILD_FLAG_MEMORY_TRACKING, MEMTRACK);
+    APPEND_FLAG_IF_SET(flags, BUILD_FLAG_SIMD, SIMD);
     
     // If no flags set (minimal production build)
     if (flags == 0) {
