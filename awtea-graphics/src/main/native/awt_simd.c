@@ -1,5 +1,6 @@
 #include "awt_simd.h"
 #include "awt_log.h"
+#include "awt_alpha_lut.h"
 #include <string.h>
 
 // Feature detection for SIMD support
@@ -122,8 +123,7 @@ void simd_blend_src_over_argb(uint32_t* dst, const uint32_t* src, int count) {
         wasm_v128_store(&dst[i], result);
     }
     
-    // Handle remaining pixels with scalar code
-    // (would use the LUT-based blending here in production)
+    // Handle remaining pixels with scalar code using alpha LUT
     for (; i < count; i++) {
         uint32_t s = src[i];
         uint32_t d = dst[i];
@@ -136,7 +136,7 @@ void simd_blend_src_over_argb(uint32_t* dst, const uint32_t* src, int count) {
             continue;
         }
         
-        // Simple alpha blend (using scalar for remaining pixels)
+        // SRC_OVER alpha blend using LUT
         uint8_t sr = (s >> 16) & 0xFF;
         uint8_t sg = (s >> 8) & 0xFF;
         uint8_t sb = s & 0xFF;
@@ -146,12 +146,13 @@ void simd_blend_src_over_argb(uint32_t* dst, const uint32_t* src, int count) {
         uint8_t dg = (d >> 8) & 0xFF;
         uint8_t db = d & 0xFF;
         
-        uint16_t inv_sa = 255 - sa;
+        uint8_t inv_sa = 255 - sa;
         
-        uint8_t out_a = sa + ((da * inv_sa + 127) / 255);
-        uint8_t out_r = sr + ((dr * inv_sa + 127) / 255);
-        uint8_t out_g = sg + ((dg * inv_sa + 127) / 255);
-        uint8_t out_b = sb + ((db * inv_sa + 127) / 255);
+        // Use alpha LUT instead of division
+        uint8_t out_a = sa + alpha_blend_component(inv_sa, da);
+        uint8_t out_r = sr + alpha_blend_component(inv_sa, dr);
+        uint8_t out_g = sg + alpha_blend_component(inv_sa, dg);
+        uint8_t out_b = sb + alpha_blend_component(inv_sa, db);
         
         dst[i] = (out_a << 24) | (out_r << 16) | (out_g << 8) | out_b;
     }
