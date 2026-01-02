@@ -7,7 +7,7 @@
  * - Basic drawing commands
  */
 
-import { assertEquals, assertNotEquals } from "@std/assert";
+import { assertEquals, assertNotEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   PixelFormat,
   SurfaceOperation,

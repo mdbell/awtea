@@ -7,7 +7,7 @@
  * - Complex drawing patterns
  */
 
-import { assertEquals, assertThrows } from "@std/assert";
+import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { PixelFormat, WasmRasterizer } from "./wasm_rasterizer.ts";
 import { assertPixelEquals } from "./test_helpers.ts";
 

@@ -5,7 +5,7 @@
  * color comparisons, and assertions across multiple test files.
  */
 
-import { assertEquals } from "@std/assert";
+import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { WasmRasterizer } from "./wasm_rasterizer.ts";
 
 /**

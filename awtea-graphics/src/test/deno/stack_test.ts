@@ -8,7 +8,7 @@
  * - Stack trace reading on function calls
  */
 
-import { assertEquals, assertNotEquals } from "@std/assert";
+import { assertEquals, assertNotEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { WasmRasterizer } from "./wasm_rasterizer.ts";
 
 const WASM_PATH = "../../../build/wasm/awt_raster.wasm";

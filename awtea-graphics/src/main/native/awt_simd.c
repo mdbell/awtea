@@ -148,12 +148,8 @@ void simd_blend_src_over_argb(uint32_t* dst, const uint32_t* src, int count) {
     }
 }
 
-// Helper macro to apply SIMD shuffle with compile-time constants
-#define SIMD_SHUFFLE_PIXELS(pixels, i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15) \
-    wasm_i8x16_shuffle(pixels, pixels, i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15)
-
 // SIMD-optimized pixel format conversion between any two formats
-// Uses compile-time shuffle patterns for each format combination
+// Uses shuffle indices from PixelFormatInfo for generic conversion
 void simd_convert_pixels(uint32_t* dst, const uint32_t* src, int count,
                         PixelFormat src_format, PixelFormat dst_format) {
     // If formats are the same, just copy
@@ -162,60 +158,34 @@ void simd_convert_pixels(uint32_t* dst, const uint32_t* src, int count,
         return;
     }
     
-    // Get format info for scalar fallback
+    // Get format info
     extern const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT];
     const PixelFormatInfo* src_info = &g_pixel_format_info[src_format];
     const PixelFormatInfo* dst_info = &g_pixel_format_info[dst_format];
     
     int i = 0;
     
-    // Process 4 pixels at a time with SIMD using compile-time shuffle patterns
-    // We need to handle the most common conversions with explicit cases
-    if (src_format == PIXEL_FORMAT_ARGB && dst_format == PIXEL_FORMAT_RGBA) {
-        // ARGB -> RGBA: rotate each pixel left by 1 byte
-        for (; i <= count - 4; i += 4) {
-            v128_t argb = wasm_v128_load(&src[i]);
-            v128_t rgba = SIMD_SHUFFLE_PIXELS(argb, 1,2,3,0, 5,6,7,4, 9,10,11,8, 13,14,15,12);
-            wasm_v128_store(&dst[i], rgba);
-        }
-    } else if (src_format == PIXEL_FORMAT_RGBA && dst_format == PIXEL_FORMAT_ARGB) {
-        // RGBA -> ARGB: rotate each pixel right by 1 byte
-        for (; i <= count - 4; i += 4) {
-            v128_t rgba = wasm_v128_load(&src[i]);
-            v128_t argb = SIMD_SHUFFLE_PIXELS(rgba, 3,0,1,2, 7,4,5,6, 11,8,9,10, 15,12,13,14);
-            wasm_v128_store(&dst[i], argb);
-        }
-    } else if (src_format == PIXEL_FORMAT_ARGB && dst_format == PIXEL_FORMAT_ABGR) {
-        // ARGB -> ABGR: keep A, reverse RGB
-        for (; i <= count - 4; i += 4) {
-            v128_t argb = wasm_v128_load(&src[i]);
-            v128_t abgr = SIMD_SHUFFLE_PIXELS(argb, 0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13);
-            wasm_v128_store(&dst[i], abgr);
-        }
-    } else if (src_format == PIXEL_FORMAT_ABGR && dst_format == PIXEL_FORMAT_ARGB) {
-        // ABGR -> ARGB: keep A, reverse RGB (same shuffle as ARGB->ABGR)
-        for (; i <= count - 4; i += 4) {
-            v128_t abgr = wasm_v128_load(&src[i]);
-            v128_t argb = SIMD_SHUFFLE_PIXELS(abgr, 0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13);
-            wasm_v128_store(&dst[i], argb);
-        }
-    } else if (src_format == PIXEL_FORMAT_RGBA && dst_format == PIXEL_FORMAT_ABGR) {
-        // RGBA -> ABGR: R<->B, G stays, A rotates
-        for (; i <= count - 4; i += 4) {
-            v128_t rgba = wasm_v128_load(&src[i]);
-            // RGBA [R G B A] -> ABGR [A B G R]
-            v128_t abgr = SIMD_SHUFFLE_PIXELS(rgba, 3,2,1,0, 7,6,5,4, 11,10,9,8, 15,14,13,12);
-            wasm_v128_store(&dst[i], abgr);
-        }
-    } else if (src_format == PIXEL_FORMAT_ABGR && dst_format == PIXEL_FORMAT_RGBA) {
-        // ABGR -> RGBA: same as RGBA->ABGR (reverse)
-        for (; i <= count - 4; i += 4) {
-            v128_t abgr = wasm_v128_load(&src[i]);
-            v128_t rgba = SIMD_SHUFFLE_PIXELS(abgr, 3,2,1,0, 7,6,5,4, 11,10,9,8, 15,14,13,12);
-            wasm_v128_store(&dst[i], rgba);
-        }
+    // Generic SIMD conversion using shuffle indices from PixelFormatInfo
+    // Strategy: src -> ARGB -> dst using pre-computed shuffle patterns
+    
+    // Load shuffle patterns into SIMD registers
+    v128_t to_argb_shuffle = wasm_v128_load(src_info->simd_shuffle_to_argb);
+    v128_t from_argb_shuffle = wasm_v128_load(dst_info->simd_shuffle_from_argb);
+    
+    // Process 4 pixels at a time with SIMD
+    for (; i <= count - 4; i += 4) {
+        // Load 4 source pixels
+        v128_t pixels = wasm_v128_load(&src[i]);
+        
+        // Convert to ARGB intermediate format
+        v128_t argb = wasm_i8x16_swizzle(pixels, to_argb_shuffle);
+        
+        // Convert from ARGB to destination format
+        v128_t result = wasm_i8x16_swizzle(argb, from_argb_shuffle);
+        
+        // Store result
+        wasm_v128_store(&dst[i], result);
     }
-    // For other combinations (including RGB/BGR which need alpha handling), use scalar fallback
     
     // Handle remaining pixels with scalar code
     for (; i < count; i++) {

@@ -139,7 +139,7 @@ tasks.register<Exec>("denoTest") {
     
     workingDir = file("src/test/deno")
     
-    commandLine("deno", "test", "--allow-read")
+    commandLine("deno", "test", "--allow-read", "--unsafely-ignore-certificate-errors=deno.land")
     
     // Make the task cacheable
     inputs.files(fileTree("src/test/deno") {
