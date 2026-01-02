@@ -25,11 +25,6 @@
 //
 // Compile with: -msimd128
 
-// Feature detection - returns 1 if SIMD is available, 0 otherwise
-// This is checked at runtime in JavaScript before calling SIMD functions
-__attribute__((export_name("has_simd_support")))
-int has_simd_support(void);
-
 // SIMD-optimized scanline fill (4 pixels at a time)
 // Fills a horizontal span with a solid color using 128-bit SIMD operations
 //

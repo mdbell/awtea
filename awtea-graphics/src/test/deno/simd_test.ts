@@ -20,19 +20,14 @@ Deno.test("SIMD feature detection via build flags", async () => {
     await rasterizer.load(WASM_PATH);
     const exports = rasterizer.getExportsPublic();
     
-    // Check build flags
+    // Check build flags to verify SIMD was compiled in
     const buildFlags = exports.get_build_flags();
     const hasSIMDFlag = (buildFlags & BUILD_FLAG_SIMD) !== 0;
     console.log(`Build flags: 0x${buildFlags.toString(16)}`);
     console.log(`SIMD build flag: ${hasSIMDFlag ? "YES" : "NO"}`);
     
-    // Check runtime support
-    const hasSIMD = exports.has_simd_support();
-    console.log(`SIMD runtime support: ${hasSIMD ? "YES" : "NO"}`);
-    
-    // Both should match when compiled with -msimd128
+    // Verify SIMD was compiled in with -msimd128
     assertEquals(hasSIMDFlag, true, "SIMD build flag should be set with -msimd128");
-    assertEquals(hasSIMD, 1, "SIMD runtime support should be available with -msimd128");
 });
 
 Deno.test("SIMD integration - fast fills use SIMD path", async () => {

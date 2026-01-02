@@ -4,17 +4,6 @@
 #include "awt_raster_internal.h"
 #include <string.h>
 
-// Feature detection for SIMD support
-// In WASM, if compiled with -msimd128, SIMD is always available
-// JavaScript should verify browser support before calling
-int has_simd_support(void) {
-#ifdef __wasm_simd128__
-    return 1;
-#else
-    return 0;
-#endif
-}
-
 // SIMD-optimized scanline fill
 void simd_fill_scanline(uint32_t* framebuffer, int y, int stride,
                        int x_start, int x_end, uint32_t color) {
