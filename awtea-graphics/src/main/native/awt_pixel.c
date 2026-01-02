@@ -13,6 +13,11 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 0,
         .shift_a = 24,
         .alphaVariant = PIXEL_FORMAT_ARGB, // self
+#ifdef __wasm_simd128__
+        // Identity shuffle (no conversion needed)
+        .simd_shuffle_to_argb = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15},
+        .simd_shuffle_from_argb = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15},
+#endif
     },
     // PIXEL_FORMAT_RGB: 0x00RRGGBB (no alpha)
     {
@@ -25,6 +30,12 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 0,
         .shift_a = 0,
         .alphaVariant = PIXEL_FORMAT_ARGB, // use ARGB for alpha operations
+#ifdef __wasm_simd128__
+        // RGB is same byte order as ARGB but alpha set to 0xFF
+        // Byte layout: [A R G B] -> set A to 0xFF
+        .simd_shuffle_to_argb = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15}, // load as-is, will set alpha separately
+        .simd_shuffle_from_argb = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15}, // copy as-is (alpha ignored)
+#endif
     },
     // PIXEL_FORMAT_RGBA: 0xRRGGBBAA
     {
@@ -37,6 +48,14 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 8,
         .shift_a = 0,
         .alphaVariant = PIXEL_FORMAT_RGBA, // self
+#ifdef __wasm_simd128__
+        // RGBA to ARGB: rotate each pixel right by 1 byte
+        // Pixel bytes: [R G B A] -> [A R G B]
+        .simd_shuffle_to_argb = {3,0,1,2, 7,4,5,6, 11,8,9,10, 15,12,13,14},
+        // ARGB to RGBA: rotate each pixel left by 1 byte
+        // Pixel bytes: [A R G B] -> [R G B A]
+        .simd_shuffle_from_argb = {1,2,3,0, 5,6,7,4, 9,10,11,8, 13,14,15,12},
+#endif
     },
 
     // PIXEL_FORMAT_ABGR: 0xAABBGGRR
@@ -50,6 +69,14 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 16,
         .shift_a = 24,
         .alphaVariant = PIXEL_FORMAT_ABGR, // self
+#ifdef __wasm_simd128__
+        // ABGR to ARGB: keep A, reverse RGB
+        // Pixel bytes: [A B G R] -> [A R G B]
+        .simd_shuffle_to_argb = {0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13},
+        // ARGB to ABGR: keep A, reverse RGB
+        // Pixel bytes: [A R G B] -> [A B G R]
+        .simd_shuffle_from_argb = {0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13},
+#endif
     },
     // PIXEL_FORMAT_BGR: 0x00BBGGRR (no alpha)
     {
@@ -62,6 +89,14 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 16,
         .shift_a = 0,
         .alphaVariant = PIXEL_FORMAT_ABGR, // use ABGR for alpha operations
+#ifdef __wasm_simd128__
+        // BGR to ARGB: reverse RGB, set A to 0xFF
+        // Pixel bytes: [0 B G R] -> [A R G B]
+        .simd_shuffle_to_argb = {0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13}, // will set alpha separately
+        // ARGB to BGR: reverse RGB
+        // Pixel bytes: [A R G B] -> [0 B G R]
+        .simd_shuffle_from_argb = {0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13},
+#endif
     }
 };
 

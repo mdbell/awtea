@@ -5,13 +5,14 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <wasm_simd128.h>
+#include "generated/pixel_format.h"
 
 // SIMD Optimizations for High-Performance Graphics Rendering
 //
 // This module provides WASM SIMD (128-bit vector) optimizations for:
 // - Pixel blending (4 pixels in parallel)
 // - Scanline fills (4 pixels per iteration)
-// - Memory operations (16-byte bulk transfers)
+// - Pixel format conversions (ARGB ↔ RGBA, ABGR, etc.)
 //
 // Browser Support:
 // - Chrome 91+, Edge 91+, Firefox 89+, Safari 16.4+
@@ -20,7 +21,7 @@
 // Performance Impact:
 // - Pixel blending: 2-4x additional speedup (process 4 pixels simultaneously)
 // - Scanline fills: 2-3x additional speedup
-// - Memory operations: 3-4x speedup
+// - Format conversion: 2.5-3x speedup
 //
 // Compile with: -msimd128
 
@@ -57,28 +58,21 @@ void simd_fill_scanline(uint32_t* framebuffer, int y, int stride,
 // Speedup: 2.5-3x over LUT-based blending
 void simd_blend_src_over_argb(uint32_t* dst, const uint32_t* src, int count);
 
-// SIMD-optimized memory copy (16 bytes at a time)
-// Faster than standard memcpy for aligned, medium-to-large buffers
-//
-// Parameters:
-//   dst: Destination buffer (should be 16-byte aligned)
-//   src: Source buffer (should be 16-byte aligned)
-//   bytes: Number of bytes to copy (will process in batches of 16)
-//
-// Performance: ~0.25 cycles per 4 bytes (vs ~1 cycle for scalar)
-// Speedup: 3-4x over scalar memcpy
-void simd_memcpy_aligned(void* dst, const void* src, size_t bytes);
-
-// SIMD-optimized pixel format conversion: ARGB -> RGBA
+// SIMD-optimized pixel format conversion between any two formats
 // Converts 4 pixels at a time using SIMD shuffle operations
+// Uses shuffle indices from PixelFormatInfo for generalized conversion
 //
 // Parameters:
-//   dst: Destination RGBA pixel buffer
-//   src: Source ARGB pixel buffer
+//   dst: Destination pixel buffer (in dst_format)
+//   src: Source pixel buffer (in src_format)
 //   count: Number of pixels to convert (will process in batches of 4)
+//   src_format: Source pixel format (ARGB, RGBA, ABGR, etc.)
+//   dst_format: Destination pixel format
 //
 // Performance: ~3 cycles per pixel (4 pixels in ~12 cycles)
 // Speedup: 2.5-3x over scalar conversion
-void simd_convert_argb_to_rgba(uint32_t* dst, const uint32_t* src, int count);
+// Supports all formats: ARGB ↔ RGBA, ARGB ↔ ABGR, RGBA ↔ ABGR, etc.
+void simd_convert_pixels(uint32_t* dst, const uint32_t* src, int count,
+                        PixelFormat src_format, PixelFormat dst_format);
 
 #endif // AWT_SIMD_H

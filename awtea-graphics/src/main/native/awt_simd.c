@@ -1,6 +1,7 @@
 #include "awt_simd.h"
 #include "awt_log.h"
 #include "awt_alpha_lut.h"
+#include "awt_raster_internal.h"
 #include <string.h>
 
 // Feature detection for SIMD support
@@ -158,59 +159,89 @@ void simd_blend_src_over_argb(uint32_t* dst, const uint32_t* src, int count) {
     }
 }
 
-// SIMD-optimized memory copy
-void simd_memcpy_aligned(void* dst, const void* src, size_t bytes) {
-    uint8_t* d = (uint8_t*)dst;
-    const uint8_t* s = (const uint8_t*)src;
-    size_t i = 0;
-    
-    // Copy 16 bytes (128 bits) at a time
-    for (; i + 16 <= bytes; i += 16) {
-        v128_t data = wasm_v128_load(&s[i]);
-        wasm_v128_store(&d[i], data);
-    }
-    
-    // Handle remaining bytes with scalar copy
-    for (; i < bytes; i++) {
-        d[i] = s[i];
-    }
-}
+// Helper macro to apply SIMD shuffle with compile-time constants
+#define SIMD_SHUFFLE_PIXELS(pixels, i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15) \
+    wasm_i8x16_shuffle(pixels, pixels, i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15)
 
-// SIMD-optimized ARGB to RGBA conversion
-void simd_convert_argb_to_rgba(uint32_t* dst, const uint32_t* src, int count) {
+// SIMD-optimized pixel format conversion between any two formats
+// Uses compile-time shuffle patterns for each format combination
+void simd_convert_pixels(uint32_t* dst, const uint32_t* src, int count,
+                        PixelFormat src_format, PixelFormat dst_format) {
+    // If formats are the same, just copy
+    if (src_format == dst_format) {
+        memcpy(dst, src, count * sizeof(uint32_t));
+        return;
+    }
+    
+    // Get format info for scalar fallback
+    extern const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT];
+    const PixelFormatInfo* src_info = &g_pixel_format_info[src_format];
+    const PixelFormatInfo* dst_info = &g_pixel_format_info[dst_format];
+    
     int i = 0;
     
-    // SIMD shuffle mask to convert ARGB to RGBA
-    // ARGB bytes: [A0 R0 G0 B0  A1 R1 G1 B1  A2 R2 G2 B2  A3 R3 G3 B3]
-    // RGBA bytes: [R0 G0 B0 A0  R1 G1 B1 A1  R2 G2 B2 A2  R3 G3 B3 A3]
-    // Shuffle indices: swap byte 0 with byte 3, byte 1 with byte 2, etc.
-    
-    // Process 4 pixels at a time
-    for (; i <= count - 4; i += 4) {
-        v128_t argb = wasm_v128_load(&src[i]);
-        
-        // Shuffle: move A from position 0 to position 3 for each pixel
-        // Byte indices for 4 pixels (16 bytes total):
-        // Pixel 0: A=0, R=1, G=2, B=3 -> want R=1, G=2, B=3, A=0
-        // Pixel 1: A=4, R=5, G=6, B=7 -> want R=5, G=6, B=7, A=4
-        // etc.
-        v128_t rgba = wasm_i8x16_shuffle(argb, argb,
-            1, 2, 3, 0,    // Pixel 0: R, G, B, A
-            5, 6, 7, 4,    // Pixel 1: R, G, B, A
-            9, 10, 11, 8,  // Pixel 2: R, G, B, A
-            13, 14, 15, 12 // Pixel 3: R, G, B, A
-        );
-        
-        wasm_v128_store(&dst[i], rgba);
+    // Process 4 pixels at a time with SIMD using compile-time shuffle patterns
+    // We need to handle the most common conversions with explicit cases
+    if (src_format == PIXEL_FORMAT_ARGB && dst_format == PIXEL_FORMAT_RGBA) {
+        // ARGB -> RGBA: rotate each pixel left by 1 byte
+        for (; i <= count - 4; i += 4) {
+            v128_t argb = wasm_v128_load(&src[i]);
+            v128_t rgba = SIMD_SHUFFLE_PIXELS(argb, 1,2,3,0, 5,6,7,4, 9,10,11,8, 13,14,15,12);
+            wasm_v128_store(&dst[i], rgba);
+        }
+    } else if (src_format == PIXEL_FORMAT_RGBA && dst_format == PIXEL_FORMAT_ARGB) {
+        // RGBA -> ARGB: rotate each pixel right by 1 byte
+        for (; i <= count - 4; i += 4) {
+            v128_t rgba = wasm_v128_load(&src[i]);
+            v128_t argb = SIMD_SHUFFLE_PIXELS(rgba, 3,0,1,2, 7,4,5,6, 11,8,9,10, 15,12,13,14);
+            wasm_v128_store(&dst[i], argb);
+        }
+    } else if (src_format == PIXEL_FORMAT_ARGB && dst_format == PIXEL_FORMAT_ABGR) {
+        // ARGB -> ABGR: keep A, reverse RGB
+        for (; i <= count - 4; i += 4) {
+            v128_t argb = wasm_v128_load(&src[i]);
+            v128_t abgr = SIMD_SHUFFLE_PIXELS(argb, 0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13);
+            wasm_v128_store(&dst[i], abgr);
+        }
+    } else if (src_format == PIXEL_FORMAT_ABGR && dst_format == PIXEL_FORMAT_ARGB) {
+        // ABGR -> ARGB: keep A, reverse RGB (same shuffle as ARGB->ABGR)
+        for (; i <= count - 4; i += 4) {
+            v128_t abgr = wasm_v128_load(&src[i]);
+            v128_t argb = SIMD_SHUFFLE_PIXELS(abgr, 0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13);
+            wasm_v128_store(&dst[i], argb);
+        }
+    } else if (src_format == PIXEL_FORMAT_RGBA && dst_format == PIXEL_FORMAT_ABGR) {
+        // RGBA -> ABGR: R<->B, G stays, A rotates
+        for (; i <= count - 4; i += 4) {
+            v128_t rgba = wasm_v128_load(&src[i]);
+            // RGBA [R G B A] -> ABGR [A B G R]
+            v128_t abgr = SIMD_SHUFFLE_PIXELS(rgba, 3,2,1,0, 7,6,5,4, 11,10,9,8, 15,14,13,12);
+            wasm_v128_store(&dst[i], abgr);
+        }
+    } else if (src_format == PIXEL_FORMAT_ABGR && dst_format == PIXEL_FORMAT_RGBA) {
+        // ABGR -> RGBA: same as RGBA->ABGR (reverse)
+        for (; i <= count - 4; i += 4) {
+            v128_t abgr = wasm_v128_load(&src[i]);
+            v128_t rgba = SIMD_SHUFFLE_PIXELS(abgr, 3,2,1,0, 7,6,5,4, 11,10,9,8, 15,14,13,12);
+            wasm_v128_store(&dst[i], rgba);
+        }
     }
+    // For other combinations (including RGB/BGR which need alpha handling), use scalar fallback
     
     // Handle remaining pixels with scalar code
     for (; i < count; i++) {
-        uint32_t argb = src[i];
-        uint8_t a = (argb >> 24) & 0xFF;
-        uint8_t r = (argb >> 16) & 0xFF;
-        uint8_t g = (argb >> 8) & 0xFF;
-        uint8_t b = argb & 0xFF;
-        dst[i] = (r << 24) | (g << 16) | (b << 8) | a;
+        uint32_t pixel = src[i];
+        
+        // Extract components from source format
+        uint8_t r = (pixel & src_info->mask_r) >> src_info->shift_r;
+        uint8_t g = (pixel & src_info->mask_g) >> src_info->shift_g;
+        uint8_t b = (pixel & src_info->mask_b) >> src_info->shift_b;
+        uint8_t a = src_info->mask_a ? ((pixel & src_info->mask_a) >> src_info->shift_a) : 0xFF;
+        
+        // Pack into destination format
+        dst[i] = ((uint32_t)r << dst_info->shift_r) |
+                 ((uint32_t)g << dst_info->shift_g) |
+                 ((uint32_t)b << dst_info->shift_b) |
+                 ((uint32_t)a << dst_info->shift_a);
     }
 }
