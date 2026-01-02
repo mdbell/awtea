@@ -1,6 +1,3 @@
-#ifndef AWT_SIMD_H
-#define AWT_SIMD_H
-
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
@@ -69,5 +66,3 @@ void simd_blend_src_over_argb(uint32_t* dst, const uint32_t* src, int count);
 // Supports all formats: ARGB ↔ RGBA, ARGB ↔ ABGR, RGBA ↔ ABGR, etc.
 void simd_convert_pixels(uint32_t* dst, const uint32_t* src, int count,
                         PixelFormat src_format, PixelFormat dst_format);
-
-#endif // AWT_SIMD_H
