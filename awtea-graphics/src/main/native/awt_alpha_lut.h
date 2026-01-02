@@ -1,6 +1,3 @@
-#ifndef AWT_ALPHA_LUT_H
-#define AWT_ALPHA_LUT_H
-
 #pragma once
 #include <stdint.h>
 
@@ -72,5 +69,3 @@ static inline uint8_t blend_src_over_component(uint8_t src, uint8_t srcA,
     // Note: May overflow 255, caller should clamp if needed
     return src_pm + dst_scaled;
 }
-
-#endif // AWT_ALPHA_LUT_H

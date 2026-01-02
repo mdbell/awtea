@@ -1,6 +1,3 @@
-#ifndef AWT_EDGE_TABLE_FIXED_H
-#define AWT_EDGE_TABLE_FIXED_H
-
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
@@ -200,5 +197,3 @@ void edge_table_fixed_pool_destroy(EdgeTableFixedPool* pool);
 // Memory footprint: Identical to float version (fx16_t and float are both 32-bit)
 //
 //-----------------------------------------------------------------------------
-
-#endif // AWT_EDGE_TABLE_FIXED_H

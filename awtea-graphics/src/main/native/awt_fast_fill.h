@@ -1,6 +1,3 @@
-#ifndef AWT_FAST_FILL_H
-#define AWT_FAST_FILL_H
-
 #pragma once
 #include <stdint.h>
 #include "awt_surface.h"
@@ -57,5 +54,3 @@ void fast_fill_rect(SurfaceData* surface, int x, int y,
 void fast_fill_pattern(SurfaceData* surface, int x, int y,
                       int width, int height, int pattern_type);
 #endif
-
-#endif // AWT_FAST_FILL_H
