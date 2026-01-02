@@ -21,5 +21,11 @@ public class ShaderTest {
         ProgramNode node = parser.parse();
 
         log.info("ProgramNode: {}", node);
+
+        ProgramEmitter e = new ProgramEmitter()
+                .defineUniform("u_brightness", 1.5f)
+                .defineUniform("u_stepScale", .10f);
+
+        byte[] code = e.assemble();
     }
 }
