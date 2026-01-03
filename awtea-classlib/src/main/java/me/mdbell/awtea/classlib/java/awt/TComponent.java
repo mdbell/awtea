@@ -482,7 +482,20 @@ public abstract class TComponent implements TImageObserver {
         if (parent == null) {
             return null;
         }
-        return parent.create(x, y, width, height);
+        TGraphics g = parent.create(x, y, width, height);
+        
+        // Set this component's ID for picking support
+        // This ensures rendering via getGraphics() goes to the picking buffer with correct ID
+        if (g instanceof TSurfaceRasterizerGraphics) {
+            TSurfaceRasterizerGraphics srg = (TSurfaceRasterizerGraphics) g;
+            srg.setActiveComponentId(this.componentId);
+            // Enable picking if backend supports it
+            if (srg.getRasterizer() instanceof me.mdbell.awtea.gfx.PickingRasterizer) {
+                srg.setPickingEnabled(true);
+            }
+        }
+        
+        return g;
     }
 
     public void paint(TGraphics g) {

@@ -11,25 +11,23 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
 /**
  * GPU-based hit-testing strategy using an off-screen picking buffer.
  * <p>
- * This strategy uses dual-rendering to build a picking buffer where components
- * are rendered with their ID encoded as an RGB color. Hit-testing is then O(1)
- * by reading a single pixel from the picking buffer.
+ * This strategy uses continuous dual-rendering where all graphics operations
+ * are automatically mirrored to both the screen buffer and the picking buffer.
+ * Components are rendered with their ID encoded as an RGB color in the picking
+ * buffer, enabling O(1) hit-testing by reading a single pixel.
  * </p>
  * <p>
  * <b>Rendering Approach:</b>
- * The picking buffer is rebuilt when invalidated using a separate render pass:
+ * Picking mode is permanently enabled on all graphics contexts:
  * <ol>
- *   <li>Enable picking mode on rasterizers</li>
- *   <li>For each component: set its ID, call paint() - renders to picking buffer with ID color</li>
- *   <li>Disable picking mode</li>
- *   <li>Normal rendering continues as usual with actual colors</li>
+ *   <li>When a component calls getGraphics(), its component ID is set on the graphics context</li>
+ *   <li>All rendering operations (fillRect, drawImage, etc.) are automatically duplicated to the picking buffer</li>
+ *   <li>The rasterizer renders with actual colors to the screen, and with ID colors to the picking buffer</li>
  * </ol>
  * </p>
  * <p>
- * This means components render normally during picking rebuild - they call setColor(),
- * fillRect(), etc. as usual. The rasterizer intercepts these operations and when
- * picking is enabled, it renders to the picking buffer using the component ID color
- * instead of the requested color.
+ * This means the picking buffer is always in sync with what's actually rendered on screen,
+ * regardless of whether rendering happens via paint() or direct getGraphics() calls.
  * </p>
  * <p>
  * <b>Automatic Shape Support:</b>
@@ -40,9 +38,6 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
  *   <li>Proper z-ordering and overlapping components</li>
  *   <li>Component transforms and clipping</li>
  * </ul>
- * </p>
- * <p>
- * The picking buffer is lazily rebuilt only when invalidated (e.g., layout changes).
  * </p>
  */
 public class TPickingBufferHitTestStrategy implements THitTestStrategy {
@@ -55,6 +50,7 @@ public class TPickingBufferHitTestStrategy implements THitTestStrategy {
     
     /**
      * Creates a new picking buffer hit-test strategy.
+     * Picking mode is automatically enabled when components call getGraphics().
      * 
      * @param backend the WebGL backend
      * @param rootContainer the root container to test against
@@ -73,17 +69,17 @@ public class TPickingBufferHitTestStrategy implements THitTestStrategy {
         backend.createPickingBuffer(width, height);
         this.pickingBuffer = backend.getPickingBuffer();
         
-        log.info("Initialized picking buffer hit-test strategy ({}x{})", width, height);
+        // Initialize picking buffer (clear it)
+        pickingBuffer.beginPickingPass();
+        pickingBuffer.endPickingPass();
+        
+        log.info("Initialized continuous picking buffer hit-test strategy ({}x{}) - picking enabled automatically on getGraphics()", width, height);
     }
     
     @Override
     public TComponent getComponentAt(int x, int y) {
-        // Rebuild picking buffer if dirty
-        if (pickingBuffer.isDirty()) {
-            rebuildPickingBuffer();
-        }
-        
         // Read component ID from picking buffer
+        // No rebuild needed - picking buffer is continuously updated as components render
         int componentId = pickingBuffer.getComponentIdAt(x, y);
         
         // Look up component by ID
@@ -100,58 +96,11 @@ public class TPickingBufferHitTestStrategy implements THitTestStrategy {
         return component;
     }
     
-    /**
-     * Rebuilds the picking buffer by re-rendering the component tree.
-     * This triggers a complete render pass with picking mode enabled.
-     */
-    private void rebuildPickingBuffer() {
-        log.trace("Rebuilding picking buffer");
-        
-        // Begin picking pass
-        pickingBuffer.beginPickingPass();
-        
-        // Get graphics context for rendering
-        TGraphics g = rootContainer.getGraphics();
-        if (g == null) {
-            log.warn("Cannot rebuild picking buffer - no graphics context available");
-            pickingBuffer.endPickingPass();
-            return;
-        }
-        
-        try {
-            // Enable picking mode on the rasterizer
-            setPickingEnabled(g, true);
-            
-            // Render the entire component tree
-            // The paint() methods will call setActiveComponentId() for each component
-            rootContainer.paint(g);
-            
-            // Disable picking mode
-            setPickingEnabled(g, false);
-            
-        } finally {
-            g.dispose();
-            pickingBuffer.endPickingPass();
-        }
-        
-        log.trace("Picking buffer rebuild complete");
-    }
-    
-    /**
-     * Enables or disables picking mode on the rasterizer.
-     */
-    private void setPickingEnabled(TGraphics g, boolean enabled) {
-        if (g instanceof me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics) {
-            me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics srg = 
-                (me.mdbell.awtea.classlib.java.awt.TSurfaceRasterizerGraphics) g;
-            srg.setPickingEnabled(enabled);
-        }
-    }
-    
     @Override
     public void invalidate() {
-        pickingBuffer.invalidate();
-        log.trace("Picking buffer invalidated");
+        // With continuous picking, we don't need to invalidate the buffer
+        // It's always up-to-date with what's rendered
+        log.trace("Picking buffer invalidate called (no-op with continuous picking)");
     }
     
     @Override
@@ -168,5 +117,8 @@ public class TPickingBufferHitTestStrategy implements THitTestStrategy {
      */
     public void resize(int width, int height) {
         pickingBuffer.resize(width, height);
+        // Clear the resized buffer
+        pickingBuffer.beginPickingPass();
+        pickingBuffer.endPickingPass();
     }
 }
