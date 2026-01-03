@@ -231,8 +231,6 @@ public class TContainer extends TComponent {
                 continue;
             }
 
-            int x = child.getX();
-            int y = child.getY();
             int width = child.getWidth();
             int height = child.getHeight();
 
@@ -241,21 +239,12 @@ public class TContainer extends TComponent {
                 continue;
             }
 
-            // Create a new graphics context for the child component
-            TGraphics childGfx = g.create();
-            // g.create() can return null if graphics context creation fails
+            // Use child.getGraphics() to automatically get the correct component ID
+            // This ensures picking works correctly for all rendering paths
+            TGraphics childGfx = child.getGraphics();
             if (childGfx != null) {
                 try {
-                    // Translate to the child's position first
-                    childGfx.translate(x, y);
-                    // Then clip to the child's bounds in the child's coordinate system
-                    // This ensures the clip is at (0, 0) relative to where the child will paint
-                    childGfx.setClip(0, 0, width, height);
-                    
-                    // Set child's ID for picking
-                    setComponentIdForPicking(childGfx, child);
-                    
-                    // Paint the child
+                    // Paint the child - component ID is already set by getGraphics()
                     child.paint(childGfx);
                 } finally {
                     // prevent a leak if we get an exception in the paint call
