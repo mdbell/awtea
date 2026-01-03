@@ -122,11 +122,10 @@ public class MouseWheelDemoPanel extends Panel implements MouseWheelListener {
         g.setColor(Color.LIGHT_GRAY);
         g.fillRect(barX, barY, barWidth, barHeight);
         
-        // Position indicator (constrained to bar)
+        // Position indicator (constrained to bar, handles negative positions correctly)
         g.setColor(Color.BLUE);
         int indicatorWidth = 10;
-        int normalizedPos = scrollPosition % barWidth;
-        if (normalizedPos < 0) normalizedPos += barWidth;
+        int normalizedPos = ((scrollPosition % barWidth) + barWidth) % barWidth;
         g.fillRect(barX + normalizedPos, barY, indicatorWidth, barHeight);
         
         // Draw center line

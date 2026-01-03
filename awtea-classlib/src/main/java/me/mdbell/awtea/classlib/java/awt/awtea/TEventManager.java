@@ -468,7 +468,9 @@ public final class TEventManager implements AutoCloseable {
                 }
                 return cachedLineDivisor;
             case 2: // DOM_DELTA_PAGE
-                // For page mode, we want to multiply (larger scroll), so return 1/multiplier
+                // For page mode, we want to multiply the raw delta (larger scroll).
+                // Since normalization divides by the returned value, we return 1/multiplier
+                // so that (rawDelta / (1/multiplier)) = (rawDelta * multiplier)
                 if (cachedPageDivisor == null) {
                     int multiplier = Integer.getInteger(WHEEL_PAGE_MULTIPLIER_PROP, DEFAULT_PAGE_MULTIPLIER);
                     if (multiplier <= 0) {
