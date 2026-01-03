@@ -45,6 +45,36 @@ public class HitTestStrategyTests {
     }
     
     /**
+     * Test tree-walk strategy with canvas child.
+     * This verifies that lightweight canvas components are correctly detected
+     * based on their bounds, not on what they paint.
+     */
+    @Test
+    public void testTreeWalkStrategyWithCanvas() {
+        // Create hierarchy: panel with a canvas child
+        TPanel container = new TPanel();
+        container.setBounds(0, 0, 200, 200);
+        
+        TCanvas canvas = new TCanvas();
+        canvas.setBounds(10, 10, 180, 180);
+        container.add(canvas);
+        
+        // Create strategy
+        THitTestStrategy strategy = new TreeWalkHitTestStrategy(container);
+        
+        // Test hit on canvas - should return canvas, not container
+        // even though canvas doesn't paint anything
+        TComponent hit1 = strategy.getComponentAt(50, 50);
+        assertEquals(canvas, hit1, "Should hit canvas based on bounds");
+        
+        // Test hit outside canvas bounds - should return container
+        TComponent hit2 = strategy.getComponentAt(5, 5);
+        assertEquals(container, hit2, "Should hit container outside canvas bounds");
+        
+        strategy.dispose();
+    }
+    
+    /**
      * Test tree-walk strategy with simple hierarchy.
      */
     @Test
