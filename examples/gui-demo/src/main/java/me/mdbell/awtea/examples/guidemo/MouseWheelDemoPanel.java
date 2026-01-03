@@ -32,6 +32,7 @@ public class MouseWheelDemoPanel extends Panel implements MouseWheelListener {
         eventCount++;
         lastWheelRotation = e.getWheelRotation();
         lastPreciseRotation = e.getPreciseWheelRotation();
+        // scrollType field contains the browser's deltaMode (0=PIXEL, 1=LINE, 2=PAGE)
         lastDeltaMode = e.getScrollType();
         
         // Update scroll position

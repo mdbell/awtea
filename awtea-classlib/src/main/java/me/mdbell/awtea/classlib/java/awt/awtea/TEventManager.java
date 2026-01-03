@@ -438,12 +438,26 @@ public final class TEventManager implements AutoCloseable {
     private static double getWheelDivisor(int deltaMode) {
         switch (deltaMode) {
             case 0: // DOM_DELTA_PIXEL
-                return Integer.getInteger(WHEEL_PIXEL_DIVISOR_PROP, DEFAULT_PIXEL_DIVISOR);
+                int pixelDivisor = Integer.getInteger(WHEEL_PIXEL_DIVISOR_PROP, DEFAULT_PIXEL_DIVISOR);
+                if (pixelDivisor <= 0) {
+                    log.warn("Invalid pixel divisor {}, using default {}", pixelDivisor, DEFAULT_PIXEL_DIVISOR);
+                    return DEFAULT_PIXEL_DIVISOR;
+                }
+                return pixelDivisor;
             case 1: // DOM_DELTA_LINE
-                return Integer.getInteger(WHEEL_LINE_DIVISOR_PROP, DEFAULT_LINE_DIVISOR);
+                int lineDivisor = Integer.getInteger(WHEEL_LINE_DIVISOR_PROP, DEFAULT_LINE_DIVISOR);
+                if (lineDivisor <= 0) {
+                    log.warn("Invalid line divisor {}, using default {}", lineDivisor, DEFAULT_LINE_DIVISOR);
+                    return DEFAULT_LINE_DIVISOR;
+                }
+                return lineDivisor;
             case 2: // DOM_DELTA_PAGE
                 // For page mode, we want to multiply (larger scroll), so return 1/multiplier
                 int multiplier = Integer.getInteger(WHEEL_PAGE_MULTIPLIER_PROP, DEFAULT_PAGE_MULTIPLIER);
+                if (multiplier <= 0) {
+                    log.warn("Invalid page multiplier {}, using default {}", multiplier, DEFAULT_PAGE_MULTIPLIER);
+                    return 1.0 / DEFAULT_PAGE_MULTIPLIER;
+                }
                 return 1.0 / multiplier;
             default:
                 log.warn("Unknown deltaMode {}, using divisor of 1", deltaMode);

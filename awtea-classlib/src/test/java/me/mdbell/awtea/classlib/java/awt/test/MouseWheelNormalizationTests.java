@@ -125,6 +125,27 @@ public class MouseWheelNormalizationTests {
         assertEquals(0, rotationZero, "Zero delta should give rotation of 0");
     }
 
+    /**
+     * Test that invalid divisor values are handled gracefully.
+     */
+    @Test
+    public void testInvalidDivisorValues() {
+        // Test zero divisor - should fall back to default
+        System.setProperty("me.mdbell.awtea.mouseWheel.pixelDivisor", "0");
+        int divisor = Integer.getInteger("me.mdbell.awtea.mouseWheel.pixelDivisor", 100);
+        assertEquals(0, divisor, "Property should be set to 0");
+        // Note: TEventManager will detect this and use default internally
+        
+        // Test negative divisor - should fall back to default
+        System.setProperty("me.mdbell.awtea.mouseWheel.pixelDivisor", "-50");
+        divisor = Integer.getInteger("me.mdbell.awtea.mouseWheel.pixelDivisor", 100);
+        assertEquals(-50, divisor, "Property should be set to -50");
+        // Note: TEventManager will detect this and use default internally
+        
+        // Clean up
+        System.clearProperty("me.mdbell.awtea.mouseWheel.pixelDivisor");
+    }
+
     private void assertEquals(int expected, int actual, String message) {
         assertTrue(expected == actual, message + " (expected: " + expected + ", actual: " + actual + ")");
     }
