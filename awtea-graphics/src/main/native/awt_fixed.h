@@ -1,6 +1,3 @@
-#ifndef AWT_FIXED_H
-#define AWT_FIXED_H
-
 #pragma once
 #include <stdint.h>
 
@@ -193,6 +190,3 @@ typedef int32_t fx16_t;
 // Overall expected speedup for font glyph rasterization: 1.8-2x
 //
 //-----------------------------------------------------------------------------
-
-#endif // AWT_FIXED_H
-

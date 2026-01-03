@@ -49,6 +49,10 @@ typedef struct {
     uint8_t  shift_b;
     uint8_t  shift_a;
     PixelFormat alphaVariant; // which format to use for alpha channel operations
+#ifdef __wasm_simd128__
+    uint8_t  simd_shuffle_to_argb[16]; // SIMD shuffle indices to convert this format to ARGB
+    uint8_t  simd_shuffle_from_argb[16]; // SIMD shuffle indices to convert ARGB to this format
+#endif
 } PixelFormatInfo;
 
 typedef struct {

@@ -1,4 +1,5 @@
 #include "awt_pixel.h"
+#include "awt_alpha_lut.h"
 
 const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
     // PIXEL_FORMAT_ARGB: 0xAARRGGBB
@@ -12,6 +13,11 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 0,
         .shift_a = 24,
         .alphaVariant = PIXEL_FORMAT_ARGB, // self
+#ifdef __wasm_simd128__
+        // Identity shuffle (no conversion needed)
+        .simd_shuffle_to_argb = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15},
+        .simd_shuffle_from_argb = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15},
+#endif
     },
     // PIXEL_FORMAT_RGB: 0x00RRGGBB (no alpha)
     {
@@ -24,6 +30,12 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 0,
         .shift_a = 0,
         .alphaVariant = PIXEL_FORMAT_ARGB, // use ARGB for alpha operations
+#ifdef __wasm_simd128__
+        // RGB is same byte order as ARGB but alpha set to 0xFF
+        // Byte layout: [A R G B] -> set A to 0xFF
+        .simd_shuffle_to_argb = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15}, // load as-is, will set alpha separately
+        .simd_shuffle_from_argb = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15}, // copy as-is (alpha ignored)
+#endif
     },
     // PIXEL_FORMAT_RGBA: 0xRRGGBBAA
     {
@@ -36,6 +48,14 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 8,
         .shift_a = 0,
         .alphaVariant = PIXEL_FORMAT_RGBA, // self
+#ifdef __wasm_simd128__
+        // RGBA to ARGB: rotate each pixel right by 1 byte
+        // Pixel bytes: [R G B A] -> [A R G B]
+        .simd_shuffle_to_argb = {3,0,1,2, 7,4,5,6, 11,8,9,10, 15,12,13,14},
+        // ARGB to RGBA: rotate each pixel left by 1 byte
+        // Pixel bytes: [A R G B] -> [R G B A]
+        .simd_shuffle_from_argb = {1,2,3,0, 5,6,7,4, 9,10,11,8, 13,14,15,12},
+#endif
     },
 
     // PIXEL_FORMAT_ABGR: 0xAABBGGRR
@@ -49,6 +69,14 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 16,
         .shift_a = 24,
         .alphaVariant = PIXEL_FORMAT_ABGR, // self
+#ifdef __wasm_simd128__
+        // ABGR to ARGB: keep A, reverse RGB
+        // Pixel bytes: [A B G R] -> [A R G B]
+        .simd_shuffle_to_argb = {0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13},
+        // ARGB to ABGR: keep A, reverse RGB
+        // Pixel bytes: [A R G B] -> [A B G R]
+        .simd_shuffle_from_argb = {0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13},
+#endif
     },
     // PIXEL_FORMAT_BGR: 0x00BBGGRR (no alpha)
     {
@@ -61,6 +89,14 @@ const PixelFormatInfo g_pixel_format_info[PIXEL_FORMAT_COUNT] = {
         .shift_b = 16,
         .shift_a = 0,
         .alphaVariant = PIXEL_FORMAT_ABGR, // use ABGR for alpha operations
+#ifdef __wasm_simd128__
+        // BGR to ARGB: reverse RGB, set A to 0xFF
+        // Pixel bytes: [0 B G R] -> [A R G B]
+        .simd_shuffle_to_argb = {0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13}, // will set alpha separately
+        // ARGB to BGR: reverse RGB
+        // Pixel bytes: [A R G B] -> [0 B G R]
+        .simd_shuffle_from_argb = {0,3,2,1, 4,7,6,5, 8,11,10,9, 12,15,14,13},
+#endif
     }
 };
 
@@ -159,9 +195,12 @@ void blend_pixel_composite(SurfaceData* surface,
     uint8_t srcR, srcG, srcB, srcA;
     unpack_pixel(srcInfo, srcPixel, &srcR, &srcG, &srcB, &srcA);
 
-    // Apply composite alpha to source alpha
-    float srcAlphaF = ((float)srcA / 255.0f) * alpha;
-    srcA = (uint8_t)(srcAlphaF * 255.0f);
+    // Apply composite alpha to source alpha using LUT
+    if (alpha < 1.0f) {
+        uint8_t alphaInt = (uint8_t)(alpha * 255.0f + 0.5f);
+        srcA = alpha_blend_component(alphaInt, srcA);
+    }
+    // else srcA unchanged (alpha == 1.0f)
 
     // Fast path: fully transparent source (no effect except for CLEAR mode)
     if (srcA == 0 && mode != COMPOSITE_CLEAR) {
@@ -178,177 +217,283 @@ void blend_pixel_composite(SurfaceData* surface,
     uint8_t dstR, dstG, dstB, dstA;
     unpack_pixel(dstInfo, dstPixel, &dstR, &dstG, &dstB, &dstA);
 
-    // 3) Apply Porter-Duff compositing formula
+    // 3) Apply Porter-Duff compositing using alpha blend LUT
     uint8_t outR, outG, outB, outA;
-    
-    // Convert to normalized floats for blending
-    float sR = (float)srcR / 255.0f;
-    float sG = (float)srcG / 255.0f;
-    float sB = (float)srcB / 255.0f;
-    float sA = (float)srcA / 255.0f;
-    
-    float dR = (float)dstR / 255.0f;
-    float dG = (float)dstG / 255.0f;
-    float dB = (float)dstB / 255.0f;
-    float dA = (float)dstA / 255.0f;
-    
-    float outRf, outGf, outBf, outAf;
     
     switch (mode) {
         case COMPOSITE_CLEAR:
             // Clear: result is transparent
-            outRf = 0.0f;
-            outGf = 0.0f;
-            outBf = 0.0f;
-            outAf = 0.0f;
+            outR = outG = outB = outA = 0;
             break;
             
         case COMPOSITE_SRC:
             // Src: copy source, ignore destination
-            outRf = sR;
-            outGf = sG;
-            outBf = sB;
-            outAf = sA;
+            outR = srcR;
+            outG = srcG;
+            outB = srcB;
+            outA = srcA;
             break;
             
         case COMPOSITE_DST:
             // Dst: keep destination, ignore source
-            outRf = dR;
-            outGf = dG;
-            outBf = dB;
-            outAf = dA;
+            outR = dstR;
+            outG = dstG;
+            outB = dstB;
+            outA = dstA;
             break;
             
-        case COMPOSITE_SRC_OVER:
-            // SrcOver: Ar = As + Ad*(1-As)
-            outAf = sA + dA * (1.0f - sA);
-            if (outAf > 0.0f) {
-                outRf = (sR * sA + dR * dA * (1.0f - sA)) / outAf;
-                outGf = (sG * sA + dG * dA * (1.0f - sA)) / outAf;
-                outBf = (sB * sA + dB * dA * (1.0f - sA)) / outAf;
-            } else {
-                outRf = outGf = outBf = 0.0f;
-            }
-            break;
+        case COMPOSITE_SRC_OVER: {
+            // SrcOver: outA = srcA + dstA * (255 - srcA) / 255
+            uint8_t inv_srcA = 255 - srcA;
+            uint8_t dstA_scaled = alpha_blend_component(inv_srcA, dstA);
+            outA = srcA + dstA_scaled;
             
-        case COMPOSITE_DST_OVER:
-            // DstOver: Ar = Ad + As*(1-Ad)
-            outAf = dA + sA * (1.0f - dA);
-            if (outAf > 0.0f) {
-                outRf = (dR * dA + sR * sA * (1.0f - dA)) / outAf;
-                outGf = (dG * dA + sG * sA * (1.0f - dA)) / outAf;
-                outBf = (dB * dA + sB * sA * (1.0f - dA)) / outAf;
+            if (outA > 0) {
+                // Premultiply: srcR * srcA / 255, dstR * dstA / 255
+                uint8_t srcR_pm = alpha_blend_component(srcA, srcR);
+                uint8_t srcG_pm = alpha_blend_component(srcA, srcG);
+                uint8_t srcB_pm = alpha_blend_component(srcA, srcB);
+                
+                uint8_t dstR_pm = alpha_blend_component(dstA, dstR);
+                uint8_t dstG_pm = alpha_blend_component(dstA, dstG);
+                uint8_t dstB_pm = alpha_blend_component(dstA, dstB);
+                
+                // Scale destination by (255 - srcA) / 255
+                uint8_t dstR_scaled = alpha_blend_component(inv_srcA, dstR_pm);
+                uint8_t dstG_scaled = alpha_blend_component(inv_srcA, dstG_pm);
+                uint8_t dstB_scaled = alpha_blend_component(inv_srcA, dstB_pm);
+                
+                // Add source and destination (clamped to 255)
+                uint16_t sumR = (uint16_t)srcR_pm + (uint16_t)dstR_scaled;
+                uint16_t sumG = (uint16_t)srcG_pm + (uint16_t)dstG_scaled;
+                uint16_t sumB = (uint16_t)srcB_pm + (uint16_t)dstB_scaled;
+                
+                // Un-premultiply by dividing by outA (approximate with LUT)
+                // For exact results: component * 255 / outA
+                // We use: component * (255 / outA) where 255/outA is computed once
+                if (outA == 255) {
+                    outR = (uint8_t)(sumR > 255 ? 255 : sumR);
+                    outG = (uint8_t)(sumG > 255 ? 255 : sumG);
+                    outB = (uint8_t)(sumB > 255 ? 255 : sumB);
+                } else {
+                    // Approximate un-premultiply: result / outA * 255
+                    outR = (uint8_t)((sumR * 255 + outA/2) / outA);
+                    outG = (uint8_t)((sumG * 255 + outA/2) / outA);
+                    outB = (uint8_t)((sumB * 255 + outA/2) / outA);
+                }
             } else {
-                outRf = outGf = outBf = 0.0f;
+                outR = outG = outB = 0;
             }
             break;
+        }
+            
+        case COMPOSITE_DST_OVER: {
+            // DstOver: outA = dstA + srcA * (255 - dstA) / 255
+            uint8_t inv_dstA = 255 - dstA;
+            uint8_t srcA_scaled = alpha_blend_component(inv_dstA, srcA);
+            outA = dstA + srcA_scaled;
+            
+            if (outA > 0) {
+                uint8_t dstR_pm = alpha_blend_component(dstA, dstR);
+                uint8_t dstG_pm = alpha_blend_component(dstA, dstG);
+                uint8_t dstB_pm = alpha_blend_component(dstA, dstB);
+                
+                uint8_t srcR_pm = alpha_blend_component(srcA, srcR);
+                uint8_t srcG_pm = alpha_blend_component(srcA, srcG);
+                uint8_t srcB_pm = alpha_blend_component(srcA, srcB);
+                
+                uint8_t srcR_scaled = alpha_blend_component(inv_dstA, srcR_pm);
+                uint8_t srcG_scaled = alpha_blend_component(inv_dstA, srcG_pm);
+                uint8_t srcB_scaled = alpha_blend_component(inv_dstA, srcB_pm);
+                
+                uint16_t sumR = (uint16_t)dstR_pm + (uint16_t)srcR_scaled;
+                uint16_t sumG = (uint16_t)dstG_pm + (uint16_t)srcG_scaled;
+                uint16_t sumB = (uint16_t)dstB_pm + (uint16_t)srcB_scaled;
+                
+                if (outA == 255) {
+                    outR = (uint8_t)(sumR > 255 ? 255 : sumR);
+                    outG = (uint8_t)(sumG > 255 ? 255 : sumG);
+                    outB = (uint8_t)(sumB > 255 ? 255 : sumB);
+                } else {
+                    outR = (uint8_t)((sumR * 255 + outA/2) / outA);
+                    outG = (uint8_t)((sumG * 255 + outA/2) / outA);
+                    outB = (uint8_t)((sumB * 255 + outA/2) / outA);
+                }
+            } else {
+                outR = outG = outB = 0;
+            }
+            break;
+        }
             
         case COMPOSITE_SRC_IN:
-            // SrcIn: Ar = As * Ad
-            outAf = sA * dA;
-            if (outAf > 0.0f) {
-                outRf = sR;
-                outGf = sG;
-                outBf = sB;
+            // SrcIn: outA = srcA * dstA / 255
+            outA = alpha_blend_component(srcA, dstA);
+            if (outA > 0) {
+                outR = srcR;
+                outG = srcG;
+                outB = srcB;
             } else {
-                outRf = outGf = outBf = 0.0f;
+                outR = outG = outB = 0;
             }
             break;
             
         case COMPOSITE_DST_IN:
-            // DstIn: Ar = Ad * As
-            outAf = dA * sA;
-            if (outAf > 0.0f) {
-                outRf = dR;
-                outGf = dG;
-                outBf = dB;
+            // DstIn: outA = dstA * srcA / 255
+            outA = alpha_blend_component(dstA, srcA);
+            if (outA > 0) {
+                outR = dstR;
+                outG = dstG;
+                outB = dstB;
             } else {
-                outRf = outGf = outBf = 0.0f;
+                outR = outG = outB = 0;
             }
             break;
             
         case COMPOSITE_SRC_OUT:
-            // SrcOut: Ar = As * (1-Ad)
-            outAf = sA * (1.0f - dA);
-            if (outAf > 0.0f) {
-                outRf = sR;
-                outGf = sG;
-                outBf = sB;
+            // SrcOut: outA = srcA * (255 - dstA) / 255
+            outA = alpha_blend_component(srcA, 255 - dstA);
+            if (outA > 0) {
+                outR = srcR;
+                outG = srcG;
+                outB = srcB;
             } else {
-                outRf = outGf = outBf = 0.0f;
+                outR = outG = outB = 0;
             }
             break;
             
         case COMPOSITE_DST_OUT:
-            // DstOut: Ar = Ad * (1-As)
-            outAf = dA * (1.0f - sA);
-            if (outAf > 0.0f) {
-                outRf = dR;
-                outGf = dG;
-                outBf = dB;
+            // DstOut: outA = dstA * (255 - srcA) / 255
+            outA = alpha_blend_component(dstA, 255 - srcA);
+            if (outA > 0) {
+                outR = dstR;
+                outG = dstG;
+                outB = dstB;
             } else {
-                outRf = outGf = outBf = 0.0f;
+                outR = outG = outB = 0;
             }
             break;
             
-        case COMPOSITE_SRC_ATOP:
-            // SrcAtop: Ar = As*Ad + Ad*(1-As) = Ad
-            outAf = dA;
-            if (outAf > 0.0f) {
-                outRf = (sR * sA + dR * (1.0f - sA));
-                outGf = (sG * sA + dG * (1.0f - sA));
-                outBf = (sB * sA + dB * (1.0f - sA));
+        case COMPOSITE_SRC_ATOP: {
+            // SrcAtop: outA = dstA (result has destination alpha)
+            outA = dstA;
+            if (outA > 0) {
+                // outRGB = srcRGB * srcA + dstRGB * (255 - srcA)
+                uint8_t inv_srcA = 255 - srcA;
+                uint8_t srcR_scaled = alpha_blend_component(srcA, srcR);
+                uint8_t srcG_scaled = alpha_blend_component(srcA, srcG);
+                uint8_t srcB_scaled = alpha_blend_component(srcA, srcB);
+                uint8_t dstR_scaled = alpha_blend_component(inv_srcA, dstR);
+                uint8_t dstG_scaled = alpha_blend_component(inv_srcA, dstG);
+                uint8_t dstB_scaled = alpha_blend_component(inv_srcA, dstB);
+                
+                outR = srcR_scaled + dstR_scaled;
+                outG = srcG_scaled + dstG_scaled;
+                outB = srcB_scaled + dstB_scaled;
             } else {
-                outRf = outGf = outBf = 0.0f;
+                outR = outG = outB = 0;
             }
             break;
+        }
             
-        case COMPOSITE_DST_ATOP:
-            // DstAtop: Ar = Ad*As + As*(1-Ad) = As
-            outAf = sA;
-            if (outAf > 0.0f) {
-                outRf = (dR * dA + sR * (1.0f - dA));
-                outGf = (dG * dA + sG * (1.0f - dA));
-                outBf = (dB * dA + sB * (1.0f - dA));
+        case COMPOSITE_DST_ATOP: {
+            // DstAtop: outA = srcA (result has source alpha)
+            outA = srcA;
+            if (outA > 0) {
+                // outRGB = dstRGB * dstA + srcRGB * (255 - dstA)
+                uint8_t inv_dstA = 255 - dstA;
+                uint8_t dstR_scaled = alpha_blend_component(dstA, dstR);
+                uint8_t dstG_scaled = alpha_blend_component(dstA, dstG);
+                uint8_t dstB_scaled = alpha_blend_component(dstA, dstB);
+                uint8_t srcR_scaled = alpha_blend_component(inv_dstA, srcR);
+                uint8_t srcG_scaled = alpha_blend_component(inv_dstA, srcG);
+                uint8_t srcB_scaled = alpha_blend_component(inv_dstA, srcB);
+                
+                outR = dstR_scaled + srcR_scaled;
+                outG = dstG_scaled + srcG_scaled;
+                outB = dstB_scaled + srcB_scaled;
             } else {
-                outRf = outGf = outBf = 0.0f;
+                outR = outG = outB = 0;
             }
             break;
+        }
             
-        case COMPOSITE_XOR:
-            // Xor: Ar = As*(1-Ad) + Ad*(1-As)
-            outAf = sA * (1.0f - dA) + dA * (1.0f - sA);
-            if (outAf > 0.0f) {
-                outRf = (sR * sA * (1.0f - dA) + dR * dA * (1.0f - sA)) / outAf;
-                outGf = (sG * sA * (1.0f - dA) + dG * dA * (1.0f - sA)) / outAf;
-                outBf = (sB * sA * (1.0f - dA) + dB * dA * (1.0f - sA)) / outAf;
+        case COMPOSITE_XOR: {
+            // Xor: outA = srcA * (255 - dstA) + dstA * (255 - srcA)
+            uint8_t inv_srcA = 255 - srcA;
+            uint8_t inv_dstA = 255 - dstA;
+            uint8_t srcA_part = alpha_blend_component(srcA, inv_dstA);
+            uint8_t dstA_part = alpha_blend_component(dstA, inv_srcA);
+            outA = srcA_part + dstA_part;
+            
+            if (outA > 0) {
+                uint8_t srcR_pm = alpha_blend_component(srcA, srcR);
+                uint8_t srcG_pm = alpha_blend_component(srcA, srcG);
+                uint8_t srcB_pm = alpha_blend_component(srcA, srcB);
+                uint8_t srcR_scaled = alpha_blend_component(inv_dstA, srcR_pm);
+                uint8_t srcG_scaled = alpha_blend_component(inv_dstA, srcG_pm);
+                uint8_t srcB_scaled = alpha_blend_component(inv_dstA, srcB_pm);
+                
+                uint8_t dstR_pm = alpha_blend_component(dstA, dstR);
+                uint8_t dstG_pm = alpha_blend_component(dstA, dstG);
+                uint8_t dstB_pm = alpha_blend_component(dstA, dstB);
+                uint8_t dstR_scaled = alpha_blend_component(inv_srcA, dstR_pm);
+                uint8_t dstG_scaled = alpha_blend_component(inv_srcA, dstG_pm);
+                uint8_t dstB_scaled = alpha_blend_component(inv_srcA, dstB_pm);
+                
+                uint16_t sumR = (uint16_t)srcR_scaled + (uint16_t)dstR_scaled;
+                uint16_t sumG = (uint16_t)srcG_scaled + (uint16_t)dstG_scaled;
+                uint16_t sumB = (uint16_t)srcB_scaled + (uint16_t)dstB_scaled;
+                
+                outR = (uint8_t)((sumR * 255 + outA/2) / outA);
+                outG = (uint8_t)((sumG * 255 + outA/2) / outA);
+                outB = (uint8_t)((sumB * 255 + outA/2) / outA);
             } else {
-                outRf = outGf = outBf = 0.0f;
+                outR = outG = outB = 0;
             }
             break;
+        }
             
-        default:
+        default: {
             // Unknown mode: fall back to SRC_OVER
-            outAf = sA + dA * (1.0f - sA);
-            if (outAf > 0.0f) {
-                outRf = (sR * sA + dR * dA * (1.0f - sA)) / outAf;
-                outGf = (sG * sA + dG * dA * (1.0f - sA)) / outAf;
-                outBf = (sB * sA + dB * dA * (1.0f - sA)) / outAf;
+            uint8_t inv_srcA = 255 - srcA;
+            uint8_t dstA_scaled = alpha_blend_component(inv_srcA, dstA);
+            outA = srcA + dstA_scaled;
+            
+            if (outA > 0) {
+                uint8_t srcR_pm = alpha_blend_component(srcA, srcR);
+                uint8_t srcG_pm = alpha_blend_component(srcA, srcG);
+                uint8_t srcB_pm = alpha_blend_component(srcA, srcB);
+                
+                uint8_t dstR_pm = alpha_blend_component(dstA, dstR);
+                uint8_t dstG_pm = alpha_blend_component(dstA, dstG);
+                uint8_t dstB_pm = alpha_blend_component(dstA, dstB);
+                
+                uint8_t dstR_scaled = alpha_blend_component(inv_srcA, dstR_pm);
+                uint8_t dstG_scaled = alpha_blend_component(inv_srcA, dstG_pm);
+                uint8_t dstB_scaled = alpha_blend_component(inv_srcA, dstB_pm);
+                
+                uint16_t sumR = (uint16_t)srcR_pm + (uint16_t)dstR_scaled;
+                uint16_t sumG = (uint16_t)srcG_pm + (uint16_t)dstG_scaled;
+                uint16_t sumB = (uint16_t)srcB_pm + (uint16_t)dstB_scaled;
+                
+                if (outA == 255) {
+                    outR = (uint8_t)(sumR > 255 ? 255 : sumR);
+                    outG = (uint8_t)(sumG > 255 ? 255 : sumG);
+                    outB = (uint8_t)(sumB > 255 ? 255 : sumB);
+                } else {
+                    outR = (uint8_t)((sumR * 255 + outA/2) / outA);
+                    outG = (uint8_t)((sumG * 255 + outA/2) / outA);
+                    outB = (uint8_t)((sumB * 255 + outA/2) / outA);
+                }
             } else {
-                outRf = outGf = outBf = 0.0f;
+                outR = outG = outB = 0;
             }
             break;
+        }
     }
     
-    // Clamp and convert back to uint8_t
-    outR = (uint8_t)(outRf * 255.0f + 0.5f);
-    outG = (uint8_t)(outGf * 255.0f + 0.5f);
-    outB = (uint8_t)(outBf * 255.0f + 0.5f);
-    
-    if (dstInfo->mask_a) {
-        // Destination has alpha channel
-        outA = (uint8_t)(outAf * 255.0f + 0.5f);
-    } else {
+    // Handle destination format alpha
+    if (!dstInfo->mask_a) {
         // No alpha in dst format -> keep opaque
         outA = 255;
     }

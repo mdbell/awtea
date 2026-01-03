@@ -61,6 +61,7 @@
 #define BUILD_FLAG_ASSERTIONS       (1 << 2)  // Assertions enabled
 #define BUILD_FLAG_LOGGING          (1 << 3)  // Logging enabled
 #define BUILD_FLAG_MEMORY_TRACKING  (1 << 4)  // Memory tracking enabled
+#define BUILD_FLAG_SIMD             (1 << 5)  // SIMD optimizations enabled
 
 // Build version and metadata exports
 __attribute__((export_name("get_build_version_ptr")))

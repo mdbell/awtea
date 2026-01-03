@@ -8,7 +8,7 @@
  * - Multiple contexts rendering to the same surface
  */
 
-import { assertEquals, assertNotEquals } from "@std/assert";
+import { assertEquals, assertNotEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { PixelFormat, WasmRasterizer } from "./wasm_rasterizer.ts";
 import { assertPixelEquals } from "./test_helpers.ts";
 
