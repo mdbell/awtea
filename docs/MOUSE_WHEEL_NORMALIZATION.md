@@ -39,20 +39,6 @@ Without any configuration, the normalization works as follows:
 
 ## Testing the Implementation
 
-### Automated Tests
-
-Run the unit tests to verify the normalization logic:
-
-```bash
-./gradlew :awtea-classlib:test --tests MouseWheelNormalizationTests
-```
-
-This verifies:
-- System property configuration works correctly
-- Default values are applied when properties are not set
-- Normalization math is correct for typical browser values
-- Rotation calculation preserves sign correctly
-
 ### Manual Testing with Demo Panel
 
 The `MouseWheelDemoPanel` class provides a visual test interface:
