@@ -1,10 +1,10 @@
 # AWT API Coverage Report
 
-**Generated:** 2025-12-23 03:39:51
+**Generated:** 2026-01-03 03:01:02
 
 ## Summary
 
-- **Total Coverage**: 1069 / 1952 (54.8%)
+- **Total Coverage**: 1070 / 1952 (54.8%)
 - **Packages**: 15
 - **Classes**: 114
 
@@ -25,7 +25,7 @@
 | [`java.awt.image.renderable`](md/java/awt/image/renderable/index.md) | 1 | 9 / 12 | 75.0% ![Coverage](https://img.shields.io/badge/coverage-75.0%25-green) |
 | [`java.io`](md/java/io/index.md) | 1 | 2 / 35 | 5.7% ![Coverage](https://img.shields.io/badge/coverage-5.7%25-red) |
 | [`java.net`](md/java/net/index.md) | 4 | 7 / 31 | 22.6% ![Coverage](https://img.shields.io/badge/coverage-22.6%25-red) |
-| [`java.nio.file`](md/java/nio/file/index.md) | 2 | 2 / 71 | 2.8% ![Coverage](https://img.shields.io/badge/coverage-2.8%25-red) |
+| [`java.nio.file`](md/java/nio/file/index.md) | 2 | 3 / 71 | 4.2% ![Coverage](https://img.shields.io/badge/coverage-4.2%25-red) |
 | [`java.security`](md/java/security/index.md) | 1 | 4 / 18 | 22.2% ![Coverage](https://img.shields.io/badge/coverage-22.2%25-red) |
 | [`java.util`](md/java/util/index.md) | 1 | 9 / 24 | 37.5% ![Coverage](https://img.shields.io/badge/coverage-37.5%25-orange) |
 | [`javax.sound.midi`](md/javax/sound/midi/index.md) | 7 | 47 / 112 | 42.0% ![Coverage](https://img.shields.io/badge/coverage-42.0%25-orange) |
