@@ -1,19 +1,19 @@
 # Package: `java.nio.file`
 
-**Coverage:** 2 / 71 (2.8%)
+**Coverage:** 3 / 71 (4.2%)
 
 ```
-[█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2.8%
+[██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 4.2%
 ```
 
 ## Classes
 
-### [`Files`](Files.md) ![Coverage](https://img.shields.io/badge/coverage-1.4%25-red)
+### [`Files`](Files.md) ![Coverage](https://img.shields.io/badge/coverage-2.9%25-red)
 
-**Coverage:** 1 / 69 (1.4%)
+**Coverage:** 2 / 69 (2.9%)
 
 ```
-[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1.4%
+[█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2.9%
 ```
 
 ### [`Paths`](Paths.md) ![Coverage](https://img.shields.io/badge/coverage-50.0%25-yellow)

@@ -1,16 +1,17 @@
-# Class: `Files` ![Coverage](https://img.shields.io/badge/coverage-1.4%25-red)
+# Class: `Files` ![Coverage](https://img.shields.io/badge/coverage-2.9%25-red)
 
 **Full Name:** `java.nio.file.Files`
 
-**Coverage:** 1 / 69 (1.4%)
+**Coverage:** 2 / 69 (2.9%)
 
 ```
-[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 1.4%
+[█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2.9%
 ```
 
 ## ✓ Implemented Methods
 
 - `public static java.io.BufferedReader newBufferedReader(java.nio.file.Path)`
+- `public static java.nio.file.Path setAttribute(java.nio.file.Path, java.lang.String, java.lang.Object, java.nio.file.LinkOption[])`
 
 ## ✗ Missing Methods
 
@@ -53,7 +54,6 @@
 - `public static java.nio.file.Path createTempFile(java.nio.file.Path, java.lang.String, java.lang.String, java.nio.file.attribute.FileAttribute[])`
 - `public static java.nio.file.Path move(java.nio.file.Path, java.nio.file.Path, java.nio.file.CopyOption[])`
 - `public static java.nio.file.Path readSymbolicLink(java.nio.file.Path)`
-- `public static java.nio.file.Path setAttribute(java.nio.file.Path, java.lang.String, java.lang.Object, java.nio.file.LinkOption[])`
 - `public static java.nio.file.Path setLastModifiedTime(java.nio.file.Path, java.nio.file.attribute.FileTime)`
 - `public static java.nio.file.Path setOwner(java.nio.file.Path, java.nio.file.attribute.UserPrincipal)`
 - `public static java.nio.file.Path setPosixFilePermissions(java.nio.file.Path, java.util.Set)`
