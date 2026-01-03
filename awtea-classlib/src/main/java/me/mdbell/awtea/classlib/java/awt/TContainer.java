@@ -21,6 +21,12 @@ import org.teavm.classlib.java.awt.TDimension;
 public class TContainer extends TComponent {
 
     private static final Logger log = LoggerFactory.getLogger(TContainer.class);
+    
+    /**
+     * Color used to fill component bounds in picking buffer.
+     * The actual color doesn't matter as the rasterizer replaces it with the component's ID color.
+     */
+    private static final Color PICKING_FILL_COLOR = Color.BLACK;
 
     private List<TComponent> children = new ArrayList<>();
     private Map<TComponent, Object> constraints = new HashMap<>();
@@ -229,10 +235,7 @@ public class TContainer extends TComponent {
         // If picking mode is enabled, fill the container's bounds first
         // This ensures the container itself can be detected in areas not covered by children
         if (isPickingEnabled(g)) {
-            Color oldColor = g.getColor();
-            g.setColor(Color.BLACK); // Color doesn't matter for picking buffer
-            g.fillRect(0, 0, getWidth(), getHeight());
-            g.setColor(oldColor);
+            fillBoundsForPicking(g, getWidth(), getHeight());
         }
         
         for (TComponent child : children) {
@@ -268,12 +271,7 @@ public class TContainer extends TComponent {
                     // If picking mode is enabled, ensure the child's bounds are filled
                     // so it can be detected in the picking buffer even if it doesn't paint anything
                     if (isPickingEnabled(childGfx)) {
-                        // Fill the child's entire bounds with a dummy color
-                        // The rasterizer will render this to the picking buffer with the component's ID color
-                        Color oldColor = childGfx.getColor();
-                        childGfx.setColor(Color.BLACK); // Color doesn't matter for picking buffer
-                        childGfx.fillRect(0, 0, width, height);
-                        childGfx.setColor(oldColor);
+                        fillBoundsForPicking(childGfx, width, height);
                     }
                     
                     // Paint the child
@@ -314,6 +312,22 @@ public class TContainer extends TComponent {
             return srg.isPickingEnabled();
         }
         return false;
+    }
+    
+    /**
+     * Fills the specified bounds with a solid color for picking buffer support.
+     * This ensures components are registered in the picking buffer even if they don't paint anything.
+     * The color is arbitrary since the rasterizer replaces it with the component's ID color.
+     * 
+     * @param g the graphics context
+     * @param width the width to fill
+     * @param height the height to fill
+     */
+    private static void fillBoundsForPicking(TGraphics g, int width, int height) {
+        Color oldColor = g.getColor();
+        g.setColor(PICKING_FILL_COLOR);
+        g.fillRect(0, 0, width, height);
+        g.setColor(oldColor);
     }
 
     public TComponent[] getComponents() {
