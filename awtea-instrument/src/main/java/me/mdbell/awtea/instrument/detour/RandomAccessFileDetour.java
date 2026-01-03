@@ -7,6 +7,7 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 
 @NoDetours
 @DetourReceiver(target = RandomAccessFile.class)
@@ -25,5 +26,11 @@ public class RandomAccessFileDetour {
 		}
 
 		return new RandomAccessFile(file, mode);
+	}
+
+	@DetourMethod()
+	public static FileChannel getChannel(RandomAccessFile instance) {
+		log.error("RandomAccessFile.getChannel() called but FileChannel is not supported in this environment.");
+		throw new UnsupportedOperationException("RandomAccessFile.getChannel() is not supported in this environment.");
 	}
 }
