@@ -164,7 +164,7 @@ public class THeavyCanvas {
 					getHeight());
 			
 			// Automatically enable GPU-based hit picking for WebGL backend
-//			initializeWebGLPickingStrategy(webgl);
+			initializeWebGLPickingStrategy(webgl);
 			
 			// we use a composite backend as there are still some surfaces that webgl
 			// doesn't fully support (like text rendering)
