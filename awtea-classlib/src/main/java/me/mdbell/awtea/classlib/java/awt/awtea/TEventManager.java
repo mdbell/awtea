@@ -53,6 +53,11 @@ public final class TEventManager implements AutoCloseable {
     private static final int DEFAULT_LINE_DIVISOR = 3;
     private static final int DEFAULT_PAGE_MULTIPLIER = 1;
 
+    // Cached divisor values (initialized lazily on first use)
+    private static volatile Double cachedPixelDivisor = null;
+    private static volatile Double cachedLineDivisor = null;
+    private static volatile Double cachedPageDivisor = null;
+
     private final HTMLElement element;
     @Getter
     private final TContainer container;
@@ -215,8 +220,10 @@ public final class TEventManager implements AutoCloseable {
             int unitsToScroll = rotation * SCROLL_AMOUNT;
             boolean meta = me.getMetaKey();
 
-            log.trace("Mouse wheel: rawDelta={}, deltaMode={}, normalized={}, rotation={}", 
-                    rawDeltaY, deltaMode, normalizedDelta, rotation);
+            if (log.isTraceEnabled()) {
+                log.trace("Mouse wheel: rawDelta={}, deltaMode={}, normalized={}, rotation={}", 
+                        rawDeltaY, deltaMode, normalizedDelta, rotation);
+            }
 
             TMouseWheelEvent event = new TMouseWheelEvent(comp, MouseEventType.WHEEL.getId(),
                     point.getX(), point.getY(), button, meta,
@@ -427,7 +434,8 @@ public final class TEventManager implements AutoCloseable {
 
     /**
      * Gets the wheel delta divisor/multiplier for a given deltaMode.
-     * Values can be configured via system properties:
+     * Values are cached after first access for performance.
+     * Can be configured via system properties:
      * - me.mdbell.awtea.mouseWheel.pixelDivisor (default: 100)
      * - me.mdbell.awtea.mouseWheel.lineDivisor (default: 3)
      * - me.mdbell.awtea.mouseWheel.pageMultiplier (default: 1)
@@ -438,27 +446,39 @@ public final class TEventManager implements AutoCloseable {
     private static double getWheelDivisor(int deltaMode) {
         switch (deltaMode) {
             case 0: // DOM_DELTA_PIXEL
-                int pixelDivisor = Integer.getInteger(WHEEL_PIXEL_DIVISOR_PROP, DEFAULT_PIXEL_DIVISOR);
-                if (pixelDivisor <= 0) {
-                    log.warn("Invalid pixel divisor {}, using default {}", pixelDivisor, DEFAULT_PIXEL_DIVISOR);
-                    return DEFAULT_PIXEL_DIVISOR;
+                if (cachedPixelDivisor == null) {
+                    int pixelDivisor = Integer.getInteger(WHEEL_PIXEL_DIVISOR_PROP, DEFAULT_PIXEL_DIVISOR);
+                    if (pixelDivisor <= 0) {
+                        log.warn("Invalid pixel divisor {}, using default {}", pixelDivisor, DEFAULT_PIXEL_DIVISOR);
+                        cachedPixelDivisor = (double) DEFAULT_PIXEL_DIVISOR;
+                    } else {
+                        cachedPixelDivisor = (double) pixelDivisor;
+                    }
                 }
-                return pixelDivisor;
+                return cachedPixelDivisor;
             case 1: // DOM_DELTA_LINE
-                int lineDivisor = Integer.getInteger(WHEEL_LINE_DIVISOR_PROP, DEFAULT_LINE_DIVISOR);
-                if (lineDivisor <= 0) {
-                    log.warn("Invalid line divisor {}, using default {}", lineDivisor, DEFAULT_LINE_DIVISOR);
-                    return DEFAULT_LINE_DIVISOR;
+                if (cachedLineDivisor == null) {
+                    int lineDivisor = Integer.getInteger(WHEEL_LINE_DIVISOR_PROP, DEFAULT_LINE_DIVISOR);
+                    if (lineDivisor <= 0) {
+                        log.warn("Invalid line divisor {}, using default {}", lineDivisor, DEFAULT_LINE_DIVISOR);
+                        cachedLineDivisor = (double) DEFAULT_LINE_DIVISOR;
+                    } else {
+                        cachedLineDivisor = (double) lineDivisor;
+                    }
                 }
-                return lineDivisor;
+                return cachedLineDivisor;
             case 2: // DOM_DELTA_PAGE
                 // For page mode, we want to multiply (larger scroll), so return 1/multiplier
-                int multiplier = Integer.getInteger(WHEEL_PAGE_MULTIPLIER_PROP, DEFAULT_PAGE_MULTIPLIER);
-                if (multiplier <= 0) {
-                    log.warn("Invalid page multiplier {}, using default {}", multiplier, DEFAULT_PAGE_MULTIPLIER);
-                    return 1.0 / DEFAULT_PAGE_MULTIPLIER;
+                if (cachedPageDivisor == null) {
+                    int multiplier = Integer.getInteger(WHEEL_PAGE_MULTIPLIER_PROP, DEFAULT_PAGE_MULTIPLIER);
+                    if (multiplier <= 0) {
+                        log.warn("Invalid page multiplier {}, using default {}", multiplier, DEFAULT_PAGE_MULTIPLIER);
+                        cachedPageDivisor = 1.0 / DEFAULT_PAGE_MULTIPLIER;
+                    } else {
+                        cachedPageDivisor = 1.0 / multiplier;
+                    }
                 }
-                return 1.0 / multiplier;
+                return cachedPageDivisor;
             default:
                 log.warn("Unknown deltaMode {}, using divisor of 1", deltaMode);
                 return 1.0;

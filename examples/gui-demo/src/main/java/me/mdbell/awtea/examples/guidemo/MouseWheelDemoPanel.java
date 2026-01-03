@@ -16,15 +16,33 @@ public class MouseWheelDemoPanel extends Panel implements MouseWheelListener {
     private int lastDeltaMode = 0;
     private int eventCount = 0;
     
+    // Cache configuration values to avoid repeated System.getProperty calls
+    private int cachedPixelDivisor;
+    private int cachedLineDivisor;
+    private int cachedPageMultiplier;
+    
     public MouseWheelDemoPanel() {
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
         addMouseWheelListener(this);
         
+        // Cache configuration values once at construction
+        updateCachedConfiguration();
+        
         // Instructions label
         Label instructions = new Label("Scroll with your mouse wheel to test normalization");
         instructions.setAlignment(Label.CENTER);
         add(instructions, BorderLayout.NORTH);
+    }
+    
+    /**
+     * Update cached configuration values from system properties.
+     * Call this if you change properties at runtime.
+     */
+    public void updateCachedConfiguration() {
+        cachedPixelDivisor = Integer.getInteger("me.mdbell.awtea.mouseWheel.pixelDivisor", 100);
+        cachedLineDivisor = Integer.getInteger("me.mdbell.awtea.mouseWheel.lineDivisor", 3);
+        cachedPageMultiplier = Integer.getInteger("me.mdbell.awtea.mouseWheel.pageMultiplier", 1);
     }
     
     @Override
@@ -84,16 +102,13 @@ public class MouseWheelDemoPanel extends Panel implements MouseWheelListener {
         g.drawString("Current Configuration:", 20, y);
         y += lineHeight;
         
-        int pixelDivisor = Integer.getInteger("me.mdbell.awtea.mouseWheel.pixelDivisor", 100);
-        g.drawString("  Pixel Divisor: " + pixelDivisor, 20, y);
+        g.drawString("  Pixel Divisor: " + cachedPixelDivisor, 20, y);
         y += lineHeight;
         
-        int lineDivisor = Integer.getInteger("me.mdbell.awtea.mouseWheel.lineDivisor", 3);
-        g.drawString("  Line Divisor: " + lineDivisor, 20, y);
+        g.drawString("  Line Divisor: " + cachedLineDivisor, 20, y);
         y += lineHeight;
         
-        int pageMultiplier = Integer.getInteger("me.mdbell.awtea.mouseWheel.pageMultiplier", 1);
-        g.drawString("  Page Multiplier: " + pageMultiplier, 20, y);
+        g.drawString("  Page Multiplier: " + cachedPageMultiplier, 20, y);
         y += lineHeight * 2;
         
         // Visual scroll position indicator
