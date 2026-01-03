@@ -5,6 +5,7 @@ This document provides comprehensive documentation for all system properties tha
 ## Table of Contents
 - [Graphics and Rendering](#graphics-and-rendering)
 - [Hit-Testing](#hit-testing)
+- [Input and Events](#input-and-events)
 - [Font Configuration](#font-configuration)
 - [WebAssembly (WASM)](#webassembly-wasm)
 - [Audio Configuration](#audio-configuration)
@@ -92,6 +93,80 @@ This document provides comprehensive documentation for all system properties tha
 
 # Typical debugging setup
 -Dme.mdbell.awtea.hit_test.strategy=picking_buffer -Dme.mdbell.awtea.hit_test.debug_render=true
+```
+
+---
+
+## Input and Events
+
+### `me.mdbell.awtea.mouseWheel.pixelDivisor`
+
+- **Type**: Integer
+- **Default**: `100`
+- **Valid Values**: Any positive integer
+- **Description**: Controls the divisor applied to mouse wheel delta values when the browser reports them in PIXEL mode (deltaMode = 0). Chrome and many browsers emit large pixel values (e.g., 100 per notch), while Java AWT expects smaller normalized values (typically ±1 per notch). This divisor normalizes browser pixel deltas to match Java's expectations. Lower values make scrolling faster; higher values make it slower.
+- **Performance Impact**: Affects scroll speed and user experience. Optimal value depends on browser, OS, and user preferences.
+- **Platform Notes**: 
+  - Chrome typically emits ~100 pixels per notch → default of 100 works well
+  - Firefox and Safari may vary - adjust if scrolling feels too fast or slow
+  - Consider user's OS scroll settings when tuning
+- **Code Location**: `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/TEventManager.java`
+- **Since**: v0.4.0
+
+**Example:**
+```bash
+# Default behavior (divide pixel delta by 100)
+-Dme.mdbell.awtea.mouseWheel.pixelDivisor=100
+
+# Slower scrolling (divide by larger value)
+-Dme.mdbell.awtea.mouseWheel.pixelDivisor=200
+
+# Faster scrolling (divide by smaller value)
+-Dme.mdbell.awtea.mouseWheel.pixelDivisor=50
+```
+
+### `me.mdbell.awtea.mouseWheel.lineDivisor`
+
+- **Type**: Integer
+- **Default**: `3`
+- **Valid Values**: Any positive integer
+- **Description**: Controls the divisor applied to mouse wheel delta values when the browser reports them in LINE mode (deltaMode = 1). Some browsers report scroll events in "lines" units (e.g., 3 lines per notch). This divisor normalizes those values to match Java AWT's expectations. Lower values make scrolling faster; higher values make it slower.
+- **Performance Impact**: Affects scroll speed for browsers using LINE mode.
+- **Platform Notes**: 
+  - LINE mode is less common but used by some browsers/platforms
+  - Default of 3 assumes browser emits 3 lines per notch
+- **Code Location**: `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/TEventManager.java`
+- **Since**: v0.4.0
+
+**Example:**
+```bash
+# Default behavior (divide line delta by 3)
+-Dme.mdbell.awtea.mouseWheel.lineDivisor=3
+
+# Adjust for browsers emitting different line counts
+-Dme.mdbell.awtea.mouseWheel.lineDivisor=5
+```
+
+### `me.mdbell.awtea.mouseWheel.pageMultiplier`
+
+- **Type**: Integer
+- **Default**: `1`
+- **Valid Values**: Any positive integer
+- **Description**: Controls the multiplier applied to mouse wheel delta values when the browser reports them in PAGE mode (deltaMode = 2). PAGE mode typically indicates a desire for large scroll jumps (e.g., page up/down). This multiplier increases the scroll amount. Higher values make page scrolling jump further; lower values make smaller jumps.
+- **Performance Impact**: Affects how far page-mode scrolling jumps.
+- **Platform Notes**: 
+  - PAGE mode is rare but supported for completeness
+  - Default of 1 provides no multiplication (pass-through)
+- **Code Location**: `awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/awtea/TEventManager.java`
+- **Since**: v0.4.0
+
+**Example:**
+```bash
+# Default behavior (no multiplication)
+-Dme.mdbell.awtea.mouseWheel.pageMultiplier=1
+
+# Larger page jumps
+-Dme.mdbell.awtea.mouseWheel.pageMultiplier=3
 ```
 
 ---
