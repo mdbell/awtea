@@ -482,7 +482,14 @@ public abstract class TComponent implements TImageObserver {
         if (parent == null) {
             return null;
         }
-        TGraphics g = parent.create(x, y, width, height);
+        
+        // Create child graphics and dispose parent to prevent leak
+        TGraphics g;
+        try {
+            g = parent.create(x, y, width, height);
+        } finally {
+            parent.dispose();
+        }
         
         // Set this component's ID for picking support
         // This ensures rendering via getGraphics() goes to the picking buffer with correct ID
