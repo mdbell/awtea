@@ -5,6 +5,7 @@ import lombok.Setter;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -225,6 +226,15 @@ public class TContainer extends TComponent {
         // Set this container's ID for picking if supported
         setComponentIdForPicking(g, this);
         
+        // If picking mode is enabled, fill the container's bounds first
+        // This ensures the container itself can be detected in areas not covered by children
+        if (isPickingEnabled(g)) {
+            Color oldColor = g.getColor();
+            g.setColor(Color.BLACK); // Color doesn't matter for picking buffer
+            g.fillRect(0, 0, getWidth(), getHeight());
+            g.setColor(oldColor);
+        }
+        
         for (TComponent child : children) {
             // Skip invisible components
             if (!child.isVisible()) {
@@ -255,6 +265,17 @@ public class TContainer extends TComponent {
                     // Set child's ID for picking
                     setComponentIdForPicking(childGfx, child);
                     
+                    // If picking mode is enabled, ensure the child's bounds are filled
+                    // so it can be detected in the picking buffer even if it doesn't paint anything
+                    if (isPickingEnabled(childGfx)) {
+                        // Fill the child's entire bounds with a dummy color
+                        // The rasterizer will render this to the picking buffer with the component's ID color
+                        Color oldColor = childGfx.getColor();
+                        childGfx.setColor(Color.BLACK); // Color doesn't matter for picking buffer
+                        childGfx.fillRect(0, 0, width, height);
+                        childGfx.setColor(oldColor);
+                    }
+                    
                     // Paint the child
                     child.paint(childGfx);
                 } finally {
@@ -278,6 +299,21 @@ public class TContainer extends TComponent {
             TSurfaceRasterizerGraphics srg = (TSurfaceRasterizerGraphics) g;
             srg.setActiveComponentId(component.getComponentId());
         }
+    }
+    
+    /**
+     * Checks if picking mode is enabled on the graphics context.
+     * Used to determine if we need to fill component bounds for picking buffer support.
+     * 
+     * @param g the graphics context
+     * @return true if picking mode is enabled
+     */
+    private static boolean isPickingEnabled(TGraphics g) {
+        if (g instanceof TSurfaceRasterizerGraphics) {
+            TSurfaceRasterizerGraphics srg = (TSurfaceRasterizerGraphics) g;
+            return srg.isPickingEnabled();
+        }
+        return false;
     }
 
     public TComponent[] getComponents() {
