@@ -112,6 +112,10 @@ public abstract class TComponent implements TImageObserver {
     // used in the event queue for caching
     // we shouldn't touch this directly, and leave it to TEventQueue
     TEventQueue.EventQueueItem[] eventCache;
+    
+    // Cached graphics context to prevent leaks when getGraphics() is called repeatedly
+    // without disposing. Disposed automatically when getGraphics() is called again.
+    private TGraphics cachedGraphics;
 
     public TFontMetrics getFontMetrics(TFont font) {
         TGraphics g = getGraphics();
@@ -475,6 +479,13 @@ public abstract class TComponent implements TImageObserver {
     }
 
     public TGraphics getGraphics() {
+        // Dispose any previously cached graphics to prevent leaks when
+        // applications call getGraphics() repeatedly without disposing
+        if (cachedGraphics != null) {
+            cachedGraphics.dispose();
+            cachedGraphics = null;
+        }
+        
         if (this.parent == null) {
             return null;
         }
@@ -482,7 +493,29 @@ public abstract class TComponent implements TImageObserver {
         if (parent == null) {
             return null;
         }
-        return parent.create(x, y, width, height);
+        
+        // Create child graphics and dispose parent to prevent leak
+        TGraphics g;
+        try {
+            g = parent.create(x, y, width, height);
+        } finally {
+            parent.dispose();
+        }
+        
+        // Set this component's ID for picking support
+        // This ensures rendering via getGraphics() goes to the picking buffer with correct ID
+        if (g instanceof TSurfaceRasterizerGraphics) {
+            TSurfaceRasterizerGraphics srg = (TSurfaceRasterizerGraphics) g;
+            srg.setActiveComponentId(this.componentId);
+            // Enable picking if backend supports it
+            if (srg.getRasterizer() instanceof me.mdbell.awtea.gfx.PickingRasterizer) {
+                srg.setPickingEnabled(true);
+            }
+        }
+        
+        // Cache the graphics to dispose on next getGraphics() call
+        cachedGraphics = g;
+        return g;
     }
 
     public void paint(TGraphics g) {

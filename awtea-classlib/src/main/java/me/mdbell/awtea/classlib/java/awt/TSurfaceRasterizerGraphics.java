@@ -138,6 +138,16 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
         }
         return false;
     }
+    
+    /**
+     * Gets the underlying rasterizer.
+     * Used to check capabilities like picking support.
+     * 
+     * @return the rasterizer
+     */
+    public Rasterizer getRasterizer() {
+        return rasterizer;
+    }
 
     /**
      * Acquires a SurfaceCommand from the pool, or creates a new one if the pool is
