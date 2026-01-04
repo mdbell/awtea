@@ -43,6 +43,21 @@ public final class TEventManager implements AutoCloseable {
 
     public static final int SCROLL_AMOUNT = 3;
 
+    // System property keys for mouse wheel normalization
+    private static final String WHEEL_PIXEL_DIVISOR_PROP = "me.mdbell.awtea.mouseWheel.pixelDivisor";
+    private static final String WHEEL_LINE_DIVISOR_PROP = "me.mdbell.awtea.mouseWheel.lineDivisor";
+    private static final String WHEEL_PAGE_MULTIPLIER_PROP = "me.mdbell.awtea.mouseWheel.pageMultiplier";
+
+    // Default normalization values (empirically determined)
+    private static final int DEFAULT_PIXEL_DIVISOR = 100;
+    private static final int DEFAULT_LINE_DIVISOR = 3;
+    private static final int DEFAULT_PAGE_MULTIPLIER = 1;
+
+    // Cached divisor values (initialized lazily on first use)
+    private static volatile Double cachedPixelDivisor = null;
+    private static volatile Double cachedLineDivisor = null;
+    private static volatile Double cachedPageDivisor = null;
+
     private final HTMLElement element;
     @Getter
     private final TContainer container;
@@ -177,6 +192,10 @@ public final class TEventManager implements AutoCloseable {
 
     /**
      * Attach mouse wheel listener, mapping to TMouseWheelEvent.
+     * Browser wheel deltas are normalized based on deltaMode to match Java's expectations:
+     * - PIXEL mode (0): divided by configurable divisor (default: 100)
+     * - LINE mode (1): divided by configurable divisor (default: 3)
+     * - PAGE mode (2): multiplied by configurable multiplier (default: 1)
      */
     public TEventManager withMouseWheel() {
         element.onEvent("wheel", e -> {
@@ -191,17 +210,24 @@ public final class TEventManager implements AutoCloseable {
 
             point.translate(-onScreen.x, -onScreen.y);
 
-            int scrollType = me.getDeltaMode(); // TODO: verify the values map 1-1
-            double deltaY = me.getDeltaY();
-            int rotation = (int) Math.signum(deltaY);
+            int deltaMode = me.getDeltaMode();
+            double rawDeltaY = me.getDeltaY();
+            
+            // Normalize the wheel delta based on browser deltaMode
+            double normalizedDelta = normalizeWheelDelta(rawDeltaY, deltaMode);
+            
+            int rotation = (int) Math.signum(normalizedDelta);
             int unitsToScroll = rotation * SCROLL_AMOUNT;
             boolean meta = me.getMetaKey();
 
+            log.trace("Mouse wheel: rawDelta={}, deltaMode={}, normalized={}, rotation={}", 
+                    rawDeltaY, deltaMode, normalizedDelta, rotation);
+
             TMouseWheelEvent event = new TMouseWheelEvent(comp, MouseEventType.WHEEL.getId(),
                     point.getX(), point.getY(), button, meta,
-                    deltaY,
+                    normalizedDelta,
                     SCROLL_AMOUNT,
-                    scrollType,
+                    deltaMode,
                     unitsToScroll,
                     rotation);
             post(event);
@@ -389,5 +415,73 @@ public final class TEventManager implements AutoCloseable {
         yScale /= rect.getHeight();
 
         p.scale(xScale, yScale);
+    }
+
+    /**
+     * Normalizes wheel delta values based on the browser's deltaMode.
+     * This ensures consistent scroll behavior across different browsers and platforms.
+     * 
+     * @param rawDelta the raw delta value from the browser wheel event
+     * @param deltaMode the deltaMode from the browser (0=PIXEL, 1=LINE, 2=PAGE)
+     * @return the normalized delta value suitable for Java AWT expectations
+     */
+    private static double normalizeWheelDelta(double rawDelta, int deltaMode) {
+        double divisor = getWheelDivisor(deltaMode);
+        return rawDelta / divisor;
+    }
+
+    /**
+     * Gets the wheel delta divisor/multiplier for a given deltaMode.
+     * Values are cached after first access for performance.
+     * Can be configured via system properties:
+     * - me.mdbell.awtea.mouseWheel.pixelDivisor (default: 100)
+     * - me.mdbell.awtea.mouseWheel.lineDivisor (default: 3)
+     * - me.mdbell.awtea.mouseWheel.pageMultiplier (default: 1)
+     * 
+     * @param deltaMode the deltaMode from the browser (0=PIXEL, 1=LINE, 2=PAGE)
+     * @return the divisor to use for normalization
+     */
+    private static double getWheelDivisor(int deltaMode) {
+        switch (deltaMode) {
+            case 0: // DOM_DELTA_PIXEL
+                if (cachedPixelDivisor == null) {
+                    int pixelDivisor = Integer.getInteger(WHEEL_PIXEL_DIVISOR_PROP, DEFAULT_PIXEL_DIVISOR);
+                    if (pixelDivisor <= 0) {
+                        log.warn("Invalid pixel divisor {}, using default {}", pixelDivisor, DEFAULT_PIXEL_DIVISOR);
+                        cachedPixelDivisor = (double) DEFAULT_PIXEL_DIVISOR;
+                    } else {
+                        cachedPixelDivisor = (double) pixelDivisor;
+                    }
+                }
+                return cachedPixelDivisor;
+            case 1: // DOM_DELTA_LINE
+                if (cachedLineDivisor == null) {
+                    int lineDivisor = Integer.getInteger(WHEEL_LINE_DIVISOR_PROP, DEFAULT_LINE_DIVISOR);
+                    if (lineDivisor <= 0) {
+                        log.warn("Invalid line divisor {}, using default {}", lineDivisor, DEFAULT_LINE_DIVISOR);
+                        cachedLineDivisor = (double) DEFAULT_LINE_DIVISOR;
+                    } else {
+                        cachedLineDivisor = (double) lineDivisor;
+                    }
+                }
+                return cachedLineDivisor;
+            case 2: // DOM_DELTA_PAGE
+                // For page mode, we want to multiply the raw delta (larger scroll).
+                // Since normalization divides by the returned value, we return 1/multiplier
+                // so that (rawDelta / (1/multiplier)) = (rawDelta * multiplier)
+                if (cachedPageDivisor == null) {
+                    int multiplier = Integer.getInteger(WHEEL_PAGE_MULTIPLIER_PROP, DEFAULT_PAGE_MULTIPLIER);
+                    if (multiplier <= 0) {
+                        log.warn("Invalid page multiplier {}, using default {}", multiplier, DEFAULT_PAGE_MULTIPLIER);
+                        cachedPageDivisor = 1.0 / DEFAULT_PAGE_MULTIPLIER;
+                    } else {
+                        cachedPageDivisor = 1.0 / multiplier;
+                    }
+                }
+                return cachedPageDivisor;
+            default:
+                log.warn("Unknown deltaMode {}, using divisor of 1", deltaMode);
+                return 1.0;
+        }
     }
 }
