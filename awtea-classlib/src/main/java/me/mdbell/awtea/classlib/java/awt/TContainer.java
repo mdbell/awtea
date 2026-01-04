@@ -241,14 +241,11 @@ public class TContainer extends TComponent {
 
             // Use child.getGraphics() to automatically get the correct component ID
             // This ensures picking works correctly for all rendering paths
-            TGraphics childGfx = child.getGraphics();
-            if (childGfx != null) {
-                try {
+            // Use try-with-resources to prevent leaks
+            try (TGraphics childGfx = child.getGraphics()) {
+                if (childGfx != null) {
                     // Paint the child - component ID is already set by getGraphics()
                     child.paint(childGfx);
-                } finally {
-                    // prevent a leak if we get an exception in the paint call
-                    childGfx.dispose();
                 }
             }
         }
