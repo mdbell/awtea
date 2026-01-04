@@ -112,6 +112,10 @@ public abstract class TComponent implements TImageObserver {
     // used in the event queue for caching
     // we shouldn't touch this directly, and leave it to TEventQueue
     TEventQueue.EventQueueItem[] eventCache;
+    
+    // Cached graphics context to prevent leaks when getGraphics() is called repeatedly
+    // without disposing. Disposed automatically when getGraphics() is called again.
+    private TGraphics cachedGraphics;
 
     public TFontMetrics getFontMetrics(TFont font) {
         TGraphics g = getGraphics();
@@ -475,6 +479,13 @@ public abstract class TComponent implements TImageObserver {
     }
 
     public TGraphics getGraphics() {
+        // Dispose any previously cached graphics to prevent leaks when
+        // applications call getGraphics() repeatedly without disposing
+        if (cachedGraphics != null) {
+            cachedGraphics.dispose();
+            cachedGraphics = null;
+        }
+        
         if (this.parent == null) {
             return null;
         }
@@ -502,6 +513,8 @@ public abstract class TComponent implements TImageObserver {
             }
         }
         
+        // Cache the graphics to dispose on next getGraphics() call
+        cachedGraphics = g;
         return g;
     }
 
