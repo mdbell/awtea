@@ -220,10 +220,8 @@ public final class TEventManager implements AutoCloseable {
             int unitsToScroll = rotation * SCROLL_AMOUNT;
             boolean meta = me.getMetaKey();
 
-            if (log.isTraceEnabled()) {
-                log.trace("Mouse wheel: rawDelta={}, deltaMode={}, normalized={}, rotation={}", 
-                        rawDeltaY, deltaMode, normalizedDelta, rotation);
-            }
+            log.trace("Mouse wheel: rawDelta={}, deltaMode={}, normalized={}, rotation={}", 
+                    rawDeltaY, deltaMode, normalizedDelta, rotation);
 
             TMouseWheelEvent event = new TMouseWheelEvent(comp, MouseEventType.WHEEL.getId(),
                     point.getX(), point.getY(), button, meta,
