@@ -23,8 +23,6 @@ The mouse wheel normalization feature addresses the issue where browser wheel de
 
 3. **Documentation**:
    - Updated `docs/SYSTEM_PROPERTIES.md` with detailed property documentation
-   - Added test suite in `MouseWheelNormalizationTests.java`
-   - Created demo panel in `MouseWheelDemoPanel.java`
 
 ### Default Behavior
 
@@ -39,24 +37,16 @@ Without any configuration, the normalization works as follows:
 
 ## Testing the Implementation
 
-### Manual Testing with Demo Panel
+### Manual Testing
 
-The `MouseWheelDemoPanel` class provides a visual test interface:
+Test the normalization with any AWTea application that uses mouse wheel scrolling:
 
-1. **Build the gui-demo example**:
+1. **Build and run an example**:
    ```bash
    ./gradlew :examples:gui-demo:build
    ```
 
-2. **Run the example** and observe:
-   - Event count increments on each wheel event
-   - Wheel rotation shows -1, 0, or 1
-   - Precise rotation shows the normalized delta value
-   - Delta mode shows PIXEL (0), LINE (1), or PAGE (2)
-   - Scroll position updates based on normalized values
-   - Blue indicator moves smoothly in the bar
-
-3. **Test different configurations**:
+2. **Test different configurations**:
    ```bash
    # Slower scrolling (larger divisor)
    -Dme.mdbell.awtea.mouseWheel.pixelDivisor=200
@@ -67,6 +57,8 @@ The `MouseWheelDemoPanel` class provides a visual test interface:
    # Custom line mode divisor
    -Dme.mdbell.awtea.mouseWheel.lineDivisor=5
    ```
+
+3. **Observe scroll behavior** in your application and adjust divisors as needed for your environment.
 
 ### Browser Testing Checklist
 
