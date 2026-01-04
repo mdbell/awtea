@@ -94,6 +94,36 @@ This document provides comprehensive documentation for all system properties tha
 -Dme.mdbell.awtea.hit_test.strategy=picking_buffer -Dme.mdbell.awtea.hit_test.debug_render=true
 ```
 
+### `me.mdbell.awtea.webgl.stack_leak_threshold`
+
+- **Type**: Integer
+- **Default**: `500`
+- **Valid Values**: Any positive integer, or `0` to disable warnings
+- **Description**: Configures the threshold for WebGL context stack depth warnings. When the WebGL rendering context stack reaches a multiple of this threshold, a warning is logged to help detect graphics context leaks. This typically happens when applications call `getGraphics()` repeatedly without disposing the returned graphics contexts. Warnings are logged at intervals (500, 1000, 1500, etc.) to prevent console spam while still alerting developers to potential resource leaks.
+- **Use Case**: Helps identify memory leaks where applications repeatedly call `canvas.getGraphics()` in loops without proper disposal. The stack depth grows unbounded until the application runs out of memory or performance degrades significantly.
+- **Performance Impact**: Minimal - only checks threshold on each `save()` call
+- **Code Location**: `awtea-graphics/src/main/java/me/mdbell/awtea/gfx/webgl/WebGLContextStack.java`
+- **Since**: v0.4.0
+
+**Example:**
+```bash
+# Default threshold (warn every 500 depth increases)
+-Dme.mdbell.awtea.webgl.stack_leak_threshold=500
+
+# More sensitive detection (warn every 100 depth increases)
+-Dme.mdbell.awtea.webgl.stack_leak_threshold=100
+
+# Disable leak warnings
+-Dme.mdbell.awtea.webgl.stack_leak_threshold=0
+```
+
+**Warning Message:**
+```
+[WARN] WebGL context stack depth is 500. This may indicate a graphics context leak.
+       Ensure getGraphics() calls are properly disposed or use try-with-resources.
+       Configure threshold with system property: me.mdbell.awtea.webgl.stack_leak_threshold (default: 500)
+```
+
 ---
 
 ## Font Configuration

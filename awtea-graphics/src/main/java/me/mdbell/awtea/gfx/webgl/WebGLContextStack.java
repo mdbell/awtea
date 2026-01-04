@@ -27,9 +27,21 @@ public class WebGLContextStack {
     
     private static final Logger log = LoggerFactory.getLogger(WebGLContextStack.class);
     
+    /**
+     * System property to configure the stack depth warning threshold.
+     * Warnings are logged every time the stack depth reaches a multiple of this value.
+     * Default is 500. Set to 0 to disable warnings.
+     */
+    private static final int STACK_LEAK_WARNING_THRESHOLD = Integer.parseInt(
+        System.getProperty("me.mdbell.awtea.webgl.stack_leak_threshold", "500")
+    );
+    
     private final WebGL2RenderingContext gl;
     private final Stack<WebGLState> stateStack = new Stack<>();
     private WebGLState currentState;
+    
+    // Track last warning depth to prevent console spam
+    private int lastWarningDepth = 0;
     
     // Surface dimensions needed for clip application
     private int surfaceWidth;
@@ -111,8 +123,12 @@ public class WebGLContextStack {
      * This should be called when creating a child rasterizer.
      */
     void save() {
-        log.trace("WebGLContextStack: Saving state (stack depth: {})", stateStack.size());
+        int depth = stateStack.size();
+        log.trace("WebGLContextStack: Saving state (stack depth: {})", depth);
         stateStack.push(new WebGLState(currentState));
+        
+        // Check for potential stack leak and log warning at intervals
+        checkStackDepthWarning(depth + 1);
     }
     
     /**
@@ -375,5 +391,33 @@ public class WebGLContextStack {
         gl.enable(WebGLRenderingContext.SCISSOR_TEST);
         gl.scissor(currentState.clip.x, currentState.clip.y, 
                    currentState.clip.width, currentState.clip.height);
+    }
+    
+    /**
+     * Checks if the stack depth has reached a warning threshold and logs a warning
+     * if needed. Warnings are logged at intervals to prevent console spam.
+     * 
+     * @param currentDepth the current stack depth
+     */
+    private void checkStackDepthWarning(int currentDepth) {
+        // Skip if warnings are disabled
+        if (STACK_LEAK_WARNING_THRESHOLD <= 0) {
+            return;
+        }
+        
+        // Check if we've crossed a threshold boundary
+        if (currentDepth >= STACK_LEAK_WARNING_THRESHOLD) {
+            int thresholdLevel = currentDepth / STACK_LEAK_WARNING_THRESHOLD;
+            int lastThresholdLevel = lastWarningDepth / STACK_LEAK_WARNING_THRESHOLD;
+            
+            // Only log if we've crossed into a new threshold level
+            if (thresholdLevel > lastThresholdLevel) {
+                log.warn("WebGL context stack depth is {}. This may indicate a graphics context leak. " +
+                        "Ensure getGraphics() calls are properly disposed or use try-with-resources. " +
+                        "Configure threshold with system property: me.mdbell.awtea.webgl.stack_leak_threshold (default: 500)",
+                        currentDepth);
+                lastWarningDepth = currentDepth;
+            }
+        }
     }
 }
