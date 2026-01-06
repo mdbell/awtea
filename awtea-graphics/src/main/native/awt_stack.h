@@ -32,7 +32,7 @@ typedef struct {
 
 #if ENABLE_WASM_STACK_TRACKING
 
-// Initialize stack tracking system (called during init_surface_system)
+// Initialize stack tracking system (called automatically via constructor)
 void init_stack_tracking(void);
 
 // Get pointer to stack buffer (exported to WASM)
