@@ -7,9 +7,6 @@ extern SurfaceContext g_contexts[NUM_CONTEXTS];
 SurfaceData* get_surface_data(int id);
 SurfaceContext* get_context_data(int id);
 
-__attribute__((export_name("init_surface_system")))
-void init_surface_system(void);
-
 __attribute__((export_name("find_free_surface")))
 int  find_free_surface(void);
 

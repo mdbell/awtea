@@ -14,9 +14,9 @@ interface WasmAwtRasterizerExports extends JSObject {
 	@JSProperty("memory")
 	WasmMemory getMemory();
 
-	// Initialization
-	@JSMethod("init_surface_system")
-	void initSurfaceSystem();
+	// Constructor initialization (Emscripten-generated)
+	@JSMethod("__wasm_call_ctors")
+	void callConstructors();
 
 	@JSMethod("find_free_surface")
 	int findFreeSurfaceId();

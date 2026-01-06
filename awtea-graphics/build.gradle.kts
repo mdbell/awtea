@@ -90,6 +90,7 @@ tasks.register("buildAwtRasterWasm") {
             "-s", "WASM_BIGINT=1",
             "-s", "ERROR_ON_UNDEFINED_SYMBOLS=0",
             "-s", "INITIAL_MEMORY=134217728", // 128MB
+            "-Wl,--export=__wasm_call_ctors",
             "--no-entry",
             "-o", "build/wasm/awt_raster.wasm"
         )

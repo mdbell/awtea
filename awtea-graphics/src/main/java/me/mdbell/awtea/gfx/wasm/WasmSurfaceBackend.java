@@ -46,8 +46,10 @@ public class WasmSurfaceBackend implements SurfaceBackend {
         this.exports = WasmAwtLoader.load(
                 WASM_MODULE_PATH,
                 env).await();
-        // Initialize the surface system (sets all contexts to free state)
-        this.exports.initSurfaceSystem();
+        
+        // Call constructors to auto-initialize the module
+        // This triggers all __attribute__((constructor)) functions
+        this.exports.callConstructors();
         
         // Cache build information at initialization
         this.buildInfo = new WasmBuildInfo(this.exports);
