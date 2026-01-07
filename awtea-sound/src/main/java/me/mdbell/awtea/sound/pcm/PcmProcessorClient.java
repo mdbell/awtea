@@ -5,15 +5,19 @@ import lombok.SneakyThrows;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.sound.DrainListener;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.browser.Window;
+import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.core.JSUndefined;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
+import org.teavm.jso.json.JSON;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.webaudio.AudioContext;
@@ -25,6 +29,8 @@ import java.util.Set;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class PcmProcessorClient {
+
+    private static final Logger log = LoggerFactory.getLogger(PcmProcessorClient.class);
 
     // worklet needs to be a JS file, so we embed it in the JS source as a resource
     public static final String MODULE_PATH = "/js/pcm-processor.js";
@@ -89,16 +95,20 @@ public class PcmProcessorClient {
         // can't use this.node.getPort().setOnMessage()
         // for some reason. Why? idk.
         setOnMessage(this.node.getPort(), evt -> {
+            log.debug("PCM Client: Message event received from processor.");
             LineMessage msg = (LineMessage) evt.getData();
-            if (msg.nullish() || msg.getType() == null) {
+            if (msg.nullish()) {
                 return;
             }
-            if (msg.getType().equals("consumed")) {
+            String type = msg.getType();
+            log.trace("PCM Client: Received message from processor. Msg: {}", JSON.stringify(msg));
+            if (type.equals("consumed")) {
                 int frames = msg.getFrames();
                 queuedFrames -= frames;
                 if (queuedFrames < 0) {
                     queuedFrames = 0;
                 }
+                log.trace("PCM Client: Processor consumed {} frames. {} frames remaining in queue.", frames, queuedFrames);
                 drainListenerSet.removeIf(l -> l.onDrain(frames, queuedFrames));
             }
         });
@@ -151,6 +161,11 @@ public class PcmProcessorClient {
 
     public void close() {
         if (!node.nullish()) {
+
+            LineMessage shutdownMsg = JSObjects.create();
+            shutdownMsg.setType("shutdown");
+            this.node.getPort().postMessage(shutdownMsg);
+
             this.node.disconnect();
             this.node = null;
         }
@@ -194,31 +209,34 @@ public class PcmProcessorClient {
 
     private interface LineMessage extends JSObject {
 
-        @JSProperty
+        @JSProperty("type")
         String getType();
 
-        @JSProperty
+        @JSProperty("type")
         void setType(String type);
 
         // only used when type == consumed || type == pcm
 
-        @JSProperty
+        @JSProperty("frames")
         int getFrames();
 
-        @JSProperty
+        @JSProperty("frames")
         void setFrames(int frames);
 
         // only used when type == init || type == pcm
-        @JSProperty
-        int getChannels();
+        @JSProperty("channels")
+        JSNumber getChannels();
 
-        @JSProperty
+        @JSProperty("channels")
         void setChannels(int channels);
 
         // only used when type == pcm
 
-        @JSProperty
+        @JSProperty("data")
         void setData(ArrayBuffer data);
+
+        @JSProperty("data")
+        ArrayBuffer getData();
     }
 }
 

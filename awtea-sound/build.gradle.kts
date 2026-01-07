@@ -31,5 +31,5 @@ dependencies {
 }
 
 tasks.compileJava {
-    dependsOn(":awtea-sound:worklet:generateJavaScript")
+    dependsOn("${project.path}:worklet:generateJavaScript")
 }
