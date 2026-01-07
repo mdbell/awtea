@@ -3,6 +3,7 @@ package me.mdbell.awtea.sound.worklet;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSArray;
@@ -14,14 +15,18 @@ import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.workers.MessagePort;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 
 public class PcmProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(PcmProcessor.class);
+    private static final int MAX_POOL_SIZE = 10;
+
+    private static int nextId = 0;
+    private static Map<Integer, PcmProcessor> instances = new HashMap<>();
+
+    private int instanceId;
 
     private MessagePort port;
 
@@ -31,47 +36,72 @@ public class PcmProcessor {
     private boolean shutdown = false;
 
     private Queue<QueuedAudioData> audioQueue;
+    private List<QueuedAudioData> dataPool = new LinkedList<>();
 
     private int channels = 0;
     private int queuedFrames = 0;
 
     public static void main(String[] args) {
         log.info("Registering PCM Processor");
-        PcmProcessor processor = new PcmProcessor();
-
-        processor.register();
+        registerProcessorFactory();
     }
 
-    private JSObject createConstructor() {
-        return createProcessorConstructor(
-                this::init,
-                this::process
+    private static void registerProcessorFactory() {
+        JSObject ctor = createProcessorConstructor(
+                PcmProcessor::createInstance,
+                PcmProcessor::processInstance
         );
-    }
-
-    private void register() {
-        JSObject ctor = createConstructor();
         registerProcessor("pcm-processor", ctor);
     }
 
-    @JSBody(params = {"initCallback", "processCallback"}, script =
+    @JSBody(params = {"createCallback", "processCallback"}, script =
             "return (class extends AudioWorkletProcessor {" +
                     "   constructor() { " +
                     "       super();" +
-                    "       initCallback(this.port);" +
+                    "       this. instanceId = createCallback(this. port);" +
                     "   }" +
                     "   process(inputs, outputs, parameters) {" +
-                    "       return processCallback(inputs, outputs, parameters);" +
+                    "       return processCallback(this.instanceId, inputs, outputs, parameters);" +
                     "   }" +
                     "})")
     private static native JSObject createProcessorConstructor(
-            InitCallback initCallback,
-            ProcessCallback processCallback
+            CreateInstanceCallback createCallback,
+            ProcessInstanceCallback processCallback
     );
-
 
     @JSBody(params = {"name", "ctor"}, script = "registerProcessor(name, ctor);")
     private static native void registerProcessor(String name, JSObject ctor);
+
+    // Factory callback - creates new instance and returns its ID
+    private static int createInstance(MessagePort port) {
+        int id = nextId++;
+        PcmProcessor processor = new PcmProcessor();
+        processor.instanceId = id;
+        processor.init(port);
+        instances.put(id, processor);
+        log.info("Created PCM Processor instance {}", id);
+        return id;
+    }
+
+    private static boolean processInstance(int id,
+                                           JSArray<JSArray<Float32Array>> inputs,
+                                           JSArray<JSArray<Float32Array>> outputs,
+                                           JSObject parameters) {
+        PcmProcessor processor = instances.get(id);
+        if (processor == null) {
+            log.error("No processor found for instance {}", id);
+            return false;
+        }
+        boolean result = processor.process(inputs, outputs, parameters);
+
+        // Cleanup if processor shuts down
+        if (!result) {
+            instances.remove(id);
+            log.info("Removed PCM Processor instance {}", id);
+        }
+
+        return result;
+    }
 
     private void init(MessagePort port) {
         this.port = port;
@@ -81,6 +111,21 @@ public class PcmProcessor {
 
         setOnMessage(port, this::handleMessage);
 
+    }
+
+    private QueuedAudioData getPooledData() {
+        if (!dataPool.isEmpty()) {
+            return dataPool.remove(0);
+        } else {
+            return new QueuedAudioData();
+        }
+    }
+
+    private void releasePooledData(QueuedAudioData data) {
+        if (dataPool.size() < MAX_POOL_SIZE) {
+            data.data = null; // help GC
+            dataPool.add(data);
+        }
     }
 
     private void handleMessage(MessageEvent event) {
@@ -99,7 +144,7 @@ public class PcmProcessor {
                 log.debug("PCM Processor: Initialized with {} channels.", this.channels);
                 break;
             case "pcm":
-                QueuedAudioData data = new QueuedAudioData();
+                QueuedAudioData data = getPooledData();
                 ArrayBuffer buffer = msg.getData();
                 data.data = new Float32Array(buffer).toJavaArray();
                 data.frames = msg.getFrames();
@@ -109,15 +154,27 @@ public class PcmProcessor {
                 this.queuedFrames += data.frames;
                 log.trace("PCM Processor: Queued {} frames of PCM data ({} frames total in queue).", data.frames, this.queuedFrames);
                 break;
+            case "keepalive":
+                // just a keepalive message, reset the idle counter
+                this.idleFrameCount = 0;
+                log.trace("PCM Processor: Keepalive received, resetting idle counter.");
+                // acknowledge the keepalive
+                postBasicMessage("keepalive-ack");
+                break;
             case "shutdown":
-                this.audioQueue.clear();
-                this.shutdown = true;
-                log.debug("PCM Processor: Shutdown signal received.");
+                shutdown();
                 break;
             default:
                 log.warn("PCM Processor: Unknown message type: {}", type);
                 break;
         }
+    }
+
+    private void shutdown() {
+        this.audioQueue.clear();
+        this.shutdown = true;
+        this.port.close();
+        log.info("PCM Processor: Shutdown complete.");
     }
 
     private int getChannels(LineMessage msg) {
@@ -149,9 +206,10 @@ public class PcmProcessor {
         int framesFilled = 0;
         int framesConsumedTotal = 0;
 
+        float[][] outputChannels = new float[channelCount][];
         for (int ch = 0; ch < channelCount; ch++) {
-            float[] channelData = output.get(ch).toJavaArray();
-            Arrays.fill(channelData, 0.0f);
+            outputChannels[ch] = output.get(ch).toJavaArray();
+            Arrays.fill(outputChannels[ch], 0.0f);
         }
 
         while (framesFilled < framesRequested && !audioQueue.isEmpty()) {
@@ -161,12 +219,12 @@ public class PcmProcessor {
             if (chunk.channels != channelCount) {
                 log.warn("PCM Processor: Channel count mismatch. Expected {}, got {}. Dropping chunk.", channelCount, chunk.channels);
                 queuedFrames -= framesAvailable;
-                audioQueue.poll();
+                releasePooledData(audioQueue.poll());
                 continue;
             }
 
             if (framesAvailable <= 0) {
-                audioQueue.poll();
+                releasePooledData(audioQueue.poll());
                 continue;
             }
 
@@ -178,8 +236,7 @@ public class PcmProcessor {
                 int srcBase = (startFrame + f) * channelCount;
                 int dstIndex = framesFilled + f;
                 for (int ch = 0; ch < channelCount; ch++) {
-                    float[] channelData = output.get(ch).toJavaArray();
-                    channelData[dstIndex] = src[srcBase + ch];
+                    outputChannels[ch][dstIndex] = src[srcBase + ch];
                 }
             }
 
@@ -188,7 +245,7 @@ public class PcmProcessor {
             framesConsumedTotal += framesToCopy;
 
             if (chunk.offsetFrames >= chunk.frames) {
-                audioQueue.poll();
+                releasePooledData(audioQueue.poll());
             }
         }
 
@@ -202,7 +259,7 @@ public class PcmProcessor {
             idleFrameCount += framesRequested;
             if (idleFrameCount >= IDLE_TIMEOUT_FRAMES) {
                 log.warn("PCM Processor: Idle timeout reached.  Shutting down.");
-                notifyTimeout();
+                postBasicMessage("timeout");
                 return false; // Stop the processor
             }
         } else {
@@ -225,11 +282,10 @@ public class PcmProcessor {
         log.trace("PCM Processor: Notified main thread of {} consumed frames.", frames);
     }
 
-    private void notifyTimeout() {
+    private void postBasicMessage(String type) {
         LineMessage message = JSObjects.create();
-        message.setType("timeout");
+        message.setType(type);
         this.port.postMessage(message);
-        log.trace("PCM Processor: Notified main thread of timeout.");
     }
 
     @JSBody(params = {"port", "handler"}, script = "port.onmessage = handler")
@@ -265,5 +321,21 @@ public class PcmProcessor {
 
         @JSProperty("data")
         ArrayBuffer getData();
+    }
+
+    @JSFunctor
+    @FunctionalInterface
+    private interface CreateInstanceCallback extends JSObject {
+        int create(MessagePort port);
+    }
+
+    // Callback interface for processing
+    @JSFunctor
+    @FunctionalInterface
+    private interface ProcessInstanceCallback extends JSObject {
+        boolean process(int instanceId,
+                        JSArray<JSArray<Float32Array>> inputs,
+                        JSArray<JSArray<Float32Array>> outputs,
+                        JSObject parameters);
     }
 }

@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.sound.DrainListener;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.jso.JSRecord;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.JSBody;
@@ -35,7 +36,13 @@ public class PcmProcessorClient {
     // worklet needs to be a JS file, so we embed it in the JS source as a resource
     public static final String MODULE_PATH = "/js/pcm-processor.js";
 
+    private static boolean moduleLoaded = false;
+
+    public static final int KEEP_ALIVE_TIMEOUT_MS = 2000; // 2 seconds
+
     private static final String moduleUrl = getModuleUrl();
+
+    private static final JSRecord contextCache = JSRecord.create();
 
     @Getter
     private final int sampleRate;
@@ -48,7 +55,9 @@ public class PcmProcessorClient {
     private AudioWorkletNode node;
 
     @Getter
-    private int queuedFrames = 0;
+    private int queuedFrames;
+
+    private int keepAliveTimeout = -1;
 
     private final Set<DrainListener> drainListenerSet = new HashSet<>();
 
@@ -83,8 +92,6 @@ public class PcmProcessorClient {
 
     public void init() {
 
-        addAudioModule(this.context, moduleUrl).await();
-
         AudioWorkletNode.Options opts = JSObjects.create();
         opts.setNumberOfInputs(0);
         opts.setNumberOfOutputs(1);
@@ -113,6 +120,8 @@ public class PcmProcessorClient {
             }
         });
 
+        this.keepAliveTimeout = Window.setTimeout(this::handleKeepAliveTick, KEEP_ALIVE_TIMEOUT_MS);
+
         LineMessage message = JSObjects.create();
 
         // tell the processor to initialize itself
@@ -123,6 +132,7 @@ public class PcmProcessorClient {
 
         this.node.connect(this.context.getDestination());
     }
+
 
     public int enqueue(float[] data, int frames) {
         if (this.node.nullish()) {
@@ -150,7 +160,7 @@ public class PcmProcessorClient {
 
         message.setType("pcm");
         message.setData(arr.getBuffer());
-        message.setFrames(frames);
+        message.setFrames(framesToSend);
         message.setChannels(this.channels);
 
         this.node.getPort().postMessage(message);
@@ -169,9 +179,22 @@ public class PcmProcessorClient {
             this.node.disconnect();
             this.node = null;
         }
-        if (!this.context.nullish()) {
-            this.context.close();
+
+        if (this.keepAliveTimeout != -1) {
+            Window.clearTimeout(this.keepAliveTimeout);
+            this.keepAliveTimeout = -1;
         }
+    }
+
+    private void handleKeepAliveTick() {
+
+        if (this.node != null) {
+            LineMessage pingMsg = JSObjects.create();
+            pingMsg.setType("keepalive");
+            this.node.getPort().postMessage(pingMsg);
+        }
+
+        this.keepAliveTimeout = Window.setTimeout(this::handleKeepAliveTick, KEEP_ALIVE_TIMEOUT_MS);
     }
 
     @SneakyThrows
@@ -187,9 +210,17 @@ public class PcmProcessorClient {
     }
 
     private static AudioContext createContext(int sr) {
+        // Make use of a cached context if we have one for the given sample rate
+        // (this prevents us from loading the module a zillion times)
+        if (contextCache.has(sr)) {
+            return contextCache.get(sr);
+        }
         AudioContextOptions opts = JSObjects.create();
         opts.setSampleRate(sr);
-        return createContext(opts);
+        AudioContext ctx = createContext(opts);
+        contextCache.put(sr, ctx);
+        addAudioModule(ctx, moduleUrl).await();
+        return ctx;
     }
 
     @JSBody(params = {"port", "handler"}, script = "port.onmessage = handler")
@@ -197,7 +228,6 @@ public class PcmProcessorClient {
 
     @JSBody(params = {"options"}, script = "return new AudioContext(options)")
     private static native AudioContext createContext(AudioContextOptions options);
-
 
     @JSBody(params = {"context", "module"}, script = "return context.audioWorklet.addModule(module);")
     private static native JSPromise<JSUndefined> addAudioModule(AudioContext context, String module);
