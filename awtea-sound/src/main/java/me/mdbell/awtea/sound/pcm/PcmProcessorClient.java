@@ -160,7 +160,7 @@ public class PcmProcessorClient {
 
         message.setType("pcm");
         message.setData(arr.getBuffer());
-        message.setFrames(frames);
+        message.setFrames(framesToSend);
         message.setChannels(this.channels);
 
         this.node.getPort().postMessage(message);
