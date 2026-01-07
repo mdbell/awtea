@@ -22,9 +22,10 @@ public class TAudioWorkletSourceDataLine extends TAbstractSourceDataLine {
 
 		backend = new PcmProcessorClient(sampleRate, channels, maxQueuedFrames);
 
-		backend.init();
+		backend.init(sampleSizeBits, bigEndian);
 
 		backend.addDrainListener(((framesDrained, framesRemaining) -> {
+			// No longer need to calculate bytes from frames - backend already reports actual bytes consumed
 			LineMonitor.get().onDrain(this, framesDrained * frameSizeBytes);
 			return !isOpen();
 		}));
@@ -55,9 +56,9 @@ public class TAudioWorkletSourceDataLine extends TAbstractSourceDataLine {
 	}
 
 	@Override
-	protected int enqueue(float[] samples, int frames) {
+	protected int enqueue(byte[] bytes, int frames) {
 		if (backend == null) return 0;
-		return backend.enqueue(samples, frames);
+		return backend.enqueue(bytes, frames);
 	}
 
 	@Override

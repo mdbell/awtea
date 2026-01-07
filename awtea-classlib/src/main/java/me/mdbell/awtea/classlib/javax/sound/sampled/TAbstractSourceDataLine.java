@@ -21,7 +21,6 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
     protected int sampleSizeBytes;
     protected int frameSizeBytes;
     protected boolean bigEndian;
-    protected float floatScale;
 
     @Getter
     private final TLine.Info lineInfo;
@@ -35,7 +34,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
     @Getter
     private boolean open = true;
 
-    private float[] sampleScratch;
+    private byte[] byteScratch;
 
     private final Set<TLineListener> lineListeners = new HashSet<>();
 
@@ -69,12 +68,12 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
     protected abstract int getMaxFrames();
 
     /**
-     * Enqueue up to `frames` frames from the `samples` array.
-     * Samples are interleaved [-1, 1].
+     * Enqueue up to `frames` frames from the `bytes` array.
+     * Bytes are raw PCM data.
      *
      * @return The number of frames accepted or 0 if full
      */
-    protected abstract int enqueue(float[] samples, int frames);
+    protected abstract int enqueue(byte[] bytes, int frames);
 
     /**
      * Drain up to `framesToDrain` frames from the backend.
@@ -106,7 +105,6 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
         this.sampleSizeBytes = this.sampleSizeBits / 8;
         this.frameSizeBytes = this.sampleSizeBytes * this.channels;
         this.bigEndian = format.isBigEndian();
-        this.floatScale = (float) (1.0 / Math.pow(2, this.sampleSizeBits - 1));
 
         int framesHint = bufferSize / this.channels;
         if (framesHint <= 0) {
@@ -114,10 +112,10 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
             framesHint = (int) (sampleRate * 0.1); // ~100ms as a fallback
         }
 
-        // scratch buffer for converting bytes -> float PCM
+        // scratch buffer for raw PCM bytes
         int scratchFrames = Math.max(framesHint, 2048);
-        if (sampleScratch == null || sampleScratch.length < scratchFrames * channels) {
-            sampleScratch = new float[scratchFrames * channels];
+        if (byteScratch == null || byteScratch.length < scratchFrames * frameSizeBytes) {
+            byteScratch = new byte[scratchFrames * frameSizeBytes];
         }
         currentFramePosition = 0;
 
@@ -166,8 +164,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
         this.sampleSizeBytes = 0;
         this.frameSizeBytes = 0;
         this.bigEndian = false;
-        this.floatScale = 0f;
-        this.sampleScratch = null;
+        this.byteScratch = null;
         LineMonitor.get().onClose(this);
         PcmMonitor.get().onClose(this);
         dispatchLineEvent(TLineEvent.Type.CLOSE);
@@ -261,11 +258,6 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
         }
 
         final int frameSizeBytes = this.frameSizeBytes;
-        final int channels = this.channels;
-        final int sampleBytes = this.sampleSizeBytes;
-        final int bits = this.sampleSizeBits;
-        final boolean be = this.bigEndian;
-        final float scale = this.floatScale;
 
         int framesRequested = len / frameSizeBytes;
         if (framesRequested == 0) {
@@ -297,10 +289,10 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
                 continue;
             }
 
-            int maxScratchFrames = sampleScratch.length / channels;
-            int framesToConvert = Math.min(remainingFrames, maxScratchFrames);
-            framesToConvert = Math.min(framesToConvert, freeFrames);
-            if (framesToConvert <= 0) {
+            int maxScratchFrames = byteScratch.length / frameSizeBytes;
+            int framesToCopy = Math.min(remainingFrames, maxScratchFrames);
+            framesToCopy = Math.min(framesToCopy, freeFrames);
+            if (framesToCopy <= 0) {
                 // Shouldn't happen, but be defensive
                 int drained = drainInternal(remainingFrames);
                 if (drained <= 0) {
@@ -310,19 +302,12 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
             }
 
             int start = off + writtenBytes;
-            int end = start + framesToConvert * frameSizeBytes;
-            int si = 0;
+            int bytesToCopy = framesToCopy * frameSizeBytes;
 
-            // Convert bytes -> float samples (interleaved)
-            for (int i = start; i < end; i += frameSizeBytes) {
-                for (int ch = 0; ch < channels; ch++) {
-                    int sampleOffset = i + ch * sampleBytes;
-                    int sample = AudioUtils.getSample(b, sampleOffset, bits, be);
-                    sampleScratch[si++] = sample * scale;
-                }
-            }
+            // Copy raw PCM bytes to scratch buffer
+            System.arraycopy(b, start, byteScratch, 0, bytesToCopy);
 
-            int framesEnqueued = enqueue(sampleScratch, framesToConvert);
+            int framesEnqueued = enqueue(byteScratch, framesToCopy);
             if (framesEnqueued <= 0) {
                 // Backend lied about free frames or is temporarily stuck;
                 // try draining some and retry.
@@ -338,22 +323,28 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
             writtenBytes += bytesPushed;
 
             LineMonitor.get().onWrite(this, bytesPushed);
-            onSamplesChunk(sampleScratch, framesEnqueued);
+            onSamplesChunk(byteScratch, framesEnqueued);
         }
 
         return writtenBytes;
     }
 
-    protected void onSamplesChunk(float[] samples, int frames) {
+    protected void onSamplesChunk(byte[] pcmBytes, int frames) {
         // compute per-channel peak from this chunk and forward to AudioMonitor
-        if (samples == null || frames <= 0) {
+        if (pcmBytes == null || frames <= 0) {
             return;
         }
+        
+        // Convert a portion of PCM bytes to floats for peak detection
         float[] peaks = new float[channels];
-        int idx = 0;
+        float scale = (float) (1.0 / Math.pow(2, sampleSizeBits - 1));
+        
         for (int f = 0; f < frames; f++) {
+            int frameOffset = f * frameSizeBytes;
             for (int ch = 0; ch < channels; ch++) {
-                float v = Math.abs(samples[idx++]);
+                int sampleOffset = frameOffset + ch * sampleSizeBytes;
+                int sample = AudioUtils.getSample(pcmBytes, sampleOffset, sampleSizeBits, bigEndian);
+                float v = Math.abs(sample * scale);
                 if (v > peaks[ch]) {
                     peaks[ch] = v;
                 }

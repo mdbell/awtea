@@ -1,18 +1,18 @@
 package me.mdbell.awtea.sound.worklet;
 
+import me.mdbell.awtea.sound.pcm.messages.*;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSArray;
-import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
+import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.jso.workers.MessagePort;
 
 import java.util.*;
@@ -40,6 +40,12 @@ public class PcmProcessor {
 
     private int channels = 0;
     private int queuedFrames = 0;
+    
+    // Format metadata from InitMessage
+    private int sampleRate = 0;
+    private int sampleSizeBits = 0;
+    private boolean bigEndian = false;
+    private int frameSizeBytes = 0;
 
     public static void main(String[] args) {
         log.info("Registering PCM Processor");
@@ -58,7 +64,7 @@ public class PcmProcessor {
             "return (class extends AudioWorkletProcessor {" +
                     "   constructor() { " +
                     "       super();" +
-                    "       this. instanceId = createCallback(this. port);" +
+                    "       this.instanceId = createCallback(this.port);" +
                     "   }" +
                     "   process(inputs, outputs, parameters) {" +
                     "       return processCallback(this.instanceId, inputs, outputs, parameters);" +
@@ -140,15 +146,30 @@ public class PcmProcessor {
         String type = msg.getType();
         switch (type) {
             case "init":
-                this.channels = getChannels(msg);
-                log.debug("PCM Processor: Initialized with {} channels.", this.channels);
+                InitMessage initMsg = (InitMessage) msg;
+                this.channels = initMsg.getChannels();
+                this.sampleRate = initMsg.getSampleRate();
+                this.sampleSizeBits = initMsg.getSampleSizeBits();
+                this.bigEndian = initMsg.isBigEndian();
+                this.frameSizeBytes = (sampleSizeBits / 8) * channels;
+                log.debug("PCM Processor: Initialized with {} channels, {} Hz, {} bits, {} endian, {} bytes/frame.", 
+                         this.channels, this.sampleRate, this.sampleSizeBits, 
+                         this.bigEndian ? "big" : "little", this.frameSizeBytes);
                 break;
             case "pcm":
+                AudioSegmentMessage pcmMsg = (AudioSegmentMessage) msg;
                 QueuedAudioData data = getPooledData();
-                ArrayBuffer buffer = msg.getData();
-                data.data = new Float32Array(buffer).toJavaArray();
-                data.frames = msg.getFrames();
-                data.channels = getChannels(msg);
+                ArrayBuffer buffer = pcmMsg.getData();
+                int frames = pcmMsg.getFrames();
+                
+                // Convert raw PCM bytes to float samples
+                byte[] pcmBytes = new Int8Array(buffer).toJavaArray();
+                float[] floatSamples = new float[frames * channels];
+                PcmConverter.convertPcmToFloat(pcmBytes, floatSamples, frames, channels, sampleSizeBits, bigEndian);
+                
+                data.data = floatSamples;
+                data.frames = frames;
+                data.channels = channels;
                 data.offsetFrames = 0;
                 this.audioQueue.add(data);
                 this.queuedFrames += data.frames;
@@ -175,15 +196,6 @@ public class PcmProcessor {
         this.shutdown = true;
         this.port.close();
         log.info("PCM Processor: Shutdown complete.");
-    }
-
-    private int getChannels(LineMessage msg) {
-        JSNumber ch = msg.getChannels();
-        if (ch != null && !JSObjects.isUndefined(ch)) {
-            return ch.intValue();
-        } else {
-            return 2; // default to stereo
-        }
     }
 
     /**
@@ -268,18 +280,19 @@ public class PcmProcessor {
 
         if (framesConsumedTotal > 0) {
             log.trace("PCM Processor: Filled {} frames ({} frames remaining in queue).", framesFilled, queuedFrames);
-            notifyFramesConsumed(framesConsumedTotal);
+            notifyBytesConsumed(framesConsumedTotal);
         }
 
         return true;
     }
 
-    private void notifyFramesConsumed(int frames) {
-        LineMessage message = JSObjects.create();
+    private void notifyBytesConsumed(int frames) {
+        int bytesConsumed = frames * frameSizeBytes;
+        ConsumedMessage message = JSObjects.create();
         message.setType("consumed");
-        message.setFrames(frames);
+        message.setBytes(bytesConsumed);
         this.port.postMessage(message);
-        log.trace("PCM Processor: Notified main thread of {} consumed frames.", frames);
+        log.trace("PCM Processor: Notified main thread of {} bytes consumed ({} frames).", bytesConsumed, frames);
     }
 
     private void postBasicMessage(String type) {
@@ -290,38 +303,6 @@ public class PcmProcessor {
 
     @JSBody(params = {"port", "handler"}, script = "port.onmessage = handler")
     private static native void setOnMessage(MessagePort port, EventListener<MessageEvent> handler);
-
-    private interface LineMessage extends JSObject {
-
-        @JSProperty("type")
-        String getType();
-
-        @JSProperty("type")
-        void setType(String type);
-
-        // only used when type == consumed || type == pcm
-
-        @JSProperty("frames")
-        int getFrames();
-
-        @JSProperty("frames")
-        void setFrames(int frames);
-
-        // only used when type == init || type == pcm
-        @JSProperty("channels")
-        JSNumber getChannels();
-
-        @JSProperty("channels")
-        void setChannels(int channels);
-
-        // only used when type == pcm
-
-        @JSProperty("data")
-        void setData(ArrayBuffer data);
-
-        @JSProperty("data")
-        ArrayBuffer getData();
-    }
 
     @JSFunctor
     @FunctionalInterface
