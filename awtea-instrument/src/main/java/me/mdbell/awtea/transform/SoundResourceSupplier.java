@@ -7,7 +7,7 @@ public class SoundResourceSupplier implements ResourceSupplier {
     @Override
     public String[] supplyResources(ResourceSupplierContext context) {
         return new String[]{
-                "sound/pcm-processor.js"
+                "js/pcm-processor.js"
         };
     }
 }
