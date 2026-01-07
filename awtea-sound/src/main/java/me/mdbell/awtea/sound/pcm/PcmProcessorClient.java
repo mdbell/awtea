@@ -35,6 +35,8 @@ public class PcmProcessorClient {
     // worklet needs to be a JS file, so we embed it in the JS source as a resource
     public static final String MODULE_PATH = "/js/pcm-processor.js";
 
+    public static final int KEEP_ALIVE_TIMEOUT_MS = 2000; // 2 seconds
+
     private static final String moduleUrl = getModuleUrl();
 
     @Getter
@@ -48,7 +50,9 @@ public class PcmProcessorClient {
     private AudioWorkletNode node;
 
     @Getter
-    private int queuedFrames = 0;
+    private int queuedFrames;
+
+    private int keepAliveTimeout = -1;
 
     private final Set<DrainListener> drainListenerSet = new HashSet<>();
 
@@ -113,6 +117,8 @@ public class PcmProcessorClient {
             }
         });
 
+        this.keepAliveTimeout = Window.setTimeout(this::handleKeepAliveTick, KEEP_ALIVE_TIMEOUT_MS);
+
         LineMessage message = JSObjects.create();
 
         // tell the processor to initialize itself
@@ -123,6 +129,7 @@ public class PcmProcessorClient {
 
         this.node.connect(this.context.getDestination());
     }
+
 
     public int enqueue(float[] data, int frames) {
         if (this.node.nullish()) {
@@ -172,6 +179,22 @@ public class PcmProcessorClient {
         if (!this.context.nullish()) {
             this.context.close();
         }
+
+        if (this.keepAliveTimeout != -1) {
+            Window.clearTimeout(this.keepAliveTimeout);
+            this.keepAliveTimeout = -1;
+        }
+    }
+
+    private void handleKeepAliveTick() {
+
+        if (this.node != null) {
+            LineMessage pingMsg = JSObjects.create();
+            pingMsg.setType("keepalive");
+            this.node.getPort().postMessage(pingMsg);
+        }
+
+        this.keepAliveTimeout = Window.setTimeout(this::handleKeepAliveTick, KEEP_ALIVE_TIMEOUT_MS);
     }
 
     @SneakyThrows
