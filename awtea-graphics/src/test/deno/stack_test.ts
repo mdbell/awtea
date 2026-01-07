@@ -36,7 +36,7 @@ Deno.test("Stack tracking - exports are available", async () => {
     "Max stack depth should be 256",
   );
 
-  // Initial stack depth should be 0 or small (from init_surface_system)
+  // Initial stack depth should be 0 (constructors have already exited)
   console.log(`Initial stack depth: ${stackDepth}`);
   console.log(`Stack buffer pointer: 0x${stackBufferPtr.toString(16)}`);
   console.log(`Max stack depth: ${maxStackDepth}`);
@@ -46,7 +46,7 @@ Deno.test("Stack tracking - depth increases during operations", async () => {
   const rasterizer = new WasmRasterizer();
   await rasterizer.load(WASM_PATH);
 
-  // Get initial depth (should include init_surface_system call)
+  // Get initial depth (should be 0 since constructors have already exited)
   const initialDepth = rasterizer.getStackDepth();
   console.log(`Initial depth: ${initialDepth}`);
 

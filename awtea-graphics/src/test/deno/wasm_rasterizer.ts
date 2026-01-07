@@ -212,9 +212,16 @@ export class WasmRasterizer {
 
     this.wasmInstance = await WebAssembly.instantiate(wasmModule, imports);
 
-    // Initialize the surface system (sets contexts to free state)
+    // Call constructors to auto-initialize the module
+    // Emscripten provides __wasm_call_ctors for standalone WASM modules
     const wasm = this.getExports();
-    wasm.init_surface_system();
+    if (!wasm.__wasm_call_ctors) {
+      throw new Error(
+        "WASM module missing __wasm_call_ctors export. " +
+        "Ensure the module was built with -Wl,--export=__wasm_call_ctors",
+      );
+    }
+    wasm.__wasm_call_ctors();
     
     // Print build information for diagnostics
     this.printBuildInfo();
