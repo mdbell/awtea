@@ -27,14 +27,18 @@
             <option value="$PROJECT_DIR$/awtea-instrument" />
             <option value="$PROJECT_DIR$/awtea-net" />
             <option value="$PROJECT_DIR$/awtea-sound" />
+            <option value="$PROJECT_DIR$/awtea-sound/worklet" />
             <option value="$PROJECT_DIR$/awtea-test-util" />
             <option value="$PROJECT_DIR$/awtea-ui" />
             <option value="$PROJECT_DIR$/awtea-util" />
             <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/examples" />
             <option value="$PROJECT_DIR$/examples/animation-demo" />
+            <option value="$PROJECT_DIR$/examples/custom-shader-demo" />
+            <option value="$PROJECT_DIR$/examples/focus-demo" />
             <option value="$PROJECT_DIR$/examples/gui-demo" />
             <option value="$PROJECT_DIR$/examples/hello-world" />
+            <option value="$PROJECT_DIR$/examples/layout-demo" />
           </set>
         </option>
       </GradleProjectSettings>
