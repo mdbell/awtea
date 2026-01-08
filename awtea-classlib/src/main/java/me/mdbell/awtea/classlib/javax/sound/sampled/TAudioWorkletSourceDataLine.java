@@ -24,9 +24,9 @@ public class TAudioWorkletSourceDataLine extends TAbstractSourceDataLine {
 
 		backend.init(sampleSizeBits, bigEndian);
 
-		backend.addDrainListener(((framesDrained, framesRemaining) -> {
-			// No longer need to calculate bytes from frames - backend already reports actual bytes consumed
-			LineMonitor.get().onDrain(this, framesDrained * frameSizeBytes);
+		backend.addDrainListener(((bytesDrained, bytesRemaining) -> {
+			// Directly use bytes - no conversion needed
+			LineMonitor.get().onDrain(this, bytesDrained);
 			return !isOpen();
 		}));
 	}
@@ -45,9 +45,10 @@ public class TAudioWorkletSourceDataLine extends TAbstractSourceDataLine {
 		if (backend == null || !isActive()) {
 			return 0;
 		}
-		int queued = backend.getQueuedFrames();
-		int max = backend.getMaxQueuedFrames();
-		return Math.max(0, max - queued);
+		int queuedBytes = backend.getQueuedBytes();
+		int maxBytes = backend.getMaxQueuedFrames() * frameSizeBytes;
+		int freeBytes = Math.max(0, maxBytes - queuedBytes);
+		return freeBytes / frameSizeBytes;
 	}
 
 	@Override
@@ -72,33 +73,35 @@ public class TAudioWorkletSourceDataLine extends TAbstractSourceDataLine {
 		}
 		return new JSPromise<>((resolve, reject) -> {
 
-			int initialQueued = backend.getQueuedFrames();
-			if (initialQueued == 0) {
+			int initialQueuedBytes = backend.getQueuedBytes();
+			int initialQueuedFrames = initialQueuedBytes / frameSizeBytes;
+			if (initialQueuedFrames == 0) {
 				resolve.accept(0);
 				return;
 			}
 
 			if (framesToDrain < 0) {
-				backend.addDrainListener((framesDrained, framesRemaining) -> {
-					if (framesRemaining == 0) {
-						resolve.accept(initialQueued);
+				backend.addDrainListener((bytesDrained, bytesRemaining) -> {
+					if (bytesRemaining == 0) {
+						resolve.accept(initialQueuedFrames);
 						return true;
 					}
 					return false;
 				});
 				return;
 			}
-			AtomicInteger remaining = new AtomicInteger(framesToDrain);
-			backend.addDrainListener((framesDrained, framesRemaining) -> {
-				int rem = remaining.addAndGet(-framesDrained);
+			AtomicInteger remainingBytes = new AtomicInteger(framesToDrain * frameSizeBytes);
+			backend.addDrainListener((bytesDrained, bytesRemaining) -> {
+				int rem = remainingBytes.addAndGet(-bytesDrained);
 
 				if (rem <= 0) {
-					resolve.accept(framesToDrain - rem);
+					int framesDrained = (framesToDrain * frameSizeBytes - rem) / frameSizeBytes;
+					resolve.accept(framesDrained);
 					return true; // remove listener
 				}
 
-				if (framesRemaining == 0) {
-					resolve.accept(initialQueued);
+				if (bytesRemaining == 0) {
+					resolve.accept(initialQueuedFrames);
 					return true; // remove listener
 				}
 

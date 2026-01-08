@@ -55,7 +55,7 @@ public class PcmProcessorClient {
     private AudioWorkletNode node;
 
     @Getter
-    private int queuedFrames;
+    private int queuedBytes;
     
     private int sampleSizeBits;
     private boolean bigEndian;
@@ -87,7 +87,7 @@ public class PcmProcessorClient {
         this.maxQueuedFrames = maxQueuedFrames;
         this.context = context;
 
-        this.queuedFrames = 0;
+        this.queuedBytes = 0;
     }
 
     public void addDrainListener(DrainListener listener) {
@@ -119,14 +119,13 @@ public class PcmProcessorClient {
             if (type.equals("consumed")) {
                 ConsumedMessage consumedMsg = (ConsumedMessage) msg;
                 int bytesConsumed = consumedMsg.getBytes();
-                int framesConsumed = bytesConsumed / frameSizeBytes;
-                queuedFrames -= framesConsumed;
-                if (queuedFrames < 0) {
-                    queuedFrames = 0;
+                queuedBytes -= bytesConsumed;
+                if (queuedBytes < 0) {
+                    queuedBytes = 0;
                 }
-                log.trace("PCM Client: Processor consumed {} bytes ({} frames). {} frames remaining in queue.", 
-                         bytesConsumed, framesConsumed, queuedFrames);
-                drainListenerSet.removeIf(l -> l.onDrain(framesConsumed, queuedFrames));
+                log.trace("PCM Client: Processor consumed {} bytes. {} bytes remaining in queue.", 
+                         bytesConsumed, queuedBytes);
+                drainListenerSet.removeIf(l -> l.onDrain(bytesConsumed, queuedBytes));
             }
         });
 
@@ -152,36 +151,37 @@ public class PcmProcessorClient {
             return 0;
         }
 
-        int free = this.maxQueuedFrames - this.queuedFrames;
-        if (free <= 0) {
+        int bytesQueued = queuedBytes;
+        int maxBytes = maxQueuedFrames * frameSizeBytes;
+        int freeBytes = maxBytes - bytesQueued;
+        if (freeBytes <= 0) {
             return 0;
         }
 
-        int framesToSend = Math.min(frames, free);
-
-        if (framesToSend <= 0) {
-            return 0;
+        int bytesToSend = frames * frameSizeBytes;
+        if (bytesToSend > freeBytes) {
+            int framesToSend = freeBytes / frameSizeBytes;
+            if (framesToSend <= 0) {
+                return 0;
+            }
+            bytesToSend = framesToSend * frameSizeBytes;
+            frames = framesToSend;
         }
 
-        int bytesToSend = framesToSend * frameSizeBytes;
-        
         // Convert Java byte array to JS Int8Array
         Int8Array arr = Int8Array.fromJavaArray(data);
-
-        if (framesToSend != frames) {
-            arr = arr.subarray(0, bytesToSend);
-        }
+        arr = arr.subarray(0, bytesToSend);
 
         AudioSegmentMessage message = JSObjects.create();
 
         message.setType("pcm");
         message.setData(arr.getBuffer());
-        message.setFrames(framesToSend);
+        message.setFrames(frames);
 
         this.node.getPort().postMessage(message);
 
-        this.queuedFrames += framesToSend;
-        return framesToSend;
+        this.queuedBytes += bytesToSend;
+        return frames;
     }
 
     public void close() {
