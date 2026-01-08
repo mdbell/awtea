@@ -34,8 +34,6 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
     @Getter
     private boolean open = true;
 
-    private byte[] byteScratch;
-
     private final Set<TLineListener> lineListeners = new HashSet<>();
 
     private long currentFramePosition = 0;
@@ -68,12 +66,15 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
     protected abstract int getMaxFrames();
 
     /**
-     * Enqueue up to `frames` frames from the `bytes` array.
+     * Enqueue up to `frames` frames from the `bytes` array starting at `offset`.
      * Bytes are raw PCM data.
      *
+     * @param bytes the byte array containing PCM data
+     * @param offset the offset in the byte array to start reading from
+     * @param frames the number of frames to enqueue
      * @return The number of frames accepted or 0 if full
      */
-    protected abstract int enqueue(byte[] bytes, int frames);
+    protected abstract int enqueue(byte[] bytes, int offset, int frames);
 
     /**
      * Drain up to `framesToDrain` frames from the backend.
@@ -112,11 +113,6 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
             framesHint = (int) (sampleRate * 0.1); // ~100ms as a fallback
         }
 
-        // scratch buffer for raw PCM bytes
-        int scratchFrames = Math.max(framesHint, 2048);
-        if (byteScratch == null || byteScratch.length < scratchFrames * frameSizeBytes) {
-            byteScratch = new byte[scratchFrames * frameSizeBytes];
-        }
         currentFramePosition = 0;
 
         log.info("Opening {} with buffer hint size of {} frames", this.getClass().getSimpleName(), framesHint);
@@ -164,7 +160,6 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
         this.sampleSizeBytes = 0;
         this.frameSizeBytes = 0;
         this.bigEndian = false;
-        this.byteScratch = null;
         LineMonitor.get().onClose(this);
         PcmMonitor.get().onClose(this);
         dispatchLineEvent(TLineEvent.Type.CLOSE);
@@ -289,10 +284,8 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
                 continue;
             }
 
-            int maxScratchFrames = byteScratch.length / frameSizeBytes;
-            int framesToCopy = Math.min(remainingFrames, maxScratchFrames);
-            framesToCopy = Math.min(framesToCopy, freeFrames);
-            if (framesToCopy <= 0) {
+            int framesToEnqueue = Math.min(remainingFrames, freeFrames);
+            if (framesToEnqueue <= 0) {
                 // Shouldn't happen, but be defensive
                 int drained = drainInternal(remainingFrames);
                 if (drained <= 0) {
@@ -301,13 +294,9 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
                 continue;
             }
 
-            int start = off + writtenBytes;
-            int bytesToCopy = framesToCopy * frameSizeBytes;
+            int offsetInArray = off + writtenBytes;
 
-            // Copy raw PCM bytes to scratch buffer
-            System.arraycopy(b, start, byteScratch, 0, bytesToCopy);
-
-            int framesEnqueued = enqueue(byteScratch, framesToCopy);
+            int framesEnqueued = enqueue(b, offsetInArray, framesToEnqueue);
             if (framesEnqueued <= 0) {
                 // Backend lied about free frames or is temporarily stuck;
                 // try draining some and retry.
@@ -323,13 +312,13 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
             writtenBytes += bytesPushed;
 
             LineMonitor.get().onWrite(this, bytesPushed);
-//            onSamplesChunk(byteScratch, framesEnqueued);
+            onSamplesChunk(b, offsetInArray, framesEnqueued);
         }
 
         return writtenBytes;
     }
 
-    protected void onSamplesChunk(byte[] pcmBytes, int frames) {
+    protected void onSamplesChunk(byte[] pcmBytes, int offset, int frames) {
         // compute per-channel peak from this chunk and forward to AudioMonitor
         if (pcmBytes == null || frames <= 0) {
             return;
@@ -340,7 +329,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
         float scale = (float) (1.0 / Math.pow(2, sampleSizeBits - 1));
 
         for (int f = 0; f < frames; f++) {
-            int frameOffset = f * frameSizeBytes;
+            int frameOffset = offset + f * frameSizeBytes;
             for (int ch = 0; ch < channels; ch++) {
                 int sampleOffset = frameOffset + ch * sampleSizeBytes;
                 int sample = AudioUtils.getSample(pcmBytes, sampleOffset, sampleSizeBits, bigEndian);

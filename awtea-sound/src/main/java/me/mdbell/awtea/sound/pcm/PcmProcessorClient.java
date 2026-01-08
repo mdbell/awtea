@@ -64,6 +64,10 @@ public class PcmProcessorClient {
     private int keepAliveTimeout = -1;
 
     private final Set<DrainListener> drainListenerSet = new HashSet<>();
+    
+    public int getMaxQueuedBytes() {
+        return maxQueuedFrames * frameSizeBytes;
+    }
 
     public PcmProcessorClient() {
         this(44100); // 44Khz
@@ -146,7 +150,7 @@ public class PcmProcessorClient {
     }
 
 
-    public int enqueue(byte[] data, int frames) {
+    public int enqueue(byte[] data, int offset, int frames) {
         if (this.node.nullish()) {
             return 0;
         }
@@ -172,9 +176,9 @@ public class PcmProcessorClient {
         Int8Array arr = Int8Array.fromJavaArray(data);
         ArrayBuffer buf = arr.getBuffer();
 
-        int offset = arr.getByteOffset();
+        int arrayOffset = arr.getByteOffset();
 
-        ArrayBuffer slice = buf.slice(offset, offset + bytesToSend);
+        ArrayBuffer slice = buf.slice(arrayOffset + offset, arrayOffset + offset + bytesToSend);
 
         AudioSegmentMessage message = JSObjects.create();
 
