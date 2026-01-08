@@ -56,7 +56,7 @@ public class PcmProcessorClient {
 
     @Getter
     private int queuedBytes;
-    
+
     private int sampleSizeBits;
     private boolean bigEndian;
     private int frameSizeBytes;
@@ -123,8 +123,8 @@ public class PcmProcessorClient {
                 if (queuedBytes < 0) {
                     queuedBytes = 0;
                 }
-                log.trace("PCM Client: Processor consumed {} bytes. {} bytes remaining in queue.", 
-                         bytesConsumed, queuedBytes);
+                log.trace("PCM Client: Processor consumed {} bytes. {} bytes remaining in queue.",
+                        bytesConsumed, queuedBytes);
                 drainListenerSet.removeIf(l -> l.onDrain(bytesConsumed, queuedBytes));
             }
         });
@@ -170,19 +170,26 @@ public class PcmProcessorClient {
 
         // Convert Java byte array to JS Int8Array
         Int8Array arr = Int8Array.fromJavaArray(data);
-        arr = arr.subarray(0, bytesToSend);
+        ArrayBuffer buf = arr.getBuffer();
+
+        int offset = arr.getByteOffset();
+
+        ArrayBuffer slice = buf.slice(offset, offset + bytesToSend);
 
         AudioSegmentMessage message = JSObjects.create();
 
         message.setType("pcm");
-        message.setData(arr.getBuffer());
+        message.setData(slice);
         message.setFrames(frames);
 
-        this.node.getPort().postMessage(message);
+        postWithTransfer(this.node.getPort(), message, slice);
 
         this.queuedBytes += bytesToSend;
         return frames;
     }
+
+    @JSBody(params = {"port", "message", "transfer"}, script = "port.postMessage(message, transfer);")
+    private static native void postWithTransfer(MessagePort port, LineMessage message, JSObject... transfer);
 
     public void close() {
         if (!node.nullish()) {
