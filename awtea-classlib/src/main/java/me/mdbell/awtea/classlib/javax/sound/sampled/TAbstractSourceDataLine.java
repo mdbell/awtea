@@ -51,38 +51,38 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
     }
 
     /**
-     * Called from open() after basic format fields are initialized. bufferFrames is a hint/capacity.
+     * Called from open() after basic format fields are initialized. bufferBytes is a hint/capacity.
      */
-    protected abstract void openBackend(int bufferFrames) throws TLineUnavailableException;
+    protected abstract void openBackend(int bufferBytes) throws TLineUnavailableException;
 
     /**
-     * How many frames can be queued *now* without blocking?
+     * How many bytes can be queued *now* without blocking?
      */
-    protected abstract int getFreeFrames();
+    protected abstract int getFreeBytes();
 
     /**
-     * Maximum queue capacity in frames (for getBufferSize/available).
+     * Maximum queue capacity in bytes (for getBufferSize/available).
      */
-    protected abstract int getMaxFrames();
+    protected abstract int getMaxBytes();
 
     /**
-     * Enqueue up to `frames` frames from the `bytes` array starting at `offset`.
+     * Enqueue up to `length` bytes from the `bytes` array starting at `offset`.
      * Bytes are raw PCM data.
      *
      * @param bytes the byte array containing PCM data
      * @param offset the offset in the byte array to start reading from
-     * @param frames the number of frames to enqueue
-     * @return The number of frames accepted or 0 if full
+     * @param length the number of bytes to enqueue
+     * @return The number of bytes accepted or 0 if full
      */
-    protected abstract int enqueue(byte[] bytes, int offset, int frames);
+    protected abstract int enqueue(byte[] bytes, int offset, int length);
 
     /**
-     * Drain up to `framesToDrain` frames from the backend.
+     * Drain up to `bytesToDrain` bytes from the backend.
      *
-     * @param framesToDrain number of frames to drain, or -1 to wait until all drained
-     * @return number of frames actually drained - may be less than requested
+     * @param bytesToDrain number of bytes to drain, or -1 to wait until all drained
+     * @return number of bytes actually drained - may be less than requested
      */
-    protected abstract int drainInternal(int framesToDrain);
+    protected abstract int drainInternal(int bytesToDrain);
 
     @Override
     public void open() throws TLineUnavailableException {
@@ -107,18 +107,18 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
         this.frameSizeBytes = this.sampleSizeBytes * this.channels;
         this.bigEndian = format.isBigEndian();
 
-        int framesHint = bufferSize / this.channels;
-        if (framesHint <= 0) {
-            log.info("Warning: invalid buffer size hint {}", bufferSize + " bytes; using default");
-            framesHint = (int) (sampleRate * 0.1); // ~100ms as a fallback
+        int bufferBytes = bufferSize;
+        if (bufferBytes <= 0) {
+            log.info("Warning: invalid buffer size hint {} bytes; using default", bufferSize);
+            bufferBytes = (int) (sampleRate * 0.1) * frameSizeBytes; // ~100ms as a fallback
         }
 
         currentFramePosition = 0;
 
-        log.info("Opening {} with buffer hint size of {} frames", this.getClass().getSimpleName(), framesHint);
+        log.info("Opening {} with buffer hint size of {} bytes", this.getClass().getSimpleName(), bufferBytes);
 
         try {
-            openBackend(framesHint);
+            openBackend(bufferBytes);
         } catch (Throwable t) {
             throw new TLineUnavailableException("Failed to open backend: " + t.getMessage());
         }
@@ -180,7 +180,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
 
     @Override
     public final int getBufferSize() {
-        return getMaxFrames() * frameSizeBytes;
+        return getMaxBytes();
     }
 
     @Override
@@ -189,14 +189,12 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
             LineMonitor.get().onAvailable(this, 0);
             return 0;
         }
-        int freeFrames = getFreeFrames();
-        if (freeFrames < 0) freeFrames = 0;
+        int freeBytes = getFreeBytes();
+        if (freeBytes < 0) freeBytes = 0;
 
-        int result = freeFrames * frameSizeBytes;
+        LineMonitor.get().onAvailable(this, freeBytes);
 
-        LineMonitor.get().onAvailable(this, result);
-
-        return result;
+        return freeBytes;
     }
 
     @Override
@@ -248,7 +246,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
     @Override
     public final int write(byte[] b, int off, int len) {
 
-        if (!open || getMaxFrames() <= 0) {
+        if (!open || getMaxBytes() <= 0) {
             return 0;
         }
 
@@ -268,26 +266,27 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
             }
 
             int remainingBytes = bytesRequested - writtenBytes;
-            int remainingFrames = remainingBytes / frameSizeBytes;
-            if (remainingFrames <= 0) {
+            if (remainingBytes <= 0) {
                 break;
             }
 
-            int freeFrames = getFreeFrames();
-            if (freeFrames <= 0) {
+            int freeBytes = getFreeBytes();
+            if (freeBytes <= 0) {
                 // Let backend drain; this will async-wait and then return
-                int drained = drainInternal(remainingFrames);
-                // If nothing drained and still no free frames, bail out to avoid spinning
-                if (drained <= 0 && getFreeFrames() <= 0) {
+                int drained = drainInternal(remainingBytes);
+                // If nothing drained and still no free bytes, bail out to avoid spinning
+                if (drained <= 0 && getFreeBytes() <= 0) {
                     break;
                 }
                 continue;
             }
 
-            int framesToEnqueue = Math.min(remainingFrames, freeFrames);
-            if (framesToEnqueue <= 0) {
+            int bytesToEnqueue = Math.min(remainingBytes, freeBytes);
+            // Align to frame boundaries
+            bytesToEnqueue = (bytesToEnqueue / frameSizeBytes) * frameSizeBytes;
+            if (bytesToEnqueue <= 0) {
                 // Shouldn't happen, but be defensive
-                int drained = drainInternal(remainingFrames);
+                int drained = drainInternal(remainingBytes);
                 if (drained <= 0) {
                     break;
                 }
@@ -296,22 +295,23 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
 
             int offsetInArray = off + writtenBytes;
 
-            int framesEnqueued = enqueue(b, offsetInArray, framesToEnqueue);
-            if (framesEnqueued <= 0) {
-                // Backend lied about free frames or is temporarily stuck;
+            int bytesEnqueued = enqueue(b, offsetInArray, bytesToEnqueue);
+            if (bytesEnqueued <= 0) {
+                // Backend lied about free bytes or is temporarily stuck;
                 // try draining some and retry.
-                int drained = drainInternal(remainingFrames);
+                int drained = drainInternal(remainingBytes);
                 if (drained <= 0) {
                     break;
                 }
                 continue;
             }
+            
+            int framesEnqueued = bytesEnqueued / frameSizeBytes;
             currentFramePosition += framesEnqueued;
 
-            int bytesPushed = framesEnqueued * frameSizeBytes;
-            writtenBytes += bytesPushed;
+            writtenBytes += bytesEnqueued;
 
-            LineMonitor.get().onWrite(this, bytesPushed);
+            LineMonitor.get().onWrite(this, bytesEnqueued);
             onSamplesChunk(b, offsetInArray, framesEnqueued);
         }
 

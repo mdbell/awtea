@@ -16,8 +16,9 @@ public class TAudioWorkletSourceDataLine extends TAbstractSourceDataLine {
 	}
 
 	@Override
-	protected void openBackend(int bufferFrames) {
-		// Determine max queued frames (approx 100ms if not specified)
+	protected void openBackend(int bufferBytes) {
+		// Calculate max queued frames from buffer bytes
+		int bufferFrames = bufferBytes / frameSizeBytes;
 		maxQueuedFrames = bufferFrames > 0 ? bufferFrames : (int) (sampleRate * 0.1);
 
 		backend = new PcmProcessorClient(sampleRate, channels, maxQueuedFrames);
@@ -41,67 +42,67 @@ public class TAudioWorkletSourceDataLine extends TAbstractSourceDataLine {
 	}
 
 	@Override
-	protected int getFreeFrames() {
+	protected int getFreeBytes() {
 		if (backend == null || !isActive()) {
 			return 0;
 		}
 		int queuedBytes = backend.getQueuedBytes();
 		int maxBytes = backend.getMaxQueuedBytes();
-		int freeBytes = Math.max(0, maxBytes - queuedBytes);
-		return freeBytes / frameSizeBytes;
+		return Math.max(0, maxBytes - queuedBytes);
 	}
 
 	@Override
-	protected int getMaxFrames() {
-		return backend != null ? backend.getMaxQueuedFrames() : maxQueuedFrames;
+	protected int getMaxBytes() {
+		return backend != null ? backend.getMaxQueuedBytes() : maxQueuedFrames * frameSizeBytes;
 	}
 
 	@Override
-	protected int enqueue(byte[] bytes, int offset, int frames) {
+	protected int enqueue(byte[] bytes, int offset, int length) {
 		if (backend == null) return 0;
-		return backend.enqueue(bytes, offset, frames);
+		int frames = length / frameSizeBytes;
+		int framesEnqueued = backend.enqueue(bytes, offset, frames);
+		return framesEnqueued * frameSizeBytes;
 	}
 
 	@Override
-	protected int drainInternal(int framesToDrain) {
-		return drainAsync(framesToDrain).await();
+	protected int drainInternal(int bytesToDrain) {
+		return drainAsync(bytesToDrain).await();
 	}
 
-	private JSPromise<Integer> drainAsync(int framesToDrain) {
+	private JSPromise<Integer> drainAsync(int bytesToDrain) {
 		if (backend == null || !isActive()) {
 			return JSPromise.resolve(0);
 		}
 		return new JSPromise<>((resolve, reject) -> {
 
 			int initialQueuedBytes = backend.getQueuedBytes();
-			int initialQueuedFrames = initialQueuedBytes / frameSizeBytes;
-			if (initialQueuedFrames == 0) {
+			if (initialQueuedBytes == 0) {
 				resolve.accept(0);
 				return;
 			}
 
-			if (framesToDrain < 0) {
+			if (bytesToDrain < 0) {
 				backend.addDrainListener((bytesDrained, bytesRemaining) -> {
 					if (bytesRemaining == 0) {
-						resolve.accept(initialQueuedFrames);
+						resolve.accept(initialQueuedBytes);
 						return true;
 					}
 					return false;
 				});
 				return;
 			}
-			AtomicInteger remainingBytes = new AtomicInteger(framesToDrain * frameSizeBytes);
+			AtomicInteger remainingBytes = new AtomicInteger(bytesToDrain);
 			backend.addDrainListener((bytesDrained, bytesRemaining) -> {
 				int rem = remainingBytes.addAndGet(-bytesDrained);
 
 				if (rem <= 0) {
-					int framesDrained = (framesToDrain * frameSizeBytes - rem) / frameSizeBytes;
-					resolve.accept(framesDrained);
+					int totalDrained = bytesToDrain - rem;
+					resolve.accept(totalDrained);
 					return true; // remove listener
 				}
 
 				if (bytesRemaining == 0) {
-					resolve.accept(initialQueuedFrames);
+					resolve.accept(initialQueuedBytes);
 					return true; // remove listener
 				}
 
