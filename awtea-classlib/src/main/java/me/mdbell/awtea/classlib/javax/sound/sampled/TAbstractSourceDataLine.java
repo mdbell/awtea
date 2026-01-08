@@ -323,7 +323,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
             writtenBytes += bytesPushed;
 
             LineMonitor.get().onWrite(this, bytesPushed);
-            onSamplesChunk(byteScratch, framesEnqueued);
+//            onSamplesChunk(byteScratch, framesEnqueued);
         }
 
         return writtenBytes;
@@ -334,11 +334,11 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
         if (pcmBytes == null || frames <= 0) {
             return;
         }
-        
+
         // Convert a portion of PCM bytes to floats for peak detection
         float[] peaks = new float[channels];
         float scale = (float) (1.0 / Math.pow(2, sampleSizeBits - 1));
-        
+
         for (int f = 0; f < frames; f++) {
             int frameOffset = f * frameSizeBytes;
             for (int ch = 0; ch < channels; ch++) {
