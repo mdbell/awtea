@@ -2,26 +2,25 @@ package me.mdbell.awtea.util;
 
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.DataView;
-import org.teavm.jso.typedarrays.Uint8Array;
 
 /**
  * Helper for writing variable-length commands to a byte buffer.
- * 
+ *
  * <p>
  * Commands are written in the format:
- * 
+ *
  * <pre>
  * [opcode: uint8][flags: uint8][length: uint16][data: length*4 bytes]
  * </pre>
- * 
+ *
  * <p>
  * The length field is in words (4-byte units) and does NOT include the 4-byte
  * header.
  * All multi-byte values are written in little-endian byte order.
- * 
+ *
  * <p>
  * Usage:
- * 
+ *
  * <pre>
  * ByteWriter writer = new ByteWriter(memoryBuffer, bufferPtr, bufferSizeWords);
  * writer.beginCommand(opcode, flags);
@@ -42,7 +41,7 @@ public class ByteWriter {
 
     /**
      * Create a ByteWriter for a WASM memory buffer.
-     * 
+     *
      * @param memoryBuffer The WASM memory buffer
      * @param basePtr      The byte offset into the buffer where commands start
      * @param maxWords     Maximum size of the buffer in words (4-byte units)
@@ -58,11 +57,11 @@ public class ByteWriter {
 
     /**
      * Begin writing a new command.
-     * 
+     *
      * <p>
      * If a previous command was started but not finished, it will be automatically
      * finished.
-     * 
+     *
      * @param opcode The command opcode (0-255)
      * @param flags  Command flags (0-255). Bit 0 reserved for CMD_FLAG_EXTENDED.
      */
@@ -90,7 +89,7 @@ public class ByteWriter {
 
     /**
      * Finish the current command by back-patching the length field.
-     * 
+     *
      * <p>
      * The length is calculated as the number of words (4-byte units) written
      * since the command header, excluding the header itself.
@@ -209,7 +208,7 @@ public class ByteWriter {
 
     /**
      * Check if currently writing a command.
-     * 
+     *
      * @return true if a command is in progress
      */
     public boolean isInCommand() {
@@ -228,7 +227,7 @@ public class ByteWriter {
 
     /**
      * Get the number of bytes remaining in the buffer.
-     * 
+     *
      * @return Available bytes
      */
     public int getRemainingBytes() {
@@ -237,7 +236,7 @@ public class ByteWriter {
 
     /**
      * Check if there's enough space for the specified number of bytes.
-     * 
+     *
      * @param bytes Number of bytes needed
      * @return true if space is available
      */
@@ -247,7 +246,7 @@ public class ByteWriter {
 
     /**
      * Get the current buffer utilization as a percentage (0.0 to 1.0).
-     * 
+     *
      * @return Buffer usage ratio
      */
     public double getUtilization() {

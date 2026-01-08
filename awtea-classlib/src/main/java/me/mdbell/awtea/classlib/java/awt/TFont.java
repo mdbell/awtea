@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.text.AttributedCharacterIterator;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -249,7 +248,7 @@ public class TFont {
                 size == tFont.size &&
                 Objects.equals(name, tFont.name) &&
                 fontPeer.getFont() == tFont.fontPeer.getFont(); // identity compare; you typically only have one
-                                                                // instance per file
+        // instance per file
     }
 
     @Override
@@ -350,7 +349,7 @@ public class TFont {
      * Load a font with a specific style, throwing an exception if not found.
      * This method is used to detect missing font variants so synthetic styling can
      * be applied.
-     * 
+     *
      * @param name  the font family name
      * @param style the style string (e.g., "Bold", "Italic", "BoldItalic", or empty
      *              for plain)
@@ -374,7 +373,7 @@ public class TFont {
     /**
      * Load a font safely with fallback to default font if not found.
      * This method never throws - it always returns a valid font.
-     * 
+     *
      * @param name  the font family name
      * @param style the style string (e.g., "Bold", "Italic", "BoldItalic", or empty
      *              for plain)

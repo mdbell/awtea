@@ -6,12 +6,9 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.applet.Applet;
-import java.applet.AppletContext;
-import java.applet.AppletStub;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.net.URL;
 
 import org.teavm.jso.JSExport;
 import org.teavm.jso.JSFunctor;
@@ -255,7 +252,7 @@ public class GuiDemo {
     private static Panel createHoverPanel(String label, Color normalColor, Color hoverColor) {
         // Use an array to hold mutable state that can be accessed from both inner
         // classes
-        final boolean[] hoveredState = { false };
+        final boolean[] hoveredState = {false};
 
         Panel panel = new Panel() {
             @Override

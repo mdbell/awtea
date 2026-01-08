@@ -1,6 +1,5 @@
 package me.mdbell.awtea.gfx;
 
-import lombok.AllArgsConstructor;
 import me.mdbell.awtea.gfx.generated.Operation;
 
 public class SurfaceCommand {
@@ -75,21 +74,21 @@ public class SurfaceCommand {
      * Configures this command with new values, supporting object reuse from a pool.
      * Uses varargs for flexible argument count.
      * Only allocates a new array if the existing one is too small.
-     * 
+     *
      * @param operation the operation type
-     * @param obj the object parameter (can be null for operations without objects)
-     * @param args variable number of integer arguments
+     * @param obj       the object parameter (can be null for operations without objects)
+     * @param args      variable number of integer arguments
      */
     public void configure(Operation operation, Object obj, int... args) {
         this.type = operation;
         this.obj = obj;
         this.argCount = args.length;
-        
+
         // Only resize if needed
         if (args.length > this.args.length) {
             this.args = new int[args.length];
         }
-        
+
         // Copy args into our array
         System.arraycopy(args, 0, this.args, 0, args.length);
     }

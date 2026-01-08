@@ -1,7 +1,6 @@
 package me.mdbell.awtea.examples.animationdemo;
 
 import me.mdbell.awtea.Helper;
-import me.mdbell.awtea.gfx.CompositeSurfaceBackend;
 import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.wasm.WasmBuildInfo;
 import me.mdbell.awtea.gfx.wasm.WasmDiagnostics;
@@ -88,7 +87,7 @@ public class AnimationDemo {
 
     /**
      * Check if we're running under TeaVM with WASM backend loaded.
-     * 
+     *
      * @return true if WASM diagnostics are available
      */
     private static boolean isWasmBackendAvailable() {
@@ -107,7 +106,7 @@ public class AnimationDemo {
 
     /**
      * Get WASM diagnostics if available.
-     * 
+     *
      * @return WasmDiagnostics instance, or null if not available
      */
     private static WasmDiagnostics getWasmDiagnostics() {
@@ -124,7 +123,7 @@ public class AnimationDemo {
 
     /**
      * Get WASM build info if available.
-     * 
+     *
      * @return WasmBuildInfo instance, or null if not available
      */
     private static WasmBuildInfo getWasmBuildInfo() {
@@ -258,7 +257,7 @@ public class AnimationDemo {
 
         /**
          * Adds a ball with random properties.
-         * 
+         *
          * @param x              X position (-1 for random)
          * @param y              Y position (-1 for random)
          * @param randomVelocity Whether to add random velocity
@@ -293,7 +292,7 @@ public class AnimationDemo {
 
         /**
          * Handles keyboard input.
-         * 
+         *
          * @param keyCode The key code that was pressed
          */
         private void handleKeyPress(int keyCode) {
@@ -386,7 +385,7 @@ public class AnimationDemo {
 
         /**
          * Updates physics simulation for all balls.
-         * 
+         *
          * @param deltaTime Time elapsed since last update (in seconds)
          */
         private void updatePhysics(double deltaTime) {
