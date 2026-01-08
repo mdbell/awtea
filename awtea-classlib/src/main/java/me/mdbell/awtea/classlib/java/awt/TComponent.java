@@ -2,7 +2,6 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import lombok.Getter;
 import lombok.Setter;
-import me.mdbell.awtea.classlib.java.awt.awtea.TFocusManager;
 import me.mdbell.awtea.classlib.java.awt.event.*;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
@@ -27,29 +26,29 @@ import org.teavm.classlib.java.awt.TDimension;
 public abstract class TComponent implements TImageObserver {
 
     private static final Logger log = LoggerFactory.getLogger(TComponent.class);
-    
+
     // Component ID management for GPU-based hit picking
     private static final AtomicInteger nextComponentId = new AtomicInteger(1);
     private static final Map<Integer, TComponent> componentRegistry = new ConcurrentHashMap<>();
-    
+
     @Getter
     private final int componentId;
-    
+
     /**
      * Looks up a component by its unique ID.
      * Used by GPU-based hit picking to resolve component IDs from picking buffer.
-     * 
+     *
      * @param id the component ID
      * @return the component with the specified ID, or null if not found
      */
     public static TComponent getComponentById(int id) {
         return componentRegistry.get(id);
     }
-    
+
     /**
      * Unregisters a component from the ID registry.
      * Should be called when a component is permanently disposed.
-     * 
+     *
      * @param component the component to unregister
      */
     static void unregisterComponent(TComponent component) {
@@ -57,7 +56,7 @@ public abstract class TComponent implements TImageObserver {
             componentRegistry.remove(component.componentId);
         }
     }
-    
+
     /**
      * Constructor that assigns a unique ID to this component.
      */
@@ -112,7 +111,7 @@ public abstract class TComponent implements TImageObserver {
     // used in the event queue for caching
     // we shouldn't touch this directly, and leave it to TEventQueue
     TEventQueue.EventQueueItem[] eventCache;
-    
+
     // Cached graphics context to prevent leaks when getGraphics() is called repeatedly
     // without disposing. Disposed automatically when getGraphics() is called again.
     private TGraphics cachedGraphics;
@@ -465,7 +464,7 @@ public abstract class TComponent implements TImageObserver {
      * root ancestor.
      *
      * @return this Component's focus cycle root, or null if no ancestor is a
-     *         focus cycle root
+     * focus cycle root
      */
     public TContainer getFocusCycleRootAncestor() {
         TContainer parent = this.parent;
@@ -485,7 +484,7 @@ public abstract class TComponent implements TImageObserver {
             cachedGraphics.dispose();
             cachedGraphics = null;
         }
-        
+
         if (this.parent == null) {
             return null;
         }
@@ -493,7 +492,7 @@ public abstract class TComponent implements TImageObserver {
         if (parent == null) {
             return null;
         }
-        
+
         // Create child graphics and dispose parent to prevent leak
         TGraphics g;
         try {
@@ -501,7 +500,7 @@ public abstract class TComponent implements TImageObserver {
         } finally {
             parent.dispose();
         }
-        
+
         // Set this component's ID for picking support
         // This ensures rendering via getGraphics() goes to the picking buffer with correct ID
         if (g instanceof TSurfaceRasterizerGraphics) {
@@ -512,7 +511,7 @@ public abstract class TComponent implements TImageObserver {
                 srg.setPickingEnabled(true);
             }
         }
-        
+
         // Cache the graphics to dispose on next getGraphics() call
         cachedGraphics = g;
         return g;
@@ -652,7 +651,7 @@ public abstract class TComponent implements TImageObserver {
     }
 
     protected void firePropertyChange(String propertyName,
-            Object oldValue, Object newValue) {
+                                      Object oldValue, Object newValue) {
         // TODO: implement property change listeners
     }
 

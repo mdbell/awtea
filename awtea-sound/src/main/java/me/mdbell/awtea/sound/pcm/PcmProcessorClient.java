@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.sound.DrainListener;
+import me.mdbell.awtea.sound.pcm.messages.*;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.jso.JSRecord;
 import me.mdbell.awtea.util.logging.Logger;
@@ -12,7 +13,6 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.browser.Window;
-import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.core.JSUndefined;
@@ -20,7 +20,7 @@ import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
 import org.teavm.jso.json.JSON;
 import org.teavm.jso.typedarrays.ArrayBuffer;
-import org.teavm.jso.typedarrays.Float32Array;
+import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.jso.webaudio.AudioContext;
 import org.teavm.jso.workers.MessagePort;
 
@@ -55,11 +55,19 @@ public class PcmProcessorClient {
     private AudioWorkletNode node;
 
     @Getter
-    private int queuedFrames;
+    private int queuedBytes;
+
+    private int sampleSizeBits;
+    private boolean bigEndian;
+    private int frameSizeBytes;
 
     private int keepAliveTimeout = -1;
 
     private final Set<DrainListener> drainListenerSet = new HashSet<>();
+    
+    public int getMaxQueuedBytes() {
+        return maxQueuedFrames * frameSizeBytes;
+    }
 
     public PcmProcessorClient() {
         this(44100); // 44Khz
@@ -83,14 +91,17 @@ public class PcmProcessorClient {
         this.maxQueuedFrames = maxQueuedFrames;
         this.context = context;
 
-        this.queuedFrames = 0;
+        this.queuedBytes = 0;
     }
 
     public void addDrainListener(DrainListener listener) {
         this.drainListenerSet.add(listener);
     }
 
-    public void init() {
+    public void init(int sampleSizeBits, boolean bigEndian) {
+        this.sampleSizeBits = sampleSizeBits;
+        this.bigEndian = bigEndian;
+        this.frameSizeBytes = (sampleSizeBits / 8) * channels;
 
         AudioWorkletNode.Options opts = JSObjects.create();
         opts.setNumberOfInputs(0);
@@ -110,23 +121,28 @@ public class PcmProcessorClient {
             String type = msg.getType();
             log.trace("PCM Client: Received message from processor. Msg: {}", JSON.stringify(msg));
             if (type.equals("consumed")) {
-                int frames = msg.getFrames();
-                queuedFrames -= frames;
-                if (queuedFrames < 0) {
-                    queuedFrames = 0;
+                ConsumedMessage consumedMsg = (ConsumedMessage) msg;
+                int bytesConsumed = consumedMsg.getBytes();
+                queuedBytes -= bytesConsumed;
+                if (queuedBytes < 0) {
+                    queuedBytes = 0;
                 }
-                log.trace("PCM Client: Processor consumed {} frames. {} frames remaining in queue.", frames, queuedFrames);
-                drainListenerSet.removeIf(l -> l.onDrain(frames, queuedFrames));
+                log.trace("PCM Client: Processor consumed {} bytes. {} bytes remaining in queue.",
+                        bytesConsumed, queuedBytes);
+                drainListenerSet.removeIf(l -> l.onDrain(bytesConsumed, queuedBytes));
             }
         });
 
         this.keepAliveTimeout = Window.setTimeout(this::handleKeepAliveTick, KEEP_ALIVE_TIMEOUT_MS);
 
-        LineMessage message = JSObjects.create();
+        InitMessage message = JSObjects.create();
 
-        // tell the processor to initialize itself
+        // tell the processor to initialize itself with format metadata
         message.setType("init");
         message.setChannels(this.channels);
+        message.setSampleRate(this.sampleRate);
+        message.setSampleSizeBits(this.sampleSizeBits);
+        message.setBigEndian(this.bigEndian);
 
         this.node.getPort().postMessage(message);
 
@@ -134,45 +150,55 @@ public class PcmProcessorClient {
     }
 
 
-    public int enqueue(float[] data, int frames) {
+    public int enqueue(byte[] data, int offset, int frames) {
         if (this.node.nullish()) {
             return 0;
         }
 
-        int free = this.maxQueuedFrames - this.queuedFrames;
-        if (free <= 0) {
+        int bytesQueued = queuedBytes;
+        int maxBytes = maxQueuedFrames * frameSizeBytes;
+        int freeBytes = maxBytes - bytesQueued;
+        if (freeBytes <= 0) {
             return 0;
         }
 
-        int framesToSend = Math.min(frames, free);
-
-        if (framesToSend <= 0) {
-            return 0;
+        int bytesToSend = frames * frameSizeBytes;
+        if (bytesToSend > freeBytes) {
+            int framesToSend = freeBytes / frameSizeBytes;
+            if (framesToSend <= 0) {
+                return 0;
+            }
+            bytesToSend = framesToSend * frameSizeBytes;
+            frames = framesToSend;
         }
 
-        Float32Array arr = Float32Array.fromJavaArray(data);
+        // Convert Java byte array to JS Int8Array
+        Int8Array arr = Int8Array.fromJavaArray(data);
+        ArrayBuffer buf = arr.getBuffer();
 
-        if (framesToSend != frames) {
-            arr = arr.subarray(0, framesToSend * this.channels);
-        }
+        int arrayOffset = arr.getByteOffset();
 
-        LineMessage message = JSObjects.create();
+        ArrayBuffer slice = buf.slice(arrayOffset + offset, arrayOffset + offset + bytesToSend);
+
+        AudioSegmentMessage message = JSObjects.create();
 
         message.setType("pcm");
-        message.setData(arr.getBuffer());
-        message.setFrames(framesToSend);
-        message.setChannels(this.channels);
+        message.setData(slice);
+        message.setFrames(frames);
 
-        this.node.getPort().postMessage(message);
+        postWithTransfer(this.node.getPort(), message, slice);
 
-        this.queuedFrames += framesToSend;
-        return framesToSend;
+        this.queuedBytes += bytesToSend;
+        return frames;
     }
+
+    @JSBody(params = {"port", "message", "transfer"}, script = "port.postMessage(message, transfer);")
+    private static native void postWithTransfer(MessagePort port, LineMessage message, JSObject... transfer);
 
     public void close() {
         if (!node.nullish()) {
 
-            LineMessage shutdownMsg = JSObjects.create();
+            ShutdownMessage shutdownMsg = JSObjects.create();
             shutdownMsg.setType("shutdown");
             this.node.getPort().postMessage(shutdownMsg);
 
@@ -189,7 +215,7 @@ public class PcmProcessorClient {
     private void handleKeepAliveTick() {
 
         if (this.node != null) {
-            LineMessage pingMsg = JSObjects.create();
+            KeepaliveMessage pingMsg = JSObjects.create();
             pingMsg.setType("keepalive");
             this.node.getPort().postMessage(pingMsg);
         }
@@ -235,38 +261,6 @@ public class PcmProcessorClient {
     public interface AudioContextOptions extends JSObject {
         @JSProperty("sampleRate")
         void setSampleRate(int sr);
-    }
-
-    private interface LineMessage extends JSObject {
-
-        @JSProperty("type")
-        String getType();
-
-        @JSProperty("type")
-        void setType(String type);
-
-        // only used when type == consumed || type == pcm
-
-        @JSProperty("frames")
-        int getFrames();
-
-        @JSProperty("frames")
-        void setFrames(int frames);
-
-        // only used when type == init || type == pcm
-        @JSProperty("channels")
-        JSNumber getChannels();
-
-        @JSProperty("channels")
-        void setChannels(int channels);
-
-        // only used when type == pcm
-
-        @JSProperty("data")
-        void setData(ArrayBuffer data);
-
-        @JSProperty("data")
-        ArrayBuffer getData();
     }
 }
 

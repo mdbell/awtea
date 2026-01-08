@@ -5,8 +5,6 @@ import lombok.Setter;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 
-import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -224,7 +222,7 @@ public class TContainer extends TComponent {
     public void paint(TGraphics g) {
         // Set this container's ID for picking if supported
         setComponentIdForPicking(g, this);
-        
+
         for (TComponent child : children) {
             // Skip invisible components
             if (!child.isVisible()) {
@@ -250,13 +248,13 @@ public class TContainer extends TComponent {
             }
         }
     }
-    
+
     /**
      * Sets the component ID on the rasterizer for GPU picking support.
      * This is called before painting each component to ensure the picking buffer
      * captures which component painted which pixels.
-     * 
-     * @param g the graphics context
+     *
+     * @param g         the graphics context
      * @param component the component about to be painted
      */
     private static void setComponentIdForPicking(TGraphics g, TComponent component) {
@@ -300,7 +298,7 @@ public class TContainer extends TComponent {
      * the default policy is returned.
      *
      * @return this Container's focus traversal policy, or null if this
-     *         Container is not a focus cycle root
+     * Container is not a focus cycle root
      * @see #setFocusTraversalPolicy
      * @see #isFocusCycleRoot
      */
@@ -336,7 +334,7 @@ public class TContainer extends TComponent {
      * or from the KeyboardFocusManager.
      *
      * @return true if the focus traversal policy has been explicitly set for
-     *         this Container; false otherwise
+     * this Container; false otherwise
      * @see #setFocusTraversalPolicy
      */
     public boolean isFocusTraversalPolicySet() {

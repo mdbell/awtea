@@ -1,7 +1,5 @@
 package me.mdbell.awtea.util;
 
-import org.teavm.jso.typedarrays.Float32Array;
-
 import java.awt.*;
 
 public class ColorUtil {

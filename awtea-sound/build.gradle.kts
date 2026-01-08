@@ -26,6 +26,7 @@ dependencies {
     implementation("org.teavm:teavm-jso-apis:0.13.0")
 
     implementation(project(":awtea-util"))
+    implementation(project(":awtea-sound:worklet"))
 
 
 }

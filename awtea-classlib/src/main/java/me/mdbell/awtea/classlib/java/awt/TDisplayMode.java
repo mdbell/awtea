@@ -1,7 +1,5 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 

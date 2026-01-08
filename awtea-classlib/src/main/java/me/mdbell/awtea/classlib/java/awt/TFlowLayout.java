@@ -1,8 +1,5 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.teavm.classlib.java.awt.TDimension;
 
 /**
@@ -123,8 +120,8 @@ public class TFlowLayout implements TLayoutManager {
      * of the {@code Container}
      *
      * @return the horizontal gap between components
-     *         and between the components and the borders
-     *         of the {@code Container}
+     * and between the components and the borders
+     * of the {@code Container}
      */
     public int getHgap() {
         return hgap;
@@ -149,8 +146,8 @@ public class TFlowLayout implements TLayoutManager {
      * {@code Container}.
      *
      * @return the vertical gap between components
-     *         and between the components and the borders
-     *         of the {@code Container}
+     * and between the components and the borders
+     * of the {@code Container}
      */
     public int getVgap() {
         return vgap;
@@ -184,7 +181,7 @@ public class TFlowLayout implements TLayoutManager {
      * their baseline.
      *
      * @return true if components are to be vertically aligned along
-     *         their baseline
+     * their baseline
      */
     public boolean getAlignOnBaseline() {
         return alignOnBaseline;
@@ -300,7 +297,7 @@ public class TFlowLayout implements TLayoutManager {
      * @param ltr      left-to-right flag
      */
     private void moveComponents(TContainer target, int x, int y, int width, int height,
-            int rowStart, int rowEnd, boolean ltr) {
+                                int rowStart, int rowEnd, boolean ltr) {
         switch (align) {
             case LEFT:
                 x = ltr ? x : x + width;
@@ -345,14 +342,14 @@ public class TFlowLayout implements TLayoutManager {
         if (min != null && (min.width > 0 || min.height > 0)) {
             return min;
         }
-        
+
         // Then use current dimensions if set
         int w = comp.getWidth();
         int h = comp.getHeight();
         if (w > 0 || h > 0) {
             return new TDimension(w, h);
         }
-        
+
         // For containers, try getPreferredLayoutSize() as fallback
         if (comp instanceof TContainer) {
             TDimension layoutPref = ((TContainer) comp).getPreferredLayoutSize();
@@ -360,13 +357,13 @@ public class TFlowLayout implements TLayoutManager {
                 return layoutPref;
             }
         }
-        
+
         // Last resort: try preferred size
         TDimension pref = comp.getPreferredSize();
         if (pref != null && (pref.width > 0 || pref.height > 0)) {
             return pref;
         }
-        
+
         // Absolute fallback
         return new TDimension(0, 0);
     }

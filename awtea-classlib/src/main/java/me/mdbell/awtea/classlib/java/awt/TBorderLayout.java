@@ -1,8 +1,5 @@
 package me.mdbell.awtea.classlib.java.awt;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.teavm.classlib.java.awt.TDimension;
 
 /**
@@ -16,13 +13,13 @@ import org.teavm.classlib.java.awt.TDimension;
  * <p>
  * When adding a component to a container with a border layout, use one of these
  * five constants, for example:
- * 
+ *
  * <pre>
  * Panel p = new Panel();
  * p.setLayout(new BorderLayout());
  * p.add(new Button("Okay"), BorderLayout.SOUTH);
  * </pre>
- * 
+ * <p>
  * This is the awtea implementation of java.awt.BorderLayout.
  *
  * @see java.awt.BorderLayout
@@ -437,14 +434,14 @@ public class TBorderLayout implements TLayoutManager2 {
         if (min != null && (min.width > 0 || min.height > 0)) {
             return min;
         }
-        
+
         // Then use current dimensions if set
         int w = comp.getWidth();
         int h = comp.getHeight();
         if (w > 0 || h > 0) {
             return new TDimension(w, h);
         }
-        
+
         // For containers, try getPreferredLayoutSize() as fallback
         if (comp instanceof TContainer) {
             TDimension layoutPref = ((TContainer) comp).getPreferredLayoutSize();
@@ -452,13 +449,13 @@ public class TBorderLayout implements TLayoutManager2 {
                 return layoutPref;
             }
         }
-        
+
         // Last resort: try preferred size
         TDimension pref = comp.getPreferredSize();
         if (pref != null && (pref.width > 0 || pref.height > 0)) {
             return pref;
         }
-        
+
         // Absolute fallback
         return new TDimension(0, 0);
     }
