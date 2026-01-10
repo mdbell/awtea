@@ -1,10 +1,6 @@
 package me.mdbell.awtea.gfx.webgl;
 
-import me.mdbell.awtea.gfx.Rasterizer;
-import me.mdbell.awtea.gfx.PickingRasterizer;
-import me.mdbell.awtea.gfx.Surface;
-import me.mdbell.awtea.gfx.SurfaceCommand;
-import me.mdbell.awtea.gfx.SurfaceContainer;
+import me.mdbell.awtea.gfx.*;
 import me.mdbell.awtea.instrument.Monitored;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
@@ -18,12 +14,15 @@ import org.teavm.jso.webgl.WebGLTexture;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.util.ArrayList;
 import java.util.List;
 
 @Monitored.AllMethods
 public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
     private static final Logger log = LoggerFactory.getLogger(WebGLRasterizer.class);
+
+    private static final List<PostProcessingCallback> postProcessingCallbacks = new ArrayList<>();
 
     private final WebGLSurfaceBackend backend;
     private final WebGL2RenderingContext gl;
@@ -32,7 +31,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
     private boolean pushToScreen = false;
     private final boolean isChildRasterizer;
-    
+
     // Picking support: current component ID for dual rendering
     // Each component sets its ID before painting, and all its paint operations
     // are rendered to both the picking buffer (with ID color) and normal framebuffer
@@ -60,15 +59,19 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         this.pushToScreen = other.pushToScreen;
         this.activeComponentId = other.activeComponentId;
         this.pickingEnabled = other.pickingEnabled;
-        
+
         // Save state on creation for isolation
         backend.contextStack.save();
     }
-    
+
+    public static void addPostProcessingCallback(PostProcessingCallback callback) {
+        postProcessingCallbacks.add(callback);
+    }
+
     /**
      * Sets the active component ID for picking buffer rendering.
      * Call this before a component starts painting.
-     * 
+     *
      * @param componentId the component ID
      */
     @Override
@@ -76,21 +79,21 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         this.activeComponentId = componentId;
         log.trace("Set active component ID to {}", componentId);
     }
-    
+
     /**
      * Enables or disables picking buffer rendering.
      * When enabled, all paint operations are duplicated to the picking buffer.
-     * 
+     *
      * @param enabled true to enable picking rendering
      */
     @Override
     public void setPickingEnabled(boolean enabled) {
         this.pickingEnabled = enabled;
     }
-    
+
     /**
      * Returns whether picking mode is currently enabled.
-     * 
+     *
      * @return true if picking is enabled
      */
     @Override
@@ -126,12 +129,12 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         final float finalX = x;
         final float finalWidth = width;
         final float finalHeight = height;
-        
+
         // If picking is enabled, render to picking buffer first with ID color
         if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
             renderRectToPicking(activeComponentId, finalX, finalY, finalWidth, finalHeight);
         }
-        
+
         // Render to normal framebuffer with actual colors
         useColorProgram();
         backend.setRectBuffer(finalX, finalY, finalWidth, finalHeight);
@@ -139,7 +142,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
         surface.markDirty();
     }
-    
+
     /**
      * Renders a rectangle to the picking buffer with the specified component ID color.
      */
@@ -148,24 +151,24 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         if (pickingBuffer == null) {
             return;
         }
-        
+
         // Bind picking framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, pickingBuffer.getFramebuffer());
         gl.viewport(0, 0, pickingBuffer.getWidth(), pickingBuffer.getHeight());
-        
+
         // Encode component ID as color
         float[] idColor = PickingColorEncoder.encodeId(componentId);
-        
+
         // Use color program in picking mode
         backend.useColorProgram(surface.getWidth(), surface.getHeight(), idColor);
         backend.setRectBuffer(x, y, width, height);
         gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
-        
+
         // Restore original framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
         gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
     }
-    
+
     /**
      * Executes a render operation on the picking buffer with the specified component ID color.
      * Used for non-rectangle primitives (ovals, polygons, etc.)
@@ -175,53 +178,53 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         if (pickingBuffer == null) {
             return;
         }
-        
+
         // Bind picking framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, pickingBuffer.getFramebuffer());
         gl.viewport(0, 0, pickingBuffer.getWidth(), pickingBuffer.getHeight());
-        
+
         // Encode component ID as color
         float[] idColor = PickingColorEncoder.encodeId(componentId);
-        
+
         // Use color program in picking mode
         backend.useColorProgram(surface.getWidth(), surface.getHeight(), idColor);
-        
+
         // Execute the render operation
         renderOp.run();
-        
+
         // Restore original framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
-        
+
         // Restore viewport
         gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
     }
-    
+
     /**
      * Renders a texture to the picking buffer using PICKING swizzle mode.
      * This ensures text and other surface-based content appears in the picking buffer
      * with the component's ID color.
      */
-    private void renderTextureToPickingBuffer(WebGLTexture texture, int x, int y, 
-            int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
+    private void renderTextureToPickingBuffer(WebGLTexture texture, int x, int y,
+                                              int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
         WebGLPickingBuffer pickingBuffer = backend.getPickingBuffer();
         if (pickingBuffer == null) {
             return;
         }
-        
+
         // Bind picking framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, pickingBuffer.getFramebuffer());
         gl.viewport(0, 0, pickingBuffer.getWidth(), pickingBuffer.getHeight());
-        
+
         // Encode component ID as color for uniform
         float[] idColor = PickingColorEncoder.encodeId(activeComponentId);
-        
+
         // Use texture program with PICKING swizzle mode
-        backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.PICKING, 
-            surface.getWidth(), surface.getHeight(), idColor);
-        
+        backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.PICKING,
+                surface.getWidth(), surface.getHeight(), idColor);
+
         // Flip Y for picking buffer
         int flippedY = surface.getHeight() - y - srcH;
-        
+
         // Setup vertices and UVs
         float[] verts = {
                 x, flippedY,
@@ -242,7 +245,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         };
 
         backend.uploadQuadVertices(verts, uvs);
-        
+
         // Bind texture
         gl.activeTexture(WebGLRenderingContext.TEXTURE0);
         gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, texture);
@@ -255,11 +258,11 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
         // Render to picking buffer
         gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
-        
+
         // Restore original framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, framebuffer);
         gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
-        
+
         gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
     }
 
@@ -303,7 +306,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         }
         gl.clear(WebGLRenderingContext.COLOR_BUFFER_BIT);
         // Clip will be restored by next useProgram call which applies state
-        
+
         surface.markDirty();
     }
 
@@ -381,13 +384,13 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
     }
 
     private void drawTexture(WebGLTexture texture, WebGLSurfaceBackend.SwizzleMode mode,
-            int x, int y, int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
-        
+                             int x, int y, int srcW, int srcH, int width, int height, Uint8ClampedArray pixelData) {
+
         // If picking is enabled, render to picking buffer with PICKING swizzle mode
         if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
             renderTextureToPickingBuffer(texture, x, y, srcW, srcH, width, height, pixelData);
         }
-        
+
         // Always render to normal framebuffer
         backend.useTextureProgram(mode, surface.getWidth(), surface.getHeight());
 
@@ -511,7 +514,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, npoints);
-        
+
         surface.markDirty();
     }
 
@@ -559,7 +562,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
-        
+
         surface.markDirty();
     }
 
@@ -580,7 +583,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         // Calculate correct vertex count: center + edges + corners (each corner is
         // segsPerCorner+1 vertices)
         int totalVerts = 1 + 2 + 4 * (segsPerCorner + 1) + 4 + 1; // center + 2 top edges + 4 corners + 4 edges + 1
-                                                                  // closing
+        // closing
         float[] verts = new float[totalVerts * 2];
 
         // Center point (flip Y to WebGL space)
@@ -654,7 +657,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
         final int finalIdx = idx;
         final float[] finalVerts = java.util.Arrays.copyOf(verts, idx * 2);
-        
+
         // If picking is enabled, render to picking buffer first
         if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
             renderToPicking(activeComponentId, () -> {
@@ -669,7 +672,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, idx);
-        
+
         surface.markDirty();
     }
 
@@ -720,7 +723,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
-        
+
         surface.markDirty();
     }
 
@@ -942,8 +945,8 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
     /**
      * Renders custom geometry using the currently active custom shader.
      * This method provides low-level access to WebGL draw calls for advanced rendering.
-     * 
-     * @param mode the WebGL primitive type (e.g., WebGLRenderingContext.TRIANGLES)
+     *
+     * @param mode  the WebGL primitive type (e.g., WebGLRenderingContext.TRIANGLES)
      * @param first the starting index in the enabled arrays
      * @param count the number of vertices to render
      * @throws IllegalStateException if no custom shader is active
@@ -952,13 +955,13 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         if (backend.getActiveCustomShader() == null) {
             throw new IllegalStateException("No custom shader is active. Call activateCustomShader() first.");
         }
-        
+
         gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, framebuffer);
         gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
-        
+
         // Apply context stack state (transform, clip, blend)
         backend.contextStack.apply();
-        
+
         gl.drawArrays(mode, first, count);
         surface.markDirty();
     }
@@ -966,10 +969,10 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
     /**
      * Renders indexed custom geometry using the currently active custom shader.
      * This method provides low-level access to WebGL indexed draw calls for advanced rendering.
-     * 
-     * @param mode the WebGL primitive type (e.g., WebGLRenderingContext.TRIANGLES)
-     * @param count the number of elements to render
-     * @param type the type of values in the element array buffer (e.g., WebGLRenderingContext.UNSIGNED_SHORT)
+     *
+     * @param mode   the WebGL primitive type (e.g., WebGLRenderingContext.TRIANGLES)
+     * @param count  the number of elements to render
+     * @param type   the type of values in the element array buffer (e.g., WebGLRenderingContext.UNSIGNED_SHORT)
      * @param offset the byte offset in the element array buffer
      * @throws IllegalStateException if no custom shader is active
      */
@@ -977,13 +980,13 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         if (backend.getActiveCustomShader() == null) {
             throw new IllegalStateException("No custom shader is active. Call activateCustomShader() first.");
         }
-        
+
         gl.bindFramebuffer(WebGL2RenderingContext.FRAMEBUFFER, framebuffer);
         gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
-        
+
         // Apply context stack state (transform, clip, blend)
         backend.contextStack.apply();
-        
+
         gl.drawElements(mode, count, type, offset);
         surface.markDirty();
     }
@@ -991,15 +994,15 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
     /**
      * Gets the WebGLSurfaceBackend for advanced custom shader operations.
      * Provides access to the WebGL context, custom shader management, and rendering state.
-     * 
+     *
      * @return the WebGL surface backend
      */
     public WebGLSurfaceBackend getBackend() {
         return backend;
     }
-    
+
     private ShaderCallbackWrapper pendingCallback = null;
-    
+
     @Override
     public void queueRenderCallback(Object wrapper) {
         if (wrapper instanceof ShaderCallbackWrapper) {
@@ -1014,10 +1017,10 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         gl.viewport(0, 0, surface.getWidth(), surface.getHeight());
         gl.framebufferTexture2D(WebGLRenderingContext.FRAMEBUFFER, WebGLRenderingContext.COLOR_ATTACHMENT0,
                 WebGLRenderingContext.TEXTURE_2D, this.surface.texture, 0);
-        
+
         // Set surface dimensions for clip application
         backend.contextStack.setSurfaceDimensions(surface.getWidth(), surface.getHeight());
-        
+
         // Set up the shader context for this rendering pass if not already set
         // (TSurfaceRasterizerGraphics may have already set it during paint())
         WebGLShaderContext existingContext = WebGLShaderContext.getCurrentContext();
@@ -1026,103 +1029,103 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             WebGLShaderContext context = new WebGLShaderContext(backend, this);
             WebGLShaderContext.setCurrentContext(context);
         }
-        
+
         try {
             for (SurfaceCommand cmd : cmds) {
                 switch (cmd.type) {
-                case SET_COLOR:
-                    Color c = (Color) cmd.obj;
-                    if (cmd.argCount > 0 && cmd.args[0] == 0) {
-                        backend.contextStack.setForeground(c);
-                    } else if (cmd.argCount > 0 && cmd.args[0] == 1) {
-                        backend.contextStack.setBackground(c);
-                    } else {
-                        log.error("WebGLRasterizer: Unknown color target: {}", cmd.argCount > 0 ? cmd.args[0] : -1);
+                    case SET_COLOR:
+                        Color c = (Color) cmd.obj;
+                        if (cmd.argCount > 0 && cmd.args[0] == 0) {
+                            backend.contextStack.setForeground(c);
+                        } else if (cmd.argCount > 0 && cmd.args[0] == 1) {
+                            backend.contextStack.setBackground(c);
+                        } else {
+                            log.error("WebGLRasterizer: Unknown color target: {}", cmd.argCount > 0 ? cmd.args[0] : -1);
+                        }
+                        break;
+                    case SET_TRANSFORM:
+                        AffineTransform at = (AffineTransform) cmd.obj;
+                        backend.contextStack.setTransform((java.awt.geom.AffineTransform) at);
+                        break;
+                    case SET_CLIP_RECT:
+                        setClip((Shape) cmd.obj);
+                        break;
+                    case SET_COMPOSITE:
+                        setComposite((Composite) cmd.obj);
+                        break;
+                    case BLIT_IMAGE:
+                        Surface s = ((SurfaceContainer) cmd.obj).getSurface();
+                        drawImage(s, cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                        break;
+                    case DRAW_RECT:
+                        drawRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], 1.0f);
+                        break;
+                    case FILL_RECT:
+                        fillRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                        break;
+                    case CLEAR_RECT:
+                        clearRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                        break;
+                    case DRAW_LINE:
+                        drawLine(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                        break;
+                    case DRAW_POLYGON: {
+                        java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                        drawPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
+                        break;
                     }
-                    break;
-                case SET_TRANSFORM:
-                    AffineTransform at = (AffineTransform) cmd.obj;
-                    backend.contextStack.setTransform((java.awt.geom.AffineTransform) at);
-                    break;
-                case SET_CLIP_RECT:
-                    setClip((Shape) cmd.obj);
-                    break;
-                case SET_COMPOSITE:
-                    setComposite((Composite) cmd.obj);
-                    break;
-                case BLIT_IMAGE:
-                    Surface s = ((SurfaceContainer) cmd.obj).getSurface();
-                    drawImage(s, cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
-                    break;
-                case DRAW_RECT:
-                    drawRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], 1.0f);
-                    break;
-                case FILL_RECT:
-                    fillRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
-                    break;
-                case CLEAR_RECT:
-                    clearRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
-                    break;
-                case DRAW_LINE:
-                    drawLine(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
-                    break;
-                case DRAW_POLYGON: {
-                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
-                    drawPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
-                    break;
+                    case FILL_POLYGON: {
+                        java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                        fillPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
+                        break;
+                    }
+                    case FILL_OVAL:
+                        fillOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                        break;
+                    case FILL_ROUND_RECT:
+                        fillRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                        break;
+                    case FILL_ARC:
+                        fillArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                        break;
+                    case DRAW_OVAL:
+                        drawOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
+                        break;
+                    case DRAW_ARC:
+                        drawArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                        break;
+                    case DRAW_ROUND_RECT:
+                        drawRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                        break;
+                    case DRAW_POLYLINE: {
+                        java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
+                        drawPolyline(polygon.xpoints, polygon.ypoints, polygon.npoints);
+                        break;
+                    }
+                    case COPY_AREA:
+                        copyArea(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
+                        break;
+                    case RENDER_CALLBACK:
+                        executeRenderCallback(cmd.obj);
+                        break;
+                    case NO_OP:
+                        // do nothing (shouldn't be in the command list in the first place)
+                        break;
+                    default:
+                        log.error("WebGLRasterizer: Unhandled command type: {}", cmd.type);
+                        break;
                 }
-                case FILL_POLYGON: {
-                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
-                    fillPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
-                    break;
-                }
-                case FILL_OVAL:
-                    fillOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
-                    break;
-                case FILL_ROUND_RECT:
-                    fillRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
-                    break;
-                case FILL_ARC:
-                    fillArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
-                    break;
-                case DRAW_OVAL:
-                    drawOval(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3]);
-                    break;
-                case DRAW_ARC:
-                    drawArc(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
-                    break;
-                case DRAW_ROUND_RECT:
-                    drawRoundRect(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
-                    break;
-                case DRAW_POLYLINE: {
-                    java.awt.Polygon polygon = (java.awt.Polygon) cmd.obj;
-                    drawPolyline(polygon.xpoints, polygon.ypoints, polygon.npoints);
-                    break;
-                }
-                case COPY_AREA:
-                    copyArea(cmd.args[0], cmd.args[1], cmd.args[2], cmd.args[3], cmd.args[4], cmd.args[5]);
-                    break;
-                case RENDER_CALLBACK:
-                    executeRenderCallback(cmd.obj);
-                    break;
-                case NO_OP:
-                    // do nothing (shouldn't be in the command list in the first place)
-                    break;
-                default:
-                    log.error("WebGLRasterizer: Unhandled command type: {}", cmd.type);
-                    break;
             }
-        }
-        
-        // Execute any pending callback queued via queueRenderCallback()
-        if (pendingCallback != null) {
-            executeRenderCallback(pendingCallback);
-            pendingCallback = null;
-        }
 
-        if (pushToScreen) {
-            pushToScreen();
-        }
+            // Execute any pending callback queued via queueRenderCallback()
+            if (pendingCallback != null) {
+                executeRenderCallback(pendingCallback);
+                pendingCallback = null;
+            }
+
+            if (pushToScreen) {
+                pushToScreen();
+            }
         } finally {
             // Only clear the context if we set it (not if TSurfaceRasterizerGraphics set it)
             // TSurfaceRasterizerGraphics will clear it after flush() completes
@@ -1131,30 +1134,30 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             }
         }
     }
-    
+
     /**
      * Executes a custom shader rendering callback.
      * The shader is activated before the callback and deactivated afterwards.
      */
     private void executeRenderCallback(Object obj) {
         if (!(obj instanceof ShaderCallbackWrapper)) {
-            log.error("RENDER_CALLBACK command received with invalid object type: {}", 
-                obj != null ? obj.getClass().getName() : "null");
+            log.error("RENDER_CALLBACK command received with invalid object type: {}",
+                    obj != null ? obj.getClass().getName() : "null");
             return;
         }
-        
+
         ShaderCallbackWrapper wrapper = (ShaderCallbackWrapper) obj;
         CustomShaderProgram shader = wrapper.getShader();
         ShaderRenderCallback callback = wrapper.getCallback();
-        
+
         if (shader == null || callback == null) {
             log.error("RENDER_CALLBACK command received with null shader or callback");
             return;
         }
-        
+
         // Activate the shader
         backend.activateCustomShader(shader);
-        
+
         try {
             // Execute the callback
             callback.render(backend, this);
@@ -1176,42 +1179,57 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
         gl.activeTexture(WebGLRenderingContext.TEXTURE0);
         gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, surface.texture);
-        
+
         // Save current transform and temporarily use identity for screen push
         backend.contextStack.save();
-        backend.contextStack.getTransform().setToIdentity();
-        
-        // no swizzling when pushing to screen, as the surface texture is already in
-        // RGBA format
-        backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.NONE, gl.getCanvas().getWidth(), gl.getCanvas().getHeight());
+        try {
+            backend.contextStack.getTransform().setToIdentity();
 
-        // full-screen quad
+            if (performPostProcessing()) {
+                // Restore previous transform
+                return;
+            }
 
-        float[] verts = {
-                0, 0,
-                width, 0,
-                0, height,
-                0, height,
-                width, 0,
-                width, height
-        };
+            // no swizzling when pushing to screen, as the surface texture is already in
+            // RGBA format
+            backend.useTextureProgram(WebGLSurfaceBackend.SwizzleMode.NONE, gl.getCanvas().getWidth(), gl.getCanvas().getHeight());
 
-        float[] uvs = {
-                0f, 0f,
-                1f, 0f,
-                0f, 1f,
-                0f, 1f,
-                1f, 0f,
-                1f, 1f
-        };
+            // full-screen quad
 
-        backend.uploadQuadVertices(verts, uvs);
-        gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
-        
-        // Restore previous transform
-        backend.contextStack.restore();
-        
-        // Render picking buffer debug visualization if enabled
-        backend.renderPickingDebugIfEnabled(gl.getCanvas().getWidth(), gl.getCanvas().getHeight());
+            float[] verts = {
+                    0, 0,
+                    width, 0,
+                    0, height,
+                    0, height,
+                    width, 0,
+                    width, height
+            };
+
+            float[] uvs = {
+                    0f, 0f,
+                    1f, 0f,
+                    0f, 1f,
+                    0f, 1f,
+                    1f, 0f,
+                    1f, 1f
+            };
+
+            backend.uploadQuadVertices(verts, uvs);
+            gl.drawArrays(WebGLRenderingContext.TRIANGLES, 0, 6);
+
+            // Render picking buffer debug visualization if enabled
+            backend.renderPickingDebugIfEnabled(gl.getCanvas().getWidth(), gl.getCanvas().getHeight());
+        } finally {
+            backend.contextStack.restore();
+        }
+    }
+
+    private boolean performPostProcessing() {
+        for (PostProcessingCallback cb : postProcessingCallbacks) {
+            if (cb.apply(this, surface.texture, gl)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
