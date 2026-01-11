@@ -47,6 +47,8 @@ public class TSocket {
     @Getter
     private volatile int soTimeout;
 
+    private volatile JSConsumer<Object> rejectConnectSocket;
+
     public TSocket(TInetAddress address, int port) throws TUnknownHostException {
         this.host = address.getHost();
         this.port = port;
@@ -112,6 +114,7 @@ public class TSocket {
         // combined with TeaVM's large JS file output, can lead to significant memory use.
         // and when the promise never resolves, that memory is never freed).
         return new JSPromise<WebSocket>((resolve, reject) -> {
+            rejectConnectSocket = reject;
             NetworkMonitor.get().onConnecting(TSocket.this);
             int timeoutId = soTimeout > 0 ? Window.setTimeout(() -> {
                 NetworkMonitor.get().onError(TSocket.this, "Connection timed out");
@@ -136,6 +139,7 @@ public class TSocket {
             }).track(registrations);
         }).onSettled(() -> {
             registrations.cleanup();
+            rejectConnectSocket = null;
             return ws;
         });
     }
@@ -170,6 +174,12 @@ public class TSocket {
         @Override
         public void close() throws IOException {
             super.close();
+
+            if (rejectConnectSocket != null) {
+                rejectConnectSocket.accept(new IOException("Socket closed"));
+                rejectConnectSocket = null;
+            }
+
             signalClosed();
             this.buffers.clear();
             this.curr = null;
