@@ -1,6 +1,10 @@
 package me.mdbell.awtea.sound.worklet;
 
-import me.mdbell.awtea.sound.pcm.messages.*;
+import me.mdbell.awtea.sound.pcm.messages.AudioSegmentMessage;
+import me.mdbell.awtea.sound.pcm.messages.ConsumedMessage;
+import me.mdbell.awtea.sound.pcm.messages.InitMessage;
+import me.mdbell.awtea.sound.pcm.messages.LineMessage;
+import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.JSBody;
@@ -40,7 +44,7 @@ public class PcmProcessor {
 
     private int channels = 0;
     private int queuedFrames = 0;
-    
+
     // Format metadata from InitMessage
     private int sampleRate = 0;
     private int sampleSizeBits = 0;
@@ -48,6 +52,7 @@ public class PcmProcessor {
     private int frameSizeBytes = 0;
 
     public static void main(String[] args) {
+        LoggerFactory.setGlobalLevel(LogLevel.ERROR);
         log.info("Registering PCM Processor");
         registerProcessorFactory();
     }
@@ -152,21 +157,21 @@ public class PcmProcessor {
                 this.sampleSizeBits = initMsg.getSampleSizeBits();
                 this.bigEndian = initMsg.isBigEndian();
                 this.frameSizeBytes = (sampleSizeBits / 8) * channels;
-                log.debug("PCM Processor: Initialized with {} channels, {} Hz, {} bits, {} endian, {} bytes/frame.", 
-                         this.channels, this.sampleRate, this.sampleSizeBits, 
-                         this.bigEndian ? "big" : "little", this.frameSizeBytes);
+                log.debug("PCM Processor: Initialized with {} channels, {} Hz, {} bits, {} endian, {} bytes/frame.",
+                        this.channels, this.sampleRate, this.sampleSizeBits,
+                        this.bigEndian ? "big" : "little", this.frameSizeBytes);
                 break;
             case "pcm":
                 AudioSegmentMessage pcmMsg = (AudioSegmentMessage) msg;
                 QueuedAudioData data = getPooledData();
                 ArrayBuffer buffer = pcmMsg.getData();
                 int frames = pcmMsg.getFrames();
-                
+
                 // Convert raw PCM bytes to float samples
                 byte[] pcmBytes = new Int8Array(buffer).toJavaArray();
                 float[] floatSamples = new float[frames * channels];
                 PcmConverter.convertPcmToFloat(pcmBytes, floatSamples, frames, channels, sampleSizeBits, bigEndian);
-                
+
                 data.data = floatSamples;
                 data.frames = frames;
                 data.channels = channels;
