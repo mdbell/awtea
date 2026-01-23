@@ -7,14 +7,25 @@ public class ShaderPreprocessor {
 
     /**
      * Process shader source with variable substitutions
-     * Variables in shader should be written as:  ${VARIABLE_NAME}
      */
     public static String process(String shaderSource, Map<String, String> variables) {
-        String result = shaderSource;
+
+        StringBuilder defineBlock = new StringBuilder();
         for (Map.Entry<String, String> entry : variables.entrySet()) {
-            String placeholder = "${" + entry.getKey() + "}";
-            result = result.replace(placeholder, entry.getValue());
+            defineBlock.append("#define ").append(entry.getKey()).append(" (").append(entry.getValue()).append(")\n");
         }
+
+        int firstNewline = shaderSource.indexOf('\n');
+        String result;
+        if (shaderSource.startsWith("#version") && firstNewline != -1) {
+            String versionLine = shaderSource.substring(0, firstNewline + 1);
+            String restOfShader = shaderSource.substring(firstNewline + 1);
+            result = versionLine + defineBlock + restOfShader;
+
+        } else {
+            result = defineBlock + shaderSource;
+        }
+
         return result;
     }
 
@@ -22,8 +33,8 @@ public class ShaderPreprocessor {
      * Builder for cleaner syntax
      */
     public static class Builder {
-        private String source;
-        private Map<String, String> vars = new HashMap<>();
+        private final String source;
+        private final Map<String, String> vars = new HashMap<>();
 
         public Builder(String source) {
             this.source = source;
