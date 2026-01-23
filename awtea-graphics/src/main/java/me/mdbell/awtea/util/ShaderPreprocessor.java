@@ -33,12 +33,8 @@ public class ShaderPreprocessor {
      * Builder for cleaner syntax
      */
     public static class Builder {
-        private final String source;
         private final Map<String, String> vars = new HashMap<>();
 
-        public Builder(String source) {
-            this.source = source;
-        }
 
         public Builder define(String name, String value) {
             vars.put(name, value);
@@ -55,12 +51,18 @@ public class ShaderPreprocessor {
             return this;
         }
 
-        public Builder defineVec3(String name, float x, float y, float z) {
+        public Builder vec3(String name, float x, float y, float z) {
             vars.put(name, String.format("vec3(%.6f, %.6f, %.6f)", x, y, z));
             return this;
         }
 
-        public String build() {
+        public Builder fork() {
+            Builder newBuilder = new Builder();
+            newBuilder.vars.putAll(this.vars);
+            return newBuilder;
+        }
+
+        public String build(String source) {
             return process(source, vars);
         }
     }
