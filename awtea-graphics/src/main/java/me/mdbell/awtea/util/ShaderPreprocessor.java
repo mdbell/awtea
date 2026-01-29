@@ -48,6 +48,21 @@ public class ShaderPreprocessor {
         }
 
         /**
+         * Define a boolean flag variable (1 if enabled, not defined if disabled)
+         *
+         * @param name    The variable name
+         * @param enabled Whether the flag is enabled
+         * @return The Builder instance
+         */
+        public Builder defineFlag(String name, boolean enabled) {
+            if (enabled) {
+                vars.put(name, "1");
+            }
+            return this;
+        }
+
+
+        /**
          * Define a float variable
          *
          * @param name  The variable name
@@ -82,6 +97,37 @@ public class ShaderPreprocessor {
          */
         public Builder vec3(String name, float x, float y, float z) {
             vars.put(name, String.format("vec3(%.6f, %.6f, %.6f)", x, y, z));
+            return this;
+        }
+
+        /**
+         * Define a vec4 variable
+         *
+         * @param name The variable name
+         * @param x    The x component
+         * @param y    The y component
+         * @param z    The z component
+         * @param w    The w component
+         * @return The Builder instance
+         */
+        public Builder vec4(String name, float x, float y, float z, float w) {
+            vars.put(name, String.format("vec4(%.6f, %.6f, %.6f, %.6f)", x, y, z, w));
+            return this;
+        }
+
+        /**
+         * Define a mat4 variable
+         *
+         * @param name The variable name
+         * @param m    The 16-element float array representing the matrix
+         * @return The Builder instance
+         */
+        public Builder mat4(String name, float[] m) {
+            if (m.length != 16) throw new IllegalArgumentException("mat4 requires 16 elements");
+            vars.put(name, String.format(
+                    "mat4(%.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f)",
+                    m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15]
+            ));
             return this;
         }
 
