@@ -9,11 +9,12 @@ import org.teavm.jso.file.Blob;
 import org.teavm.jso.file.File;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int8Array;
+import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.runtime.fs.VirtualFileAccessor;
 
 import java.io.IOException;
 
-@ExtensionMethod({JSObjectsExtensions.class})
+@ExtensionMethod({ JSObjectsExtensions.class })
 class OPFSVirtualFileAccessor implements VirtualFileAccessor {
 
     private final FileSystemFileHandle fileHandle;
@@ -35,7 +36,8 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
         File file = fileHandle.getFile().await();
         int fileSize = (int) file.getSize();
 
-        if (position >= fileSize) return -1;
+        if (position >= fileSize)
+            return -1;
 
         // 2. Slice the file to get only the bytes we need
         int end = Math.min(position + limit, fileSize);
@@ -64,7 +66,7 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
 
         Int8Array nativeArray = Int8Array.fromJavaArray(buffer);
 
-        Int8Array sliceArray = nativeArray.subarray(offset, offset + limit);
+        Uint8Array sliceArray = new Uint8Array(nativeArray.getBuffer(), nativeArray.getByteOffset() + offset, limit);
 
         // Write the chunk
         writable.write(sliceArray).await();

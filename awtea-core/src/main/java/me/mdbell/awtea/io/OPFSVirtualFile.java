@@ -1,15 +1,20 @@
 package me.mdbell.awtea.io;
 
+import lombok.experimental.ExtensionMethod;
+import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.jso.FileSystemDirectoryHandle;
 import me.mdbell.awtea.util.jso.FileSystemFileHandle;
 import me.mdbell.awtea.util.jso.FileSystemHandle;
+import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSObjects;
+import org.teavm.jso.core.JSString;
 import org.teavm.jso.file.File;
 import org.teavm.runtime.fs.VirtualFile;
 import org.teavm.runtime.fs.VirtualFileAccessor;
 
 import java.io.IOException;
 
+@ExtensionMethod({ JSObjectsExtensions.class })
 public class OPFSVirtualFile implements VirtualFile {
 
     private final FileSystemDirectoryHandle parentHandle;
@@ -46,7 +51,15 @@ public class OPFSVirtualFile implements VirtualFile {
     @Override
     public String[] listFiles() {
         FileSystemDirectoryHandle dirHandle = (FileSystemDirectoryHandle) handle;
-        return dirHandle.listEntries();
+
+        JSArray<JSString> dirs = dirHandle.keys().await();
+
+        String[] result = new String[dirs.getLength()];
+        for (int i = 0; i < dirs.getLength(); i++) {
+            System.out.printf("Found entry: %s%n", dirs.get(i).stringValue());
+            result[i] = dirs.get(i).stringValue();
+        }
+        return result;
     }
 
     @Override
@@ -62,8 +75,13 @@ public class OPFSVirtualFile implements VirtualFile {
         FileSystemDirectoryHandle dirHandle = (FileSystemDirectoryHandle) handle;
         FileSystemDirectoryHandle.GetFileSystemHandleOptions opts = JSObjects.create();
         opts.setCreate(true);
-        FileSystemFileHandle newHandle = dirHandle.getFileHandle(fileName, opts).await();
-        return newHandle != null;
+        try {
+            FileSystemFileHandle newHandle = dirHandle.getFileHandle(fileName, opts).await();
+            return newHandle != null;
+        } catch (Exception e) {
+            // OPFS throws when an entry exists at this path with directory type.
+            throw new IOException("Could not create file '" + fileName + "'", e);
+        }
     }
 
     @Override
@@ -74,8 +92,13 @@ public class OPFSVirtualFile implements VirtualFile {
         FileSystemDirectoryHandle dirHandle = (FileSystemDirectoryHandle) handle;
         FileSystemDirectoryHandle.GetFileSystemHandleOptions opts = JSObjects.create();
         opts.setCreate(true);
-        FileSystemDirectoryHandle newHandle = dirHandle.getDirectoryHandle(fileName, opts).await();
-        return newHandle != null;
+        try {
+            FileSystemDirectoryHandle newHandle = dirHandle.getDirectoryHandle(fileName, opts).await();
+            return newHandle != null;
+        } catch (Exception e) {
+            // OPFS throws when an entry exists at this path with file type.
+            return false;
+        }
     }
 
     @Override

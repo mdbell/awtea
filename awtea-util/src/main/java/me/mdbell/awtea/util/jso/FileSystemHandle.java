@@ -5,21 +5,21 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.core.JSUndefined;
 
-public abstract class FileSystemHandle implements JSObject {
+public interface FileSystemHandle extends JSObject {
 
     @JSProperty("kind")
-    public native String getKind();
+    String getKind();
 
     @JSProperty("name")
-    public native String getName();
+    String getName();
 
-    public native boolean isSameEntry(FileSystemHandle other);
+    boolean isSameEntry(FileSystemHandle other);
 
-    public native JSPromise<JSUndefined> move(String newName);
+    JSPromise<JSUndefined> move(String newName);
 
-    public native JSPromise<JSUndefined> move(FileSystemDirectoryHandle newParent);
+    JSPromise<JSUndefined> move(FileSystemDirectoryHandle newParent);
 
-    public native JSPromise<JSUndefined> move(FileSystemDirectoryHandle newParent, String newName);
+    JSPromise<JSUndefined> move(FileSystemDirectoryHandle newParent, String newName);
 
     // non baseline methods like queryPermission, requestPermission, etc. are not included for now
 }

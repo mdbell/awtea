@@ -5,15 +5,15 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.file.File;
 
-public class FileSystemFileHandle extends FileSystemHandle {
+public interface FileSystemFileHandle extends FileSystemHandle {
 
-    public native JSPromise<File> getFile();
+    JSPromise<File> getFile();
 
-    public native JSPromise<FileSystemSyncAccessHandle> createSyncAccessHandle();
+    JSPromise<FileSystemSyncAccessHandle> createSyncAccessHandle();
 
-    public native JSPromise<FileSystemWritableFileStream> createWritable();
+    JSPromise<FileSystemWritableFileStream> createWritable();
 
-    public native JSPromise<FileSystemWritableFileStream> createWritable(CreateWritableOptions options);
+    JSPromise<FileSystemWritableFileStream> createWritable(CreateWritableOptions options);
 
     public interface CreateWritableOptions extends JSObject {
         @JSProperty("keepExistingData")
