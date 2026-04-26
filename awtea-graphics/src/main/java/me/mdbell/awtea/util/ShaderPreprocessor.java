@@ -7,25 +7,14 @@ public class ShaderPreprocessor {
 
     /**
      * Process shader source with variable substitutions
+     * Variables in shader should be written as:  ${VARIABLE_NAME}
      */
     public static String process(String shaderSource, Map<String, String> variables) {
-
-        StringBuilder defineBlock = new StringBuilder();
+        String result = shaderSource;
         for (Map.Entry<String, String> entry : variables.entrySet()) {
-            defineBlock.append("#define ").append(entry.getKey()).append(" (").append(entry.getValue()).append(")\n");
+            String placeholder = "${" + entry.getKey() + "}";
+            result = result.replace(placeholder, entry.getValue());
         }
-
-        int firstNewline = shaderSource.indexOf('\n');
-        String result;
-        if (shaderSource.startsWith("#version") && firstNewline != -1) {
-            String versionLine = shaderSource.substring(0, firstNewline + 1);
-            String restOfShader = shaderSource.substring(firstNewline + 1);
-            result = versionLine + defineBlock + restOfShader;
-
-        } else {
-            result = defineBlock + shaderSource;
-        }
-
         return result;
     }
 
@@ -33,7 +22,7 @@ public class ShaderPreprocessor {
      * Builder for cleaner syntax
      */
     public static class Builder {
-        private final Map<String, String> vars = new HashMap<>();
+        private Map<String, String> vars = new HashMap<>();
 
         /**
          * Define a string variable (not quoted - use quotes in value if needed)
@@ -95,7 +84,7 @@ public class ShaderPreprocessor {
          * @param z    The z component
          * @return The Builder instance
          */
-        public Builder vec3(String name, float x, float y, float z) {
+        public Builder defineVec3(String name, float x, float y, float z) {
             vars.put(name, String.format("vec3(%.6f, %.6f, %.6f)", x, y, z));
             return this;
         }
@@ -110,7 +99,7 @@ public class ShaderPreprocessor {
          * @param w    The w component
          * @return The Builder instance
          */
-        public Builder vec4(String name, float x, float y, float z, float w) {
+        public Builder defineVec4(String name, float x, float y, float z, float w) {
             vars.put(name, String.format("vec4(%.6f, %.6f, %.6f, %.6f)", x, y, z, w));
             return this;
         }
