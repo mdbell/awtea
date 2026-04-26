@@ -248,10 +248,16 @@ public class OPFSVirtualFile implements VirtualFile {
 
     @Override
     public long lastModified() {
+        if (isDirectory()) {
+            // TODO: support metadata for files + directories to get real last modified time
+            // for directories
+            return 0;
+        }
         try {
             return (long) getFile().getLastModified();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            return 0;
         }
     }
 
