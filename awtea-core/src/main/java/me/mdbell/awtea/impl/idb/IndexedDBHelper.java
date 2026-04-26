@@ -55,7 +55,7 @@ public class IndexedDBHelper {
 
     private void upgrade(IDBVersionChangeEvent evt) {
         IDBDatabase db = ((IDBOpenDBRequest) evt.getTarget()).getResult();
-
+        
         // nuke the old stores
         for (String storeName : db.getObjectStoreNames()) {
             db.deleteObjectStore(storeName);

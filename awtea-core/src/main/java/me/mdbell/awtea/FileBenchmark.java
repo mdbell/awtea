@@ -1,10 +1,10 @@
 package me.mdbell.awtea;
 
+import me.mdbell.awtea.impl.idb.IndexedDBHelper;
+import me.mdbell.awtea.io.OPFSVirtualFileSystem;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.runtime.fs.VirtualFileSystemProvider;
-import me.mdbell.awtea.impl.idb.IndexedDBHelper;
-import me.mdbell.awtea.impl.idb.IndexedDBVirtualFileSystem;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -22,7 +22,7 @@ public class FileBenchmark {
     public static void main(String[] args) throws IOException {
 
         // comment this out to use the default file system (in-memory)
-        VirtualFileSystemProvider.setInstance(new IndexedDBVirtualFileSystem());
+        VirtualFileSystemProvider.setInstance(new OPFSVirtualFileSystem());
 
         // in case file is left over from previous run
         if (IndexedDBHelper.isFile("/" + FILE_PATH) && !IndexedDBHelper.deleteFile("/" + FILE_PATH)) {
