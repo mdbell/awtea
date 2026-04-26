@@ -1,7 +1,7 @@
 package me.mdbell.awtea;
 
 import me.mdbell.awtea.impl.idb.IndexedDBHelper;
-import me.mdbell.awtea.io.OPFSVirtualFileSystem;
+import me.mdbell.awtea.io.opfs.OPFSVirtualFileSystem;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.runtime.fs.VirtualFileSystemProvider;

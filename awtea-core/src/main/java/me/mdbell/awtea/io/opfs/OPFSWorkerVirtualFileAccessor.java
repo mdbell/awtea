@@ -1,16 +1,13 @@
-package me.mdbell.awtea.io;
+package me.mdbell.awtea.io.opfs;
 
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.jso.FileSystemFileHandle;
-import me.mdbell.awtea.util.jso.JSRecord;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
-import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSPromise;
-import org.teavm.jso.core.JSString;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
 import org.teavm.jso.typedarrays.ArrayBuffer;
@@ -22,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@ExtensionMethod({ JSObjectsExtensions.class })
+@ExtensionMethod({JSObjectsExtensions.class})
 class OPFSWorkerVirtualFileAccessor implements VirtualFileAccessor {
 
     private static final String WORKER_SYNC_PROPERTY = "me.mdbell.awtea.io.opfs.worker_sync";
@@ -331,12 +328,12 @@ class OPFSWorkerVirtualFileAccessor implements VirtualFileAccessor {
     @JSBody(params = "url", script = "return new Worker(url);")
     private static native JSObject createWorker(String url);
 
-    @JSBody(params = { "worker", "handler" }, script = "worker.onmessage = handler;")
+    @JSBody(params = {"worker", "handler"}, script = "worker.onmessage = handler;")
     private static native void setOnMessage(JSObject worker, EventListener<MessageEvent> handler);
 
-    @JSBody(params = { "worker", "message",
-            "transfer" }, script = "if (transfer && transfer.length) { worker.postMessage(message, transfer); }"
-                    + "else { worker.postMessage(message); }")
+    @JSBody(params = {"worker", "message",
+            "transfer"}, script = "if (transfer && transfer.length) { worker.postMessage(message, transfer); }"
+            + "else { worker.postMessage(message); }")
     private static native void postToWorker(JSObject worker, WorkerMessage message, JSObject... transfer);
 
     @JSBody(script = "return typeof Worker !== 'undefined' && typeof navigator !== 'undefined' && !!navigator.storage && !!navigator.storage.getDirectory;")

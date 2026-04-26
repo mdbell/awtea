@@ -1,4 +1,4 @@
-package me.mdbell.awtea.io;
+package me.mdbell.awtea.io.opfs;
 
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.util.JSObjectsExtensions;
@@ -14,7 +14,7 @@ import org.teavm.runtime.fs.VirtualFileAccessor;
 
 import java.io.IOException;
 
-@ExtensionMethod({ JSObjectsExtensions.class })
+@ExtensionMethod({JSObjectsExtensions.class})
 class OPFSVirtualFileAccessor implements VirtualFileAccessor {
 
     private final FileSystemFileHandle fileHandle;

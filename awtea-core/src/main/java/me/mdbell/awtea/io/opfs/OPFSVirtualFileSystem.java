@@ -1,4 +1,4 @@
-package me.mdbell.awtea.io;
+package me.mdbell.awtea.io.opfs;
 
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.util.JSObjectsExtensions;

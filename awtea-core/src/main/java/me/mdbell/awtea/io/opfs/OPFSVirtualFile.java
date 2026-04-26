@@ -1,4 +1,4 @@
-package me.mdbell.awtea.io;
+package me.mdbell.awtea.io.opfs;
 
 import me.mdbell.awtea.util.jso.FileSystemDirectoryHandle;
 import me.mdbell.awtea.util.jso.FileSystemFileHandle;
@@ -33,7 +33,7 @@ public class OPFSVirtualFile implements VirtualFile {
     }
 
     private OPFSVirtualFile(FileSystemDirectoryHandle parentHandle, String name,
-            FileSystemDirectoryHandle rootDirectoryHandle) {
+                            FileSystemDirectoryHandle rootDirectoryHandle) {
         this.parentHandle = parentHandle;
         this.name = name;
         this.rootDirectoryHandle = rootDirectoryHandle;

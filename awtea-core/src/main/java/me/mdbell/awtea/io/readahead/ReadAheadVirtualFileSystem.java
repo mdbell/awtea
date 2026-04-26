@@ -1,4 +1,4 @@
-package me.mdbell.awtea.io;
+package me.mdbell.awtea.io.readahead;
 
 import org.teavm.runtime.fs.VirtualFile;
 import org.teavm.runtime.fs.VirtualFileSystem;
