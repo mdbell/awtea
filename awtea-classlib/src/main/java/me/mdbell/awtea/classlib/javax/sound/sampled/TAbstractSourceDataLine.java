@@ -69,7 +69,7 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
      * Enqueue up to `length` bytes from the `bytes` array starting at `offset`.
      * Bytes are raw PCM data.
      *
-     * @param bytes the byte array containing PCM data
+     * @param bytes  the byte array containing PCM data
      * @param offset the offset in the byte array to start reading from
      * @param length the number of bytes to enqueue
      * @return The number of bytes accepted or 0 if full
@@ -305,14 +305,14 @@ public abstract class TAbstractSourceDataLine implements TSourceDataLine, AudioC
                 }
                 continue;
             }
-            
+
             int framesEnqueued = bytesEnqueued / frameSizeBytes;
             currentFramePosition += framesEnqueued;
 
             writtenBytes += bytesEnqueued;
 
             LineMonitor.get().onWrite(this, bytesEnqueued);
-            onSamplesChunk(b, offsetInArray, framesEnqueued);
+//            onSamplesChunk(b, offsetInArray, framesEnqueued);
         }
 
         return writtenBytes;

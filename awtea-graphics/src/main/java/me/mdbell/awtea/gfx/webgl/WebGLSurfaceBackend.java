@@ -1,5 +1,7 @@
 package me.mdbell.awtea.gfx.webgl;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
 import me.mdbell.awtea.gl.Shaders;
@@ -48,6 +50,9 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
     private final WebGLBuffer quadBuffer;
     private final WebGLBuffer quadTexCoordBuffer;
+
+    @Getter(AccessLevel.PACKAGE)
+    private final TexturePool texturePool;
 
     // state tracking
 
@@ -111,6 +116,8 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
 
         quadBuffer = gl.createBuffer();
         quadTexCoordBuffer = gl.createBuffer();
+
+        texturePool = new TexturePool(gl);
     }
 
     void setRectBuffer(float x, float y, float width, float height) {
