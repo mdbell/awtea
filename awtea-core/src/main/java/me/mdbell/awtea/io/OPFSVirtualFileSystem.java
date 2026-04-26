@@ -34,7 +34,6 @@ public class OPFSVirtualFileSystem implements VirtualFileSystem {
     public VirtualFile getFile(String path) {
         FileSystemDirectoryHandle.GetFileSystemHandleOptions options = JSObjects.create();
         options.setCreate(false);
-        System.out.println("OPFSVirtualFileSystem.getFile: " + path);
         if (path == null || path.isEmpty() || "/".equals(path)) {
             return OPFSVirtualFile.root(getRootHandle());
         }

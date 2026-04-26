@@ -58,7 +58,6 @@ public class OPFSVirtualFile implements VirtualFile {
             return null;
         }
         try {
-            System.out.println("OPFSVirtualFile.getExistingDirectoryHandle: " + name);
             directoryHandle = parentHandle.getDirectoryHandle(name, noCreateOptions).await();
             return directoryHandle;
         } catch (Exception ignored) {
@@ -154,6 +153,10 @@ public class OPFSVirtualFile implements VirtualFile {
             FileSystemFileHandle handle = writable ? getOrCreateFileHandle() : getExistingFileHandle();
             if (handle == null) {
                 throw new IOException("Not a file: " + name);
+            }
+            if (OPFSWorkerVirtualFileAccessor.isEnabled() &&
+                    OPFSWorkerVirtualFileAccessor.isSupported(handle)) {
+                return new OPFSWorkerVirtualFileAccessor(handle);
             }
             return new OPFSVirtualFileAccessor(handle);
         } catch (IOException e) {
