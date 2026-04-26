@@ -1,11 +1,9 @@
 package me.mdbell.awtea.io;
 
-import lombok.experimental.ExtensionMethod;
-import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.jso.FileSystemDirectoryHandle;
 import me.mdbell.awtea.util.jso.FileSystemFileHandle;
 import me.mdbell.awtea.util.jso.FileSystemHandle;
-import org.teavm.jso.core.JSArray;
+import me.mdbell.awtea.util.jso.JSAsyncIterators;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSString;
 import org.teavm.jso.file.File;
@@ -13,66 +11,163 @@ import org.teavm.runtime.fs.VirtualFile;
 import org.teavm.runtime.fs.VirtualFileAccessor;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-@ExtensionMethod({ JSObjectsExtensions.class })
 public class OPFSVirtualFile implements VirtualFile {
 
     private final FileSystemDirectoryHandle parentHandle;
-    private final FileSystemHandle handle;
+    private final String name;
+    private final FileSystemDirectoryHandle rootDirectoryHandle;
+    private FileSystemDirectoryHandle directoryHandle;
+    private FileSystemFileHandle fileHandle;
 
-    public OPFSVirtualFile(FileSystemDirectoryHandle parent, FileSystemHandle handle) {
-        this.parentHandle = parent;
-        this.handle = handle;
+    private static final FileSystemDirectoryHandle.GetFileSystemHandleOptions noCreateOptions = JSObjects.create();
+
+    static {
+        noCreateOptions.setCreate(false);
+    }
+
+    public OPFSVirtualFile(FileSystemDirectoryHandle parentHandle, String name) {
+        this(parentHandle, name, null);
+    }
+
+    private OPFSVirtualFile(FileSystemDirectoryHandle parentHandle, String name,
+            FileSystemDirectoryHandle rootDirectoryHandle) {
+        this.parentHandle = parentHandle;
+        this.name = name;
+        this.rootDirectoryHandle = rootDirectoryHandle;
+    }
+
+    public static OPFSVirtualFile root(FileSystemDirectoryHandle rootHandle) {
+        return new OPFSVirtualFile(null, "/", rootHandle);
+    }
+
+    private boolean isRoot() {
+        return rootDirectoryHandle != null;
+    }
+
+    private FileSystemDirectoryHandle getExistingDirectoryHandle() {
+        if (isRoot()) {
+            return rootDirectoryHandle;
+        }
+        if (directoryHandle != null) {
+            return directoryHandle;
+        }
+        if (parentHandle == null || name == null || name.isEmpty()) {
+            return null;
+        }
+        try {
+            System.out.println("OPFSVirtualFile.getExistingDirectoryHandle: " + name);
+            directoryHandle = parentHandle.getDirectoryHandle(name, noCreateOptions).await();
+            return directoryHandle;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private FileSystemFileHandle getExistingFileHandle() {
+        if (isRoot()) {
+            return null;
+        }
+        if (fileHandle != null) {
+            return fileHandle;
+        }
+        if (parentHandle == null || name == null || name.isEmpty()) {
+            return null;
+        }
+        try {
+            fileHandle = parentHandle.getFileHandle(name, noCreateOptions).await();
+            return fileHandle;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private FileSystemFileHandle getOrCreateFileHandle() throws IOException {
+        FileSystemFileHandle existing = getExistingFileHandle();
+        if (existing != null) {
+            return existing;
+        }
+        if (isRoot() || parentHandle == null || name == null || name.isEmpty()) {
+            throw new IOException("Not a file");
+        }
+
+        FileSystemDirectoryHandle.GetFileSystemHandleOptions opts = JSObjects.create();
+        opts.setCreate(true);
+        try {
+            fileHandle = parentHandle.getFileHandle(name, opts).await();
+            return fileHandle;
+        } catch (Exception e) {
+            throw new IOException("Could not create file '" + name + "'", e);
+        }
+    }
+
+    private FileSystemHandle getExistingHandle() {
+        FileSystemDirectoryHandle existingDir = getExistingDirectoryHandle();
+        if (existingDir != null) {
+            return existingDir;
+        }
+        return getExistingFileHandle();
     }
 
     private File getFile() throws IOException {
-        if (!isFile()) {
+        FileSystemFileHandle existing = getExistingFileHandle();
+        if (existing == null) {
             throw new IOException("Not a file");
         }
-        FileSystemFileHandle fileHandle = (FileSystemFileHandle) handle;
-        return fileHandle.getFile().await();
+        return existing.getFile().await();
     }
 
     @Override
     public String getName() {
-        return this.handle.getName();
+        return name;
     }
 
     @Override
     public boolean isDirectory() {
-        return "directory".equals(this.handle.getKind());
+        return getExistingDirectoryHandle() != null;
     }
 
     @Override
     public boolean isFile() {
-        return "file".equals(this.handle.getKind());
+        return getExistingFileHandle() != null;
     }
 
     @Override
     public String[] listFiles() {
-        FileSystemDirectoryHandle dirHandle = (FileSystemDirectoryHandle) handle;
-
-        JSArray<JSString> dirs = dirHandle.keys().await();
-
-        String[] result = new String[dirs.getLength()];
-        for (int i = 0; i < dirs.getLength(); i++) {
-            System.out.printf("Found entry: %s%n", dirs.get(i).stringValue());
-            result[i] = dirs.get(i).stringValue();
+        FileSystemDirectoryHandle dirHandle = getExistingDirectoryHandle();
+        if (dirHandle == null) {
+            return new String[0];
         }
-        return result;
+
+        List<String> result = new ArrayList<>();
+        for (String key : JSAsyncIterators.map(dirHandle.keys(), JSString::stringValue)) {
+            result.add(key);
+        }
+        return result.toArray(new String[0]);
     }
 
     @Override
     public VirtualFileAccessor createAccessor(boolean readable, boolean writable, boolean append) {
-        return new OPFSVirtualFileAccessor((FileSystemFileHandle) this.handle);
+        try {
+            FileSystemFileHandle handle = writable ? getOrCreateFileHandle() : getExistingFileHandle();
+            if (handle == null) {
+                throw new IOException("Not a file: " + name);
+            }
+            return new OPFSVirtualFileAccessor(handle);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public boolean createFile(String fileName) throws IOException {
-        if (!isDirectory()) {
+        System.out.println("OPFSVirtualFile.createFile: " + fileName);
+        FileSystemDirectoryHandle dirHandle = getExistingDirectoryHandle();
+        if (dirHandle == null) {
             throw new IOException("Not a directory");
         }
-        FileSystemDirectoryHandle dirHandle = (FileSystemDirectoryHandle) handle;
         FileSystemDirectoryHandle.GetFileSystemHandleOptions opts = JSObjects.create();
         opts.setCreate(true);
         try {
@@ -86,10 +181,11 @@ public class OPFSVirtualFile implements VirtualFile {
 
     @Override
     public boolean createDirectory(String fileName) {
-        if (!isDirectory()) {
+        System.out.println("OPFSVirtualFile.createDirectory: " + fileName);
+        FileSystemDirectoryHandle dirHandle = getExistingDirectoryHandle();
+        if (dirHandle == null) {
             return false;
         }
-        FileSystemDirectoryHandle dirHandle = (FileSystemDirectoryHandle) handle;
         FileSystemDirectoryHandle.GetFileSystemHandleOptions opts = JSObjects.create();
         opts.setCreate(true);
         try {
@@ -103,13 +199,13 @@ public class OPFSVirtualFile implements VirtualFile {
 
     @Override
     public boolean delete() {
-        if (parentHandle == null) {
+        if (parentHandle == null || isRoot()) {
             return false; // Cannot delete root
         }
         FileSystemDirectoryHandle.RemoveEntryOptions opts = JSObjects.create();
         opts.setRecursive(true); // Ensure directories are deleted with their contents
         try {
-            parentHandle.removeEntry(handle.getName(), opts).await();
+            parentHandle.removeEntry(name, opts).await();
         } catch (Exception e) {
             return false; // Deletion failed (e.g. due to permissions)
         }
@@ -118,15 +214,19 @@ public class OPFSVirtualFile implements VirtualFile {
 
     @Override
     public boolean adopt(VirtualFile file, String fileName) {
-        if (!isDirectory()) {
+        FileSystemDirectoryHandle destDir = getExistingDirectoryHandle();
+        if (destDir == null) {
             return false;
         }
         OPFSVirtualFile source = (OPFSVirtualFile) file;
-        FileSystemDirectoryHandle destDir = (FileSystemDirectoryHandle) this.handle;
+        FileSystemHandle sourceHandle = source.getExistingHandle();
+        if (sourceHandle == null) {
+            return false;
+        }
 
         // 1. Try the efficient move first
         try {
-            source.handle.move(destDir).await();
+            sourceHandle.move(destDir).await();
             return true;
         } catch (Exception ignored) {
             return false;

@@ -19,6 +19,7 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
 
     private final FileSystemFileHandle fileHandle;
     private int position = 0;
+    private FileSystemWritableFileStream writable;
 
     private static final FileSystemFileHandle.CreateWritableOptions writeOptions = JSObjects.create();
 
@@ -30,8 +31,25 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
         this.fileHandle = file;
     }
 
+    private FileSystemWritableFileStream getWritable() {
+        if (writable == null) {
+            writable = fileHandle.createWritable(writeOptions).await();
+        }
+        return writable;
+    }
+
+    private void closeWritableIfOpen() {
+        if (writable == null) {
+            return;
+        }
+        writable.close().await();
+        writable = null;
+    }
+
     @Override
     public int read(byte[] buffer, int offset, int limit) throws IOException {
+        closeWritableIfOpen();
+
         // 1. Get a snapshot of the file
         File file = fileHandle.getFile().await();
         int fileSize = (int) file.getSize();
@@ -43,23 +61,18 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
         int end = Math.min(position + limit, fileSize);
         Blob slice = file.slice(position, end);
 
-        Int8Array nativeArray = Int8Array.fromJavaArray(buffer);
-        ArrayBuffer data = slice.arrayBuffer().await();
-
-        Int8Array sliceArray = new Int8Array(data);
-        nativeArray.set(sliceArray, offset);
-
         int bytesRead = end - position;
+        ArrayBuffer data = slice.arrayBuffer().await();
+        byte[] readBytes = new Int8Array(data).toJavaArray();
+        System.arraycopy(readBytes, 0, buffer, offset, bytesRead);
+
         position += bytesRead;
         return bytesRead;
     }
 
     @Override
     public void write(byte[] buffer, int offset, int limit) throws IOException {
-        // WARNING: On the main thread, 'createWritable' usually wipes the file
-        // or creates a temp file. For true random access, we have to be careful.
-
-        FileSystemWritableFileStream writable = fileHandle.createWritable(writeOptions).await();
+        FileSystemWritableFileStream writable = getWritable();
 
         // Seek to the current position in the stream
         writable.seek(position).await();
@@ -70,9 +83,6 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
 
         // Write the chunk
         writable.write(sliceArray).await();
-
-        // In OPFS main thread, you MUST close to persist
-        writable.close().await();
 
         position += limit;
     }
@@ -94,11 +104,13 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
 
     @Override
     public int size() throws IOException {
+        closeWritableIfOpen();
         return (int) fileHandle.getFile().await().getSize();
     }
 
     @Override
     public void resize(int size) throws IOException {
+        closeWritableIfOpen();
         FileSystemWritableFileStream writable = fileHandle.createWritable(writeOptions).await();
         writable.truncate(size).await();
         writable.close().await();
@@ -106,11 +118,11 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
 
     @Override
     public void close() throws IOException {
-
+        closeWritableIfOpen();
     }
 
     @Override
     public void flush() throws IOException {
-
+        closeWritableIfOpen();
     }
 }

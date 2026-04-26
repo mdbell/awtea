@@ -1,19 +1,22 @@
 package me.mdbell.awtea.io;
 
+import lombok.experimental.ExtensionMethod;
+import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.jso.FileSystemDirectoryHandle;
-import me.mdbell.awtea.util.jso.FileSystemFileHandle;
 import me.mdbell.awtea.util.jso.StorageManager;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.core.JSObjects;
 import org.teavm.runtime.fs.VirtualFile;
 import org.teavm.runtime.fs.VirtualFileSystem;
 
+@ExtensionMethod({JSObjectsExtensions.class})
 public class OPFSVirtualFileSystem implements VirtualFileSystem {
 
     private static final StorageManager storage = getStorage();
 
     private FileSystemDirectoryHandle rootHandle;
 
-    private String[] roots = new String[] { "/" };
+    private String[] roots = new String[]{"/"};
 
     private FileSystemDirectoryHandle getRootHandle() {
         if (rootHandle == null) {
@@ -29,13 +32,15 @@ public class OPFSVirtualFileSystem implements VirtualFileSystem {
 
     @Override
     public VirtualFile getFile(String path) {
+        FileSystemDirectoryHandle.GetFileSystemHandleOptions options = JSObjects.create();
+        options.setCreate(false);
+        System.out.println("OPFSVirtualFileSystem.getFile: " + path);
         if (path == null || path.isEmpty() || "/".equals(path)) {
-            return new OPFSVirtualFile(null, getRootHandle());
+            return OPFSVirtualFile.root(getRootHandle());
         }
 
         String[] parts = canonicalize(path).split("/");
         FileSystemDirectoryHandle currentDir = getRootHandle();
-        FileSystemDirectoryHandle parentDir = null;
 
         for (int i = 0; i < parts.length; i++) {
             String part = parts[i];
@@ -44,43 +49,22 @@ public class OPFSVirtualFileSystem implements VirtualFileSystem {
             }
 
             boolean isLastPart = i == parts.length - 1;
+            if (isLastPart) {
+                return new OPFSVirtualFile(currentDir, part);
+            }
 
-            if (!isLastPart) {
-                try {
-                    FileSystemDirectoryHandle nextDir = currentDir.getDirectoryHandle(part).await();
-                    if (nextDir == null) {
-                        return null;
-                    }
-                    parentDir = currentDir;
-                    currentDir = nextDir;
-                    continue;
-                } catch (Exception e) {
+            try {
+                FileSystemDirectoryHandle nextDir = currentDir.getDirectoryHandle(part, options).await();
+                if (nextDir == null) {
                     return null;
                 }
+                currentDir = nextDir;
+            } catch (Exception e) {
+                return null;
             }
-
-            try {
-                FileSystemDirectoryHandle dirHandle = currentDir.getDirectoryHandle(part).await();
-                if (dirHandle != null) {
-                    return new OPFSVirtualFile(currentDir, dirHandle);
-                }
-            } catch (Exception ignored) {
-                // Fall back to checking for a file with the same name.
-            }
-
-            try {
-                FileSystemFileHandle fileHandle = currentDir.getFileHandle(part).await();
-                if (fileHandle != null) {
-                    return new OPFSVirtualFile(currentDir, fileHandle);
-                }
-            } catch (Exception ignored) {
-                // File does not exist.
-            }
-
-            return null;
         }
 
-        return new OPFSVirtualFile(parentDir, currentDir);
+        return OPFSVirtualFile.root(currentDir);
     }
 
     @Override

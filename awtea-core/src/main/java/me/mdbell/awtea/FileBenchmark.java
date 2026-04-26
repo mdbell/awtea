@@ -6,9 +6,11 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.runtime.fs.VirtualFileSystemProvider;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Random;
 
 public class FileBenchmark {
@@ -23,7 +25,7 @@ public class FileBenchmark {
 
         // comment this out to use the default file system (in-memory)
         VirtualFileSystemProvider.setInstance(new OPFSVirtualFileSystem());
-
+//        VirtualFileSystemProvider.setInstance(new IndexedDBVirtualFileSystem());
         // in case file is left over from previous run
         if (IndexedDBHelper.isFile("/" + FILE_PATH) && !IndexedDBHelper.deleteFile("/" + FILE_PATH)) {
             log.info("Failed to delete existing file");
@@ -45,16 +47,24 @@ public class FileBenchmark {
     }
 
     private static void verifyFileContents() throws IOException {
+        byte[] expected = new byte[BUFFER_SIZE];
         byte[] buffer = new byte[BUFFER_SIZE];
-        new Random().nextBytes(buffer); // Fill buffer with random data
+        new Random().nextBytes(expected); // Fill buffer with random data
 
         int expectedChecksum = 0;
 
+        File f = new File(FILE_PATH);
+        if (f.exists()) {
+            log.info("Deleting existing file for verification...");
+            f.delete();
+        }
+
         // write the file
-        try (FileOutputStream fos = new FileOutputStream(FILE_PATH)) {
+        System.out.println("Writing file for verification...");
+        try (FileOutputStream fos = new FileOutputStream(f)) {
             for (int i = 0; i < ((FILE_SIZE_MB / 2) * 1024 * 1024) / BUFFER_SIZE; i++) {
-                fos.write(buffer);
-                for (byte b : buffer) {
+                fos.write(expected);
+                for (byte b : expected) {
                     expectedChecksum += b;
                 }
             }
@@ -63,17 +73,23 @@ public class FileBenchmark {
         // read the file again to verify the checksum
         int actualChecksum = 0;
 
-        try (FileInputStream fis = new FileInputStream(FILE_PATH)) {
+        System.out.println("Reading file for verification...");
+        try (FileInputStream fis = new FileInputStream(f)) {
             int bytesRead;
             while ((bytesRead = fis.read(buffer)) != -1) {
                 for (int i = 0; i < bytesRead; i++) {
                     actualChecksum += buffer[i];
+                    if (buffer[i % BUFFER_SIZE] != expected[i % BUFFER_SIZE]) {
+                        throw new IOException("Data mismatch at byte " + i + ". Expected: " + expected[i % BUFFER_SIZE]
+                                + ", Actual: " + buffer[i % BUFFER_SIZE]);
+                    }
                 }
+                Arrays.fill(buffer, (byte) 0); // Clear buffer for next read
             }
         }
 
         if (expectedChecksum != actualChecksum) {
-            throw new IOException("Checksum mismatch");
+            throw new IOException("Checksum mismatch. Expected: " + expectedChecksum + ", Actual: " + actualChecksum);
         }
     }
 
@@ -92,8 +108,6 @@ public class FileBenchmark {
 
     private static long benchmarkRead() throws IOException {
         byte[] buffer = new byte[BUFFER_SIZE];
-
-        int calculatedChecksum = 0;
 
         long startTime = System.nanoTime();
         try (FileInputStream fis = new FileInputStream(FILE_PATH)) {

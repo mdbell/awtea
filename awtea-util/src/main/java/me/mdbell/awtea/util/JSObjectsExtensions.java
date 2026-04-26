@@ -1,6 +1,8 @@
 package me.mdbell.awtea.util;
 
 import me.mdbell.awtea.util.jso.FileSystemDirectoryHandle;
+import me.mdbell.awtea.util.jso.FileSystemHandle;
+import me.mdbell.awtea.util.jso.JSAsyncIterator;
 import me.mdbell.awtea.util.jso.JSRecord;
 import me.mdbell.awtea.util.jso.MediaQueryList;
 import org.teavm.jso.JSBody;
@@ -37,19 +39,19 @@ public final class JSObjectsExtensions {
         return obj == null || JSObjects.isUndefined(obj);
     }
 
-    @JSBody(params = {"arr", "begin", "end"}, script = "arr.subarray(begin, end)")
+    @JSBody(params = { "arr", "begin", "end" }, script = "arr.subarray(begin, end)")
     public static native <T extends TypedArray> T subarray(T arr, int begin, int end);
 
-    @JSBody(params = {"context", "enabled"}, script = "context.imageSmoothingEnabled = enabled;")
+    @JSBody(params = { "context", "enabled" }, script = "context.imageSmoothingEnabled = enabled;")
     public static native void setImageSmoothingEnabled(CanvasRenderingContext2D context, boolean enabled);
 
-    @JSBody(params = {"window", "query"}, script = "return window.matchMedia(query);")
+    @JSBody(params = { "window", "query" }, script = "return window.matchMedia(query);")
     public static native MediaQueryList matchMedia(Window window, String query);
 
     public static CanvasRenderingContext2D getContext2d(HTMLCanvasElement element, boolean frequentReads) {
         JSRecord options = JSRecord.create();
         options.put("alpha", false);
-//        options.put("willReadFrequently", JSBoolean.valueOf(frequentReads));
+        // options.put("willReadFrequently", JSBoolean.valueOf(frequentReads));
         return (CanvasRenderingContext2D) element.getContext("2d", options);
     }
 
@@ -59,16 +61,16 @@ public final class JSObjectsExtensions {
         return (WebGL2RenderingContext) element.getContext("webgl2", options);
     }
 
-    @JSBody(params = {"blob"}, script = "return (window.URL || window.webkitURL).createObjectURL(blob);")
+    @JSBody(params = { "blob" }, script = "return (window.URL || window.webkitURL).createObjectURL(blob);")
     public static native String createObjectUrl(JSObject blob);
 
-    @JSBody(params = {"url"}, script = "return (window.URL || window.webkitURL).revokeObjectURL(url);")
+    @JSBody(params = { "url" }, script = "return (window.URL || window.webkitURL).revokeObjectURL(url);")
     public static native void revokeObjectUrl(String url);
 
     @JSByRef
-    @JSBody(params = {"arr"}, script = "return arr;")
+    @JSBody(params = { "arr" }, script = "return arr;")
     public static native byte[] getArrayFromJS(Uint8ClampedArray arr);
 
-    @JSBody(params = {"dir"}, script = "return Array.fromAsync(dir.keys());")
-    public static native JSPromise<JSArray<JSString>> keys(FileSystemDirectoryHandle handle);
+    @JSBody(params = { "iterator" }, script = "return Array.fromAsync(iterator);")
+    public static native <T extends JSObject> JSPromise<JSArray<T>> toArray(JSAsyncIterator<T> iterator);
 }

@@ -7,15 +7,24 @@ public class ShaderPreprocessor {
 
     /**
      * Process shader source with variable substitutions
-     * Variables in shader should be written as:  ${VARIABLE_NAME}
+     * Variables are defined in the file using #define VAR_NAME value
      */
     public static String process(String shaderSource, Map<String, String> variables) {
-        String result = shaderSource;
+        StringBuilder defines = new StringBuilder();
         for (Map.Entry<String, String> entry : variables.entrySet()) {
-            String placeholder = "${" + entry.getKey() + "}";
-            result = result.replace(placeholder, entry.getValue());
+            defines.append("#define ").append(entry.getKey()).append(" ").append(entry.getValue()).append("\n");
         }
-        return result;
+        // check if the shader source already has a #version directive, if so insert defines after it, otherwise insert at the top
+        int versionIndex = shaderSource.indexOf("#version");
+        if (versionIndex != -1) {
+            int lineEndIndex = shaderSource.indexOf("\n", versionIndex);
+            if (lineEndIndex != -1) {
+                shaderSource = shaderSource.substring(0, lineEndIndex + 1) + defines.toString() + shaderSource.substring(lineEndIndex + 1);
+            } else {
+                shaderSource = shaderSource + "\n" + defines.toString();
+            }
+        }
+        return shaderSource;
     }
 
     /**

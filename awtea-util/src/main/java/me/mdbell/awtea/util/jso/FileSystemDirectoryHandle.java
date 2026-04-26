@@ -2,7 +2,9 @@ package me.mdbell.awtea.util.jso;
 
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSPromise;
+import org.teavm.jso.core.JSString;
 import org.teavm.jso.core.JSUndefined;
 
 public interface FileSystemDirectoryHandle extends FileSystemHandle {
@@ -19,7 +21,11 @@ public interface FileSystemDirectoryHandle extends FileSystemHandle {
 
     JSPromise<String[]> resolve(FileSystemHandle possibleDescendant);
 
-    //TODO: entries(), keys(), values(), etc. are not included for now, as they require async iterators which are not (?) supported by TeaVM
+    JSAsyncIterator<JSString> keys();
+
+    JSAsyncIterator<FileSystemHandle> values();
+
+    JSAsyncIterator<JSArray<JSObject>> entries();
 
     public interface GetFileSystemHandleOptions extends JSObject {
         @JSProperty("create")
