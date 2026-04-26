@@ -171,6 +171,16 @@ public class TrueTypeFont {
 		return (getAscentUnits() - getDescentUnits() + getLineGapUnits()) * s;
 	}
 
+	public float getLineGapPx(float pixelSize) {
+		float s = getScaleForPixelSize(pixelSize);
+		return getLineGapUnits() * s;
+	}
+
+	public float getMaxAdvancePx(float pixelSize) {
+		float s = getScaleForPixelSize(pixelSize);
+		return hheaTable.getAdvanceWidthMax() * s;
+	}
+
 	public float getScaleForPixelSize(float pixelSize) {
 		return pixelSize / (float) getUnitsPerEm();
 	}
