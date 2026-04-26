@@ -44,7 +44,7 @@ between **heavyweight** components (with DOM elements and peers) and **lightweig
 | `Canvas`     | **Lightweight** | `TCanvas`                 | ❌ None                                                     | Drawable area, renders to parent's surface             |
 | `Button`     | **Lightweight** | `TButton`                 | ❌ None                                                     | Clickable button drawn via graphics primitives         |
 | `Label`      | **Lightweight** | `TLabel`                  | ❌ None                                                     | Static text rendered via `drawString()`                |
-| `TextField`  | **Hybrid**      | _Not yet implemented_     | ⚠️ Possible `<input>` overlay                              | May use DOM overlay for native keyboard/accessibility  |
+| `TextField`  | **Lightweight** | `TTextField`              | ❌ None                                                     | Single-line text input with caret and selection        |
 | `TextArea`   | **Hybrid**      | _Not yet implemented_     | ⚠️ Possible `<textarea>` overlay                           | May use DOM overlay for native text editing            |
 | `Checkbox`   | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Checkbox drawn via graphics primitives                 |
 | `List`       | **Lightweight** | _Not yet implemented_     | ❌ None                                                     | Scrollable list component                              |
@@ -97,6 +97,7 @@ java.awt.Component (AWT API)
    ├─ TCanvas (lightweight drawable area)
    ├─ TButton (lightweight button with action events)
    ├─ TLabel (lightweight text label)
+   ├─ TTextField (lightweight single-line text input)
    ├─ TContainer (lightweight container)
    │  ├─ TPanel (lightweight panel with default FlowLayout)
    │  │  └─ TApplet (extends TPanel for proper layout management)
@@ -106,7 +107,7 @@ java.awt.Component (AWT API)
    │  ├─ TJComponent (Swing base)
    │  │  └─ TJPanel (Swing panel)
    │  └─ (future: ScrollPane, etc.)
-   └─ (future: TextField, TextArea, Checkbox, List, Choice, Scrollbar, etc.)
+   └─ (future: TextArea, Checkbox, List, Choice, Scrollbar, etc.)
 
 MenuComponent (separate AWT hierarchy)
 ├─ MenuBar
@@ -433,6 +434,9 @@ For text input components, consider a hybrid approach:
 - [`TContainer.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TContainer.java) - Container
   base
 - [`TCanvas.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TCanvas.java) - Lightweight canvas
+- [`TButton.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TButton.java) - Lightweight button
+- [`TLabel.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TLabel.java) - Lightweight label
+- [`TTextField.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TTextField.java) - Lightweight text field
 - [`TSurface.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TSurface.java) - Heavyweight base
 - [`TWindow.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TWindow.java) - Abstract heavyweight window base with pack()
 - [`TFrame.java`](../awtea-classlib/src/main/java/me/mdbell/awtea/classlib/java/awt/TFrame.java) - Frame window
