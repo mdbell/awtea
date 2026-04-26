@@ -53,13 +53,14 @@ public class ReadAheadVirtualFileAccessor implements VirtualFileAccessor {
             return;
         }
 
-        delegate.seek(writeBufferStart);
+        int start = writeBufferStart;
+        delegate.seek(start);
         delegate.write(writeBuffer.buffer(), 0, buffered);
         writeBuffer.reset();
         writeBufferStart = -1;
 
         if (cachedSize != -1) {
-            cachedSize = Math.max(cachedSize, writeBufferStart + buffered);
+            cachedSize = Math.max(cachedSize, start + buffered);
         }
     }
 
@@ -81,6 +82,14 @@ public class ReadAheadVirtualFileAccessor implements VirtualFileAccessor {
 
     private void fillReadCache(int start, int minBytes) throws IOException {
         int target = Math.max(readAheadSize, minBytes);
+        if (writeBufferStart != -1 && start < writeBufferStart) {
+            target = Math.min(target, writeBufferStart - start);
+        }
+        if (target <= 0) {
+            readCacheStart = start;
+            readCacheEnd = start;
+            return;
+        }
         if (readCache == null || readCache.length < target) {
             readCache = new byte[target];
         }
@@ -146,11 +155,7 @@ public class ReadAheadVirtualFileAccessor implements VirtualFileAccessor {
             }
 
             if (!inReadCache(position)) {
-                int maxFetch = remaining;
-                if (writeBufferStart != -1 && position < writeBufferStart) {
-                    maxFetch = Math.min(maxFetch, writeBufferStart - position);
-                }
-                fillReadCache(position, maxFetch);
+                fillReadCache(position, remaining);
                 if (!inReadCache(position)) {
                     break;
                 }

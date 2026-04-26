@@ -93,7 +93,7 @@ public class ShaderPreprocessor {
          * @param z    The z component
          * @return The Builder instance
          */
-        public Builder defineVec3(String name, float x, float y, float z) {
+        public Builder vec3(String name, float x, float y, float z) {
             vars.put(name, String.format("vec3(%.6f, %.6f, %.6f)", x, y, z));
             return this;
         }
