@@ -33,7 +33,7 @@ public class OPFSVirtualFile implements VirtualFile {
     }
 
     private OPFSVirtualFile(FileSystemDirectoryHandle parentHandle, String name,
-                            FileSystemDirectoryHandle rootDirectoryHandle) {
+            FileSystemDirectoryHandle rootDirectoryHandle) {
         this.parentHandle = parentHandle;
         this.name = name;
         this.rootDirectoryHandle = rootDirectoryHandle;
@@ -166,7 +166,6 @@ public class OPFSVirtualFile implements VirtualFile {
 
     @Override
     public boolean createFile(String fileName) throws IOException {
-        System.out.println("OPFSVirtualFile.createFile: " + fileName);
         FileSystemDirectoryHandle dirHandle = getExistingDirectoryHandle();
         if (dirHandle == null) {
             throw new IOException("Not a directory");
@@ -184,7 +183,6 @@ public class OPFSVirtualFile implements VirtualFile {
 
     @Override
     public boolean createDirectory(String fileName) {
-        System.out.println("OPFSVirtualFile.createDirectory: " + fileName);
         FileSystemDirectoryHandle dirHandle = getExistingDirectoryHandle();
         if (dirHandle == null) {
             return false;
