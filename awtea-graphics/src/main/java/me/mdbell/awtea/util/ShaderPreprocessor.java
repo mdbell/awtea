@@ -97,6 +97,10 @@ public class ShaderPreprocessor {
             vars.put(name, String.format("vec3(%.6f, %.6f, %.6f)", x, y, z));
             return this;
         }
+      
+      public Builder defineVec3(String name, float x, float y, float z) {
+        return vec3(name, x, y, z);
+      }
 
         /**
          * Define a vec4 variable
