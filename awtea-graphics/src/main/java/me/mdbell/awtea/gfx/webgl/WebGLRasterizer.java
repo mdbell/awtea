@@ -341,7 +341,8 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
     }
 
     private void drawSurface(Surface surface, int x, int y, int width, int height) {
-        WebGLTexture tmp = gl.createTexture();
+        TexturePool pool = backend.getTexturePool();
+        WebGLTexture tmp = pool.obtain();
         gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, tmp);
         gl.texParameteri(WebGLRenderingContext.TEXTURE_2D,
                 WebGLRenderingContext.TEXTURE_WRAP_S,
@@ -362,7 +363,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         } finally {
             // clean up temporary texture
             gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
-            gl.deleteTexture(tmp);
+            pool.release(tmp);
         }
     }
 
@@ -908,8 +909,10 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         int destX = srcX + dx;
         int destY = srcY + dy;
 
+        TexturePool pool = backend.getTexturePool();
+
         // Create a temporary texture to hold the source region
-        WebGLTexture tmpTexture = gl.createTexture();
+        WebGLTexture tmpTexture = pool.obtain();
         gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, tmpTexture);
         gl.texParameteri(WebGLRenderingContext.TEXTURE_2D,
                 WebGLRenderingContext.TEXTURE_WRAP_S,
@@ -934,8 +937,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         drawTexture(tmpTexture, WebGLSurfaceBackend.SwizzleMode.NONE,
                 destX, destY, width, height, width, height, null);
 
-        // Clean up
-        gl.deleteTexture(tmpTexture);
+        pool.release(tmpTexture);
     }
 
     private void setComposite(Composite composite) {
