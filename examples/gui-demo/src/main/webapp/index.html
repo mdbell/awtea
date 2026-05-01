@@ -93,19 +93,13 @@
             </div>
         </div>
         <script type="module">
-            import { main, setOpenCallback, setProperty } from "./js/gui-demo.js";
+            import { initWorker } from "./worker-init.js";
 
-            function hideLoading() {
-                const loadingElem = document.getElementById("loadingMsg");
-                const canvasElem = document.getElementById("gui-demo");
+            const canvas = document.getElementById("gui-demo");
+            canvas.style.display = "block";
+            document.getElementById("loadingMsg").style.display = "none";
 
-                loadingElem.style.display = "none";
-                canvasElem.style.display = "block";
-            }
-
-            setOpenCallback(hideLoading);
-
-            main(["gui-demo", "trace"]);
+            initWorker(canvas, "./worker-entry.js");
         </script>
     </body>
 </html>

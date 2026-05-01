@@ -2,6 +2,7 @@ package me.mdbell.awtea.classlib.java.applet;
 
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.*;
+import me.mdbell.awtea.classlib.java.awt.awtea.TMainThreadBridge;
 import me.mdbell.awtea.classlib.java.awt.event.TPaintEvent;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.logging.Logger;
@@ -76,8 +77,17 @@ public class TApplet extends TPanel {
     }
 
     private THeavyCanvas createHeavyCanvas() {
-        String canvasId = System.getProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId");
         try {
+            // Worker mode: OffscreenCanvas was transferred at init — no DOM lookup needed
+            if (TToolkit.getDefaultToolkit() instanceof TWorkerToolkit) {
+                log.info("Creating heavyweight canvas from transferred OffscreenCanvas");
+                return new THeavyCanvas(
+                        TMainThreadBridge.getOffscreenCanvas(), this,
+                        TMainThreadBridge.getInitWidth(), TMainThreadBridge.getInitHeight()
+                ).configureStandardEvents();
+            }
+
+            String canvasId = System.getProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId");
             if (canvasId == null) {
                 return null;
             }
@@ -90,8 +100,6 @@ public class TApplet extends TPanel {
             }
             return new THeavyCanvas(canvasElement, this).configureStandardEvents();
         } finally {
-            // no matter what we unset the canvasId property to avoid affecting nested
-            // applets
             System.clearProperty("me.mdbell.awtea.classlib.java.awt.Applet.canvasId");
         }
     }

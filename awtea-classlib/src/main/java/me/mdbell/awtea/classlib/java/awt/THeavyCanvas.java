@@ -11,6 +11,9 @@ import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import me.mdbell.awtea.classlib.java.awt.awtea.TMainThreadBridge;
+import org.teavm.jso.JSBody;
+import org.teavm.jso.JSObject;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 
@@ -77,6 +80,12 @@ public class THeavyCanvas {
      */
     @Getter
     private final HTMLCanvasElement canvasElement;
+
+    // Non-null only in worker mode — holds the transferred OffscreenCanvas
+    private final JSObject offscreenCanvas;
+    // Dimensions tracked manually in worker mode (OffscreenCanvas has no getWidth/getHeight in JSO)
+    private int workerWidth;
+    private int workerHeight;
     /**
      * -- GETTER --
      * Gets the event manager for advanced event configuration.
@@ -116,22 +125,14 @@ public class THeavyCanvas {
      * @param height    Initial height in pixels
      */
     public THeavyCanvas(HTMLDocument document, TContainer container, int width, int height) {
-        // Create canvas element
+        offscreenCanvas = null;
         canvasElement = (HTMLCanvasElement) document.createElement("canvas");
-        canvasElement.setAttribute("tabindex", "0"); // make canvas focusable
-        canvasElement.getStyle().setProperty("outline", "none"); // remove focus outline
-
-        // Set initial size
+        canvasElement.setAttribute("tabindex", "0");
+        canvasElement.getStyle().setProperty("outline", "none");
         canvasElement.setWidth(width);
         canvasElement.setHeight(height);
-
-        // Create event manager
         eventManager = new TEventManager(canvasElement, container);
-
-        // Create surface for rendering
         surface = createScreenSurface();
-
-        // Create buffered image wrapper
         screenImg = new TBufferedImage(surface);
     }
 
@@ -140,33 +141,35 @@ public class THeavyCanvas {
     }
 
     public THeavyCanvas(HTMLCanvasElement canvasElement, TContainer container, int width, int height) {
+        offscreenCanvas = null;
         this.canvasElement = canvasElement;
-
-        // Create event manager
-        eventManager = new TEventManager(canvasElement, container);
-
         canvasElement.setWidth(width);
         canvasElement.setHeight(height);
-
-        // Create surface for rendering
+        eventManager = new TEventManager(canvasElement, container);
         surface = createScreenSurface();
+        screenImg = new TBufferedImage(surface);
+    }
 
-        // Create buffered image wrapper
+    /** Worker-mode constructor: uses a transferred OffscreenCanvas instead of a DOM element. */
+    public THeavyCanvas(JSObject offscreenCanvas, TContainer container, int width, int height) {
+        this.offscreenCanvas = offscreenCanvas;
+        this.canvasElement = null;
+        this.workerWidth = width;
+        this.workerHeight = height;
+        setOffscreenSize(offscreenCanvas, width, height);
+        eventManager = new TEventManager(null, container);
+        surface = createScreenSurface();
         screenImg = new TBufferedImage(surface);
     }
 
     private Surface createScreenSurface() {
         try {
-            WebGLSurfaceBackend webgl = (WebGLSurfaceBackend) SurfaceBackendFactory.getWebGLBackend(canvasElement);
+            WebGLSurfaceBackend webgl = offscreenCanvas != null
+                    ? new WebGLSurfaceBackend(offscreenCanvas)
+                    : (WebGLSurfaceBackend) SurfaceBackendFactory.getWebGLBackend(canvasElement);
             Surface surface = webgl.createScreenSurface(getWidth(), getHeight());
             log.trace("Using WebGL surface backend for heavyweight canvas - dimensions: {}x{}", getWidth(),
                     getHeight());
-
-            // Automatically enable GPU-based hit picking for WebGL backend
-//			initializeWebGLPickingStrategy(webgl);
-
-            // we use a composite backend as there are still some surfaces that webgl
-            // doesn't fully support (like text rendering)
             CompositeSurfaceBackend compositeSurfaceBackend = new CompositeSurfaceBackend(new SurfaceBackend[]{
                     webgl,
                     SurfaceBackendFactory.getDefault()
@@ -176,8 +179,15 @@ public class THeavyCanvas {
         } catch (Exception e) {
             log.warn("Failed to create a webgl instance! Using default");
         }
+        if (offscreenCanvas != null) {
+            // No non-WebGL fallback for OffscreenCanvas — surface creation failed
+            throw new RuntimeException("WebGL backend required in worker mode");
+        }
         return SurfaceBackendFactory.createScreenSurface(getWidth(), getHeight(), canvasElement);
     }
+
+    @JSBody(params = {"canvas", "w", "h"}, script = "canvas.width = w; canvas.height = h;")
+    private static native void setOffscreenSize(JSObject canvas, int w, int h);
 
     /**
      * Initializes GPU-based hit picking for WebGL backend.
@@ -231,15 +241,17 @@ public class THeavyCanvas {
      * @return This canvas instance for method chaining
      */
     public THeavyCanvas configureStandardEvents() {
-        eventManager.disableContextMenu()
-                .withFocus()
-                .withKeyboard()
-                .withMouse()
-                .withMouseWheel();
-
-        // Give the canvas DOM focus so keyboard events work immediately
-        canvasElement.focus();
-
+        if (offscreenCanvas != null) {
+            eventManager.withWorkerEvents();
+            TMainThreadBridge.send("setFocus");
+        } else {
+            eventManager.disableContextMenu()
+                    .withFocus()
+                    .withKeyboard()
+                    .withMouse()
+                    .withMouseWheel();
+            canvasElement.focus();
+        }
         return this;
     }
 
@@ -270,8 +282,14 @@ public class THeavyCanvas {
      * @param height New height in pixels
      */
     public void resize(int width, int height) {
-        canvasElement.setWidth(width);
-        canvasElement.setHeight(height);
+        if (offscreenCanvas != null) {
+            workerWidth = width;
+            workerHeight = height;
+            setOffscreenSize(offscreenCanvas, width, height);
+        } else {
+            canvasElement.setWidth(width);
+            canvasElement.setHeight(height);
+        }
         surface.resize(width, height);
     }
 
@@ -281,7 +299,7 @@ public class THeavyCanvas {
      * @return Canvas width in pixels
      */
     public int getWidth() {
-        return canvasElement.getWidth();
+        return offscreenCanvas != null ? workerWidth : canvasElement.getWidth();
     }
 
     /**
@@ -290,7 +308,7 @@ public class THeavyCanvas {
      * @return Canvas height in pixels
      */
     public int getHeight() {
-        return canvasElement.getHeight();
+        return offscreenCanvas != null ? workerHeight : canvasElement.getHeight();
     }
 
     /**

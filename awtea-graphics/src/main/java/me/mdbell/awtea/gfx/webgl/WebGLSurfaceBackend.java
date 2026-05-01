@@ -6,6 +6,8 @@ import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
 import me.mdbell.awtea.gl.Shaders;
 import me.mdbell.awtea.util.jso.JSRecord;
+import org.teavm.jso.JSBody;
+import org.teavm.jso.JSObject;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
@@ -68,13 +70,18 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
     private final Map<String, CustomShaderProgram> customShaders = new HashMap<>();
     private CustomShaderProgram activeCustomShader = null;
 
-    public WebGLSurfaceBackend(HTMLCanvasElement element) {
-        this.element = element;
+    /** Constructor for OffscreenCanvas (worker mode). */
+    public WebGLSurfaceBackend(JSObject offscreenCanvas) {
+        this(getContextFromObj(offscreenCanvas), null);
+    }
 
-        // Maybe figure out how to pass in options later?
-        JSRecord options = JSRecord.create();
-        options.put("alpha", false);
-        this.gl = (WebGL2RenderingContext) element.getContext("webgl2", options);
+    public WebGLSurfaceBackend(HTMLCanvasElement element) {
+        this((WebGL2RenderingContext) element.getContext("webgl2", defaultOptions()), element);
+    }
+
+    private WebGLSurfaceBackend(WebGL2RenderingContext gl, HTMLCanvasElement element) {
+        this.element = element;
+        this.gl = gl;
 
         gl.enable(WebGLRenderingContext.BLEND);
         gl.blendFunc(WebGLRenderingContext.SRC_ALPHA, WebGLRenderingContext.ONE_MINUS_SRC_ALPHA);
@@ -95,8 +102,6 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
         this.uPickingModeLocColor = gl.getUniformLocation(colorProgram, "u_pickingMode");
         this.uPickingColorLocColor = gl.getUniformLocation(colorProgram, "u_pickingColor");
 
-        // Set the color uniform location in the context stack for automatic color
-        // application
         this.contextStack.setColorUniformLocation(this.uColorLoc);
 
         // texture program locations
@@ -111,13 +116,25 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
         gl.uniform1i(uTextureLoc, 0); // texture unit 0
 
         // ---- buffers ----
-        // simple rect buffer: two triangles in [0,0]-[1,1] space
         rectBuffer = gl.createBuffer();
-
         quadBuffer = gl.createBuffer();
         quadTexCoordBuffer = gl.createBuffer();
 
         texturePool = new TexturePool(gl);
+    }
+
+    private static JSRecord defaultOptions() {
+        JSRecord options = JSRecord.create();
+        options.put("alpha", false);
+        return options;
+    }
+
+    @JSBody(params = {"canvas", "type", "options"},
+            script = "return canvas.getContext(type, options);")
+    private static native WebGL2RenderingContext getContextFromObj(JSObject canvas, String type, JSObject options);
+
+    private static WebGL2RenderingContext getContextFromObj(JSObject canvas) {
+        return getContextFromObj(canvas, "webgl2", defaultOptions());
     }
 
     void setRectBuffer(float x, float y, float width, float height) {

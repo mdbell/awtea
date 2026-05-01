@@ -5,6 +5,7 @@ import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
 import me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.jso.JSObject;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 
 /**
@@ -121,6 +122,11 @@ public class SurfaceBackendFactory {
 	 */
 	public static SurfaceBackend getWebGLBackend(HTMLCanvasElement canvas) {
 		return new WebGLSurfaceBackend(canvas);
+	}
+
+	/** Overload for OffscreenCanvas (worker mode). */
+	public static SurfaceBackend getWebGLBackend(JSObject offscreenCanvas) {
+		return new WebGLSurfaceBackend(offscreenCanvas);
 	}
 
 	/**

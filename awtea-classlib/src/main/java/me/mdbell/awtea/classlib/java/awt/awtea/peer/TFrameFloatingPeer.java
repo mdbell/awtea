@@ -3,6 +3,9 @@ package me.mdbell.awtea.classlib.java.awt.awtea.peer;
 import me.mdbell.awtea.classlib.java.awt.TFrame;
 import me.mdbell.awtea.classlib.java.awt.TGraphics;
 import me.mdbell.awtea.classlib.java.awt.THeavyCanvas;
+import me.mdbell.awtea.classlib.java.awt.TToolkit;
+import me.mdbell.awtea.classlib.java.awt.TWorkerToolkit;
+import me.mdbell.awtea.classlib.java.awt.awtea.TMainThreadBridge;
 import me.mdbell.awtea.ui.FloatingFrame;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLElement;
@@ -14,8 +17,13 @@ public final class TFrameFloatingPeer extends FloatingFrame {
 	public TFrameFloatingPeer(TFrame component) {
 		super("frame-peer-window");
 
-		// Create and configure heavyweight canvas
-		heavyCanvas = new THeavyCanvas(Window.current().getDocument(), component);
+		if (TToolkit.getDefaultToolkit() instanceof TWorkerToolkit) {
+			heavyCanvas = new THeavyCanvas(
+					TMainThreadBridge.getOffscreenCanvas(), component,
+					TMainThreadBridge.getInitWidth(), TMainThreadBridge.getInitHeight());
+		} else {
+			heavyCanvas = new THeavyCanvas(Window.current().getDocument(), component);
+		}
 		heavyCanvas.configureStandardEvents();
 
 		setSize(0, 0); // auto-size to content

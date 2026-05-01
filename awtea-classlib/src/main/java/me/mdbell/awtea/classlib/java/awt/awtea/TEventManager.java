@@ -279,6 +279,77 @@ public final class TEventManager implements AutoCloseable {
         return this;
     }
 
+    /**
+     * Worker-mode event source: receive serialised browser events forwarded by the
+     * main thread shim via TMainThreadBridge instead of registering DOM listeners.
+     */
+    public TEventManager withWorkerEvents() {
+        TMainThreadBridge.setEventListener(msg -> {
+            String eventType = msg.getEventType();
+            if (eventType == null) {
+                // resize notification — handled by THeavyCanvas separately
+                return;
+            }
+            switch (eventType) {
+                case "keydown":
+                case "keyup":
+                case "keypress": {
+                    TComponent focusOwner = TFocusManager.get().getGlobalFocusOwner();
+                    if (focusOwner == null) return;
+                    TKeyEvent.KeyEvent keyEventType = TKeyEvent.KeyEvent.fromType(eventType);
+                    KeyboardKey key = KeyboardKey.lookup(msg.getCode());
+                    int modifiers = 0;
+                    if (msg.isShiftKey()) modifiers |= TKeyEvent.FLAG_SHIFT;
+                    if (msg.isCtrlKey())  modifiers |= TKeyEvent.FLAG_CTRL;
+                    if (msg.isAltKey())   modifiers |= TKeyEvent.FLAG_ALT;
+                    if (msg.isMetaKey())  modifiers |= TKeyEvent.FLAG_META;
+                    post(new TKeyEvent(focusOwner, keyEventType.getId(), key, modifiers));
+                    break;
+                }
+                case "mousemove":
+                case "mousedown":
+                case "mouseup":
+                case "click": {
+                    Point point = new Point(msg.getX(), msg.getY());
+                    TComponent comp = getComponentAt(point);
+                    if (comp != componentUnderMouse && eventType.equals("mousemove")) {
+                        componentUnderMouse = comp;
+                    }
+                    java.awt.Point onScreen = comp.getLocationOnScreen();
+                    int localX = msg.getX() - onScreen.x;
+                    int localY = msg.getY() - onScreen.y;
+                    MouseButtonType button = MouseButtonType.fromHtml(msg.getButton());
+                    MouseEventType mouseType = MouseEventType.fromHtml(eventType);
+                    post(new TMouseEvent(comp, mouseType.getId(), localX, localY, button, msg.isMetaKey()));
+                    break;
+                }
+                case "wheel": {
+                    Point point = new Point(msg.getX(), msg.getY());
+                    TComponent comp = getComponentAt(point);
+                    java.awt.Point onScreen = comp.getLocationOnScreen();
+                    int localX = msg.getX() - onScreen.x;
+                    int localY = msg.getY() - onScreen.y;
+                    double normalizedDelta = normalizeWheelDelta(msg.getDeltaY(), msg.getDeltaMode());
+                    int rotation = (int) Math.signum(normalizedDelta);
+                    post(new TMouseWheelEvent(comp, MouseEventType.WHEEL.getId(),
+                            localX, localY, MouseButtonType.UNKNOWN, msg.isMetaKey(),
+                            normalizedDelta, SCROLL_AMOUNT, msg.getDeltaMode(),
+                            rotation * SCROLL_AMOUNT, rotation));
+                    break;
+                }
+                case "focus":
+                    post(new TFocusEvent(container, TFocusEvent.FOCUS_GAINED));
+                    break;
+                case "blur":
+                    post(new TFocusEvent(container, TFocusEvent.FOCUS_LOST));
+                    break;
+                default:
+                    break;
+            }
+        });
+        return this;
+    }
+
     public void detach() {
         registrations.cleanup();
         // Reset mouse position tracking to prevent stale coordinates
