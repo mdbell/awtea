@@ -28,7 +28,7 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 
-@ExtensionMethod({JSObjectsExtensions.class})
+@ExtensionMethod({ JSObjectsExtensions.class })
 public class PcmProcessorClient {
 
     private static final Logger log = LoggerFactory.getLogger(PcmProcessorClient.class);
@@ -64,7 +64,7 @@ public class PcmProcessorClient {
     private int keepAliveTimeout = -1;
 
     private final Set<DrainListener> drainListenerSet = new HashSet<>();
-    
+
     public int getMaxQueuedBytes() {
         return maxQueuedFrames * frameSizeBytes;
     }
@@ -78,7 +78,7 @@ public class PcmProcessorClient {
     }
 
     public PcmProcessorClient(int sampleRate, int channels) {
-        this(sampleRate, channels, sampleRate / 10); //~ 100ms
+        this(sampleRate, channels, sampleRate / 10); // ~ 100ms
     }
 
     public PcmProcessorClient(int sampleRate, int channels, int maxQueuedFrames) {
@@ -106,14 +106,13 @@ public class PcmProcessorClient {
         AudioWorkletNode.Options opts = JSObjects.create();
         opts.setNumberOfInputs(0);
         opts.setNumberOfOutputs(1);
-        opts.setOutputChannelCount(new int[]{this.channels});
+        opts.setOutputChannelCount(new int[] { this.channels });
 
         this.node = AudioWorkletNode.create(this.context, "pcm-processor", opts);
 
         // can't use this.node.getPort().setOnMessage()
         // for some reason. Why? idk.
         setOnMessage(this.node.getPort(), evt -> {
-            log.debug("PCM Client: Message event received from processor.");
             LineMessage msg = (LineMessage) evt.getData();
             if (msg.nullish()) {
                 return;
@@ -148,7 +147,6 @@ public class PcmProcessorClient {
 
         this.node.connect(this.context.getDestination());
     }
-
 
     public int enqueue(byte[] data, int offset, int frames) {
         if (this.node.nullish()) {
@@ -192,7 +190,7 @@ public class PcmProcessorClient {
         return frames;
     }
 
-    @JSBody(params = {"port", "message", "transfer"}, script = "port.postMessage(message, transfer);")
+    @JSBody(params = { "port", "message", "transfer" }, script = "port.postMessage(message, transfer);")
     private static native void postWithTransfer(MessagePort port, LineMessage message, JSObject... transfer);
 
     public void close() {
@@ -249,13 +247,13 @@ public class PcmProcessorClient {
         return ctx;
     }
 
-    @JSBody(params = {"port", "handler"}, script = "port.onmessage = handler")
+    @JSBody(params = { "port", "handler" }, script = "port.onmessage = handler")
     private static native void setOnMessage(MessagePort port, EventListener<MessageEvent> handler);
 
-    @JSBody(params = {"options"}, script = "return new AudioContext(options)")
+    @JSBody(params = { "options" }, script = "return new AudioContext(options)")
     private static native AudioContext createContext(AudioContextOptions options);
 
-    @JSBody(params = {"context", "module"}, script = "return context.audioWorklet.addModule(module);")
+    @JSBody(params = { "context", "module" }, script = "return context.audioWorklet.addModule(module);")
     private static native JSPromise<JSUndefined> addAudioModule(AudioContext context, String module);
 
     public interface AudioContextOptions extends JSObject {
@@ -263,4 +261,3 @@ public class PcmProcessorClient {
         void setSampleRate(int sr);
     }
 }
-
