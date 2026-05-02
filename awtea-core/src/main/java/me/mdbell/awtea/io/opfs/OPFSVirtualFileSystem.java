@@ -9,14 +9,14 @@ import org.teavm.jso.core.JSObjects;
 import org.teavm.runtime.fs.VirtualFile;
 import org.teavm.runtime.fs.VirtualFileSystem;
 
-@ExtensionMethod({JSObjectsExtensions.class})
+@ExtensionMethod({ JSObjectsExtensions.class })
 public class OPFSVirtualFileSystem implements VirtualFileSystem {
 
     private static final StorageManager storage = getStorage();
 
     private FileSystemDirectoryHandle rootHandle;
 
-    private String[] roots = new String[]{"/"};
+    private String[] roots = new String[] { "/" };
 
     private FileSystemDirectoryHandle getRootHandle() {
         if (rootHandle == null) {
@@ -88,4 +88,7 @@ public class OPFSVirtualFileSystem implements VirtualFileSystem {
 
     @JSBody(script = "return navigator.storage;")
     private static native StorageManager getStorage();
+
+    @JSBody(script = "return 'storage' in navigator && 'getDirectory' in navigator.storage;")
+    public static native boolean isOPFSSupported();
 }
