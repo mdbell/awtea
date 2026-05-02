@@ -1199,10 +1199,12 @@ public class TKeyEvent extends TInputEvent {
     public static final int FLAG_META = 8;
 
     private final KeyboardKey key;
+    private final String rawKey;
 
-    public TKeyEvent(TComponent component, int id, KeyboardKey key, int modifiers) {
+    public TKeyEvent(TComponent component, int id, KeyboardKey key, int modifiers, String rawKey) {
         super(component, id, System.currentTimeMillis(), modifiers);
         this.key = key;
+        this.rawKey = rawKey;
     }
 
     public boolean isControlDown() {
@@ -1210,10 +1212,16 @@ public class TKeyEvent extends TInputEvent {
     }
 
     public int getKeyCode() {
+        if (getID() == KEY_TYPED) {
+            return VK_UNDEFINED;
+        }
         return key.getKeyCode();
     }
 
     public char getKeyChar() {
+        if (rawKey != null && rawKey.length() == 1) {
+            return rawKey.charAt(0);
+        }
         boolean shifted = (this.modifiers & FLAG_SHIFT) != 0;
         char base = this.key.getBaseChar();
         char shiftedChar = this.key.getShiftedSymbol();
@@ -1251,7 +1259,7 @@ public class TKeyEvent extends TInputEvent {
             modifiers |= FLAG_META;
         }
 
-        return new TKeyEvent(component, keyEvent.getId(), key, modifiers);
+        return new TKeyEvent(component, keyEvent.getId(), key, modifiers, event.getKey());
     }
 
     @AllArgsConstructor
