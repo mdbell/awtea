@@ -78,8 +78,11 @@ public class TApplet extends TPanel {
 
     private THeavyCanvas createHeavyCanvas() {
         try {
-            // Worker mode: OffscreenCanvas was transferred at init — no DOM lookup needed
+            // Worker mode: OffscreenCanvas was transferred at init — no DOM lookup needed.
+            // TMainThreadBridge.init() may have been a no-op at module-load time (pendingInit
+            // not yet set), so call it again here now that main() is running.
             if (TToolkit.getDefaultToolkit() instanceof TWorkerToolkit) {
+                TMainThreadBridge.init();
                 log.info("Creating heavyweight canvas from transferred OffscreenCanvas");
                 return new THeavyCanvas(
                         TMainThreadBridge.getOffscreenCanvas(), this,

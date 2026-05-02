@@ -12,6 +12,7 @@ import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.typedarrays.Uint8Array;
 
 import java.net.URL;
+import java.util.Arrays;
 
 /**
  * Worker-side Toolkit implementation.
@@ -65,11 +66,13 @@ public class TWorkerToolkit extends TToolkit {
 
     @Override
     public TImage createImage(URL url) {
-        TMainThreadBridge.BridgeResponse resp = TMainThreadBridge.request("loadImage",
-                req -> req.setUrl(url.toString()));
+        return pixelsFromResponse(TMainThreadBridge.request("loadImage",
+                req -> req.setUrl(url.toString())));
+    }
+
+    private static TImage pixelsFromResponse(TMainThreadBridge.BridgeResponse resp) {
         int w = resp.getWidth();
         int h = resp.getHeight();
-        // Main thread returns raw RGBA bytes; convert to ARGB int[] for setRGB
         Uint8Array rgba = new Uint8Array(resp.getData());
         int[] argb = new int[w * h];
         for (int i = 0; i < argb.length; i++) {
@@ -90,9 +93,12 @@ public class TWorkerToolkit extends TToolkit {
 
     @Override
     public TImage createImage(byte[] imagedata, int imageoffset, int imagelength) {
-        // In worker mode image decoding via a DOM canvas is not available.
-        // Fall back to returning an empty image; real RS images go through createImage(URL).
-        return new TBufferedImage(1, 1, TBufferedImage.TYPE_INT_ARGB);
+        byte[] sub = Arrays.copyOfRange(imagedata, imageoffset, imageoffset + imagelength);
+        Uint8Array arr = new Uint8Array(sub.length);
+        arr.set(sub);
+        TMainThreadBridge.BridgeResponse resp = TMainThreadBridge.request("loadImage",
+                req -> req.setBytes(arr.getBuffer()));
+        return pixelsFromResponse(resp);
     }
 
     @Override

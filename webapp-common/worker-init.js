@@ -9,6 +9,10 @@
  *   import { initWorker } from './worker-init.js';
  *   initWorker(document.getElementById('my-canvas'), './worker-entry.js');
  */
+// audioId → { context: AudioContext, node: AudioWorkletNode }
+const audioContexts = new Map();
+let nextAudioId = 1;
+
 export function initWorker(canvas, workerUrl) {
     const dpr = window.devicePixelRatio || 1;
     const width = canvas.width;
@@ -115,7 +119,7 @@ export function initWorker(canvas, workerUrl) {
 
             case 'loadImage': {
                 try {
-                    const result = await loadImageData(msg.url);
+                    const result = await loadImageData(msg.url, msg.bytes);
                     worker.postMessage(
                         { id: msg.id, type: 'loadImage', width: result.width, height: result.height, data: result.buffer },
                         [result.buffer]
@@ -136,6 +140,66 @@ export function initWorker(canvas, workerUrl) {
                     osc.stop(ctx.currentTime + 0.1);
                 } catch (_) {}
                 break;
+
+            case 'audio.init': {
+                const audioId = nextAudioId++;
+                try {
+                    const { sampleRate, channels, sampleSizeBits, bigEndian, maxFrames, script } = msg;
+                    const ctx = new AudioContext({ sampleRate });
+                    const scriptUrl = URL.createObjectURL(new Blob([script], { type: 'text/javascript' }));
+                    try {
+                        await ctx.audioWorklet.addModule(scriptUrl);
+                    } finally {
+                        URL.revokeObjectURL(scriptUrl);
+                    }
+                    const node = new AudioWorkletNode(ctx, 'pcm-processor', {
+                        numberOfInputs: 0,
+                        numberOfOutputs: 1,
+                        outputChannelCount: [channels],
+                    });
+                    node.connect(ctx.destination);
+                    node.port.postMessage({ type: 'init', channels, sampleRate, sampleSizeBits, bigEndian });
+                    node.port.onmessage = (e) => {
+                        const m = e.data;
+                        if (m && m.type === 'consumed') {
+                            worker.postMessage({ id: 0, type: 'audio.consumed', audioId, consumed: m.bytes });
+                        }
+                    };
+                    audioContexts.set(audioId, { context: ctx, node });
+                    worker.postMessage({ id: msg.id, type: 'audio.init', audioId });
+                } catch (err) {
+                    worker.postMessage({ id: msg.id, type: 'audio.init', audioId: -1 });
+                }
+                break;
+            }
+
+            case 'audio.pcm': {
+                const audio = audioContexts.get(msg.audioId);
+                if (audio) {
+                    audio.node.port.postMessage(
+                        { type: 'pcm', data: msg.bytes, frames: msg.frames },
+                        [msg.bytes]
+                    );
+                }
+                break;
+            }
+
+            case 'audio.keepalive': {
+                const audio = audioContexts.get(msg.audioId);
+                if (audio) audio.node.port.postMessage({ type: 'keepalive' });
+                break;
+            }
+
+            case 'audio.close': {
+                const audio = audioContexts.get(msg.audioId);
+                if (audio) {
+                    audio.node.port.postMessage({ type: 'shutdown' });
+                    audio.node.disconnect();
+                    audio.context.close();
+                    audioContexts.delete(msg.audioId);
+                }
+                break;
+            }
         }
     };
 
@@ -160,18 +224,28 @@ export function initWorker(canvas, workerUrl) {
     return worker;
 }
 
-async function loadImageData(url) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-        img.src = url;
-    });
-    const cvs = new OffscreenCanvas(img.naturalWidth, img.naturalHeight);
-    const ctx = cvs.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-    const imageData = ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
-    // slice() so the buffer is detached from the ImageData and safe to transfer
-    return { width: img.naturalWidth, height: img.naturalHeight, buffer: imageData.data.buffer.slice(0) };
+async function loadImageData(url, bytes) {
+    let src = url;
+    let createdUrl = false;
+    if (bytes) {
+        src = URL.createObjectURL(new Blob([bytes]));
+        createdUrl = true;
+    }
+    try {
+        const img = new Image();
+        if (!createdUrl) img.crossOrigin = 'anonymous';
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+            img.src = src;
+        });
+        const cvs = new OffscreenCanvas(img.naturalWidth, img.naturalHeight);
+        const ctx = cvs.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
+        // slice() so the buffer is detached from the ImageData and safe to transfer
+        return { width: img.naturalWidth, height: img.naturalHeight, buffer: imageData.data.buffer.slice(0) };
+    } finally {
+        if (createdUrl) URL.revokeObjectURL(src);
+    }
 }
