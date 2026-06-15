@@ -2,6 +2,7 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import lombok.Getter;
 import lombok.Setter;
+import me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext;
 import me.mdbell.awtea.classlib.java.awt.geom.TAffineTransform;
 import me.mdbell.awtea.classlib.java.awt.image.TBufferedImage;
 import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
@@ -334,7 +335,9 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     @Override
     public TFontMetrics getFontMetrics(TFont f) {
-        return f.getFontMetrics();
+        // Create context-aware metrics using the current rendering context
+        TFontRenderContext frc = getFontRenderContext();
+        return new TFontMetrics(f, frc);
     }
 
     @Override
@@ -616,15 +619,17 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             return;
         }
 
-        // Measure the string to determine surface size
+        // Get font metrics and string bounds for accurate sizing
+        TFontMetrics fontMetrics = getFontMetrics(font);
+        me.mdbell.awtea.classlib.java.awt.geom.TRectangle2D bounds = fontMetrics.getStringBounds(str, this);
+        
         float sizePx = font.getSize();
-        int textWidth = peer.measureString(str, sizePx);
-        FontPeer.FontMetrics metrics = peer.getFontMetrics(sizePx);
+        int textWidth = (int) Math.ceil(bounds.getWidth());
 
         // Calculate surface dimensions with padding for glyphs that may extend beyond
         // bounds
         int surfaceWidth = textWidth + TEXT_SURFACE_PADDING;
-        int surfaceHeight = (int) Math.ceil(metrics.getAscent() + metrics.getDescent()) + TEXT_SURFACE_PADDING;
+        int surfaceHeight = (int) Math.ceil(bounds.getHeight()) + TEXT_SURFACE_PADDING;
 
         if (surfaceWidth <= 0 || surfaceHeight <= 0) {
             return;

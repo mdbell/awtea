@@ -195,7 +195,11 @@ public class TAWTeaToolkit extends TToolkit {
 
 	@Override
 	public TFontMetrics getFontMetrics(TFont font) {
-		return font.getFontMetrics();
+		// Toolkit creates metrics with default rendering context (no AA, no fractional metrics)
+		// This matches AWT behavior where Toolkit.getFontMetrics() provides baseline metrics
+		me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext defaultContext = 
+			new me.mdbell.awtea.classlib.java.awt.font.TFontRenderContext(null, false, false);
+		return new TFontMetrics(font, defaultContext);
 	}
 
 	public TImage createImage(TImageProducer producer) {

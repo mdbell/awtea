@@ -350,14 +350,39 @@ public abstract class TGraphics2D extends TGraphics {
 
 	/**
 	 * Gets the font render context from the Graphics2D context.
+	 * This method extracts rendering hints (anti-aliasing, fractional metrics) and
+	 * the current transform to create a FontRenderContext that accurately represents
+	 * how text will be rendered.
 	 * 
 	 * @return the FontRenderContext of this Graphics2D
 	 * @see java.awt.Graphics2D#getFontRenderContext()
 	 */
 	public TFontRenderContext getFontRenderContext() {
-		// TODO: Implement font render context retrieval
-		// @see https://docs.oracle.com/javase/8/docs/api/java/awt/Graphics2D.html#getFontRenderContext--
-		throw new UnsupportedOperationException("TGraphics2D.getFontRenderContext() not yet implemented");
+		// Get rendering hints
+		TRenderingHints hints = getRenderingHints();
+		
+		// Determine anti-aliasing setting
+		boolean isAntiAliased = false;
+		if (hints != null) {
+			Object aaHint = hints.get(TRenderingHints.KEY_TEXT_ANTIALIASING);
+			if (aaHint == null) {
+				aaHint = hints.get(TRenderingHints.KEY_ANTIALIASING);
+			}
+			isAntiAliased = (aaHint == TRenderingHints.VALUE_ANTIALIAS_ON) ||
+			                (aaHint == TRenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		}
+		
+		// Determine fractional metrics setting
+		boolean usesFractionalMetrics = false;
+		if (hints != null) {
+			Object fmHint = hints.get(TRenderingHints.KEY_FRACTIONALMETRICS);
+			usesFractionalMetrics = (fmHint == TRenderingHints.VALUE_FRACTIONALMETRICS_ON);
+		}
+		
+		// Get transform (make a copy to prevent modification)
+		TAffineTransform transform = getTransform();
+		
+		return new TFontRenderContext(transform, isAntiAliased, usesFractionalMetrics);
 	}
 
 	/**
