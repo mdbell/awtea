@@ -234,6 +234,7 @@ public class THeavyCanvas {
         eventManager.disableContextMenu()
                 .withFocus()
                 .withKeyboard()
+                .withKeypressSuppression()
                 .withMouse()
                 .withMouseWheel();
 
