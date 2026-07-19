@@ -119,6 +119,20 @@ public final class TEventManager implements AutoCloseable {
     }
 
     /**
+     * Suppress the default browser behavior for keypress events.
+     * This is useful for preventing unwanted character input or browser shortcuts.
+     * (e.g., preventing the browser from scrolling when arrow keys are pressed, or
+     * '/' for the quick
+     * find menu).
+     * 
+     * @return this TEventManager for chaining
+     */
+    public TEventManager withKeypressSuppression() {
+        element.onEvent("keypress", Event::preventDefault).track(registrations);
+        return this;
+    }
+
+    /**
      * Attach mouse listeners, mapping to TMouseEvent.
      */
     public TEventManager withMouse() {
@@ -192,7 +206,8 @@ public final class TEventManager implements AutoCloseable {
 
     /**
      * Attach mouse wheel listener, mapping to TMouseWheelEvent.
-     * Browser wheel deltas are normalized based on deltaMode to match Java's expectations:
+     * Browser wheel deltas are normalized based on deltaMode to match Java's
+     * expectations:
      * - PIXEL mode (0): divided by configurable divisor (default: 100)
      * - LINE mode (1): divided by configurable divisor (default: 3)
      * - PAGE mode (2): multiplied by configurable multiplier (default: 1)
@@ -212,15 +227,15 @@ public final class TEventManager implements AutoCloseable {
 
             int deltaMode = me.getDeltaMode();
             double rawDeltaY = me.getDeltaY();
-            
+
             // Normalize the wheel delta based on browser deltaMode
             double normalizedDelta = normalizeWheelDelta(rawDeltaY, deltaMode);
-            
+
             int rotation = (int) Math.signum(normalizedDelta);
             int unitsToScroll = rotation * SCROLL_AMOUNT;
             boolean meta = me.getMetaKey();
 
-            log.trace("Mouse wheel: rawDelta={}, deltaMode={}, normalized={}, rotation={}", 
+            log.trace("Mouse wheel: rawDelta={}, deltaMode={}, normalized={}, rotation={}",
                     rawDeltaY, deltaMode, normalizedDelta, rotation);
 
             TMouseWheelEvent event = new TMouseWheelEvent(comp, MouseEventType.WHEEL.getId(),
@@ -419,9 +434,10 @@ public final class TEventManager implements AutoCloseable {
 
     /**
      * Normalizes wheel delta values based on the browser's deltaMode.
-     * This ensures consistent scroll behavior across different browsers and platforms.
+     * This ensures consistent scroll behavior across different browsers and
+     * platforms.
      * 
-     * @param rawDelta the raw delta value from the browser wheel event
+     * @param rawDelta  the raw delta value from the browser wheel event
      * @param deltaMode the deltaMode from the browser (0=PIXEL, 1=LINE, 2=PAGE)
      * @return the normalized delta value suitable for Java AWT expectations
      */
