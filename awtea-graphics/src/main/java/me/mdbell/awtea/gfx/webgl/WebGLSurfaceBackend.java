@@ -6,6 +6,7 @@ import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
 import me.mdbell.awtea.gl.Shaders;
 import me.mdbell.awtea.util.jso.JSRecord;
+import org.teavm.jso.core.JSString;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
@@ -74,6 +75,11 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
         // Maybe figure out how to pass in options later?
         JSRecord options = JSRecord.create();
         options.put("alpha", false);
+        // Rendering goes through our own FBOs; a multisampled default
+        // framebuffer would only add a resolve per composite.
+        options.put("antialias", false);
+        // Prefer the discrete GPU on dual-GPU machines.
+        options.put("powerPreference", JSString.valueOf("high-performance"));
         this.gl = (WebGL2RenderingContext) element.getContext("webgl2", options);
 
         gl.enable(WebGLRenderingContext.BLEND);
