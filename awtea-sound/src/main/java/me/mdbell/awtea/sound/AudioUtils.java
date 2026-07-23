@@ -6,19 +6,35 @@ import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.html.HTMLDocument;
-import org.teavm.jso.webaudio.AudioBuffer;
-import org.teavm.jso.webaudio.AudioBufferSourceNode;
 import org.teavm.jso.webaudio.AudioContext;
 import org.teavm.jso.webaudio.GainNode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @UtilityClass
 public class AudioUtils implements AudioConstants {
 
+    /**
+     * Events that count as a user gesture for autoplay purposes.
+     * Note: browsers differ on which events grant activation (e.g. Chrome
+     * honors touchend but not touchstart), so we listen to all of them.
+     */
     public String[] LISTEN_EVENTS = new String[]{
+            "keydown",
+            "mousedown",
+            "pointerdown",
             "touchstart",
             "touchend",
             "click"
     };
+
+    /**
+     * Every context created by the sound system. Suspended contexts are
+     * resumed on each user gesture; contexts created after the first gesture
+     * are resumed immediately on registration.
+     */
+    private final List<AudioContext> registeredContexts = new ArrayList<>();
 
     @Getter
     private final AudioContext globalContext = new AudioContext();
@@ -32,10 +48,28 @@ public class AudioUtils implements AudioConstants {
     private final GainNode globalGain;
 
     static {
-        AudioUtils.registerFix();
+        registerGestureListeners();
+        register(globalContext);
         globalGain = globalContext.createGain();
         globalGain.getGain().setValueAtTime(MASTER_GAIN, globalContext.getCurrentTime());
         globalGain.connect(globalContext.getDestination());
+    }
+
+    /**
+     * Registers a context so autoplay restrictions get lifted from it.
+     * <p>
+     * Contexts created before any user interaction start in the
+     * {@code suspended} state and stay silent until {@code resume()} is
+     * called from a user gesture. Anything that creates its own
+     * {@link AudioContext} (rather than using {@link #getGlobalContext()})
+     * must register it here, or it may never start.
+     * </p>
+     *
+     * @param ctx The context to register.
+     */
+    public void register(AudioContext ctx) {
+        registeredContexts.add(ctx);
+        resumeIfSuspended(ctx);
     }
 
     /**
@@ -66,20 +100,6 @@ public class AudioUtils implements AudioConstants {
     }
 
     /**
-     * We can't have an audio context without user interaction, unless
-     * we create it with silent audio. So this is a workaround to let
-     * us create a valid context and 'play' audio without user interaction.
-     */
-    public void fixAudioContext(AudioContext ctx) {
-        AudioBuffer buffer = ctx.createBuffer(1, 1, 22050);
-        AudioBufferSourceNode source = ctx.createBufferSource();
-        source.setBuffer(buffer);
-        source.connect(ctx.getDestination());
-
-        source.start(0);
-    }
-
-    /**
      * Performs an exponetial mapping on a given 14-bit midi volume.
      * <p>
      * This roughly maps the volume to a logarithmic scale, which is more
@@ -99,33 +119,26 @@ public class AudioUtils implements AudioConstants {
         return (float) Math.pow(volume / (float) MAX_MIDI_VOLUME, 2);
     }
 
-    private void unregisterEvents(EventListener<?> fix) {
-        HTMLDocument document = Window.current().getDocument();
-        for (String event : LISTEN_EVENTS) {
-            document.removeEventListener(event, fix);
+    private void resumeIfSuspended(AudioContext ctx) {
+        // resume() outside a gesture is harmless: the returned promise just
+        // stays pending until the browser allows playback.
+        if (AudioContext.STATE_SUSPENDED.equals(ctx.getState())) {
+            ctx.resume();
         }
     }
 
-
-    private void registerFix() {
+    /**
+     * The listeners stay registered for the lifetime of the page: contexts
+     * can be created (and suspended) at any point, and some browsers
+     * re-suspend contexts themselves (e.g. iOS audio interruptions), so a
+     * one-shot unlock is not enough. Capture phase, so game code stopping
+     * propagation can't swallow the gesture.
+     */
+    private void registerGestureListeners() {
         HTMLDocument document = Window.current().getDocument();
-        ContextFixer fixer = new ContextFixer(AudioUtils.globalContext);
+        EventListener<Event> resumer = evt -> registeredContexts.forEach(AudioUtils::resumeIfSuspended);
         for (String event : LISTEN_EVENTS) {
-            document.addEventListener(event, fixer);
-        }
-    }
-
-    private class ContextFixer implements EventListener<Event> {
-        private final AudioContext ctx;
-
-        public ContextFixer(AudioContext ctx) {
-            this.ctx = ctx;
-        }
-
-        @Override
-        public void handleEvent(Event evt) {
-            fixAudioContext(ctx);
-            unregisterEvents(this);
+            document.addEventListener(event, resumer, true);
         }
     }
 }

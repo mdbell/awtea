@@ -3,6 +3,7 @@ package me.mdbell.awtea.sound.pcm;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.experimental.ExtensionMethod;
+import me.mdbell.awtea.sound.AudioUtils;
 import me.mdbell.awtea.sound.DrainListener;
 import me.mdbell.awtea.sound.pcm.messages.*;
 import me.mdbell.awtea.util.JSObjectsExtensions;
@@ -292,6 +293,7 @@ public class PcmProcessorClient {
         AudioContextOptions opts = JSObjects.create();
         opts.setSampleRate(sr);
         AudioContext ctx = createContext(opts);
+        AudioUtils.register(ctx);
         contextCache.put(sr, ctx);
         addAudioModule(ctx, moduleUrl).await();
         return ctx;
