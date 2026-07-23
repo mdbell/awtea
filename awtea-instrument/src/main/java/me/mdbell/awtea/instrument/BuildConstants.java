@@ -93,7 +93,10 @@ public class BuildConstants implements ClassHolderTransformer {
             if (value == null) {
                 throw new IllegalStateException(
                         "@BuildConstant key '" + key + "' at " + location
-                                + " has no supplied value - probe and build plugin are out of sync");
+                                + " has no supplied value. Either the probe and build plugin are"
+                                + " out of sync, or a second BuildConstants instance is registered"
+                                + " - every instance scans every probe, so all keys must be"
+                                + " supplied through a single instance per build");
             }
 
             if (!method.hasModifier(ElementModifier.STATIC)
@@ -137,8 +140,10 @@ public class BuildConstants implements ClassHolderTransformer {
         if (value == null) {
             throw new IllegalStateException(
                     "@BuildFlag key '" + key + "' at " + location
-                            + " has no supplied value - probe and build plugin are out of sync"
-                            + " (supply it in every build: setFlag(\"" + key + "\", ...))");
+                            + " has no supplied value. Supply it in every build"
+                            + " (setFlag(\"" + key + "\", ...)) - and through a single"
+                            + " BuildConstants instance: every registered instance scans every"
+                            + " probe, so a second instance fails on keys it doesn't own");
         }
 
         if (!method.hasModifier(ElementModifier.STATIC)

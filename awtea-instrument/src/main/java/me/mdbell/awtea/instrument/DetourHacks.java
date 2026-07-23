@@ -365,13 +365,22 @@ public class DetourHacks implements ClassHolderTransformer {
             }
             DetourReceiver receiver = detourClass.getAnnotation(DetourReceiver.class);
             if (receiver == null) {
-                throw new IllegalArgumentException(
-                        "Detour class missing @DetourReceiver: " + detourClass.getName()
-                                + " (annotate with @DisableDetour if intentionally disabled)");
+                boolean anyOn = false;
+                for (Method m : detourClass.getDeclaredMethods()) {
+                    if (m.getAnnotation(On.class) != null) {
+                        anyOn = true;
+                        break;
+                    }
+                }
+                if (!anyOn) {
+                    throw new IllegalArgumentException(
+                            "Detour class missing @DetourReceiver and has no @On methods: "
+                                    + detourClass.getName()
+                                    + " (annotate with @DisableDetour if intentionally disabled)");
+                }
             }
 
-            Class<?> targetType = receiver.target();
-            String targetClassName = targetType.getName();
+            Class<?> classTarget = receiver != null ? receiver.target() : null;
             registeredDetourClasses.add(detourClass.getName());
 
             for (Method m : detourClass.getDeclaredMethods()) {
@@ -397,6 +406,7 @@ public class DetourHacks implements ClassHolderTransformer {
                 DetourMethod dm = m.getAnnotation(DetourMethod.class);
 
                 Callers callersAnnotation = m.getAnnotation(Callers.class);
+                On on = m.getAnnotation(On.class);
 
                 int annotationCount = (before != null ? 1 : 0) + (after != null ? 1 : 0)
                         + (finallyAdvice != null ? 1 : 0)
@@ -410,12 +420,24 @@ public class DetourHacks implements ClassHolderTransformer {
                         throw new IllegalArgumentException(
                                 "@Callers without a detour annotation to filter: " + m);
                     }
+                    if (on != null) {
+                        throw new IllegalArgumentException(
+                                "@On without a detour annotation to target: " + m);
+                    }
                     continue;
                 }
                 if (annotationCount > 1) {
                     throw new IllegalArgumentException(
                             "Method carries more than one detour annotation: " + m);
                 }
+
+                Class<?> targetType = on != null ? on.value() : classTarget;
+                if (targetType == null) {
+                    throw new IllegalArgumentException(
+                            "No target for detour method: class has no @DetourReceiver and the"
+                                    + " method has no @On: " + m);
+                }
+                String targetClassName = targetType.getName();
                 Set<String> callers = null;
                 if (callersAnnotation != null) {
                     if (callersAnnotation.value().length == 0) {

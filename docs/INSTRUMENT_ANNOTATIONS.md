@@ -151,6 +151,26 @@ Stacks with any detour annotation; restricts binding to sites inside the
 listed classes. Class literals, so renames refactor with the code.
 Class-level granularity only, on purpose.
 
+### `@On` — per-method target
+
+```java
+@NoDetours                       // no @DetourReceiver needed when every hook has @On
+public class FramePacerDetour {
+    @Body("waitForNextFrame") @On(Class14_Sub1.class)
+    public static int waitForNextFrame(Class14_Sub1 self, ...) { ... }
+
+    @Body("waitForNextFrame") @On(Class14_Sub2.class)
+    public static int waitForNextFrame(Class14_Sub2 self, ...) { ... }
+}
+```
+
+Stacks with any detour annotation and aims that one hook at the given class,
+overriding the class-level `@DetourReceiver` (which stays the default for
+methods without `@On`). A class where every hook carries `@On` may omit the
+receiver entirely. The leading self parameter, when present, is typed as the
+`@On` class. Born of `@Body`, which binds concrete classes — hierarchies
+with several concretes would otherwise need one detour class each.
+
 ### `@DisableDetour` — explicit off-switch
 
 On a class: the whole detour class is skipped (quietly, and its
@@ -199,8 +219,10 @@ Rules learned the hard way:
   `OptimizationLevel.BALANCED` or above**. At NONE the branch remains,
   inert but shipped.
 
-The `EmbedTransformer` in awtea-graphics (`@ShaderSource`/`@CSSSource`) is
-the same mechanism with the value loaded from a classpath resource.
+`@EmbedResource("path/to/file")` is the same mechanism with the value loaded
+from a classpath resource (UTF-8, verbatim) — registered for every awtea
+build via `CustomTransformersPlugin`, so no per-app setup. awtea-graphics'
+`@ShaderSource` is its shader-specific sibling, adding include expansion.
 
 ## Zero-match verification
 

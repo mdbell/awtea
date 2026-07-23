@@ -15,16 +15,16 @@ import org.teavm.model.ValueType;
 import org.teavm.model.instructions.StringConstantInstruction;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 import static me.mdbell.awtea.util.ShaderIncludeProcessor.preprocessIncludes;
 
 /**
- * Embeds classpath resources into {@code @ShaderSource}/{@code @CSSSource}
+ * Embeds include-preprocessed shader sources into {@code @ShaderSource}
  * methods at build time by rewriting the placeholder string constant in their
  * IR — the annotated method must be a static String method whose body is
- * exactly {@code return "";}.
+ * exactly {@code return "";}. This is the shader-specific sibling of
+ * awtea-instrument's generic {@code @EmbedResource}: same mechanism, plus
+ * shader include expansion.
  * <p>
  * This replaces the old {@code EmbedGenerator}, which emitted JS source
  * directly ({@code return $rt_str("...")}). Hand-emitted JS hard-codes
@@ -53,32 +53,25 @@ public class EmbedTransformer implements ClassHolderTransformer {
     public void transformClass(ClassHolder classHolder, ClassHolderTransformerContext context) {
         for (MethodHolder method : classHolder.getMethods()) {
             AnnotationHolder shader = method.getAnnotations().get(ShaderSource.class.getName());
-            AnnotationHolder css = method.getAnnotations().get(CSSSource.class.getName());
-            if (shader == null && css == null) {
+            if (shader == null) {
                 continue;
             }
             String location = classHolder.getName() + "." + method.getName();
-            if (shader != null && css != null) {
-                throw new IllegalStateException(
-                        "Method carries both @ShaderSource and @CSSSource: " + location);
-            }
 
-            String path = (shader != null ? shader : css).getValue("value").getString();
+            String path = shader.getValue("value").getString();
             String text;
             try {
-                text = shader != null
-                        ? preprocessIncludes(path, new ClasspathRoot(classLoader))
-                        : loadResourceAsString(classLoader, path);
+                text = preprocessIncludes(path, new ClasspathRoot(classLoader));
             } catch (IOException e) {
                 throw new IllegalStateException(
-                        "Failed to read embedded resource '" + path + "' for " + location, e);
+                        "Failed to read embedded shader '" + path + "' for " + location, e);
             }
 
             if (!method.hasModifier(ElementModifier.STATIC)
                     || !ValueType.parse(String.class).equals(method.getResultType())
                     || !method.hasProgram()) {
                 throw new IllegalStateException(
-                        "@ShaderSource/@CSSSource method must be a static String method with a"
+                        "@ShaderSource method must be a static String method with a"
                                 + " 'return \"\";' placeholder body (not native): " + location);
             }
 
@@ -93,19 +86,10 @@ public class EmbedTransformer implements ClassHolderTransformer {
             }
             if (replaced != 1) {
                 throw new IllegalStateException(
-                        "@ShaderSource/@CSSSource method body must be exactly 'return \"\";'"
+                        "@ShaderSource method body must be exactly 'return \"\";'"
                                 + " (found " + replaced + " string constants): " + location);
             }
             log.debug("Embedded '{}' into {} ({} chars)", path, location, text.length());
-        }
-    }
-
-    private static String loadResourceAsString(ClassLoader cl, String path) throws IOException {
-        try (InputStream in = cl.getResourceAsStream(path)) {
-            if (in == null) {
-                throw new IOException("Resource not found on classpath: " + path);
-            }
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 }
