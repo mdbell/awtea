@@ -1,25 +1,33 @@
 package me.mdbell.awtea.gl;
 
 import lombok.experimental.UtilityClass;
-import org.teavm.backend.javascript.spi.GeneratedBy;
 
+/**
+ * Shader sources embedded at build time by {@link EmbedTransformer}: each
+ * {@code return "";} placeholder is rewritten to the (include-preprocessed)
+ * resource contents. Off TeaVM the placeholders are what you get.
+ */
 @UtilityClass
 public class Shaders {
 
 	@ShaderSource("shaders/color.vert")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String colorVertex();
+	public String colorVertex() {
+		return "";
+	}
 
 	@ShaderSource("shaders/color.frag")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String colorFragment();
+	public String colorFragment() {
+		return "";
+	}
 
 	@ShaderSource("shaders/tex.vert")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String textureVertex();
+	public String textureVertex() {
+		return "";
+	}
 
 	@ShaderSource("shaders/tex.frag")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String textureFragment();
+	public String textureFragment() {
+		return "";
+	}
 
 }

@@ -2,34 +2,44 @@ package me.mdbell.awtea.ui;
 
 import lombok.experimental.UtilityClass;
 import me.mdbell.awtea.gl.CSSSource;
-import me.mdbell.awtea.gl.EmbedGenerator;
-import org.teavm.backend.javascript.spi.GeneratedBy;
 
+/**
+ * Stylesheet sources embedded at build time by
+ * {@code me.mdbell.awtea.gl.EmbedTransformer}: each {@code return "";}
+ * placeholder is rewritten to the resource contents. Off TeaVM the
+ * placeholders are what you get.
+ */
 @UtilityClass
 public class UiStyles {
 
 	@CSSSource("styles/menubar.css")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String menubarCSS();
+	public String menubarCSS() {
+		return "";
+	}
 
 	@CSSSource("styles/taskbar.css")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String taskbarCSS();
+	public String taskbarCSS() {
+		return "";
+	}
 
 	@CSSSource("styles/floating-window.css")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String floatingWindowCSS();
+	public String floatingWindowCSS() {
+		return "";
+	}
 
 	@CSSSource("styles/floating-frame.css")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String floatingFrameCSS();
+	public String floatingFrameCSS() {
+		return "";
+	}
 
 	@CSSSource("styles/log-frame.css")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String logFrameCSS();
+	public String logFrameCSS() {
+		return "";
+	}
 
 	@CSSSource("styles/monitor-frame.css")
-	@GeneratedBy(EmbedGenerator.class)
-	public native String monitorFrameCSS();
+	public String monitorFrameCSS() {
+		return "";
+	}
 
 }
