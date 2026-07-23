@@ -7,6 +7,8 @@ import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.*;
+import org.teavm.model.emit.ProgramEmitter;
+import org.teavm.model.emit.ValueEmitter;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
@@ -94,8 +96,13 @@ public class DetourHacks implements ClassHolderTransformer {
         /** Pipe element reads of a field's array through a hook (see {@link ElementGet}). */
         ELEMENT_GET,
         /** Pipe element writes of a field's array through a hook (see {@link ElementSet}). */
-        ELEMENT_SET
+        ELEMENT_SET,
+        /** Replace the target method's body with a delegation (see {@link Body}). */
+        BODY
     }
+
+    /** Suffix for the synthetic method that preserves a body-detoured original. */
+    private static final String BODY_ORIGINAL_SUFFIX = "$original";
 
     /** Where an array variable came from: a read of a specific field. */
     private static class FieldOrigin {
@@ -161,6 +168,11 @@ public class DetourHacks implements ClassHolderTransformer {
          * {@link Callers}; null means unrestricted.
          */
         Set<String> callers;
+        /**
+         * BODY: FQCN of the @DetourReceiver target whose method body this
+         * hook replaces (needed by the declaring-class call-through rewrite).
+         */
+        String targetClass;
 
         MethodDetour(MethodDescriptor original, Class<?> detourClass, String detourName) {
             this.kind = Kind.REPLACE;
@@ -186,10 +198,10 @@ public class DetourHacks implements ClassHolderTransformer {
             this.detourName = detourName;
         }
 
-        /** FILTER: exact original descriptor plus the filter's own call shape. */
-        MethodDetour(MethodDescriptor original, boolean adviceHasSelf,
+        /** FILTER/BODY: exact original descriptor plus the hook's own call shape. */
+        MethodDetour(Kind kind, MethodDescriptor original, boolean adviceHasSelf,
                      MethodDescriptor adviceDescriptor, Class<?> detourClass, String detourName) {
-            this.kind = Kind.FILTER;
+            this.kind = kind;
             this.original = original;
             this.adviceTargetName = null;
             this.adviceTargetParams = null;
@@ -212,6 +224,13 @@ public class DetourHacks implements ClassHolderTransformer {
      * rewritten to report that this build applied them.
      */
     private final Set<String> registeredDetourClasses;
+
+    /**
+     * BODY detours keyed by the FQCN of the class that DECLARES the hook —
+     * inside that class (and only there) calls to the original are rewritten
+     * to the preserved {@code $original} body so the hook can call through.
+     */
+    private final Map<String, List<MethodDetour>> bodyHooksByDeclarer = new HashMap<>();
 
     /**
      * Whether any element hooks are registered at all — methods skip the
@@ -374,6 +393,7 @@ public class DetourHacks implements ClassHolderTransformer {
                 FieldSet fieldSet = m.getAnnotation(FieldSet.class);
                 ElementGet elementGet = m.getAnnotation(ElementGet.class);
                 ElementSet elementSet = m.getAnnotation(ElementSet.class);
+                Body body = m.getAnnotation(Body.class);
                 DetourMethod dm = m.getAnnotation(DetourMethod.class);
 
                 Callers callersAnnotation = m.getAnnotation(Callers.class);
@@ -383,6 +403,7 @@ public class DetourHacks implements ClassHolderTransformer {
                         + (guard != null ? 1 : 0) + (filter != null ? 1 : 0)
                         + (fieldGet != null ? 1 : 0) + (fieldSet != null ? 1 : 0)
                         + (elementGet != null ? 1 : 0) + (elementSet != null ? 1 : 0)
+                        + (body != null ? 1 : 0)
                         + (dm != null ? 1 : 0);
                 if (annotationCount == 0) {
                     if (callersAnnotation != null) {
@@ -426,6 +447,17 @@ public class DetourHacks implements ClassHolderTransformer {
                     } else if (elementGet != null) {
                         built = buildElementHook(Kind.ELEMENT_GET, targetType, elementGet.value(), m);
                         hasElementHooks = true;
+                    } else if (body != null) {
+                        if (callersAnnotation != null) {
+                            throw new IllegalArgumentException(
+                                    "@Callers cannot apply to @Body (a body detour has no call"
+                                            + " sites to filter): " + m);
+                        }
+                        built = buildBody(targetType, body.value(), m);
+                        built.targetClass = targetClassName;
+                        bodyHooksByDeclarer
+                                .computeIfAbsent(detourClass.getName(), k -> new ArrayList<>())
+                                .add(built);
                     } else if (elementSet != null) {
                         built = buildElementHook(Kind.ELEMENT_SET, targetType, elementSet.value(), m);
                         hasElementHooks = true;
@@ -617,8 +649,34 @@ public class DetourHacks implements ClassHolderTransformer {
         signature[signature.length - 1] = resultType;
         MethodDescriptor filterDesc = new MethodDescriptor(filterMethod.getName(), signature);
 
-        return new MethodDetour(originalDesc, hasSelf, filterDesc,
+        return new MethodDetour(Kind.FILTER, originalDesc, hasSelf, filterDesc,
                 filterMethod.getDeclaringClass(), filterMethod.getName());
+    }
+
+    /**
+     * Builds a body-detour mapping from a @Body method. The hook follows
+     * replacement conventions (leading Target parameter for instance
+     * methods, matching return type); the exact original descriptor is
+     * matched against the target class's methods at transform time.
+     */
+    private MethodDetour buildBody(Class<?> targetType, String name, Method bodyMethod) {
+        String originalName = name.isEmpty() ? bodyMethod.getName() : name;
+        if ("<init>".equals(originalName)) {
+            throw new IllegalArgumentException(
+                    "@Body on constructors is not supported: " + bodyMethod);
+        }
+        MethodDescriptor originalDesc =
+                buildOriginalDescriptorFromDetour(targetType, originalName, bodyMethod);
+
+        Class<?>[] hookParams = bodyMethod.getParameterTypes();
+        boolean hasSelf = hookParams.length > 0 && hookParams[0] == targetType;
+
+        Class<?>[] signature = Arrays.copyOf(hookParams, hookParams.length + 1);
+        signature[signature.length - 1] = bodyMethod.getReturnType();
+        MethodDescriptor hookDesc = new MethodDescriptor(bodyMethod.getName(), signature);
+
+        return new MethodDetour(Kind.BODY, originalDesc, hasSelf, hookDesc,
+                bodyMethod.getDeclaringClass(), bodyMethod.getName());
     }
 
     /**
@@ -757,6 +815,19 @@ public class DetourHacks implements ClassHolderTransformer {
             rewriteDetourAppliedProbes(classHolder);
         }
 
+        // Body detours act on the TARGET class's methods (not call sites) and
+        // on the hook's declaring class (call-through), so both run before
+        // the @NoDetours opt-out below - that flag governs call-site
+        // rewriting only.
+        MethodDetour[] detoursForClass = detours.get(classHolder.getName());
+        if (detoursForClass != null) {
+            applyBodyDetours(classHolder, context, detoursForClass);
+        }
+        List<MethodDetour> declaredBodyHooks = bodyHooksByDeclarer.get(classHolder.getName());
+        if (declaredBodyHooks != null) {
+            rewriteBodyCallThrough(classHolder, declaredBodyHooks);
+        }
+
         // Allow opting out at the class level with @NoDetours
         if (classHolder.getAnnotations().get(NoDetours.class.getName()) != null) {
             return;
@@ -764,6 +835,111 @@ public class DetourHacks implements ClassHolderTransformer {
 
         for (MethodHolder method : classHolder.getMethods()) {
             transformMethod(method);
+        }
+    }
+
+    /**
+     * Replaces the bodies of @Body-detoured methods on this target class.
+     * The original body moves to a public synthetic sibling
+     * ({@code name$original}, same signature and static-ness) and the method
+     * itself becomes a delegation to the hook. A missing target method is
+     * left to the zero-match verifier; a target without a program (native/
+     * abstract) or a hook whose leading-self form disagrees with the
+     * target's static-ness fails the build.
+     */
+    private void applyBodyDetours(ClassHolder classHolder,
+                                  ClassHolderTransformerContext context,
+                                  MethodDetour[] detoursForClass) {
+        for (MethodDetour detour : detoursForClass) {
+            if (detour.kind != Kind.BODY) {
+                continue;
+            }
+            MethodHolder original = classHolder.getMethod(detour.original);
+            if (original == null) {
+                continue; // zero-match verifier reports the drift
+            }
+            String location = classHolder.getName() + "." + detour.original.getName();
+            if (!original.hasProgram()) {
+                throw new IllegalStateException(
+                        "@Body target must have a body (not native/abstract): " + location);
+            }
+            boolean isStatic = original.hasModifier(ElementModifier.STATIC);
+            if (detour.adviceHasSelf == isStatic) {
+                throw new IllegalStateException(
+                        "@Body hook form mismatch: leading Target parameter must be present"
+                                + " exactly when the original is an instance method: " + location);
+            }
+            MethodDescriptor syntheticDesc = new MethodDescriptor(
+                    detour.original.getName() + BODY_ORIGINAL_SUFFIX, detour.original.getSignature());
+            if (classHolder.getMethod(syntheticDesc) != null) {
+                throw new IllegalStateException(
+                        "@Body synthetic name collision: " + classHolder.getName()
+                                + "." + syntheticDesc.getName());
+            }
+
+            // Preserve the original body under the synthetic name.
+            MethodHolder synthetic = new MethodHolder(syntheticDesc);
+            synthetic.setLevel(AccessLevel.PUBLIC);
+            if (isStatic) {
+                synthetic.getModifiers().add(ElementModifier.STATIC);
+            }
+            synthetic.setProgram(original.getProgram());
+            classHolder.addMethod(synthetic);
+
+            // The method itself becomes: return Hook.hook(this?, args...);
+            ProgramEmitter pe = ProgramEmitter.create(original, context.getHierarchy());
+            ValueType[] signature = detour.original.getSignature();
+            List<ValueEmitter> args = new ArrayList<>();
+            if (!isStatic) {
+                args.add(pe.var(0, ValueType.object(classHolder.getName())));
+            }
+            for (int i = 0; i < signature.length - 1; i++) {
+                args.add(pe.var(i + 1, signature[i]));
+            }
+            ValueType returnType = detour.original.getResultType();
+            if (ValueType.VOID.equals(returnType)) {
+                pe.invoke(detour.detourClass.getName(), detour.detourName,
+                        args.toArray(new ValueEmitter[0]));
+                pe.exit();
+            } else {
+                pe.invoke(detour.detourClass.getName(), detour.detourName, returnType,
+                        args.toArray(new ValueEmitter[0])).returnValue();
+            }
+            detour.matchedSites++;
+            log.debug("Replaced body of {} with delegation to {}.{}",
+                    location, detour.detourClass.getName(), detour.detourName);
+        }
+    }
+
+    /**
+     * Inside a @Body hook's declaring class, calls to the detoured original
+     * are redirected to the preserved {@code $original} body — this is what
+     * lets the hook call through without recursing into itself. The rewrite
+     * is deliberately limited to the declaring class; everywhere else the
+     * replaced body (and thus the hook) is the point.
+     */
+    private void rewriteBodyCallThrough(ClassHolder classHolder, List<MethodDetour> hooks) {
+        for (MethodHolder method : classHolder.getMethods()) {
+            if (!method.hasProgram()) {
+                continue;
+            }
+            for (BasicBlock block : method.getProgram().getBasicBlocks()) {
+                for (Instruction insn : block) {
+                    if (!(insn instanceof InvokeInstruction)) {
+                        continue;
+                    }
+                    InvokeInstruction invoke = (InvokeInstruction) insn;
+                    for (MethodDetour hook : hooks) {
+                        if (invoke.getMethod().getClassName().equals(hook.targetClass)
+                                && invoke.getMethod().getDescriptor().equals(hook.original)) {
+                            invoke.setMethod(new MethodReference(hook.targetClass,
+                                    new MethodDescriptor(
+                                            hook.original.getName() + BODY_ORIGINAL_SUFFIX,
+                                            hook.original.getSignature())));
+                        }
+                    }
+                }
+            }
         }
     }
 

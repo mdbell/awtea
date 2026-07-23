@@ -92,6 +92,26 @@ parameter doubles as the declared return type). Void originals can't be
 filtered — use `@After`. Filters chain; they compose with replacements
 (piping whatever the rewritten call produces).
 
+### `@Body` — method-body replacement
+
+```java
+@Body("foo")                   // replaces Target.foo's BODY, not its call sites
+public static R foo(Target self, A a, B b) {
+    ...
+    return self.foo(a, b);     // inside the hook's declaring class this is
+}                              // rewritten to the preserved original body
+```
+
+Every invocation path is hooked — virtual dispatch through supertypes,
+interface calls, reflection, calls inside `@NoDetours` classes — because the
+target method's body itself becomes a delegation to the hook; the original
+body survives as a public synthetic sibling (`foo$original`). Call-through
+rewriting applies **only inside the hook's declaring class**. Sharp edges:
+subclass overrides are separate bodies and are not hooked; constructors and
+native/abstract methods are unsupported; `@Callers` cannot combine with it
+(there is no call site). Call-site detours on the same method still bind
+their sites and run in front of the body hook.
+
 ## Field and element hooks
 
 Bound to a named field on the `@DetourReceiver` target. Name + form matched;
@@ -205,6 +225,8 @@ Intentionally dead detours get `@DisableDetour`, not a tolerated zero-match.
 | `@Filter` + `@Filter` | chain (order = registration order) |
 | `@Guard` + `@Guard`/`@Finally`/`@DetourMethod`/`@Filter` | build error |
 | `@Finally` + `@Finally` | build error |
+| `@Body` + `@Callers` | build error (no call site to filter) |
+| `@Body` + call-site detours on the same method | compose: sites bind first, then the body hook |
 | Two detour annotations on one method | build error |
 
 Transform order per site: control-flow wrap (guard/finally) first, then
