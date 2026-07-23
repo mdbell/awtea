@@ -3,6 +3,7 @@ package me.mdbell.awtea.instrument;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.model.*;
+import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 
 import java.io.BufferedReader;
@@ -73,6 +74,13 @@ public class DetourHacks implements ClassHolderTransformer {
      */
     private final Map<String, MethodDetour[]> detours;
 
+    /**
+     * FQCNs of the registered detour classes themselves (the ones carrying
+     * a valid @DetourReceiver). Their @DetourApplied probe methods get
+     * rewritten to report that this build applied them.
+     */
+    private final Set<String> registeredDetourClasses;
+
     private static final Logger log = LoggerFactory.getLogger(DetourHacks.class);
 
     /**
@@ -82,6 +90,7 @@ public class DetourHacks implements ClassHolderTransformer {
      * static methods annotated with @DetourMethod.
      */
     public DetourHacks(Collection<Class<?>> detourClasses) {
+        this.registeredDetourClasses = new HashSet<>();
         this.detours = buildDetourMap(detourClasses);
     }
 
@@ -201,6 +210,7 @@ public class DetourHacks implements ClassHolderTransformer {
 
             Class<?> targetType = receiver.target();
             String targetClassName = targetType.getName();
+            registeredDetourClasses.add(detourClass.getName());
 
             for (Method m : detourClass.getDeclaredMethods()) {
                 DetourMethod dm = m.getAnnotation(DetourMethod.class);
@@ -319,6 +329,12 @@ public class DetourHacks implements ClassHolderTransformer {
 
     @Override
     public void transformClass(ClassHolder classHolder, ClassHolderTransformerContext context) {
+        // @DetourApplied probes live in the detour classes themselves, which
+        // are typically @NoDetours - rewrite them before the opt-out below.
+        if (registeredDetourClasses.contains(classHolder.getName())) {
+            rewriteDetourAppliedProbes(classHolder);
+        }
+
         // Allow opting out at the class level with @NoDetours
         if (classHolder.getAnnotations().get(NoDetours.class.getName()) != null) {
             return;
@@ -326,6 +342,50 @@ public class DetourHacks implements ClassHolderTransformer {
 
         for (MethodHolder method : classHolder.getMethods()) {
             transformMethod(method);
+        }
+    }
+
+    /**
+     * Rewrites every @DetourApplied method of a registered detour class from
+     * its mandatory {@code return false;} body to return true.
+     * <p>
+     * Edits the javac-produced constant in place instead of synthesizing a
+     * replacement {@link Program}: hand-built IR has to honor renderer
+     * invariants the model API doesn't enforce. The strict body convention is
+     * what makes the in-place edit safe, so violations fail the build.
+     */
+    private void rewriteDetourAppliedProbes(ClassHolder classHolder) {
+        for (MethodHolder method : classHolder.getMethods()) {
+            if (method.getAnnotations().get(DetourApplied.class.getName()) == null) {
+                continue;
+            }
+            if (!method.hasModifier(ElementModifier.STATIC)
+                    || method.getResultType() != ValueType.BOOLEAN
+                    || !method.hasProgram()) {
+                throw new IllegalStateException(
+                        "@DetourApplied method must be a static boolean method with a body: "
+                                + classHolder.getName() + "." + method.getName());
+            }
+
+            boolean rewritten = false;
+            for (BasicBlock block : method.getProgram().getBasicBlocks()) {
+                for (Instruction insn : block) {
+                    if (insn instanceof IntegerConstantInstruction) {
+                        IntegerConstantInstruction constant = (IntegerConstantInstruction) insn;
+                        if (constant.getConstant() == 0) {
+                            constant.setConstant(1);
+                            rewritten = true;
+                        }
+                    }
+                }
+            }
+            if (!rewritten) {
+                throw new IllegalStateException(
+                        "@DetourApplied method body must be exactly 'return false;': "
+                                + classHolder.getName() + "." + method.getName());
+            }
+            log.debug("Rewrote @DetourApplied probe {}.{} to true",
+                    classHolder.getName(), method.getName());
         }
     }
 
