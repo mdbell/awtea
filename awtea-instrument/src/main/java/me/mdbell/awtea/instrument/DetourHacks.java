@@ -20,6 +20,7 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.BasicBlockSplitter;
 import org.teavm.model.util.ProgramUtils;
@@ -80,6 +81,8 @@ public class DetourHacks implements ClassHolderTransformer {
         BEFORE,
         /** Insert an advice call after the original call. */
         AFTER,
+        /** Advice on both normal and exceptional exit (see {@link Finally}). */
+        FINALLY,
         /** Let a @Guard decide whether the original runs (see {@link Guard}). */
         GUARD,
         /** Pipe the original's result through a @Filter (see {@link Filter}). */
@@ -364,6 +367,7 @@ public class DetourHacks implements ClassHolderTransformer {
 
                 Before before = m.getAnnotation(Before.class);
                 After after = m.getAnnotation(After.class);
+                Finally finallyAdvice = m.getAnnotation(Finally.class);
                 Guard guard = m.getAnnotation(Guard.class);
                 Filter filter = m.getAnnotation(Filter.class);
                 FieldGet fieldGet = m.getAnnotation(FieldGet.class);
@@ -375,6 +379,7 @@ public class DetourHacks implements ClassHolderTransformer {
                 Callers callersAnnotation = m.getAnnotation(Callers.class);
 
                 int annotationCount = (before != null ? 1 : 0) + (after != null ? 1 : 0)
+                        + (finallyAdvice != null ? 1 : 0)
                         + (guard != null ? 1 : 0) + (filter != null ? 1 : 0)
                         + (fieldGet != null ? 1 : 0) + (fieldSet != null ? 1 : 0)
                         + (elementGet != null ? 1 : 0) + (elementSet != null ? 1 : 0)
@@ -427,16 +432,19 @@ public class DetourHacks implements ClassHolderTransformer {
                     } else {
                         Kind kind = before != null ? Kind.BEFORE
                                 : after != null ? Kind.AFTER
+                                : finallyAdvice != null ? Kind.FINALLY
                                 : guard != null ? Kind.GUARD
                                 : Kind.FILTER;
                         String name = before != null ? before.value()
                                 : after != null ? after.value()
+                                : finallyAdvice != null ? finallyAdvice.value()
                                 : guard != null ? guard.value()
                                 : filter.value();
                         String originalName = name.isEmpty() ? m.getName() : name;
                         switch (kind) {
                             case BEFORE:
                             case AFTER:
+                            case FINALLY:
                                 built = buildAdvice(kind, targetType, originalName, m);
                                 break;
                             case GUARD:
@@ -1090,6 +1098,7 @@ public class DetourHacks implements ClassHolderTransformer {
         }
 
         List<MethodDetour> guards = new ArrayList<>();
+        List<MethodDetour> finallies = new ArrayList<>();
         List<MethodDetour> advice = new ArrayList<>();
         List<MethodDetour> filters = new ArrayList<>();
         boolean anyReplace = false;
@@ -1101,6 +1110,11 @@ public class DetourHacks implements ClassHolderTransformer {
                 case GUARD:
                     if (adviceMatches(detour, invoke, ref)) {
                         guards.add(detour);
+                    }
+                    break;
+                case FINALLY:
+                    if (adviceMatches(detour, invoke, ref)) {
+                        finallies.add(detour);
                     }
                     break;
                 case BEFORE:
@@ -1124,23 +1138,31 @@ public class DetourHacks implements ClassHolderTransformer {
             }
         }
 
-        // A guard owns the call site's control flow; a second guard, a
-        // replacement or a filter on the same site has no defined composition.
-        // Wrap the guard around the original FIRST, so advice inserted next to
-        // the invoke lands inside the conditional block and runs only when the
-        // original actually runs.
-        if (!guards.isEmpty()) {
-            if (guards.size() > 1 || anyReplace || !filters.isEmpty()) {
+        // A guard or @Finally owns the call site's control flow, so at most
+        // one of either may bind, and a guard additionally excludes
+        // replacements and filters. Wrap the control flow FIRST, so advice
+        // and filters inserted next to the invoke land inside the guarded /
+        // protected block.
+        if (!guards.isEmpty() || !finallies.isEmpty()) {
+            if (guards.size() > 1 || finallies.size() > 1
+                    || (!guards.isEmpty() && !finallies.isEmpty())
+                    || (!guards.isEmpty() && (anyReplace || !filters.isEmpty()))) {
                 throw new IllegalStateException(
                         "Conflicting detours on call site " + ref + " in "
                                 + owner.getOwnerName() + "." + owner.getName()
-                                + ": a guard cannot combine with another guard, a replacement or a filter");
+                                + ": at most one guard or @Finally may bind a site, and a guard"
+                                + " cannot combine with a replacement or a filter");
             }
             if (splitter == null) {
                 splitter = new BasicBlockSplitter(program);
             }
-            applyGuard(program, splitter, guards.get(0), invoke);
-            guards.get(0).matchedSites++;
+            if (!guards.isEmpty()) {
+                applyGuard(program, splitter, guards.get(0), invoke);
+                guards.get(0).matchedSites++;
+            } else {
+                applyFinally(program, splitter, finallies.get(0), invoke);
+                finallies.get(0).matchedSites++;
+            }
         }
 
         // Advice next, while the instruction still reflects the original call
@@ -1263,6 +1285,16 @@ public class DetourHacks implements ClassHolderTransformer {
      * an exception skips it exactly like the statement following the call.
      */
     private static void insertAdvice(MethodDetour advice, InvokeInstruction invoke) {
+        InvokeInstruction call = buildAdviceCall(advice, invoke);
+        if (advice.kind == Kind.BEFORE) {
+            invoke.insertPrevious(call);
+        } else {
+            invoke.insertNext(call);
+        }
+    }
+
+    /** A static call to an advice-shaped hook, with the invoke's receiver/args. */
+    private static InvokeInstruction buildAdviceCall(MethodDetour advice, InvokeInstruction invoke) {
         InvokeInstruction call = new InvokeInstruction();
         call.setType(InvocationType.SPECIAL);
         call.setMethod(new MethodReference(advice.detourClass.getName(), advice.adviceDescriptor));
@@ -1274,12 +1306,66 @@ public class DetourHacks implements ClassHolderTransformer {
         args.addAll(invoke.getArguments());
         call.setArguments(args.toArray(new Variable[0]));
         call.setLocation(invoke.getLocation());
+        return call;
+    }
 
-        if (advice.kind == Kind.BEFORE) {
-            invoke.insertPrevious(call);
-        } else {
-            invoke.insertNext(call);
-        }
+    /**
+     * Wraps a call site so the advice runs on both exits:
+     *
+     * <pre>
+     * head:    ...           -> jump call
+     * call:    [try: catch-all -> handler] result = original invoke;
+     *          hook(self?, args...); jump join
+     * handler: hook(self?, args...); rethrow      (covered by the site's
+     *                                              original handlers, so the
+     *                                              rethrow stays catchable)
+     * join:    ...rest...
+     * </pre>
+     *
+     * The synthesized catch-all sits ahead of the handlers the split copied
+     * onto the call block, so it intercepts first; no phi is needed because
+     * the exception path rethrows and never reaches the join. The handler
+     * defines nothing but its exception variable, which keeps any enclosing
+     * handler's phi wiring untouched.
+     */
+    private static void applyFinally(Program program, BasicBlockSplitter splitter,
+                                     MethodDetour advice, InvokeInstruction invoke) {
+        BasicBlock headBlock = invoke.getBasicBlock();
+        TextLocation location = invoke.getLocation();
+
+        // getPrevious() == null (invoke first in block) is fine: the splitter
+        // treats a null split point as "move every instruction".
+        BasicBlock invokeBlock = splitter.split(headBlock, invoke.getPrevious());
+        BasicBlock joinBlock = splitter.split(invokeBlock, invoke);
+
+        BasicBlock handlerBlock = program.createBasicBlock();
+        Variable exception = program.createVariable();
+        handlerBlock.setExceptionVariable(exception);
+        handlerBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(headBlock, program));
+
+        handlerBlock.add(buildAdviceCall(advice, invoke));
+
+        RaiseInstruction rethrow = new RaiseInstruction();
+        rethrow.setException(exception);
+        rethrow.setLocation(location);
+        handlerBlock.add(rethrow);
+
+        TryCatchBlock tryCatch = new TryCatchBlock();
+        // no exception type set: catch everything
+        tryCatch.setHandler(handlerBlock);
+        invokeBlock.getTryCatchBlocks().add(0, tryCatch);
+
+        invoke.insertNext(buildAdviceCall(advice, invoke));
+
+        JumpInstruction headJump = new JumpInstruction();
+        headJump.setTarget(invokeBlock);
+        headJump.setLocation(location);
+        headBlock.add(headJump);
+
+        JumpInstruction invokeJump = new JumpInstruction();
+        invokeJump.setTarget(joinBlock);
+        invokeJump.setLocation(location);
+        invokeBlock.add(invokeJump);
     }
 
     /**
