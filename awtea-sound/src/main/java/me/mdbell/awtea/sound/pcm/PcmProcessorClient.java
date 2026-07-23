@@ -54,8 +54,18 @@ public class PcmProcessorClient {
 
     private AudioWorkletNode node;
 
-    @Getter
-    private int queuedBytes;
+    /**
+     * Total bytes posted to the worklet / total bytes it has confirmed
+     * consuming via "consumed" messages. The difference is what's queued —
+     * but see {@link #getQueuedBytes()}: confirmations need main-thread
+     * event-loop turns, which a busy render loop starves, so the live value
+     * is estimated from the audio clock and these totals only anchor it.
+     */
+    private long sentBytes;
+    private long ackedBytes;
+
+    /** Audio-clock time ({@code context.currentTime}) of the last ack. */
+    private double lastAckTime;
 
     private int sampleSizeBits;
     private boolean bigEndian;
@@ -90,8 +100,39 @@ public class PcmProcessorClient {
         this.channels = channels;
         this.maxQueuedFrames = maxQueuedFrames;
         this.context = context;
+    }
 
-        this.queuedBytes = 0;
+    /**
+     * Bytes currently queued in the worklet, estimated from the audio clock.
+     *
+     * <p>The worklet's "consumed" confirmations are main-thread message
+     * events, and a render loop that only yields via MessageChannel
+     * micro-yields (sub-target-FPS frames) starves them — with a pure
+     * message-driven counter the queue reads phantom-full, {@link #enqueue}
+     * bounces every write, and the worklet underruns while the client
+     * believes the line is full. The worklet consumes at exactly
+     * {@link #sampleRate} while it has data and {@code context.currentTime}
+     * advances on the audio thread's own clock, so consumption since the
+     * last confirmed ack is estimated as {@code elapsed * byteRate}, clamped
+     * to what was actually sent. Acks re-anchor the estimate whenever they
+     * do get through; during a worklet underrun the clock over-estimates
+     * drain, which reads as free space — exactly when pushing more audio is
+     * the right call.</p>
+     */
+    public int getQueuedBytes() {
+        long unacked = sentBytes - ackedBytes;
+        if (unacked <= 0) {
+            return 0;
+        }
+        double elapsed = context.getCurrentTime() - lastAckTime;
+        if (elapsed > 0) {
+            long estimatedDrain = (long) (elapsed * sampleRate) * frameSizeBytes;
+            unacked -= estimatedDrain;
+            if (unacked < 0) {
+                unacked = 0;
+            }
+        }
+        return (int) unacked;
     }
 
     public void addDrainListener(DrainListener listener) {
@@ -122,13 +163,17 @@ public class PcmProcessorClient {
             if (type.equals("consumed")) {
                 ConsumedMessage consumedMsg = (ConsumedMessage) msg;
                 int bytesConsumed = consumedMsg.getBytes();
-                queuedBytes -= bytesConsumed;
-                if (queuedBytes < 0) {
-                    queuedBytes = 0;
+                // Authoritative reconciliation: the confirmed totals advance
+                // and the clock estimate re-anchors at this instant.
+                ackedBytes += bytesConsumed;
+                if (ackedBytes > sentBytes) {
+                    ackedBytes = sentBytes;
                 }
+                lastAckTime = context.getCurrentTime();
+                int remaining = getQueuedBytes();
                 log.trace("PCM Client: Processor consumed {} bytes. {} bytes remaining in queue.",
-                        bytesConsumed, queuedBytes);
-                drainListenerSet.removeIf(l -> l.onDrain(bytesConsumed, queuedBytes));
+                        bytesConsumed, remaining);
+                drainListenerSet.removeIf(l -> l.onDrain(bytesConsumed, remaining));
             }
         });
 
@@ -153,7 +198,7 @@ public class PcmProcessorClient {
             return 0;
         }
 
-        int bytesQueued = queuedBytes;
+        int bytesQueued = getQueuedBytes();
         int maxBytes = maxQueuedFrames * frameSizeBytes;
         int freeBytes = maxBytes - bytesQueued;
         if (freeBytes <= 0) {
@@ -186,7 +231,12 @@ public class PcmProcessorClient {
 
         postWithTransfer(this.node.getPort(), message, slice);
 
-        this.queuedBytes += bytesToSend;
+        if (sentBytes == ackedBytes) {
+            // Queue was (estimated) empty: anchor the clock now so the
+            // estimate starts draining from this write, not from a stale ack.
+            lastAckTime = context.getCurrentTime();
+        }
+        this.sentBytes += bytesToSend;
         return frames;
     }
 
