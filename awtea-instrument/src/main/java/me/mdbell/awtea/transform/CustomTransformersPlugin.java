@@ -10,7 +10,11 @@ public class CustomTransformersPlugin implements TeaVMPlugin {
 
 	@Override
 	public void install(TeaVMHost host) {
-		host.add(DetourHacks.fromResource("META-INF/awtea.detours"));
+		DetourHacks detours = DetourHacks.fromResource("META-INF/awtea.detours");
+		host.add(detours);
+		// warnings only: the classlib detours are opportunistic platform
+		// fixes, and an app need not use every API they cover
+		host.add(detours.zeroMatchVerifier(false));
 		host.add(new MonitorHacks());
 		host.add(new ArrayHacks());
 	}

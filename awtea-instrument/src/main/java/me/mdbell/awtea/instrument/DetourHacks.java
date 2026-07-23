@@ -2,6 +2,10 @@ package me.mdbell.awtea.instrument;
 
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyListener;
+import org.teavm.dependency.FieldDependency;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.model.*;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
@@ -112,6 +116,13 @@ public class DetourHacks implements ClassHolderTransformer {
          * Name of the detour method inside detourClass.
          */
         final String detourName;
+        /**
+         * Call sites this detour actually rewrote/instrumented. Zero at the
+         * end of dependency analysis means the original was renamed, its
+         * signature drifted, or the detour is dead — see
+         * {@link #zeroMatchVerifier(boolean)}.
+         */
+        int matchedSites;
 
         MethodDetour(MethodDescriptor original, Class<?> detourClass, String detourName) {
             this.kind = Kind.REPLACE;
@@ -285,10 +296,15 @@ public class DetourHacks implements ClassHolderTransformer {
         Map<String, List<MethodDetour>> tmp = new HashMap<>();
 
         for (Class<?> detourClass : detourClasses) {
+            if (detourClass.getAnnotation(DisableDetour.class) != null) {
+                log.info("Detour class disabled via @DisableDetour: {}", detourClass.getName());
+                continue;
+            }
             DetourReceiver receiver = detourClass.getAnnotation(DetourReceiver.class);
             if (receiver == null) {
-                log.warn("Detour class missing @DetourReceiver: {} - skipping", detourClass.getName());
-                continue;
+                throw new IllegalArgumentException(
+                        "Detour class missing @DetourReceiver: " + detourClass.getName()
+                                + " (annotate with @DisableDetour if intentionally disabled)");
             }
 
             Class<?> targetType = receiver.target();
@@ -298,6 +314,10 @@ public class DetourHacks implements ClassHolderTransformer {
             for (Method m : detourClass.getDeclaredMethods()) {
                 if (m.getAnnotation(NoDetours.class) != null) {
                     // explicit opt-out
+                    continue;
+                }
+                if (m.getAnnotation(DisableDetour.class) != null) {
+                    log.info("Detour method disabled via @DisableDetour: {}", m);
                     continue;
                 }
 
@@ -718,18 +738,21 @@ public class DetourHacks implements ClassHolderTransformer {
                 splitter = new BasicBlockSplitter(program);
             }
             applyGuard(program, splitter, guards.get(0), invoke);
+            guards.get(0).matchedSites++;
         }
 
         // Advice next, while the instruction still reflects the original call
         // - a replacement below rewrites the receiver/args/method in place.
         for (MethodDetour detour : advice) {
             insertAdvice(detour, invoke);
+            detour.matchedSites++;
         }
 
         // Filters wrap the call's result; they compose with a replacement
         // (the filter call pipes whatever the rewritten invoke produces).
         for (MethodDetour detour : filters) {
             applyFilter(program, detour, invoke);
+            detour.matchedSites++;
         }
 
         for (MethodDetour detour : detoursForClass) {
@@ -750,6 +773,7 @@ public class DetourHacks implements ClassHolderTransformer {
                         && thisVar != null && thisVar.getIndex() == 0) {
                     continue;
                 }
+                detour.matchedSites++;
 
                 // Constructor detour:
                 // Original sig: [p1, p2, ..., void]
@@ -770,6 +794,7 @@ public class DetourHacks implements ClassHolderTransformer {
                 continue;
             }
 
+            detour.matchedSites++;
             if (thisVar != null) {
                 // Instance method detour:
                 // Original sig: [p1, p2, ..., R]
@@ -1032,5 +1057,76 @@ public class DetourHacks implements ClassHolderTransformer {
         call.setReceiver(result);
         call.setLocation(invoke.getLocation());
         invoke.insertNext(call);
+    }
+
+    /**
+     * Build-time safety net: a {@link DependencyListener} that, once
+     * dependency analysis completes (i.e. every reachable class has been
+     * transformed), reports every registered detour that matched zero call
+     * sites. A silent zero-match is how a renamed original or a drifted
+     * signature quietly un-hooks a detour.
+     * <p>
+     * Register it alongside the transformer itself:
+     * <pre>
+     * DetourHacks detours = ...;
+     * host.add(detours);
+     * host.add(detours.zeroMatchVerifier(true));
+     * </pre>
+     *
+     * @param failOnUnmatched true to report unmatched detours as build
+     *                        errors — right for an application's own detours,
+     *                        where every registration is expected to bind.
+     *                        Use false (warnings) for opportunistic library
+     *                        detour sets whose target APIs an application may
+     *                        legitimately never use. Intentionally dead
+     *                        detours should be annotated {@link DisableDetour}
+     *                        rather than left unmatched.
+     */
+    public DependencyListener zeroMatchVerifier(boolean failOnUnmatched) {
+        return new DependencyListener() {
+            @Override
+            public void started(DependencyAgent agent) {
+            }
+
+            @Override
+            public void classReached(DependencyAgent agent, String className) {
+            }
+
+            @Override
+            public void methodReached(DependencyAgent agent, MethodDependency method) {
+            }
+
+            @Override
+            public void fieldReached(DependencyAgent agent, FieldDependency field) {
+            }
+
+            @Override
+            public void completing(DependencyAgent agent) {
+                detours.forEach((targetClass, detourList) -> {
+                    for (MethodDetour detour : detourList) {
+                        if (detour.matchedSites > 0) {
+                            continue;
+                        }
+                        String originalName = detour.original != null
+                                ? detour.original.getName()
+                                : detour.adviceTargetName;
+                        String message = "Detour matched no call sites: " + detour.kind + " on "
+                                + targetClass + "." + originalName + " -> "
+                                + detour.detourClass.getName() + "." + detour.detourName
+                                + " (was the original renamed? annotate with @DisableDetour if"
+                                + " intentionally disabled)";
+                        if (failOnUnmatched) {
+                            agent.getDiagnostics().error(null, message);
+                        } else {
+                            agent.getDiagnostics().warning(null, message);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void complete() {
+            }
+        };
     }
 }

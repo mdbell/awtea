@@ -1,11 +1,14 @@
 package me.mdbell.awtea.instrument.detour;
 
 import me.mdbell.awtea.instrument.DetourMethod;
+import me.mdbell.awtea.instrument.DetourReceiver;
+import me.mdbell.awtea.instrument.DisableDetour;
 import me.mdbell.awtea.instrument.NoDetours;
 import me.mdbell.awtea.monitor.ThreadMonitor;
 
 @NoDetours
-// @DetourReceiver(target = Thread.class)
+@DisableDetour
+@DetourReceiver(target = Thread.class)
 public class ThreadDetour {
 
     @DetourMethod(constructor = true)
