@@ -7,16 +7,20 @@ import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.*;
+import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.BasicBlockSplitter;
 import org.teavm.model.util.ProgramUtils;
 
@@ -83,7 +87,24 @@ public class DetourHacks implements ClassHolderTransformer {
         /** Pipe every read of a field through a hook (see {@link FieldGet}). */
         FIELD_GET,
         /** Pipe every write of a field through a hook (see {@link FieldSet}). */
-        FIELD_SET
+        FIELD_SET,
+        /** Pipe element reads of a field's array through a hook (see {@link ElementGet}). */
+        ELEMENT_GET,
+        /** Pipe element writes of a field's array through a hook (see {@link ElementSet}). */
+        ELEMENT_SET
+    }
+
+    /** Where an array variable came from: a read of a specific field. */
+    private static class FieldOrigin {
+        final FieldReference field;
+        final Variable instance;
+        final ValueType fieldType;
+
+        FieldOrigin(FieldReference field, Variable instance, ValueType fieldType) {
+            this.field = field;
+            this.instance = instance;
+            this.fieldType = fieldType;
+        }
     }
 
     /**
@@ -183,6 +204,12 @@ public class DetourHacks implements ClassHolderTransformer {
      * rewritten to report that this build applied them.
      */
     private final Set<String> registeredDetourClasses;
+
+    /**
+     * Whether any element hooks are registered at all — methods skip the
+     * per-method array-origin scan entirely when none are.
+     */
+    private boolean hasElementHooks;
 
     private static final Logger log = LoggerFactory.getLogger(DetourHacks.class);
 
@@ -336,11 +363,14 @@ public class DetourHacks implements ClassHolderTransformer {
                 Filter filter = m.getAnnotation(Filter.class);
                 FieldGet fieldGet = m.getAnnotation(FieldGet.class);
                 FieldSet fieldSet = m.getAnnotation(FieldSet.class);
+                ElementGet elementGet = m.getAnnotation(ElementGet.class);
+                ElementSet elementSet = m.getAnnotation(ElementSet.class);
                 DetourMethod dm = m.getAnnotation(DetourMethod.class);
 
                 int annotationCount = (before != null ? 1 : 0) + (after != null ? 1 : 0)
                         + (guard != null ? 1 : 0) + (filter != null ? 1 : 0)
                         + (fieldGet != null ? 1 : 0) + (fieldSet != null ? 1 : 0)
+                        + (elementGet != null ? 1 : 0) + (elementSet != null ? 1 : 0)
                         + (dm != null ? 1 : 0);
                 if (annotationCount == 0) {
                     continue;
@@ -365,6 +395,12 @@ public class DetourHacks implements ClassHolderTransformer {
                         built = buildFieldHook(Kind.FIELD_GET, targetType, fieldGet.value(), m);
                     } else if (fieldSet != null) {
                         built = buildFieldHook(Kind.FIELD_SET, targetType, fieldSet.value(), m);
+                    } else if (elementGet != null) {
+                        built = buildElementHook(Kind.ELEMENT_GET, targetType, elementGet.value(), m);
+                        hasElementHooks = true;
+                    } else if (elementSet != null) {
+                        built = buildElementHook(Kind.ELEMENT_SET, targetType, elementSet.value(), m);
+                        hasElementHooks = true;
                     } else {
                         Kind kind = before != null ? Kind.BEFORE
                                 : after != null ? Kind.AFTER
@@ -584,6 +620,43 @@ public class DetourHacks implements ClassHolderTransformer {
     }
 
     /**
+     * Builds an element hook mapping from an @ElementGet/@ElementSet method:
+     * {@code (Target self?, int index, T value) -> T}, where T is the array's
+     * element type. Stored params hold the element type; the field's actual
+     * array type is checked against {@code T[]} at every matched site.
+     */
+    private MethodDetour buildElementHook(Kind kind, Class<?> targetType, String fieldName,
+                                          Method hookMethod) {
+        Class<?> elementType = hookMethod.getReturnType();
+        if (elementType == void.class) {
+            throw new IllegalArgumentException(
+                    "Element hook must return the array's (non-void) element type: " + hookMethod);
+        }
+        Class<?>[] params = hookMethod.getParameterTypes();
+        if (params.length < 2
+                || params[params.length - 1] != elementType
+                || params[params.length - 2] != int.class) {
+            throw new IllegalArgumentException(
+                    "Element hook signature must be (int index, T value) or"
+                            + " (Target self, int index, T value) with T matching the return type: "
+                            + hookMethod);
+        }
+        boolean hasSelf = params.length == 3 && params[0] == targetType;
+        if (params.length > 3 || (params.length == 3 && !hasSelf)) {
+            throw new IllegalArgumentException(
+                    "Element hook signature must be (int index, T value) or"
+                            + " (Target self, int index, T value): " + hookMethod);
+        }
+
+        Class<?>[] signature = Arrays.copyOf(params, params.length + 1);
+        signature[signature.length - 1] = elementType;
+        MethodDescriptor hookDesc = new MethodDescriptor(hookMethod.getName(), signature);
+
+        return new MethodDetour(kind, fieldName, new ValueType[]{ValueType.parse(elementType)},
+                hasSelf, hookDesc, hookMethod.getDeclaringClass(), hookMethod.getName());
+    }
+
+    /**
      * Given a detour method and the target class + original name, produce the descriptor
      * of the original method that this detour is meant to replace.
      * <p>
@@ -717,6 +790,7 @@ public class DetourHacks implements ClassHolderTransformer {
         // mid-iteration - and it keeps the loop from walking into freshly
         // inserted calls. Collected instructions stay valid across splits: an
         // instruction keeps its identity when it moves to a split-off block.
+        boolean sawElementAccess = false;
         List<Instruction> targets = new ArrayList<>();
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Instruction insn : block) {
@@ -724,9 +798,22 @@ public class DetourHacks implements ClassHolderTransformer {
                         || insn instanceof GetFieldInstruction
                         || insn instanceof PutFieldInstruction) {
                     targets.add(insn);
+                } else if (hasElementHooks
+                        && (insn instanceof GetElementInstruction
+                                || insn instanceof PutElementInstruction)) {
+                    targets.add(insn);
+                    sawElementAccess = true;
                 }
             }
         }
+
+        // Array origins must be traced on the untransformed program: a
+        // @FieldGet hook on the same field re-plumbs the GetField's receiver,
+        // which would otherwise break the chain from field read to element
+        // access. Variable identities survive those edits, so the map built
+        // here stays valid.
+        Map<Variable, FieldOrigin> origins =
+                sawElementAccess ? buildFieldOrigins(program) : Collections.emptyMap();
 
         BasicBlockSplitter splitter = null;
         for (Instruction insn : targets) {
@@ -734,13 +821,150 @@ public class DetourHacks implements ClassHolderTransformer {
                 splitter = transformInvoke(method, program, splitter, (InvokeInstruction) insn);
             } else if (insn instanceof GetFieldInstruction) {
                 transformFieldGet(program, (GetFieldInstruction) insn);
-            } else {
+            } else if (insn instanceof PutFieldInstruction) {
                 transformFieldSet(program, (PutFieldInstruction) insn);
+            } else if (insn instanceof GetElementInstruction) {
+                transformElementGet(program, (GetElementInstruction) insn, origins);
+            } else {
+                transformElementSet(program, (PutElementInstruction) insn, origins);
             }
         }
         if (splitter != null) {
             splitter.fixProgram();
         }
+    }
+
+    /**
+     * Maps each variable holding an array (or unwrapped array data) to the
+     * field read it came from, following unwrap and plain-assignment links to
+     * a fixpoint. Phi merges and values crossing method boundaries are
+     * deliberately not traced — see the binding-scope note on
+     * {@link ElementGet}.
+     */
+    private static Map<Variable, FieldOrigin> buildFieldOrigins(Program program) {
+        Map<Variable, FieldOrigin> origins = new HashMap<>();
+        List<Variable[]> aliases = new ArrayList<>();
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction insn : block) {
+                if (insn instanceof GetFieldInstruction) {
+                    GetFieldInstruction get = (GetFieldInstruction) insn;
+                    if (get.getReceiver() != null) {
+                        origins.put(get.getReceiver(),
+                                new FieldOrigin(get.getField(), get.getInstance(), get.getFieldType()));
+                    }
+                } else if (insn instanceof UnwrapArrayInstruction) {
+                    UnwrapArrayInstruction unwrap = (UnwrapArrayInstruction) insn;
+                    aliases.add(new Variable[]{unwrap.getReceiver(), unwrap.getArray()});
+                } else if (insn instanceof AssignInstruction) {
+                    AssignInstruction assign = (AssignInstruction) insn;
+                    aliases.add(new Variable[]{assign.getReceiver(), assign.getAssignee()});
+                }
+            }
+        }
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (Variable[] alias : aliases) {
+                if (!origins.containsKey(alias[0]) && origins.containsKey(alias[1])) {
+                    origins.put(alias[0], origins.get(alias[1]));
+                    changed = true;
+                }
+            }
+        }
+        return origins;
+    }
+
+    private void transformElementGet(Program program, GetElementInstruction get,
+                                     Map<Variable, FieldOrigin> origins) {
+        FieldOrigin origin = origins.get(get.getArray());
+        if (origin == null) {
+            return;
+        }
+        MethodDetour[] detoursForClass = detours.get(origin.field.getClassName());
+        if (detoursForClass == null) {
+            return;
+        }
+        for (MethodDetour detour : detoursForClass) {
+            if (detour.kind != Kind.ELEMENT_GET || !elementMatches(detour, origin)) {
+                continue;
+            }
+            Variable result = get.getReceiver();
+            if (result == null) {
+                continue;
+            }
+            Variable raw = program.createVariable();
+            get.setReceiver(raw);
+
+            InvokeInstruction call = new InvokeInstruction();
+            call.setType(InvocationType.SPECIAL);
+            call.setMethod(new MethodReference(detour.detourClass.getName(), detour.adviceDescriptor));
+            List<Variable> args = new ArrayList<>();
+            if (detour.adviceHasSelf) {
+                args.add(origin.instance);
+            }
+            args.add(get.getIndex());
+            args.add(raw);
+            call.setArguments(args.toArray(new Variable[0]));
+            call.setReceiver(result);
+            call.setLocation(get.getLocation());
+            get.insertNext(call);
+            detour.matchedSites++;
+        }
+    }
+
+    private void transformElementSet(Program program, PutElementInstruction put,
+                                     Map<Variable, FieldOrigin> origins) {
+        FieldOrigin origin = origins.get(put.getArray());
+        if (origin == null) {
+            return;
+        }
+        MethodDetour[] detoursForClass = detours.get(origin.field.getClassName());
+        if (detoursForClass == null) {
+            return;
+        }
+        for (MethodDetour detour : detoursForClass) {
+            if (detour.kind != Kind.ELEMENT_SET || !elementMatches(detour, origin)) {
+                continue;
+            }
+            Variable piped = program.createVariable();
+            InvokeInstruction call = new InvokeInstruction();
+            call.setType(InvocationType.SPECIAL);
+            call.setMethod(new MethodReference(detour.detourClass.getName(), detour.adviceDescriptor));
+            List<Variable> args = new ArrayList<>();
+            if (detour.adviceHasSelf) {
+                args.add(origin.instance);
+            }
+            args.add(put.getIndex());
+            args.add(put.getValue());
+            call.setArguments(args.toArray(new Variable[0]));
+            call.setReceiver(piped);
+            call.setLocation(put.getLocation());
+            put.insertPrevious(call);
+            put.setValue(piped);
+            detour.matchedSites++;
+        }
+    }
+
+    /**
+     * Whether an element hook applies to a traced array origin. Field name
+     * and instance-vs-static form must agree; a field whose array type then
+     * disagrees with the hook's element type is a build error (type drift).
+     */
+    private static boolean elementMatches(MethodDetour hook, FieldOrigin origin) {
+        if (!origin.field.getFieldName().equals(hook.adviceTargetName)) {
+            return false;
+        }
+        if (hook.adviceHasSelf != (origin.instance != null)) {
+            return false;
+        }
+        ValueType expected = ValueType.arrayOf(hook.adviceTargetParams[0]);
+        if (!expected.equals(origin.fieldType)) {
+            throw new IllegalStateException(
+                    "Element hook type mismatch on " + origin.field + ": field is "
+                            + origin.fieldType + " but " + hook.detourClass.getName() + "."
+                            + hook.detourName + " expects " + expected);
+        }
+        return true;
     }
 
     private void transformFieldGet(Program program, GetFieldInstruction get) {
