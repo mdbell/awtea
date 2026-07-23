@@ -153,6 +153,11 @@ public class DetourHacks implements ClassHolderTransformer {
          * {@link #zeroMatchVerifier(boolean)}.
          */
         int matchedSites;
+        /**
+         * FQCNs of the classes whose sites this detour may bind, from
+         * {@link Callers}; null means unrestricted.
+         */
+        Set<String> callers;
 
         MethodDetour(MethodDescriptor original, Class<?> detourClass, String detourName) {
             this.kind = Kind.REPLACE;
@@ -367,17 +372,35 @@ public class DetourHacks implements ClassHolderTransformer {
                 ElementSet elementSet = m.getAnnotation(ElementSet.class);
                 DetourMethod dm = m.getAnnotation(DetourMethod.class);
 
+                Callers callersAnnotation = m.getAnnotation(Callers.class);
+
                 int annotationCount = (before != null ? 1 : 0) + (after != null ? 1 : 0)
                         + (guard != null ? 1 : 0) + (filter != null ? 1 : 0)
                         + (fieldGet != null ? 1 : 0) + (fieldSet != null ? 1 : 0)
                         + (elementGet != null ? 1 : 0) + (elementSet != null ? 1 : 0)
                         + (dm != null ? 1 : 0);
                 if (annotationCount == 0) {
+                    if (callersAnnotation != null) {
+                        throw new IllegalArgumentException(
+                                "@Callers without a detour annotation to filter: " + m);
+                    }
                     continue;
                 }
                 if (annotationCount > 1) {
                     throw new IllegalArgumentException(
                             "Method carries more than one detour annotation: " + m);
+                }
+                Set<String> callers = null;
+                if (callersAnnotation != null) {
+                    if (callersAnnotation.value().length == 0) {
+                        throw new IllegalArgumentException(
+                                "@Callers must list at least one class (use @DisableDetour to turn"
+                                        + " a detour off): " + m);
+                    }
+                    callers = new HashSet<>();
+                    for (Class<?> caller : callersAnnotation.value()) {
+                        callers.add(caller.getName());
+                    }
                 }
 
                 if (!java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
@@ -424,6 +447,7 @@ public class DetourHacks implements ClassHolderTransformer {
                                 break;
                         }
                     }
+                    built.callers = callers;
                     tmp.computeIfAbsent(targetClassName, k -> new ArrayList<>()).add(built);
                     continue;
                 }
@@ -445,6 +469,7 @@ public class DetourHacks implements ClassHolderTransformer {
                         detourClass,
                         m.getName()
                 );
+                md.callers = callers;
 
                 tmp.computeIfAbsent(targetClassName, k -> new ArrayList<>())
                         .add(md);
@@ -820,13 +845,13 @@ public class DetourHacks implements ClassHolderTransformer {
             if (insn instanceof InvokeInstruction) {
                 splitter = transformInvoke(method, program, splitter, (InvokeInstruction) insn);
             } else if (insn instanceof GetFieldInstruction) {
-                transformFieldGet(program, (GetFieldInstruction) insn);
+                transformFieldGet(method, program, (GetFieldInstruction) insn);
             } else if (insn instanceof PutFieldInstruction) {
-                transformFieldSet(program, (PutFieldInstruction) insn);
+                transformFieldSet(method, program, (PutFieldInstruction) insn);
             } else if (insn instanceof GetElementInstruction) {
-                transformElementGet(program, (GetElementInstruction) insn, origins);
+                transformElementGet(method, program, (GetElementInstruction) insn, origins);
             } else {
-                transformElementSet(program, (PutElementInstruction) insn, origins);
+                transformElementSet(method, program, (PutElementInstruction) insn, origins);
             }
         }
         if (splitter != null) {
@@ -874,7 +899,7 @@ public class DetourHacks implements ClassHolderTransformer {
         return origins;
     }
 
-    private void transformElementGet(Program program, GetElementInstruction get,
+    private void transformElementGet(MethodHolder owner, Program program, GetElementInstruction get,
                                      Map<Variable, FieldOrigin> origins) {
         FieldOrigin origin = origins.get(get.getArray());
         if (origin == null) {
@@ -885,7 +910,9 @@ public class DetourHacks implements ClassHolderTransformer {
             return;
         }
         for (MethodDetour detour : detoursForClass) {
-            if (detour.kind != Kind.ELEMENT_GET || !elementMatches(detour, origin)) {
+            if (detour.kind != Kind.ELEMENT_GET
+                    || !callerAllowed(detour, owner)
+                    || !elementMatches(detour, origin)) {
                 continue;
             }
             Variable result = get.getReceiver();
@@ -912,7 +939,7 @@ public class DetourHacks implements ClassHolderTransformer {
         }
     }
 
-    private void transformElementSet(Program program, PutElementInstruction put,
+    private void transformElementSet(MethodHolder owner, Program program, PutElementInstruction put,
                                      Map<Variable, FieldOrigin> origins) {
         FieldOrigin origin = origins.get(put.getArray());
         if (origin == null) {
@@ -923,7 +950,9 @@ public class DetourHacks implements ClassHolderTransformer {
             return;
         }
         for (MethodDetour detour : detoursForClass) {
-            if (detour.kind != Kind.ELEMENT_SET || !elementMatches(detour, origin)) {
+            if (detour.kind != Kind.ELEMENT_SET
+                    || !callerAllowed(detour, owner)
+                    || !elementMatches(detour, origin)) {
                 continue;
             }
             Variable piped = program.createVariable();
@@ -967,13 +996,14 @@ public class DetourHacks implements ClassHolderTransformer {
         return true;
     }
 
-    private void transformFieldGet(Program program, GetFieldInstruction get) {
+    private void transformFieldGet(MethodHolder owner, Program program, GetFieldInstruction get) {
         MethodDetour[] detoursForClass = detours.get(get.getField().getClassName());
         if (detoursForClass == null) {
             return;
         }
         for (MethodDetour detour : detoursForClass) {
             if (detour.kind != Kind.FIELD_GET
+                    || !callerAllowed(detour, owner)
                     || !fieldMatches(detour, get.getField(), get.getInstance(), get.getFieldType())) {
                 continue;
             }
@@ -1000,13 +1030,14 @@ public class DetourHacks implements ClassHolderTransformer {
         }
     }
 
-    private void transformFieldSet(Program program, PutFieldInstruction put) {
+    private void transformFieldSet(MethodHolder owner, Program program, PutFieldInstruction put) {
         MethodDetour[] detoursForClass = detours.get(put.getField().getClassName());
         if (detoursForClass == null) {
             return;
         }
         for (MethodDetour detour : detoursForClass) {
             if (detour.kind != Kind.FIELD_SET
+                    || !callerAllowed(detour, owner)
                     || !fieldMatches(detour, put.getField(), put.getInstance(), put.getFieldType())) {
                 continue;
             }
@@ -1063,6 +1094,9 @@ public class DetourHacks implements ClassHolderTransformer {
         List<MethodDetour> filters = new ArrayList<>();
         boolean anyReplace = false;
         for (MethodDetour detour : detoursForClass) {
+            if (!callerAllowed(detour, owner)) {
+                continue;
+            }
             switch (detour.kind) {
                 case GUARD:
                     if (adviceMatches(detour, invoke, ref)) {
@@ -1081,8 +1115,11 @@ public class DetourHacks implements ClassHolderTransformer {
                         filters.add(detour);
                     }
                     break;
-                default:
+                case REPLACE:
                     anyReplace |= ref.getDescriptor().equals(detour.original);
+                    break;
+                default:
+                    // field/element hooks anchor on field accesses, not calls
                     break;
             }
         }
@@ -1121,7 +1158,7 @@ public class DetourHacks implements ClassHolderTransformer {
         }
 
         for (MethodDetour detour : detoursForClass) {
-            if (detour.kind != Kind.REPLACE) {
+            if (detour.kind != Kind.REPLACE || !callerAllowed(detour, owner)) {
                 continue;
             }
             if (!ref.getDescriptor().equals(detour.original)) {
@@ -1193,6 +1230,14 @@ public class DetourHacks implements ClassHolderTransformer {
         }
 
         return splitter;
+    }
+
+    /**
+     * Whether a detour's {@link Callers} restriction (if any) admits sites
+     * inside the given method's class.
+     */
+    private static boolean callerAllowed(MethodDetour detour, MethodHolder owner) {
+        return detour.callers == null || detour.callers.contains(owner.getOwnerName());
     }
 
     /**
