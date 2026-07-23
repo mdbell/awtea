@@ -11,10 +11,12 @@ import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.util.BasicBlockSplitter;
 import org.teavm.model.util.ProgramUtils;
 
@@ -77,7 +79,11 @@ public class DetourHacks implements ClassHolderTransformer {
         /** Let a @Guard decide whether the original runs (see {@link Guard}). */
         GUARD,
         /** Pipe the original's result through a @Filter (see {@link Filter}). */
-        FILTER
+        FILTER,
+        /** Pipe every read of a field through a hook (see {@link FieldGet}). */
+        FIELD_GET,
+        /** Pipe every write of a field through a hook (see {@link FieldSet}). */
+        FIELD_SET
     }
 
     /**
@@ -95,6 +101,9 @@ public class DetourHacks implements ClassHolderTransformer {
          * Advice: original method name and parameter types to match. The
          * original's return type is unknown to (and irrelevant for) advice,
          * so it does not participate in matching. Null for REPLACE.
+         * <p>
+         * FIELD_GET/FIELD_SET reuse these: the name is the field name and
+         * the params hold a single element, the field's type.
          */
         final String adviceTargetName;
         final ValueType[] adviceTargetParams;
@@ -325,10 +334,14 @@ public class DetourHacks implements ClassHolderTransformer {
                 After after = m.getAnnotation(After.class);
                 Guard guard = m.getAnnotation(Guard.class);
                 Filter filter = m.getAnnotation(Filter.class);
+                FieldGet fieldGet = m.getAnnotation(FieldGet.class);
+                FieldSet fieldSet = m.getAnnotation(FieldSet.class);
                 DetourMethod dm = m.getAnnotation(DetourMethod.class);
 
                 int annotationCount = (before != null ? 1 : 0) + (after != null ? 1 : 0)
-                        + (guard != null ? 1 : 0) + (filter != null ? 1 : 0) + (dm != null ? 1 : 0);
+                        + (guard != null ? 1 : 0) + (filter != null ? 1 : 0)
+                        + (fieldGet != null ? 1 : 0) + (fieldSet != null ? 1 : 0)
+                        + (dm != null ? 1 : 0);
                 if (annotationCount == 0) {
                     continue;
                 }
@@ -347,27 +360,33 @@ public class DetourHacks implements ClassHolderTransformer {
                 }
 
                 if (dm == null) {
-                    Kind kind = before != null ? Kind.BEFORE
-                            : after != null ? Kind.AFTER
-                            : guard != null ? Kind.GUARD
-                            : Kind.FILTER;
-                    String name = before != null ? before.value()
-                            : after != null ? after.value()
-                            : guard != null ? guard.value()
-                            : filter.value();
-                    String originalName = name.isEmpty() ? m.getName() : name;
                     MethodDetour built;
-                    switch (kind) {
-                        case BEFORE:
-                        case AFTER:
-                            built = buildAdvice(kind, targetType, originalName, m);
-                            break;
-                        case GUARD:
-                            built = buildGuard(targetType, originalName, m);
-                            break;
-                        default:
-                            built = buildFilter(targetType, originalName, m);
-                            break;
+                    if (fieldGet != null) {
+                        built = buildFieldHook(Kind.FIELD_GET, targetType, fieldGet.value(), m);
+                    } else if (fieldSet != null) {
+                        built = buildFieldHook(Kind.FIELD_SET, targetType, fieldSet.value(), m);
+                    } else {
+                        Kind kind = before != null ? Kind.BEFORE
+                                : after != null ? Kind.AFTER
+                                : guard != null ? Kind.GUARD
+                                : Kind.FILTER;
+                        String name = before != null ? before.value()
+                                : after != null ? after.value()
+                                : guard != null ? guard.value()
+                                : filter.value();
+                        String originalName = name.isEmpty() ? m.getName() : name;
+                        switch (kind) {
+                            case BEFORE:
+                            case AFTER:
+                                built = buildAdvice(kind, targetType, originalName, m);
+                                break;
+                            case GUARD:
+                                built = buildGuard(targetType, originalName, m);
+                                break;
+                            default:
+                                built = buildFilter(targetType, originalName, m);
+                                break;
+                        }
                     }
                     tmp.computeIfAbsent(targetClassName, k -> new ArrayList<>()).add(built);
                     continue;
@@ -534,6 +553,37 @@ public class DetourHacks implements ClassHolderTransformer {
     }
 
     /**
+     * Builds a field hook mapping from a @FieldGet/@FieldSet method. Both are
+     * filter-shaped over the field's value; the hook's return type doubles as
+     * the expected field type, checked against each matched site.
+     */
+    private MethodDetour buildFieldHook(Kind kind, Class<?> targetType, String fieldName,
+                                        Method hookMethod) {
+        Class<?> valueType = hookMethod.getReturnType();
+        if (valueType == void.class) {
+            throw new IllegalArgumentException(
+                    "Field hook must return the field's (non-void) type: " + hookMethod);
+        }
+        Class<?>[] params = hookMethod.getParameterTypes();
+        if (params.length == 0 || params[params.length - 1] != valueType) {
+            throw new IllegalArgumentException(
+                    "Field hook's trailing parameter must match its return type: " + hookMethod);
+        }
+        boolean hasSelf = params.length == 2 && params[0] == targetType;
+        if (params.length > 2 || (params.length == 2 && !hasSelf)) {
+            throw new IllegalArgumentException(
+                    "Field hook signature must be (T value) or (Target self, T value): " + hookMethod);
+        }
+
+        Class<?>[] signature = Arrays.copyOf(params, params.length + 1);
+        signature[signature.length - 1] = valueType;
+        MethodDescriptor hookDesc = new MethodDescriptor(hookMethod.getName(), signature);
+
+        return new MethodDetour(kind, fieldName, new ValueType[]{ValueType.parse(valueType)},
+                hasSelf, hookDesc, hookMethod.getDeclaringClass(), hookMethod.getName());
+    }
+
+    /**
      * Given a detour method and the target class + original name, produce the descriptor
      * of the original method that this detour is meant to replace.
      * <p>
@@ -665,24 +715,115 @@ public class DetourHacks implements ClassHolderTransformer {
         // Two-phase: collect first, then transform. Advice insertion and
         // guard block-splitting mutate the program, which must not happen
         // mid-iteration - and it keeps the loop from walking into freshly
-        // inserted calls. Collected invokes stay valid across splits: an
+        // inserted calls. Collected instructions stay valid across splits: an
         // instruction keeps its identity when it moves to a split-off block.
-        List<InvokeInstruction> invokes = new ArrayList<>();
+        List<Instruction> targets = new ArrayList<>();
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Instruction insn : block) {
-                if (insn instanceof InvokeInstruction) {
-                    invokes.add((InvokeInstruction) insn);
+                if (insn instanceof InvokeInstruction
+                        || insn instanceof GetFieldInstruction
+                        || insn instanceof PutFieldInstruction) {
+                    targets.add(insn);
                 }
             }
         }
 
         BasicBlockSplitter splitter = null;
-        for (InvokeInstruction invoke : invokes) {
-            splitter = transformInvoke(method, program, splitter, invoke);
+        for (Instruction insn : targets) {
+            if (insn instanceof InvokeInstruction) {
+                splitter = transformInvoke(method, program, splitter, (InvokeInstruction) insn);
+            } else if (insn instanceof GetFieldInstruction) {
+                transformFieldGet(program, (GetFieldInstruction) insn);
+            } else {
+                transformFieldSet(program, (PutFieldInstruction) insn);
+            }
         }
         if (splitter != null) {
             splitter.fixProgram();
         }
+    }
+
+    private void transformFieldGet(Program program, GetFieldInstruction get) {
+        MethodDetour[] detoursForClass = detours.get(get.getField().getClassName());
+        if (detoursForClass == null) {
+            return;
+        }
+        for (MethodDetour detour : detoursForClass) {
+            if (detour.kind != Kind.FIELD_GET
+                    || !fieldMatches(detour, get.getField(), get.getInstance(), get.getFieldType())) {
+                continue;
+            }
+            Variable result = get.getReceiver();
+            if (result == null) {
+                continue;
+            }
+            Variable raw = program.createVariable();
+            get.setReceiver(raw);
+
+            InvokeInstruction call = new InvokeInstruction();
+            call.setType(InvocationType.SPECIAL);
+            call.setMethod(new MethodReference(detour.detourClass.getName(), detour.adviceDescriptor));
+            List<Variable> args = new ArrayList<>();
+            if (detour.adviceHasSelf) {
+                args.add(get.getInstance());
+            }
+            args.add(raw);
+            call.setArguments(args.toArray(new Variable[0]));
+            call.setReceiver(result);
+            call.setLocation(get.getLocation());
+            get.insertNext(call);
+            detour.matchedSites++;
+        }
+    }
+
+    private void transformFieldSet(Program program, PutFieldInstruction put) {
+        MethodDetour[] detoursForClass = detours.get(put.getField().getClassName());
+        if (detoursForClass == null) {
+            return;
+        }
+        for (MethodDetour detour : detoursForClass) {
+            if (detour.kind != Kind.FIELD_SET
+                    || !fieldMatches(detour, put.getField(), put.getInstance(), put.getFieldType())) {
+                continue;
+            }
+            Variable piped = program.createVariable();
+            InvokeInstruction call = new InvokeInstruction();
+            call.setType(InvocationType.SPECIAL);
+            call.setMethod(new MethodReference(detour.detourClass.getName(), detour.adviceDescriptor));
+            List<Variable> args = new ArrayList<>();
+            if (detour.adviceHasSelf) {
+                args.add(put.getInstance());
+            }
+            args.add(put.getValue());
+            call.setArguments(args.toArray(new Variable[0]));
+            call.setReceiver(piped);
+            call.setLocation(put.getLocation());
+            put.insertPrevious(call);
+            put.setValue(piped);
+            detour.matchedSites++;
+        }
+    }
+
+    /**
+     * Whether a field hook applies to an access site. Name and
+     * instance-vs-static form must agree; a site that then disagrees on the
+     * field's type is a build error (type drift), never a silent skip.
+     */
+    private static boolean fieldMatches(MethodDetour hook, FieldReference field,
+                                        Variable instance, ValueType fieldType) {
+        if (!field.getFieldName().equals(hook.adviceTargetName)) {
+            return false;
+        }
+        if (hook.adviceHasSelf != (instance != null)) {
+            return false;
+        }
+        if (!fieldType.equals(hook.adviceTargetParams[0])) {
+            throw new IllegalStateException(
+                    "Field hook type mismatch on " + field + ": site has " + fieldType
+                            + " but " + hook.detourClass.getName() + "." + hook.detourName
+                            + " expects " + hook.adviceTargetParams[0]);
+        }
+        return true;
     }
 
     private BasicBlockSplitter transformInvoke(MethodHolder owner, Program program,
