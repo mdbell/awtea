@@ -127,6 +127,19 @@ registered; stays `return 0;` when the class is `@DisableDetour`d or absent.
 pool; unsupplied-key probe fails the build; supplied-but-unconsumed key
 produces a warning from `unusedValueVerifier()`.
 
+**@BuildFlag** — probe compiled to `return 1;`/`return 0;` per the supplied
+value; a `return true;` source body fails the build (default must be off).
+At `OptimizationLevel.BALANCED` a branch gated on a false flag is fully
+dead-stripped — its guarded string constants must be ABSENT from the output
+JS; at NONE the branch remains (inert), so the stripping assertion is
+optimization-level-conditional. Registering two `BuildConstants` instances
+must fail on each other's keys (single-instance rule).
+
+**Invalid-IR regression** — a replacement detour on an *instance* method must
+emit `InvocationType.SPECIAL`; the historical VIRTUAL-with-null-instance bug
+only surfaced as an optimizer NPE at BALANCED, so this test must compile at
+BALANCED, not NONE.
+
 **Zero-match verifier** — strict mode: a detour naming a nonexistent method
 fails the build with a message containing both sides of the binding; lenient
 mode reports the same text as a warning. `@Callers` pointing at a class with

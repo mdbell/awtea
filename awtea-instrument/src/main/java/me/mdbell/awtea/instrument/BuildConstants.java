@@ -15,6 +15,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 
 import java.util.HashSet;
@@ -47,6 +48,7 @@ public class BuildConstants implements ClassHolderTransformer {
     private static final Logger log = LoggerFactory.getLogger(BuildConstants.class);
 
     private final Map<String, String> values = new LinkedHashMap<>();
+    private final Map<String, Boolean> flags = new LinkedHashMap<>();
     private final Set<String> consumedKeys = new HashSet<>();
 
     /** Supplies the value a {@link BuildConstant} probe with this key receives. */
@@ -55,11 +57,33 @@ public class BuildConstants implements ClassHolderTransformer {
         return this;
     }
 
+    /**
+     * Supplies the value a {@link BuildFlag} probe with this key receives.
+     * Supply the key in every build — {@code setFlag("dev", isDev)} — rather
+     * than only when true, so a typo'd or forgotten key stays a build error
+     * instead of a silently-false flag.
+     */
+    public BuildConstants setFlag(String key, boolean value) {
+        flags.put(key, value);
+        return this;
+    }
+
     @Override
     public void transformClass(ClassHolder classHolder, ClassHolderTransformerContext context) {
         for (MethodHolder method : classHolder.getMethods()) {
+            AnnotationHolder flagAnnotation =
+                    method.getAnnotations().get(BuildFlag.class.getName());
             AnnotationHolder annotation =
                     method.getAnnotations().get(BuildConstant.class.getName());
+            if (flagAnnotation != null && annotation != null) {
+                throw new IllegalStateException(
+                        "Method carries both @BuildConstant and @BuildFlag: "
+                                + classHolder.getName() + "." + method.getName());
+            }
+            if (flagAnnotation != null) {
+                rewriteFlag(classHolder, method, flagAnnotation);
+                continue;
+            }
             if (annotation == null) {
                 continue;
             }
@@ -100,6 +124,58 @@ public class BuildConstants implements ClassHolderTransformer {
     }
 
     /**
+     * Rewrites a {@link BuildFlag} probe. The body must be exactly
+     * {@code return false;}; a supplied value of true flips the constant, a
+     * supplied false leaves the source default standing (but still marks the
+     * key consumed).
+     */
+    private void rewriteFlag(ClassHolder classHolder, MethodHolder method,
+                             AnnotationHolder annotation) {
+        String location = classHolder.getName() + "." + method.getName();
+        String key = annotation.getValue("value").getString();
+        Boolean value = flags.get(key);
+        if (value == null) {
+            throw new IllegalStateException(
+                    "@BuildFlag key '" + key + "' at " + location
+                            + " has no supplied value - probe and build plugin are out of sync"
+                            + " (supply it in every build: setFlag(\"" + key + "\", ...))");
+        }
+
+        if (!method.hasModifier(ElementModifier.STATIC)
+                || !ValueType.parse(boolean.class).equals(method.getResultType())
+                || !method.hasProgram()) {
+            throw new IllegalStateException(
+                    "@BuildFlag method must be a static boolean method with a body: " + location);
+        }
+
+        int constants = 0;
+        for (BasicBlock block : method.getProgram().getBasicBlocks()) {
+            for (Instruction insn : block) {
+                if (insn instanceof IntegerConstantInstruction) {
+                    IntegerConstantInstruction constant = (IntegerConstantInstruction) insn;
+                    if (constant.getConstant() != 0) {
+                        throw new IllegalStateException(
+                                "@BuildFlag method body must be exactly 'return false;'"
+                                        + " (the source default is off): " + location);
+                    }
+                    if (value) {
+                        constant.setConstant(1);
+                    }
+                    constants++;
+                }
+            }
+        }
+        if (constants != 1) {
+            throw new IllegalStateException(
+                    "@BuildFlag method body must be exactly 'return false;'"
+                            + " (found " + constants + " integer constants): " + location);
+        }
+
+        consumedKeys.add(key);
+        log.debug("Rewrote @BuildFlag '{}' at {} to {}", key, location, value);
+    }
+
+    /**
      * Optional companion listener: once dependency analysis completes,
      * reports (as warnings) every supplied value whose probe was never
      * reached — a typo'd key, or a probe class that fell out of the build.
@@ -130,6 +206,13 @@ public class BuildConstants implements ClassHolderTransformer {
                     if (!consumedKeys.contains(key)) {
                         agent.getDiagnostics().warning(null,
                                 "Supplied @BuildConstant value was never consumed: '" + key
+                                        + "' (typo'd key, or the probe is unreachable)");
+                    }
+                }
+                for (String key : flags.keySet()) {
+                    if (!consumedKeys.contains(key)) {
+                        agent.getDiagnostics().warning(null,
+                                "Supplied @BuildFlag value was never consumed: '" + key
                                         + "' (typo'd key, or the probe is unreachable)");
                     }
                 }

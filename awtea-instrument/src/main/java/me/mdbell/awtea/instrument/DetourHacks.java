@@ -1232,6 +1232,11 @@ public class DetourHacks implements ClassHolderTransformer {
                 newArgs.addAll(invoke.getArguments());
                 invoke.setArguments(newArgs.toArray(new Variable[0]));
                 invoke.setInstance(null); // static call
+                // The original was a VIRTUAL invoke; a static call must be
+                // SPECIAL. Leaving it VIRTUAL with a null instance is invalid
+                // IR that NPEs TeaVM's optimizer (InvokeInstruction
+                // .getInstance() is null) at BALANCED/AGGRESSIVE.
+                invoke.setType(InvocationType.SPECIAL);
 
                 ValueType[] newSig = new ValueType[sig.length + 1];
                 // First param = Target
