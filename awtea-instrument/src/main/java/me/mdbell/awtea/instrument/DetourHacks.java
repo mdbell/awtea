@@ -4,6 +4,7 @@ import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.model.*;
 import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 
 import java.io.BufferedReader;
@@ -40,18 +41,51 @@ import java.util.*;
  * //
  * // Detour:   static Target create(A a, B b)
  * @DetourMethod("<init>") public static Target create(A a, B b) { ... }
+ * <p>
+ * // Advice (call inserted around the original instead of replacing it):
+ * // see {@link Before} and {@link After} for the signature conventions.
+ * @Before("foo") public static void beforeFoo(Target self, A a, B b) { ... }
+ * @After("foo") public static void afterFoo(Target self, A a, B b) { ... }
  * }
  */
 public class DetourHacks implements ClassHolderTransformer {
+
+    private enum Kind {
+        /** Replace the call with the detour (the original @DetourMethod). */
+        REPLACE,
+        /** Insert an advice call before the original call. */
+        BEFORE,
+        /** Insert an advice call after the original call. */
+        AFTER
+    }
 
     /**
      * Internal representation of a single detour mapping.
      */
     private static class MethodDetour {
+        final Kind kind;
         /**
-         * Descriptor of the original method to match (name + params + return).
+         * REPLACE: descriptor of the original method to match
+         * (name + params + return). Null for advice.
          */
         final MethodDescriptor original;
+        /**
+         * Advice: original method name and parameter types to match. The
+         * original's return type is unknown to (and irrelevant for) advice,
+         * so it does not participate in matching. Null for REPLACE.
+         */
+        final String adviceTargetName;
+        final ValueType[] adviceTargetParams;
+        /**
+         * Advice: whether the advice method's first parameter is the receiver
+         * (instance-method form) as opposed to the static-method form.
+         */
+        final boolean adviceHasSelf;
+        /**
+         * Advice: descriptor of the static advice method itself, used to
+         * build the inserted call. Null for REPLACE.
+         */
+        final MethodDescriptor adviceDescriptor;
         /**
          * Class that contains the detour implementation.
          */
@@ -62,7 +96,25 @@ public class DetourHacks implements ClassHolderTransformer {
         final String detourName;
 
         MethodDetour(MethodDescriptor original, Class<?> detourClass, String detourName) {
+            this.kind = Kind.REPLACE;
             this.original = original;
+            this.adviceTargetName = null;
+            this.adviceTargetParams = null;
+            this.adviceHasSelf = false;
+            this.adviceDescriptor = null;
+            this.detourClass = detourClass;
+            this.detourName = detourName;
+        }
+
+        MethodDetour(Kind kind, String adviceTargetName, ValueType[] adviceTargetParams,
+                     boolean adviceHasSelf, MethodDescriptor adviceDescriptor,
+                     Class<?> detourClass, String detourName) {
+            this.kind = kind;
+            this.original = null;
+            this.adviceTargetName = adviceTargetName;
+            this.adviceTargetParams = adviceTargetParams;
+            this.adviceHasSelf = adviceHasSelf;
+            this.adviceDescriptor = adviceDescriptor;
             this.detourClass = detourClass;
             this.detourName = detourName;
         }
@@ -213,17 +265,42 @@ public class DetourHacks implements ClassHolderTransformer {
             registeredDetourClasses.add(detourClass.getName());
 
             for (Method m : detourClass.getDeclaredMethods()) {
-                DetourMethod dm = m.getAnnotation(DetourMethod.class);
-                if (dm == null) {
+                if (m.getAnnotation(NoDetours.class) != null) {
+                    // explicit opt-out
                     continue;
                 }
 
-                if (!java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
-                    log.warn("Detour method not static: {} - skipping", m);
+                Before before = m.getAnnotation(Before.class);
+                After after = m.getAnnotation(After.class);
+                DetourMethod dm = m.getAnnotation(DetourMethod.class);
+
+                if (before == null && after == null && dm == null) {
                     continue;
                 }
-                if (m.getAnnotation(NoDetours.class) != null) {
-                    // explicit opt-out
+                if ((before != null || after != null) && dm != null) {
+                    throw new IllegalArgumentException(
+                            "Method cannot be both advice and a replacement detour: " + m);
+                }
+                if (before != null && after != null) {
+                    throw new IllegalArgumentException(
+                            "Method cannot be both @Before and @After advice: " + m);
+                }
+
+                if (!java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+                    if (dm != null) {
+                        log.warn("Detour method not static: {} - skipping", m);
+                        continue;
+                    }
+                    // advice is a new feature; be strict rather than lenient
+                    throw new IllegalArgumentException("Advice method must be static: " + m);
+                }
+
+                if (before != null || after != null) {
+                    Kind kind = before != null ? Kind.BEFORE : Kind.AFTER;
+                    String name = before != null ? before.value() : after.value();
+                    String originalName = name.isEmpty() ? m.getName() : name;
+                    tmp.computeIfAbsent(targetClassName, k -> new ArrayList<>())
+                            .add(buildAdvice(kind, targetType, originalName, m));
                     continue;
                 }
 
@@ -257,14 +334,57 @@ public class DetourHacks implements ClassHolderTransformer {
         log.debug("Detour map:");
         result.forEach((targetClass, detourList) -> {
             for (MethodDetour detour : detourList) {
-                log.debug("  {}.{} -> {}.{}{}",
-                        targetClass, detour.original.getName(),
-                        detour.detourClass.getName(), detour.detourName,
-                        detour.original.signatureToString());
+                if (detour.kind == Kind.REPLACE) {
+                    log.debug("  {}.{} -> {}.{}{}",
+                            targetClass, detour.original.getName(),
+                            detour.detourClass.getName(), detour.detourName,
+                            detour.original.signatureToString());
+                } else {
+                    log.debug("  {} {}.{} -> {}.{}{}",
+                            detour.kind, targetClass, detour.adviceTargetName,
+                            detour.detourClass.getName(), detour.detourName,
+                            detour.adviceDescriptor.signatureToString());
+                }
             }
         });
 
         return result;
+    }
+
+    /**
+     * Builds an advice mapping from a @Before/@After method. Mirrors the
+     * signature conventions of replacement detours (leading Target parameter
+     * selects the instance-method form) minus the return value: advice never
+     * replaces the call, so it must be void and the original's return type
+     * plays no part in matching.
+     */
+    private MethodDetour buildAdvice(Kind kind, Class<?> targetType, String originalName,
+                                     Method adviceMethod) {
+        if ("<init>".equals(originalName)) {
+            throw new IllegalArgumentException(
+                    "Advice on constructors is not supported: " + adviceMethod);
+        }
+        if (adviceMethod.getReturnType() != void.class) {
+            throw new IllegalArgumentException("Advice method must return void: " + adviceMethod);
+        }
+
+        Class<?>[] adviceParams = adviceMethod.getParameterTypes();
+        boolean hasSelf = adviceParams.length > 0 && adviceParams[0] == targetType;
+        Class<?>[] originalParams = hasSelf
+                ? Arrays.copyOfRange(adviceParams, 1, adviceParams.length)
+                : adviceParams;
+
+        ValueType[] targetParamTypes = new ValueType[originalParams.length];
+        for (int i = 0; i < originalParams.length; i++) {
+            targetParamTypes[i] = ValueType.parse(originalParams[i]);
+        }
+
+        Class<?>[] signature = Arrays.copyOf(adviceParams, adviceParams.length + 1);
+        signature[signature.length - 1] = void.class;
+        MethodDescriptor adviceDesc = new MethodDescriptor(adviceMethod.getName(), signature);
+
+        return new MethodDetour(kind, originalName, targetParamTypes, hasSelf, adviceDesc,
+                adviceMethod.getDeclaringClass(), adviceMethod.getName());
     }
 
     /**
@@ -401,10 +521,17 @@ public class DetourHacks implements ClassHolderTransformer {
     }
 
     private void transformBlock(MethodHolder owner, BasicBlock block) {
+        // Two-phase: collect first, then transform. Advice insertion mutates
+        // the block's instruction list, which must not happen mid-iteration -
+        // and it keeps the iterator from walking into freshly inserted calls.
+        List<InvokeInstruction> invokes = new ArrayList<>();
         for (Instruction insn : block) {
             if (insn instanceof InvokeInstruction) {
-                transformInvoke(owner, (InvokeInstruction) insn);
+                invokes.add((InvokeInstruction) insn);
             }
+        }
+        for (InvokeInstruction invoke : invokes) {
+            transformInvoke(owner, invoke);
         }
     }
 
@@ -415,7 +542,19 @@ public class DetourHacks implements ClassHolderTransformer {
             return;
         }
 
+        // Insert all matching advice first, while the instruction still
+        // reflects the original call - a replacement below rewrites the
+        // receiver/args/method of the invoke in place.
         for (MethodDetour detour : detoursForClass) {
+            if (detour.kind != Kind.REPLACE && adviceMatches(detour, invoke, ref)) {
+                insertAdvice(detour, invoke);
+            }
+        }
+
+        for (MethodDetour detour : detoursForClass) {
+            if (detour.kind != Kind.REPLACE) {
+                continue;
+            }
             if (!ref.getDescriptor().equals(detour.original)) {
                 continue;
             }
@@ -480,6 +619,48 @@ public class DetourHacks implements ClassHolderTransformer {
                 MethodDescriptor detourDesc = new MethodDescriptor(detour.detourName, sig);
                 invoke.setMethod(new MethodReference(detour.detourClass.getName(), detourDesc));
             }
+        }
+    }
+
+    /**
+     * Whether an advice mapping applies to a call site. Matched on method
+     * name, parameter types and instance-vs-static form; the original's
+     * return type deliberately does not participate (see {@link Before}).
+     */
+    private static boolean adviceMatches(MethodDetour advice, InvokeInstruction invoke,
+                                         MethodReference ref) {
+        if (!ref.getName().equals(advice.adviceTargetName)) {
+            return false;
+        }
+        if (advice.adviceHasSelf != (invoke.getInstance() != null)) {
+            return false;
+        }
+        return Arrays.equals(ref.getDescriptor().getParameterTypes(), advice.adviceTargetParams);
+    }
+
+    /**
+     * Inserts the advice call adjacent to the original invoke, reusing the
+     * call site's own receiver/argument variables. @After advice lands
+     * immediately after the invoke, so it runs only on normal completion -
+     * an exception skips it exactly like the statement following the call.
+     */
+    private static void insertAdvice(MethodDetour advice, InvokeInstruction invoke) {
+        InvokeInstruction call = new InvokeInstruction();
+        call.setType(InvocationType.SPECIAL);
+        call.setMethod(new MethodReference(advice.detourClass.getName(), advice.adviceDescriptor));
+
+        List<Variable> args = new ArrayList<>();
+        if (advice.adviceHasSelf) {
+            args.add(invoke.getInstance());
+        }
+        args.addAll(invoke.getArguments());
+        call.setArguments(args.toArray(new Variable[0]));
+        call.setLocation(invoke.getLocation());
+
+        if (advice.kind == Kind.BEFORE) {
+            invoke.insertPrevious(call);
+        } else {
+            invoke.insertNext(call);
         }
     }
 }
