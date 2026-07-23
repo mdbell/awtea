@@ -3,9 +3,16 @@ package me.mdbell.awtea.instrument;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.model.*;
+import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.util.BasicBlockSplitter;
+import org.teavm.model.util.ProgramUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -46,6 +53,12 @@ import java.util.*;
  * // see {@link Before} and {@link After} for the signature conventions.
  * @Before("foo") public static void beforeFoo(Target self, A a, B b) { ... }
  * @After("foo") public static void afterFoo(Target self, A a, B b) { ... }
+ * <p>
+ * // Guard (decides per call whether the original runs; see {@link Guard}):
+ * @Guard("foo") public static void guardFoo(Target self, A a, B b, Interception ci) { ... }
+ * <p>
+ * // Filter (pipes the original's result; see {@link Filter}):
+ * @Filter("foo") public static R filterFoo(Target self, A a, B b, R result) { ... }
  * }
  */
 public class DetourHacks implements ClassHolderTransformer {
@@ -56,7 +69,11 @@ public class DetourHacks implements ClassHolderTransformer {
         /** Insert an advice call before the original call. */
         BEFORE,
         /** Insert an advice call after the original call. */
-        AFTER
+        AFTER,
+        /** Let a @Guard decide whether the original runs (see {@link Guard}). */
+        GUARD,
+        /** Pipe the original's result through a @Filter (see {@link Filter}). */
+        FILTER
     }
 
     /**
@@ -65,8 +82,9 @@ public class DetourHacks implements ClassHolderTransformer {
     private static class MethodDetour {
         final Kind kind;
         /**
-         * REPLACE: descriptor of the original method to match
-         * (name + params + return). Null for advice.
+         * REPLACE/FILTER: descriptor of the original method to match
+         * (name + params + return). Null for the other kinds, which match
+         * without the return type.
          */
         final MethodDescriptor original;
         /**
@@ -113,6 +131,19 @@ public class DetourHacks implements ClassHolderTransformer {
             this.original = null;
             this.adviceTargetName = adviceTargetName;
             this.adviceTargetParams = adviceTargetParams;
+            this.adviceHasSelf = adviceHasSelf;
+            this.adviceDescriptor = adviceDescriptor;
+            this.detourClass = detourClass;
+            this.detourName = detourName;
+        }
+
+        /** FILTER: exact original descriptor plus the filter's own call shape. */
+        MethodDetour(MethodDescriptor original, boolean adviceHasSelf,
+                     MethodDescriptor adviceDescriptor, Class<?> detourClass, String detourName) {
+            this.kind = Kind.FILTER;
+            this.original = original;
+            this.adviceTargetName = null;
+            this.adviceTargetParams = null;
             this.adviceHasSelf = adviceHasSelf;
             this.adviceDescriptor = adviceDescriptor;
             this.detourClass = detourClass;
@@ -272,18 +303,18 @@ public class DetourHacks implements ClassHolderTransformer {
 
                 Before before = m.getAnnotation(Before.class);
                 After after = m.getAnnotation(After.class);
+                Guard guard = m.getAnnotation(Guard.class);
+                Filter filter = m.getAnnotation(Filter.class);
                 DetourMethod dm = m.getAnnotation(DetourMethod.class);
 
-                if (before == null && after == null && dm == null) {
+                int annotationCount = (before != null ? 1 : 0) + (after != null ? 1 : 0)
+                        + (guard != null ? 1 : 0) + (filter != null ? 1 : 0) + (dm != null ? 1 : 0);
+                if (annotationCount == 0) {
                     continue;
                 }
-                if ((before != null || after != null) && dm != null) {
+                if (annotationCount > 1) {
                     throw new IllegalArgumentException(
-                            "Method cannot be both advice and a replacement detour: " + m);
-                }
-                if (before != null && after != null) {
-                    throw new IllegalArgumentException(
-                            "Method cannot be both @Before and @After advice: " + m);
+                            "Method carries more than one detour annotation: " + m);
                 }
 
                 if (!java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
@@ -291,16 +322,34 @@ public class DetourHacks implements ClassHolderTransformer {
                         log.warn("Detour method not static: {} - skipping", m);
                         continue;
                     }
-                    // advice is a new feature; be strict rather than lenient
+                    // advice/guard/filter are new features; be strict rather than lenient
                     throw new IllegalArgumentException("Advice method must be static: " + m);
                 }
 
-                if (before != null || after != null) {
-                    Kind kind = before != null ? Kind.BEFORE : Kind.AFTER;
-                    String name = before != null ? before.value() : after.value();
+                if (dm == null) {
+                    Kind kind = before != null ? Kind.BEFORE
+                            : after != null ? Kind.AFTER
+                            : guard != null ? Kind.GUARD
+                            : Kind.FILTER;
+                    String name = before != null ? before.value()
+                            : after != null ? after.value()
+                            : guard != null ? guard.value()
+                            : filter.value();
                     String originalName = name.isEmpty() ? m.getName() : name;
-                    tmp.computeIfAbsent(targetClassName, k -> new ArrayList<>())
-                            .add(buildAdvice(kind, targetType, originalName, m));
+                    MethodDetour built;
+                    switch (kind) {
+                        case BEFORE:
+                        case AFTER:
+                            built = buildAdvice(kind, targetType, originalName, m);
+                            break;
+                        case GUARD:
+                            built = buildGuard(targetType, originalName, m);
+                            break;
+                        default:
+                            built = buildFilter(targetType, originalName, m);
+                            break;
+                    }
+                    tmp.computeIfAbsent(targetClassName, k -> new ArrayList<>()).add(built);
                     continue;
                 }
 
@@ -340,8 +389,11 @@ public class DetourHacks implements ClassHolderTransformer {
                             detour.detourClass.getName(), detour.detourName,
                             detour.original.signatureToString());
                 } else {
+                    String originalName = detour.original != null
+                            ? detour.original.getName()
+                            : detour.adviceTargetName;
                     log.debug("  {} {}.{} -> {}.{}{}",
-                            detour.kind, targetClass, detour.adviceTargetName,
+                            detour.kind, targetClass, originalName,
                             detour.detourClass.getName(), detour.detourName,
                             detour.adviceDescriptor.signatureToString());
                 }
@@ -385,6 +437,80 @@ public class DetourHacks implements ClassHolderTransformer {
 
         return new MethodDetour(kind, originalName, targetParamTypes, hasSelf, adviceDesc,
                 adviceMethod.getDeclaringClass(), adviceMethod.getName());
+    }
+
+    /**
+     * Builds a guard mapping from a @Guard method: like advice, but with a
+     * mandatory trailing {@link Interception} parameter that is excluded from
+     * matching. The original's return type is unknown here; the call-site
+     * transform recovers it from each matched invoke.
+     */
+    private MethodDetour buildGuard(Class<?> targetType, String originalName, Method guardMethod) {
+        if ("<init>".equals(originalName)) {
+            throw new IllegalArgumentException(
+                    "Guards on constructors are not supported: " + guardMethod);
+        }
+        if (guardMethod.getReturnType() != void.class) {
+            throw new IllegalArgumentException("Guard method must return void: " + guardMethod);
+        }
+        Class<?>[] guardParams = guardMethod.getParameterTypes();
+        if (guardParams.length == 0 || guardParams[guardParams.length - 1] != Interception.class) {
+            throw new IllegalArgumentException(
+                    "Guard method must take a trailing Interception parameter: " + guardMethod);
+        }
+
+        boolean hasSelf = guardParams.length > 1 && guardParams[0] == targetType;
+        Class<?>[] originalParams = Arrays.copyOfRange(
+                guardParams, hasSelf ? 1 : 0, guardParams.length - 1);
+
+        ValueType[] targetParamTypes = new ValueType[originalParams.length];
+        for (int i = 0; i < originalParams.length; i++) {
+            targetParamTypes[i] = ValueType.parse(originalParams[i]);
+        }
+
+        Class<?>[] signature = Arrays.copyOf(guardParams, guardParams.length + 1);
+        signature[signature.length - 1] = void.class;
+        MethodDescriptor guardDesc = new MethodDescriptor(guardMethod.getName(), signature);
+
+        return new MethodDetour(Kind.GUARD, originalName, targetParamTypes, hasSelf, guardDesc,
+                guardMethod.getDeclaringClass(), guardMethod.getName());
+    }
+
+    /**
+     * Builds a filter mapping from a @Filter method: the trailing parameter
+     * is the original's return value and doubles as its declared return type,
+     * which restores exact-descriptor matching for filters.
+     */
+    private MethodDetour buildFilter(Class<?> targetType, String originalName, Method filterMethod) {
+        if ("<init>".equals(originalName)) {
+            throw new IllegalArgumentException(
+                    "Filters on constructors are not supported: " + filterMethod);
+        }
+        Class<?> resultType = filterMethod.getReturnType();
+        if (resultType == void.class) {
+            throw new IllegalArgumentException(
+                    "Filter method must return the original's (non-void) return type: " + filterMethod);
+        }
+        Class<?>[] filterParams = filterMethod.getParameterTypes();
+        if (filterParams.length == 0 || filterParams[filterParams.length - 1] != resultType) {
+            throw new IllegalArgumentException(
+                    "Filter method's trailing parameter must match its return type: " + filterMethod);
+        }
+
+        boolean hasSelf = filterParams.length > 1 && filterParams[0] == targetType;
+        Class<?>[] originalParams = Arrays.copyOfRange(
+                filterParams, hasSelf ? 1 : 0, filterParams.length - 1);
+
+        Class<?>[] originalSignature = Arrays.copyOf(originalParams, originalParams.length + 1);
+        originalSignature[originalSignature.length - 1] = resultType;
+        MethodDescriptor originalDesc = new MethodDescriptor(originalName, originalSignature);
+
+        Class<?>[] signature = Arrays.copyOf(filterParams, filterParams.length + 1);
+        signature[signature.length - 1] = resultType;
+        MethodDescriptor filterDesc = new MethodDescriptor(filterMethod.getName(), signature);
+
+        return new MethodDetour(originalDesc, hasSelf, filterDesc,
+                filterMethod.getDeclaringClass(), filterMethod.getName());
     }
 
     /**
@@ -515,40 +641,95 @@ public class DetourHacks implements ClassHolderTransformer {
         }
 
         Program program = method.getProgram();
-        for (BasicBlock block : program.getBasicBlocks()) {
-            transformBlock(method, block);
-        }
-    }
 
-    private void transformBlock(MethodHolder owner, BasicBlock block) {
-        // Two-phase: collect first, then transform. Advice insertion mutates
-        // the block's instruction list, which must not happen mid-iteration -
-        // and it keeps the iterator from walking into freshly inserted calls.
+        // Two-phase: collect first, then transform. Advice insertion and
+        // guard block-splitting mutate the program, which must not happen
+        // mid-iteration - and it keeps the loop from walking into freshly
+        // inserted calls. Collected invokes stay valid across splits: an
+        // instruction keeps its identity when it moves to a split-off block.
         List<InvokeInstruction> invokes = new ArrayList<>();
-        for (Instruction insn : block) {
-            if (insn instanceof InvokeInstruction) {
-                invokes.add((InvokeInstruction) insn);
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction insn : block) {
+                if (insn instanceof InvokeInstruction) {
+                    invokes.add((InvokeInstruction) insn);
+                }
             }
         }
+
+        BasicBlockSplitter splitter = null;
         for (InvokeInstruction invoke : invokes) {
-            transformInvoke(owner, invoke);
+            splitter = transformInvoke(method, program, splitter, invoke);
+        }
+        if (splitter != null) {
+            splitter.fixProgram();
         }
     }
 
-    private void transformInvoke(MethodHolder owner, InvokeInstruction invoke) {
+    private BasicBlockSplitter transformInvoke(MethodHolder owner, Program program,
+                                               BasicBlockSplitter splitter, InvokeInstruction invoke) {
         MethodReference ref = invoke.getMethod();
         MethodDetour[] detoursForClass = detours.get(ref.getClassName());
         if (detoursForClass == null) {
-            return;
+            return splitter;
         }
 
-        // Insert all matching advice first, while the instruction still
-        // reflects the original call - a replacement below rewrites the
-        // receiver/args/method of the invoke in place.
+        List<MethodDetour> guards = new ArrayList<>();
+        List<MethodDetour> advice = new ArrayList<>();
+        List<MethodDetour> filters = new ArrayList<>();
+        boolean anyReplace = false;
         for (MethodDetour detour : detoursForClass) {
-            if (detour.kind != Kind.REPLACE && adviceMatches(detour, invoke, ref)) {
-                insertAdvice(detour, invoke);
+            switch (detour.kind) {
+                case GUARD:
+                    if (adviceMatches(detour, invoke, ref)) {
+                        guards.add(detour);
+                    }
+                    break;
+                case BEFORE:
+                case AFTER:
+                    if (adviceMatches(detour, invoke, ref)) {
+                        advice.add(detour);
+                    }
+                    break;
+                case FILTER:
+                    if (ref.getDescriptor().equals(detour.original)
+                            && detour.adviceHasSelf == (invoke.getInstance() != null)) {
+                        filters.add(detour);
+                    }
+                    break;
+                default:
+                    anyReplace |= ref.getDescriptor().equals(detour.original);
+                    break;
             }
+        }
+
+        // A guard owns the call site's control flow; a second guard, a
+        // replacement or a filter on the same site has no defined composition.
+        // Wrap the guard around the original FIRST, so advice inserted next to
+        // the invoke lands inside the conditional block and runs only when the
+        // original actually runs.
+        if (!guards.isEmpty()) {
+            if (guards.size() > 1 || anyReplace || !filters.isEmpty()) {
+                throw new IllegalStateException(
+                        "Conflicting detours on call site " + ref + " in "
+                                + owner.getOwnerName() + "." + owner.getName()
+                                + ": a guard cannot combine with another guard, a replacement or a filter");
+            }
+            if (splitter == null) {
+                splitter = new BasicBlockSplitter(program);
+            }
+            applyGuard(program, splitter, guards.get(0), invoke);
+        }
+
+        // Advice next, while the instruction still reflects the original call
+        // - a replacement below rewrites the receiver/args/method in place.
+        for (MethodDetour detour : advice) {
+            insertAdvice(detour, invoke);
+        }
+
+        // Filters wrap the call's result; they compose with a replacement
+        // (the filter call pipes whatever the rewritten invoke produces).
+        for (MethodDetour detour : filters) {
+            applyFilter(program, detour, invoke);
         }
 
         for (MethodDetour detour : detoursForClass) {
@@ -620,6 +801,8 @@ public class DetourHacks implements ClassHolderTransformer {
                 invoke.setMethod(new MethodReference(detour.detourClass.getName(), detourDesc));
             }
         }
+
+        return splitter;
     }
 
     /**
@@ -662,5 +845,192 @@ public class DetourHacks implements ClassHolderTransformer {
         } else {
             invoke.insertNext(call);
         }
+    }
+
+    /**
+     * Wraps a guarded call site in a conditional:
+     *
+     * <pre>
+     * head:    ... ctx = new Interception(); guard(self?, args..., ctx);
+     *          flag = ctx.isCancelled(); if (flag != 0) goto skip else goto call
+     * call:    result1 = original invoke; goto join
+     * skip:    result2 = ctx.getX() [+ cast]; goto join
+     * join:    result = phi(result1@call, result2@skip); ...rest...
+     * </pre>
+     *
+     * Split mechanics: a block may only be split once, but a split-off tail
+     * may be split again — so the head block is split after the prep
+     * instructions (moving the invoke and the rest out) and the resulting
+     * tail is split after the invoke (leaving the invoke alone in its block).
+     * The hand-built phi is safe from {@link BasicBlockSplitter#fixProgram()}:
+     * its incomings reference blocks created after the splitter initialized,
+     * which fixProgram explicitly ignores.
+     */
+    private static void applyGuard(Program program, BasicBlockSplitter splitter,
+                                   MethodDetour guard, InvokeInstruction invoke) {
+        String interception = Interception.class.getName();
+        MethodReference ref = invoke.getMethod();
+        BasicBlock headBlock = invoke.getBasicBlock();
+        TextLocation location = invoke.getLocation();
+
+        // ctx = new Interception()
+        Variable ctx = program.createVariable();
+        ConstructInstruction construct = new ConstructInstruction();
+        construct.setType(interception);
+        construct.setReceiver(ctx);
+        construct.setLocation(location);
+        invoke.insertPrevious(construct);
+
+        InvokeInstruction init = new InvokeInstruction();
+        init.setType(InvocationType.SPECIAL);
+        init.setInstance(ctx);
+        init.setMethod(new MethodReference(interception, new MethodDescriptor("<init>", void.class)));
+        init.setLocation(location);
+        invoke.insertPrevious(init);
+
+        // guard(self?, args..., ctx)
+        InvokeInstruction guardCall = new InvokeInstruction();
+        guardCall.setType(InvocationType.SPECIAL);
+        guardCall.setMethod(new MethodReference(guard.detourClass.getName(), guard.adviceDescriptor));
+        List<Variable> args = new ArrayList<>();
+        if (guard.adviceHasSelf) {
+            args.add(invoke.getInstance());
+        }
+        args.addAll(invoke.getArguments());
+        args.add(ctx);
+        guardCall.setArguments(args.toArray(new Variable[0]));
+        guardCall.setLocation(location);
+        invoke.insertPrevious(guardCall);
+
+        // flag = ctx.isCancelled()
+        Variable flag = program.createVariable();
+        InvokeInstruction cancelledCall = new InvokeInstruction();
+        cancelledCall.setType(InvocationType.SPECIAL);
+        cancelledCall.setInstance(ctx);
+        cancelledCall.setMethod(new MethodReference(interception,
+                new MethodDescriptor("isCancelled", boolean.class)));
+        cancelledCall.setReceiver(flag);
+        cancelledCall.setLocation(location);
+        invoke.insertPrevious(cancelledCall);
+
+        BasicBlock invokeBlock = splitter.split(headBlock, cancelledCall);
+        BasicBlock joinBlock = splitter.split(invokeBlock, invoke);
+
+        BasicBlock skipBlock = program.createBasicBlock();
+        skipBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(headBlock, program));
+
+        // Merge the two paths' results when the call site uses the value.
+        Variable result = invoke.getReceiver();
+        if (result != null) {
+            Variable invokeResult = program.createVariable();
+            invoke.setReceiver(invokeResult);
+
+            ValueType returnType = ref.getDescriptor().getResultType();
+            Variable skipResult;
+            InvokeInstruction accessor = new InvokeInstruction();
+            accessor.setType(InvocationType.SPECIAL);
+            accessor.setInstance(ctx);
+            accessor.setLocation(location);
+            if (returnType instanceof ValueType.Primitive) {
+                accessor.setMethod(new MethodReference(interception,
+                        primitiveAccessor((ValueType.Primitive) returnType)));
+                skipResult = program.createVariable();
+                accessor.setReceiver(skipResult);
+                skipBlock.add(accessor);
+            } else {
+                accessor.setMethod(new MethodReference(interception,
+                        new MethodDescriptor("getObject", Object.class)));
+                Variable raw = program.createVariable();
+                accessor.setReceiver(raw);
+                skipBlock.add(accessor);
+
+                skipResult = program.createVariable();
+                CastInstruction cast = new CastInstruction();
+                cast.setValue(raw);
+                cast.setReceiver(skipResult);
+                cast.setTargetType(returnType);
+                cast.setLocation(location);
+                skipBlock.add(cast);
+            }
+
+            Phi phi = new Phi();
+            phi.setReceiver(result);
+            Incoming fromInvoke = new Incoming();
+            fromInvoke.setSource(invokeBlock);
+            fromInvoke.setValue(invokeResult);
+            phi.getIncomings().add(fromInvoke);
+            Incoming fromSkip = new Incoming();
+            fromSkip.setSource(skipBlock);
+            fromSkip.setValue(skipResult);
+            phi.getIncomings().add(fromSkip);
+            joinBlock.getPhis().add(phi);
+        }
+
+        JumpInstruction invokeJump = new JumpInstruction();
+        invokeJump.setTarget(joinBlock);
+        invokeJump.setLocation(location);
+        invokeBlock.add(invokeJump);
+
+        JumpInstruction skipJump = new JumpInstruction();
+        skipJump.setTarget(joinBlock);
+        skipJump.setLocation(location);
+        skipBlock.add(skipJump);
+
+        BranchingInstruction branch = new BranchingInstruction(BranchingCondition.NOT_EQUAL);
+        branch.setOperand(flag);
+        branch.setConsequent(skipBlock);
+        branch.setAlternative(invokeBlock);
+        branch.setLocation(location);
+        headBlock.add(branch);
+    }
+
+    private static MethodDescriptor primitiveAccessor(ValueType.Primitive type) {
+        switch (type.getKind()) {
+            case BOOLEAN:
+                return new MethodDescriptor("getBoolean", boolean.class);
+            case BYTE:
+                return new MethodDescriptor("getByte", byte.class);
+            case SHORT:
+                return new MethodDescriptor("getShort", short.class);
+            case CHARACTER:
+                return new MethodDescriptor("getChar", char.class);
+            case INTEGER:
+                return new MethodDescriptor("getInt", int.class);
+            case LONG:
+                return new MethodDescriptor("getLong", long.class);
+            case FLOAT:
+                return new MethodDescriptor("getFloat", float.class);
+            case DOUBLE:
+                return new MethodDescriptor("getDouble", double.class);
+            default:
+                throw new IllegalStateException("Unexpected primitive kind: " + type.getKind());
+        }
+    }
+
+    /**
+     * Pipes the call's result through the filter: the invoke gets a fresh
+     * receiver, and the filter call consumes it and defines the variable the
+     * rest of the method already reads. A call site that discards the value
+     * still runs the filter (for its side effects); its result is discarded
+     * too. Multiple filters chain, innermost = last registered.
+     */
+    private static void applyFilter(Program program, MethodDetour filter, InvokeInstruction invoke) {
+        Variable result = invoke.getReceiver();
+        Variable piped = program.createVariable();
+        invoke.setReceiver(piped);
+
+        InvokeInstruction call = new InvokeInstruction();
+        call.setType(InvocationType.SPECIAL);
+        call.setMethod(new MethodReference(filter.detourClass.getName(), filter.adviceDescriptor));
+        List<Variable> args = new ArrayList<>();
+        if (filter.adviceHasSelf) {
+            args.add(invoke.getInstance());
+        }
+        args.addAll(invoke.getArguments());
+        args.add(piped);
+        call.setArguments(args.toArray(new Variable[0]));
+        call.setReceiver(result);
+        call.setLocation(invoke.getLocation());
+        invoke.insertNext(call);
     }
 }
