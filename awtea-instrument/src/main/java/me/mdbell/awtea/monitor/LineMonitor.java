@@ -111,7 +111,7 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 	private LineMonitor() {
 	}
 
-	public synchronized void onOpen(Object target) {
+	public void onOpen(Object target) {
 		DataLine line = (DataLine) target;
 		Entry info = ensureEntry(line);
 		info.setOutput(line instanceof SourceDataLine);
@@ -148,7 +148,7 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 		e.drainRateBytesPerSec = 0;
 	}
 
-	public synchronized void onWrite(Object target, int bytesPushed) {
+	public void onWrite(Object target, int bytesPushed) {
 		Entry info = ensureEntry(target);
 
 		DataLine line = (DataLine) target;
@@ -179,7 +179,7 @@ public final class LineMonitor extends AbstractMonitor<LineMonitor.Entry,
 		}
 	}
 
-	public synchronized void onDrain(Object target, int bytesDrained) {
+	public void onDrain(Object target, int bytesDrained) {
 		Entry info = ensureEntry(target);
 		DataLine line = (DataLine) target;
 

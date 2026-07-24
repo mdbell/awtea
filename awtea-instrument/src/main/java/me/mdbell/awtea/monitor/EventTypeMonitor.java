@@ -93,7 +93,7 @@ public final class EventTypeMonitor
 		}
 	}
 
-	public synchronized void onPost(Object event) {
+	public void onPost(Object event) {
 		if (event == null) {
 			return;
 		}
@@ -108,7 +108,7 @@ public final class EventTypeMonitor
 		e.setLastPostTimeMs(now);
 	}
 
-	public synchronized void onCoalesce(Object event) {
+	public void onCoalesce(Object event) {
 		if (event == null) {
 			return;
 		}
@@ -118,7 +118,7 @@ public final class EventTypeMonitor
 		e.coalescedCount++;
 	}
 
-	public synchronized void onDispatch(Object target, long dispatchTimeMs) {
+	public void onDispatch(Object target, long dispatchTimeMs) {
 		AWTEvent event = (AWTEvent) target;
 		Class<?> type = event.getClass();
 

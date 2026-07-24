@@ -3,13 +3,13 @@ package me.mdbell.awtea.classlib.java.net;
 import lombok.Getter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.monitor.NetworkMonitor;
+import me.mdbell.awtea.net.WebSocketConnectSupport;
 import me.mdbell.awtea.net.SocketResolver;
 import me.mdbell.awtea.net.SocketResolverFactory;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.ThreadUtils;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
-import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.function.JSConsumer;
@@ -55,24 +55,38 @@ public class TSocket {
         this.port = port;
         this.resolver = SocketResolverFactory.getInstance().createSocketResolver();
 
-        this.socket = this.connect(host, port).await();
+        // Monitor reporting happens HERE (Java/fiber context), not inside the
+        // WebSocket JS handlers: a JS-async-invoked functor that reaches
+        // suspendable code traps in Fiber.isResuming under wasm-gc, so the
+        // handlers below are kept non-suspending (field writes + JSO calls).
+        try {
+            this.socket = this.connect(host, port).await();
+        } catch (RuntimeException e) {
+            NetworkMonitor.get().onError(this, e.toString());
+            throw e;
+        }
+        NetworkMonitor.get().onOpen(this);
+        rejectConnectSocket = null;
 
         this.inputStream = new SocketInputStream();
         this.outputStream = new SocketOutputStream();
 
-        socket.onMessage(evt -> {
-            Int8Array arr = new Int8Array(evt.getDataAsArray());
-            inputStream.pushBuffer(arr);
-            NetworkMonitor.get().onUpdateBufferSizes(this, inputStream.available(), 0);
-        }).track(registrations);
-
-        socket.onError(event -> {
-            try {
-                NetworkMonitor.get().onError(TSocket.this, event.toString());
-                close();
-            } catch (IOException ignored) {
+        // Handlers attach in WebSocketConnectSupport (unmapped class — see
+        // connect() comment); the sink methods below are plain Java virtual
+        // calls and must stay non-suspending: field writes, list ops, and
+        // JSO calls only. Failure is flagged and the reader (Java context)
+        // surfaces the IOException and drives cleanup.
+        WebSocketConnectSupport.attachStreamHandlers(socket, new WebSocketConnectSupport.StreamSink() {
+            @Override
+            public void data(Int8Array bytes) {
+                inputStream.pushBuffer(bytes);
             }
-        }).track(registrations);
+
+            @Override
+            public void error() {
+                inputStream.failFromJs(new IOException("WebSocket error"));
+            }
+        });
     }
 
     public void setSoTimeout(int timeout) throws TSocketException {
@@ -105,44 +119,21 @@ public class TSocket {
         log.info("Connecting to {}:{} ({}) via WebSocket", server, port, url);
 
         NetworkMonitor.get().register(this, host, port, url);
+        NetworkMonitor.get().onConnecting(this);
         WebSocket ws = new WebSocket(url, "binary");
         ws.setBinaryType("arraybuffer");
 
-        //So this looks a bit wierd, but we need to handle timeouts ourselves
-        // otherwise we may never timeout, and the promise will never resolve/reject
-        // (this can lead to a memory leak if many connections are attempted - V8
-        // provides promises with a copy of the current script as a string, which
-        // combined with TeaVM's large JS file output, can lead to significant memory use.
-        // and when the promise never resolves, that memory is never freed).
-        return new JSPromise<WebSocket>((resolve, reject) -> {
-            rejectConnectSocket = reject;
-            NetworkMonitor.get().onConnecting(TSocket.this);
-            int timeoutId = soTimeout > 0 ? Window.setTimeout(() -> {
-                NetworkMonitor.get().onError(TSocket.this, "Connection timed out");
-                reject.accept(new TSocketTimeoutException("Connect timed out after " + soTimeout + " ms"));
-                ws.close();
-            }, soTimeout) : -1;
-            ws.onOpen(e -> {
-                if (timeoutId != -1) {
-                    Window.clearTimeout(timeoutId);
-                }
-                NetworkMonitor.get().onOpen(TSocket.this);
-                resolve.accept(ws);
-            }).track(registrations);
-
-            ws.onError(e -> {
-                if (timeoutId != -1) {
-                    Window.clearTimeout(timeoutId);
-                }
-                NetworkMonitor.get().onError(TSocket.this, e.toString());
-                reject.accept(new IOException("WebSocket error during connect"));
-                ws.close();
-            }).track(registrations);
-        }).onSettled(() -> {
-            registrations.cleanup();
-            rejectConnectSocket = null;
-            return ws;
-        });
+        // All connect-time JS callbacks live in WebSocketConnectSupport, an
+        // UNMAPPED class: under wasm-gc, lambdas declared inside this
+        // package-mapped class get CPS-tainted regardless of body and trap in
+        // Fiber.isResuming when invoked from the JS event loop. The timeout
+        // handling (self-managed so pending promises can't leak V8 script
+        // copies) also lives there. rejectConnectSocket is cleared after the
+        // await in the ctor (Java context) instead of onSettled — an
+        // onSettled lambda here would be async-invoked and tainted too.
+        return WebSocketConnectSupport.connect(ws, soTimeout,
+                new TSocketTimeoutException("Connect timed out after " + soTimeout + " ms"),
+                r -> rejectConnectSocket = r);
     }
 
     class SocketInputStream extends InputStream {
@@ -168,7 +159,6 @@ public class TSocket {
             }
             availableBytes += buf.getLength();
             buffers.add(TypedArrays.toJavaArray(buf));
-            NetworkMonitor.get().onUpdateInBuffer(TSocket.this, availableBytes);
             wakeWaiter();
         }
 
@@ -189,6 +179,18 @@ public class TSocket {
 
         public void signalClosed() {
             eof = true;
+            wakeWaiter();
+        }
+
+        /**
+         * Non-suspending failure path for JS-async handlers: record the
+         * failure and wake the reader; the reader thread throws and cleans up
+         * from Java context.
+         */
+        void failFromJs(Throwable t) {
+            if (failure == null) {
+                failure = t;
+            }
             wakeWaiter();
         }
 

@@ -11,6 +11,7 @@ import org.teavm.jso.webaudio.*;
 import javax.sound.sampled.*;
 import java.util.ArrayList;
 import java.util.List;
+import me.mdbell.awtea.util.RawTimers;
 
 public class AudioContextLine implements SourceDataLine, AudioConstants {
 
@@ -217,7 +218,7 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
         if (!running) {
             return;
         }
-        Window.setTimeout(this::drain, delay < 0 ? FLUSH_TIME : delay);
+        RawTimers.setTimeout(this::drain, delay < 0 ? FLUSH_TIME : delay);
     }
 
     public double drainImpl() {
@@ -372,14 +373,14 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 				int availBytes = available();
 				if (availBytes <= 0) {
 					// “block” by yielding to event loop
-					Window.setTimeout(this::attempt, 0);
+					RawTimers.setTimeout(this::attempt, 0);
 					return;
 				}
 
 				// How many frames can we write *now*
 				int availFrames = availBytes / frameSizeBytes;
 				if (availFrames <= 0) {
-					Window.setTimeout(this::attempt, 0);
+					RawTimers.setTimeout(this::attempt, 0);
 					return;
 				}
 
@@ -406,7 +407,7 @@ public class AudioContextLine implements SourceDataLine, AudioConstants {
 					callback.complete(written[0]);
 				} else {
 					// Continue blocking
-					Window.setTimeout(this::attempt, 0);
+					RawTimers.setTimeout(this::attempt, 0);
 				}
 			}
 		}

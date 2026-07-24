@@ -21,6 +21,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @param <E> the type of monitor entries
  * @param <S> the type of monitor snapshots
+ *
+ * <p>
+ * Deliberately unsynchronized (as are the concrete monitors): monitor calls
+ * happen inside JS-driven callbacks (WebSocket handlers, DOM events), and the
+ * wasm-gc backend classifies any method containing monitorenter as suspendable
+ * — which makes those callbacks trap in Fiber.isResuming. There are no
+ * suspension points inside monitor bodies, so under TeaVM's green threads the
+ * locks were never contended anyway; on the JVM (tests/tools) the monitors are
+ * debug-only and tolerate benign races.
+ * </p>
  */
 public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorSnapshot<E>> {
 
@@ -77,7 +87,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 * @param label  an optional label for the entry; if null, a default label is generated
 	 * @return the existing or newly created monitor entry
 	 */
-	protected synchronized E ensureEntry(Object target, String label) {
+	protected E ensureEntry(Object target, String label) {
 		if (target == null) {
 			target = NULL_TARGET;
 		}
@@ -119,7 +129,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 *
 	 * @param target the target object to mark as active
 	 */
-	public synchronized void markInactive(Object target) {
+	public void markInactive(Object target) {
 		E entry = entries.get(target);
 		if (entry != null && entry.isActive()) {
 			entry.setActive(false);
@@ -132,7 +142,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 *
 	 * @param target the target object to unregister
 	 */
-	public synchronized void unregister(Object target) {
+	public void unregister(Object target) {
 		E entry = entries.remove(target);
 		if (entry != null) {
 			bumpRevision();
@@ -144,7 +154,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 *
 	 * @param target the target object whose monitor entry should be touched
 	 */
-	public synchronized void touch(Object target) {
+	public void touch(Object target) {
 		E entry = entries.get(target);
 		if (entry != null) {
 			touch(entry);
@@ -164,7 +174,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	/**
 	 * Reset the monitor by clearing all entries.
 	 */
-	public synchronized void reset() {
+	public void reset() {
 		log.debug("Resetting monitor: {}", this.getClass().getSimpleName());
 		entries.clear();
 		bumpRevision();
@@ -178,7 +188,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 * @param target the target object
 	 * @return the monitor entry, or null if none exists
 	 */
-	public synchronized E getEntry(Object target) {
+	public E getEntry(Object target) {
 		return entries.get(target);
 	}
 
@@ -187,7 +197,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 *
 	 * @return a list of the current monitor entries
 	 */
-	public synchronized List<E> snapshotEntries() {
+	public List<E> snapshotEntries() {
 		return new ArrayList<>(entries.values());
 	}
 
@@ -203,7 +213,7 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 *
 	 * @return a list of snapshots representing the current state of all monitor entries
 	 */
-	public synchronized List<S> snapshot() {
+	public List<S> snapshot() {
 		ArrayList<S> out = new ArrayList<>();
 		for (E entry : entries.values()) {
 			S snap = buildSnapshot(entry);

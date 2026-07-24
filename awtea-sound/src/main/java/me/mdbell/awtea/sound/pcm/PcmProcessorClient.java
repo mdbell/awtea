@@ -29,6 +29,8 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 import me.mdbell.awtea.util.TypedArrays;
+import me.mdbell.awtea.util.RawTimers;
+import me.mdbell.awtea.util.PlatformSupport;
 
 @ExtensionMethod({ JSObjectsExtensions.class })
 public class PcmProcessorClient {
@@ -74,6 +76,21 @@ public class PcmProcessorClient {
     private int frameSizeBytes;
 
     private int keepAliveTimeout = -1;
+
+    /** wasm-gc keepalive: green-thread driven, see startKeepAlive(). */
+    private volatile boolean keepAliveRunning;
+
+    /** wasm-gc: JS-side message queue (see attachJsMessageQueue) polled by
+     * the worklet-pump green thread. */
+    private org.teavm.jso.JSObject jsMessageQueue;
+    private volatile boolean workletPumpRunning;
+
+    @org.teavm.jso.JSBody(params = { "port" }, script = ""
+            + "var q = []; port.onmessage = function(e) { q.push(e.data); }; return q;")
+    private static native org.teavm.jso.JSObject attachJsMessageQueue(MessagePort port);
+
+    @org.teavm.jso.JSBody(params = { "q" }, script = "return q.length > 0 ? q.shift() : null;")
+    private static native LineMessage pollJsMessageQueue(org.teavm.jso.JSObject q);
 
     private final Set<DrainListener> drainListenerSet = new HashSet<>();
 
@@ -155,31 +172,24 @@ public class PcmProcessorClient {
 
         // can't use this.node.getPort().setOnMessage()
         // for some reason. Why? idk.
-        setOnMessage(this.node.getPort(), evt -> {
-            LineMessage msg = (LineMessage) evt.getData();
-            if (msg.nullish()) {
-                return;
-            }
-            String type = msg.getType();
-            log.trace("PCM Client: Received message from processor. Msg: {}", JSON.stringify(msg));
-            if (type.equals("consumed")) {
-                ConsumedMessage consumedMsg = (ConsumedMessage) msg;
-                int bytesConsumed = consumedMsg.getBytes();
-                // Authoritative reconciliation: the confirmed totals advance
-                // and the clock estimate re-anchors at this instant.
-                ackedBytes += bytesConsumed;
-                if (ackedBytes > sentBytes) {
-                    ackedBytes = sentBytes;
+        // wasm-gc: NO Java onmessage functor at all — every JS->wasm
+        // callback variant tried (even enqueue-only bodies) ends up
+        // CPS-tainted in the full client build and traps in
+        // Fiber.isResuming. Instead a pure-JS handler queues the data and
+        // the worklet-pump green thread polls it from fiber context.
+        if (PlatformSupport.isWebAssemblyGC()) {
+            this.jsMessageQueue = attachJsMessageQueue(this.node.getPort());
+            startWorkletPump();
+        } else {
+            setOnMessage(this.node.getPort(), evt -> {
+                LineMessage msg = (LineMessage) evt.getData();
+                if (!msg.nullish()) {
+                    processWorkletMessage(msg);
                 }
-                lastAckTime = context.getCurrentTime();
-                int remaining = getQueuedBytes();
-                log.trace("PCM Client: Processor consumed {} bytes. {} bytes remaining in queue.",
-                        bytesConsumed, remaining);
-                drainListenerSet.removeIf(l -> l.onDrain(bytesConsumed, remaining));
-            }
-        });
+            });
+        }
 
-        this.keepAliveTimeout = Window.setTimeout(this::handleKeepAliveTick, KEEP_ALIVE_TIMEOUT_MS);
+        startKeepAlive();
 
         InitMessage message = JSObjects.create();
 
@@ -256,21 +266,99 @@ public class PcmProcessorClient {
             this.node = null;
         }
 
+        keepAliveRunning = false;
+        workletPumpRunning = false;
         if (this.keepAliveTimeout != -1) {
-            Window.clearTimeout(this.keepAliveTimeout);
+            RawTimers.clearTimeout(this.keepAliveTimeout);
             this.keepAliveTimeout = -1;
         }
     }
 
-    private void handleKeepAliveTick() {
+    /**
+     * wasm-gc: the keepalive runs on a green thread (fiber context) instead of
+     * a setTimeout chain — every timer-callback variant we tried gets
+     * CPS-tainted through the postMessage path and traps in Fiber.isResuming
+     * (no current fiber on the JS event loop). JS backend keeps the raw timer
+     * chain.
+     */
+    private void startKeepAlive() {
+        if (PlatformSupport.isWebAssemblyGC()) {
+            if (keepAliveRunning) {
+                return;
+            }
+            keepAliveRunning = true;
+            Thread t = new Thread(() -> {
+                while (keepAliveRunning && this.node != null) {
+                    try {
+                        Thread.sleep(KEEP_ALIVE_TIMEOUT_MS);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                    if (keepAliveRunning) {
+                        sendKeepAlive();
+                    }
+                }
+            }, "pcm-keepalive");
+            t.setDaemon(true);
+            t.start();
+        } else {
+            this.keepAliveTimeout = RawTimers.setTimeout(this::handleKeepAliveTick, KEEP_ALIVE_TIMEOUT_MS);
+        }
+    }
 
+    private void processWorkletMessage(LineMessage msg) {
+        String type = msg.getType();
+        log.trace("PCM Client: Received message from processor. Msg: {}", JSON.stringify(msg));
+        if (type.equals("consumed")) {
+            ConsumedMessage consumedMsg = (ConsumedMessage) msg;
+            int bytesConsumed = consumedMsg.getBytes();
+            // Authoritative reconciliation: the confirmed totals advance
+            // and the clock estimate re-anchors at this instant.
+            ackedBytes += bytesConsumed;
+            if (ackedBytes > sentBytes) {
+                ackedBytes = sentBytes;
+            }
+            lastAckTime = context.getCurrentTime();
+            int remaining = getQueuedBytes();
+            log.trace("PCM Client: Processor consumed {} bytes. {} bytes remaining in queue.",
+                    bytesConsumed, remaining);
+            drainListenerSet.removeIf(l -> l.onDrain(bytesConsumed, remaining));
+        }
+    }
+
+    private void startWorkletPump() {
+        if (!PlatformSupport.isWebAssemblyGC() || workletPumpRunning) {
+            return;
+        }
+        workletPumpRunning = true;
+        Thread t = new Thread(() -> {
+            while (workletPumpRunning) {
+                LineMessage msg;
+                while (jsMessageQueue != null && (msg = pollJsMessageQueue(jsMessageQueue)) != null && !msg.nullish()) {
+                    processWorkletMessage(msg);
+                }
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        }, "pcm-worklet-pump");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void sendKeepAlive() {
         if (this.node != null) {
             KeepaliveMessage pingMsg = JSObjects.create();
             pingMsg.setType("keepalive");
             this.node.getPort().postMessage(pingMsg);
         }
+    }
 
-        this.keepAliveTimeout = Window.setTimeout(this::handleKeepAliveTick, KEEP_ALIVE_TIMEOUT_MS);
+    private void handleKeepAliveTick() {
+        sendKeepAlive();
+        this.keepAliveTimeout = RawTimers.setTimeout(this::handleKeepAliveTick, KEEP_ALIVE_TIMEOUT_MS);
     }
 
     @SneakyThrows

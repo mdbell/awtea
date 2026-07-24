@@ -16,6 +16,7 @@ import me.mdbell.awtea.input.MouseEventType;
 import me.mdbell.awtea.util.ElementUtils;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.NormalizedPoint;
+import me.mdbell.awtea.util.PlatformSupport;
 import me.mdbell.awtea.util.Point;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
@@ -75,6 +76,18 @@ public final class TEventManager implements AutoCloseable {
     // Hit-testing strategy (tree-walk by default)
     private THitTestStrategy componentHitStrategy;
 
+    /**
+     * wasm-gc only: DOM listeners must not reach suspendable code — a JS-invoked
+     * callback with no current fiber traps in Fiber.isResuming, and
+     * EventQueue.postEvent is synchronized (= suspendable). Listeners append
+     * here instead (an unsynchronized deque is safe: the browser is
+     * single-threaded and green threads only switch at suspension points), and
+     * a green thread pumps events into the real EventQueue from fiber context.
+     * See docs/wasm-port-plan.md in the client repo.
+     */
+    private static final java.util.ArrayDeque<TAWTEvent> wasmEventBuffer = new java.util.ArrayDeque<>();
+    private static Thread wasmEventPump;
+
     public TEventManager(HTMLElement element, TContainer container) {
         this.element = element;
         this.container = container;
@@ -83,7 +96,30 @@ public final class TEventManager implements AutoCloseable {
         // Initialize with tree-walk strategy (always available)
         this.componentHitStrategy = new TreeWalkHitTestStrategy(container);
 
+        ensureWasmEventPump();
+
         log.debug("TEventManager initialized with tree-walk hit-test strategy");
+    }
+
+    private static void ensureWasmEventPump() {
+        if (!PlatformSupport.isWebAssemblyGC() || wasmEventPump != null) {
+            return;
+        }
+        wasmEventPump = new Thread(() -> {
+            while (true) {
+                TAWTEvent event;
+                while ((event = wasmEventBuffer.pollFirst()) != null) {
+                    TToolkit.getEventQueue().postEvent(event);
+                }
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        }, "wasm-event-pump");
+        wasmEventPump.setDaemon(true);
+        wasmEventPump.start();
     }
 
     /**
@@ -326,6 +362,11 @@ public final class TEventManager implements AutoCloseable {
     }
 
     private void post(TAWTEvent event) {
+        if (PlatformSupport.isWebAssemblyGC()) {
+            // Non-suspending append; the wasm-event-pump thread delivers it.
+            wasmEventBuffer.addLast(event);
+            return;
+        }
         TToolkit.getEventQueue().postEvent(event);
     }
 
