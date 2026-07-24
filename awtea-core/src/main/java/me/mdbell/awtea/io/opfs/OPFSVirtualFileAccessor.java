@@ -13,6 +13,7 @@ import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.runtime.fs.VirtualFileAccessor;
 
 import java.io.IOException;
+import me.mdbell.awtea.util.TypedArrays;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 class OPFSVirtualFileAccessor implements VirtualFileAccessor {
@@ -63,7 +64,7 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
 
         int bytesRead = end - position;
         ArrayBuffer data = slice.arrayBuffer().await();
-        byte[] readBytes = new Int8Array(data).toJavaArray();
+        byte[] readBytes = TypedArrays.toJavaArray(new Int8Array(data));
         System.arraycopy(readBytes, 0, buffer, offset, bytesRead);
 
         position += bytesRead;
@@ -77,7 +78,7 @@ class OPFSVirtualFileAccessor implements VirtualFileAccessor {
         // Seek to the current position in the stream
         writable.seek(position).await();
 
-        Int8Array nativeArray = Int8Array.fromJavaArray(buffer);
+        Int8Array nativeArray = TypedArrays.from(buffer);
 
         Uint8Array sliceArray = new Uint8Array(nativeArray.getBuffer(), nativeArray.getByteOffset() + offset, limit);
 

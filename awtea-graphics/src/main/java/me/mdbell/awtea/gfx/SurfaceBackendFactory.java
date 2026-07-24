@@ -5,6 +5,7 @@ import me.mdbell.awtea.gfx.wasm.WasmSurfaceBackend;
 import me.mdbell.awtea.gfx.webgl.WebGLSurfaceBackend;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 
 /**
@@ -208,14 +209,20 @@ public class SurfaceBackendFactory {
 		// Try to create each backend individually and only include successful ones
 		java.util.ArrayList<SurfaceBackend> backendList = new java.util.ArrayList<>();
 
-		// Try WASM backend first
-		try {
-			WasmSurfaceBackend wasmBackend = getWasmBackend();
-			backendList.add(wasmBackend);
-		} catch (Exception e) {
-			// WASM backend failed to load (e.g., wasm file not found on server)
-			// Continue without it - will use software fallback
-			log.warn("Failed to load WASM backend, will use software renderer: {}", e.getMessage());
+		// Try WASM backend first — except under the wasm-gc compile target,
+		// where the emcc guest rasterizer is out of scope: the game itself is
+		// already wasm, the software rasterizer is the canonical pixel path
+		// there, and a guest-module load failure surfaces as an unmarshallable
+		// JS promise rejection instead of a clean fallback.
+		if (!PlatformDetector.isWebAssemblyGC()) {
+			try {
+				WasmSurfaceBackend wasmBackend = getWasmBackend();
+				backendList.add(wasmBackend);
+			} catch (Exception e) {
+				// WASM backend failed to load (e.g., wasm file not found on server)
+				// Continue without it - will use software fallback
+				log.warn("Failed to load WASM backend, will use software renderer: {}", e.getMessage());
+			}
 		}
 
 		backendList.add(defaultBackend);

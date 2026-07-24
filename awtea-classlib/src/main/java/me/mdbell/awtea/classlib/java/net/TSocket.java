@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import me.mdbell.awtea.util.TypedArrays;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class TSocket {
@@ -166,7 +167,7 @@ public class TSocket {
                 return; // ignore if already closed/failed
             }
             availableBytes += buf.getLength();
-            buffers.add(buf.toJavaArray());
+            buffers.add(TypedArrays.toJavaArray(buf));
             NetworkMonitor.get().onUpdateInBuffer(TSocket.this, availableBytes);
             wakeWaiter();
         }
@@ -345,7 +346,7 @@ public class TSocket {
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            Int8Array nativeArr = Int8Array.fromJavaArray(b);
+            Int8Array nativeArr = TypedArrays.from(b);
             Uint8ClampedArray view = new Uint8ClampedArray(nativeArr.getBuffer(),
                     nativeArr.getByteOffset() + off,
                     len);

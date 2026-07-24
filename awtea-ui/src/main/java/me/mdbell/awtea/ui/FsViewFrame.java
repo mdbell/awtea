@@ -9,13 +9,14 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.dom.css.CSSStyleDeclaration;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.file.FileList;
-import org.teavm.jso.typedarrays.Uint8ClampedArray;
+import org.teavm.jso.typedarrays.Int8Array;
 
 import java.io.File;
 import java.util.Arrays;
 
 import static me.mdbell.awtea.ui.Theme.humanReadableSize;
 import static me.mdbell.awtea.ui.Theme.humanReadableTimestamp;
+import me.mdbell.awtea.util.TypedArrays;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class FsViewFrame extends FloatingFrame {
@@ -244,8 +245,7 @@ public class FsViewFrame extends FloatingFrame {
 				if (fileList != null) {
 					for (int i = 0; i < fileList.getLength(); i++) {
 						org.teavm.jso.file.File jsFile = fileList.item(i);
-						Uint8ClampedArray nativeArray = new Uint8ClampedArray(jsFile.arrayBuffer().await());
-						byte[] buffer = nativeArray.getArrayFromJS();
+						byte[] buffer = TypedArrays.toJavaArray(new Int8Array(jsFile.arrayBuffer().await()));
 						File destFile = new File(currentDir, jsFile.getName());
 						log.info(" - {} ({} bytes)", jsFile.getName(), buffer.length);
 						// Write to local FS

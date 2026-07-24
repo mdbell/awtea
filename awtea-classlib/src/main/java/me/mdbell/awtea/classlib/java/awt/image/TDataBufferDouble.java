@@ -3,6 +3,7 @@ package me.mdbell.awtea.classlib.java.awt.image;
 import lombok.Getter;
 import org.teavm.jso.typedarrays.Float64Array;
 import org.teavm.jso.typedarrays.Int32Array;
+import me.mdbell.awtea.util.TypedArrays;
 
 /**
  * @see java.awt.image.DataBufferDouble
@@ -29,7 +30,7 @@ public class TDataBufferDouble extends TDataBuffer {
 	public TDataBufferDouble(double[] data, int size, int offset) {
 		super(TYPE_DOUBLE, size, 1, offset);
 		this.bankData = new double[][]{data};
-		this.jsArray = new Int32Array(Float64Array.fromJavaArray(data).getBuffer(), offset, size);
+		this.jsArray = new Int32Array(TypedArrays.from(data).getBuffer(), offset, size);
 	}
 
 	public TDataBufferDouble(double[][] dataArray, int size) {

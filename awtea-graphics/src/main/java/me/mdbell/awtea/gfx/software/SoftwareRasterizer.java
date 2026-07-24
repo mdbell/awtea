@@ -13,6 +13,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.List;
+import me.mdbell.awtea.util.TypedArrays;
 
 /**
  * Pure Java software rasterizer implementation.
@@ -510,13 +511,21 @@ public class SoftwareRasterizer implements Rasterizer {
 
         // Coordinates are already in device space, no need to transform again
 
-        Uint8ClampedArray srcPixArray = surface.getPixelData();
         int[] destPixels = this.surface.getPixelDataAsInt32Array();
-        if (srcPixArray == null || destPixels == null) {
+        int[] srcPixels;
+        if (surface instanceof SoftwareSurface) {
+            // Canonical int[] store — avoids materializing a JS-side snapshot
+            // per blit (free on JS, one copy saved per blit on wasm-gc).
+            srcPixels = ((SoftwareSurface) surface).getPixelDataAsInt32Array();
+        } else {
+            Uint8ClampedArray srcPixArray = surface.getPixelData();
+            srcPixels = srcPixArray == null ? null
+                    : TypedArrays.toJavaArray(new Int32Array(srcPixArray.getBuffer(), srcPixArray.getByteOffset(),
+                            srcPixArray.getLength() / 4));
+        }
+        if (srcPixels == null || destPixels == null) {
             return;
         }
-        int[] srcPixels = new Int32Array(srcPixArray.getBuffer(), srcPixArray.getByteOffset(),
-                srcPixArray.getLength() / 4).toJavaArray();
 
         int srcFormat = surface.getFormat();
         int destFormat = this.surface.getFormat();

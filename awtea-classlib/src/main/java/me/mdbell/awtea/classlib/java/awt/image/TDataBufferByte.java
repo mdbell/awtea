@@ -3,6 +3,7 @@ package me.mdbell.awtea.classlib.java.awt.image;
 import lombok.Getter;
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Int8Array;
+import me.mdbell.awtea.util.TypedArrays;
 
 /**
  * @see java.awt.image.DataBufferByte
@@ -29,7 +30,7 @@ public class TDataBufferByte extends TDataBuffer {
 	public TDataBufferByte(byte[] data, int size, int offset) {
 		super(TYPE_BYTE, size, 1, offset);
 		this.bankData = new byte[][]{data};
-		this.jsArray = new Int32Array(Int8Array.fromJavaArray(data).getBuffer(), offset, size);
+		this.jsArray = new Int32Array(TypedArrays.from(data).getBuffer(), offset, size);
 	}
 
 	public TDataBufferByte(byte[][] dataArray, int size) {

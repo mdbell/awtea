@@ -21,7 +21,7 @@ public class TinyMidiPCM implements JSObject {
 
     public native void ensureInitialized();
 
-    @JSByRef
+    @JSByRef(optional = true)
     public native void setSoundfont(byte[] soundfont);
 
     public native Uint8Array getPCMBuffer();

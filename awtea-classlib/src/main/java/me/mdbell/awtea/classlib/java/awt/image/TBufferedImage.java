@@ -10,6 +10,7 @@ import me.mdbell.awtea.font.FontRenderer;
 import me.mdbell.awtea.gfx.SurfaceBackendFactory;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceContainer;
+import me.mdbell.awtea.gfx.software.SoftwareSurface;
 import me.mdbell.awtea.instrument.Monitored;
 import org.teavm.classlib.java.awt.TPoint;
 import org.teavm.jso.canvas.ImageData;
@@ -112,6 +113,20 @@ public class TBufferedImage extends TImage implements FontRenderer.RasterTarget,
         this.surface = SurfaceBackendFactory.getDefault().createCompatibleSurface(cm, raster, isRasterPremultiplied, imageType);
     }
 
+    /**
+     * Builds the raster's backing data buffer over the surface's pixels.
+     * For software surfaces this goes through the canonical int[] store —
+     * an aliased view on the JS backend and the canonical array itself on
+     * wasm-gc — so raster writes reach the surface on both backends. The
+     * typed-array path only remains for non-software surfaces (JS-side).
+     */
+    private TDataBufferInt createSurfaceDataBuffer(int width, int height) {
+        if (surface instanceof SoftwareSurface) {
+            return new TDataBufferInt(((SoftwareSurface) surface).getPixelDataAsInt32Array(), width * height);
+        }
+        return new TDataBufferInt(surface.getPixelData(), width, height);
+    }
+
     private void init(Surface surface) {
         imageType = Surface.toBufferedImageType(surface.getFormat());
         switch (imageType) {
@@ -133,7 +148,7 @@ public class TBufferedImage extends TImage implements FontRenderer.RasterTarget,
                                 masks
                         );
 
-                TDataBufferInt db = new TDataBufferInt(surface.getPixelData(), width, height);
+                TDataBufferInt db = createSurfaceDataBuffer(width, height);
 
                 this.raster = TWritableRaster.createWritableRaster(sm, db, new TPoint(0, 0));
 
@@ -166,7 +181,7 @@ public class TBufferedImage extends TImage implements FontRenderer.RasterTarget,
                                 masks
                         );
 
-                TDataBufferInt db = new TDataBufferInt(surface.getPixelData(), width, height);
+                TDataBufferInt db = createSurfaceDataBuffer(width, height);
 
                 this.raster = TWritableRaster.createWritableRaster(sm, db, new TPoint(0, 0));
 
@@ -200,7 +215,7 @@ public class TBufferedImage extends TImage implements FontRenderer.RasterTarget,
                                 masks
                         );
 
-                TDataBufferInt db = new TDataBufferInt(surface.getPixelData(), width, height);
+                TDataBufferInt db = createSurfaceDataBuffer(width, height);
 
                 this.raster = TWritableRaster.createWritableRaster(sm, db, new TPoint(0, 0));
 

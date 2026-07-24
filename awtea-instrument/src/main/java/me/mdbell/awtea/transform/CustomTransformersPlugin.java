@@ -17,7 +17,15 @@ public class CustomTransformersPlugin implements TeaVMPlugin {
 		// fixes, and an app need not use every API they cover
 		host.add(detours.zeroMatchVerifier(false));
 		host.add(new EmbedResourceTransformer(host.getClassLoader()));
-		host.add(new MonitorHacks());
+		// JS backend only: the monitor wrappers call synchronized code
+		// (OperationsMonitor.ensureEntry), which wasm-gc classifies as
+		// suspendable — that poisons every @Monitored method, and JS-driven
+		// callbacks (requestAnimationFrame, DOM events) into suspendable code
+		// trap in Fiber.isResuming with no current fiber. The monitors feed
+		// the awtea-ui debug frames, which are a JS-side concern anyway.
+		if (host.getExtension(org.teavm.backend.javascript.TeaVMJavaScriptHost.class) != null) {
+			host.add(new MonitorHacks());
+		}
 		host.add(new ArrayHacks());
 	}
 

@@ -14,6 +14,7 @@ import org.teavm.jso.webgl.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import me.mdbell.awtea.util.TypedArrays;
 
 public final class WebGLSurfaceBackend implements SurfaceBackend {
 
@@ -153,8 +154,8 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
     }
 
     void uploadQuadVertices(float[] verts, float[] uvs) {
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
-        ArrayBuffer uvBuf = Float32Array.fromJavaArray(uvs).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
+        ArrayBuffer uvBuf = TypedArrays.from(uvs).getBuffer();
 
         gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadBuffer);
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
@@ -396,7 +397,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
         // Upload vertex data
         gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadBuffer);
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER,
-                org.teavm.jso.typedarrays.Float32Array.fromJavaArray(vertices).getBuffer(),
+                TypedArrays.from(vertices).getBuffer(),
                 WebGLRenderingContext.DYNAMIC_DRAW);
         gl.enableVertexAttribArray(aPositionLocTex);
         gl.vertexAttribPointer(aPositionLocTex, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
@@ -404,7 +405,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
         // Upload texture coordinate data
         gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadTexCoordBuffer);
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER,
-                org.teavm.jso.typedarrays.Float32Array.fromJavaArray(uvs).getBuffer(),
+                TypedArrays.from(uvs).getBuffer(),
                 WebGLRenderingContext.DYNAMIC_DRAW);
         gl.enableVertexAttribArray(aTexCoordLocTex);
         gl.vertexAttribPointer(aTexCoordLocTex, 2, WebGLRenderingContext.FLOAT, false, 0, 0);

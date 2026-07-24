@@ -13,6 +13,7 @@ import me.mdbell.awtea.gfx.SurfaceCommand;
 import me.mdbell.awtea.gfx.generated.Operation;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import me.mdbell.awtea.util.PlatformSupport;
 import org.teavm.jso.browser.Window;
 
 import java.awt.*;
@@ -813,9 +814,20 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
     // Schedule rasterization on the next animation frame
 
     protected final void scheduleRasterize() {
-        Window.requestAnimationFrame(time -> {
-            flush();
-        });
+        if (PlatformSupport.isWebAssemblyGC()) {
+            // wasm-gc: no requestAnimationFrame here — a JS-invoked functor
+            // that reaches suspendable code (rasterizeCommands' virtual
+            // dispatch) traps in Fiber.isResuming, and in the full client
+            // build even a thread-spawning-only lambda gets CPS-tainted (see
+            // docs/wasm-port-plan.md, open rAF issue). scheduleRasterize is
+            // always called from Java green threads (a fiber context), so
+            // spawn the flush directly; the 2D flush loses vsync alignment,
+            // which Phase 0 accepts. (Raw PlatformDetector would evaluate
+            // false in this package-mapped class — hence PlatformSupport.)
+            new Thread(this::flush, "rasterize").start();
+        } else {
+            Window.requestAnimationFrame(time -> flush());
+        }
     }
 
     private boolean coalesce(SurfaceCommand previous, SurfaceCommand requested) {

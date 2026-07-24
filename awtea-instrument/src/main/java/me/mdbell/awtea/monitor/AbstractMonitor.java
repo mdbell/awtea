@@ -26,6 +26,15 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 
 	private static final Logger log = LoggerFactory.getLogger(AbstractMonitor.class);
 
+	/**
+	 * Stand-in key for null targets (static @Monitored methods pass
+	 * self = null), same masking trick as the JDK's WeakHashMap.NULL_KEY.
+	 * A raw null key would put a WeakReference(null) into the map, which the
+	 * wasm-gc backend rejects at runtime (FinalizationRegistry.register(null)
+	 * throws); the JS backend merely tolerated it.
+	 */
+	private static final Object NULL_TARGET = new Object();
+
 	private final Map<Object, E> entries;
 
 	private final AtomicInteger nextId = new AtomicInteger(1);
@@ -69,6 +78,9 @@ public abstract class AbstractMonitor<E extends MonitorEntry, S extends MonitorS
 	 * @return the existing or newly created monitor entry
 	 */
 	protected synchronized E ensureEntry(Object target, String label) {
+		if (target == null) {
+			target = NULL_TARGET;
+		}
 		E entry = entries.get(target);
 		if (entry != null) {
 			touch(entry);

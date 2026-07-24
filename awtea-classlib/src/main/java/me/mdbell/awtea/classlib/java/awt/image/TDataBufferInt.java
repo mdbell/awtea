@@ -6,6 +6,7 @@ import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.awt.image.DataBufferInt;
+import me.mdbell.awtea.util.TypedArrays;
 
 /**
  * @see DataBufferInt
@@ -23,7 +24,10 @@ public class TDataBufferInt extends TDataBuffer {
 	TDataBufferInt(Uint8ClampedArray pixelData, int width, int height) {
 		super(TYPE_INT, width * height);
 		this.jsArray = new Int32Array(pixelData.getBuffer(), pixelData.getByteOffset(), pixelData.getLength() / 4);
-		this.bankData = new int[][]{this.jsArray.toJavaArray()};
+		// ALIAS-DEPENDENT (JS backend): bankData shares memory with jsArray/pixelData,
+		// so raster writes show up in the surface. On wasm-gc this is a detached copy —
+		// needs the PixelBuffer restructure (docs/wasm-port-plan.md Lane 2).
+		this.bankData = new int[][]{TypedArrays.toJavaArray(this.jsArray)};
 	}
 
 	public TDataBufferInt(int size) {
@@ -48,7 +52,7 @@ public class TDataBufferInt extends TDataBuffer {
 	public TDataBufferInt(int[] data, int size, int offset) {
 		super(TYPE_INT, size, 1, offset);
 		this.bankData = new int[][]{data};
-		this.jsArray = new Int32Array(Int32Array.fromJavaArray(data).getBuffer(), offset, size);
+		this.jsArray = new Int32Array(TypedArrays.from(data).getBuffer(), offset, size);
 	}
 
 	public TDataBufferInt(int[][] dataArray, int size) {

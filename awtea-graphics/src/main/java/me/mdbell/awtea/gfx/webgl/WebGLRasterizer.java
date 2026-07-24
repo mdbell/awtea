@@ -16,6 +16,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.List;
+import me.mdbell.awtea.util.TypedArrays;
 
 @Monitored.AllMethods
 public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
@@ -457,7 +458,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         };
 
         // Upload vertices to the already-bound rectBuffer
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
 
         gl.drawArrays(WebGLRenderingContext.LINES, 0, 2);
@@ -479,7 +480,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             verts[i * 2 + 1] = h - ypoints[i];
         }
 
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
 
         gl.drawArrays(WebGLRenderingContext.LINE_LOOP, 0, npoints);
@@ -504,7 +505,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
             final float[] finalVerts = verts;
             renderToPicking(activeComponentId, () -> {
-                ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+                ArrayBuffer vertBuf = TypedArrays.from(finalVerts).getBuffer();
                 gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
                 gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, npoints);
             });
@@ -512,7 +513,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
         // Render to normal framebuffer
         useColorProgram();
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, npoints);
 
@@ -552,7 +553,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             final float[] finalVerts = verts;
             final int finalSegments = segments;
             renderToPicking(activeComponentId, () -> {
-                ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+                ArrayBuffer vertBuf = TypedArrays.from(finalVerts).getBuffer();
                 gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
                 gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, finalSegments + 2);
             });
@@ -560,7 +561,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
         // Render to normal framebuffer
         useColorProgram();
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
 
@@ -662,7 +663,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
         // If picking is enabled, render to picking buffer first
         if (pickingEnabled && activeComponentId != INVALID_COMPONENT_ID && backend.hasPickingBuffer()) {
             renderToPicking(activeComponentId, () -> {
-                ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+                ArrayBuffer vertBuf = TypedArrays.from(finalVerts).getBuffer();
                 gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
                 gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, finalIdx);
             });
@@ -670,7 +671,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
         // Render to normal framebuffer
         useColorProgram();
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(finalVerts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, idx);
 
@@ -713,7 +714,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             final float[] finalVerts = verts;
             final int finalSegments = segments;
             renderToPicking(activeComponentId, () -> {
-                ArrayBuffer vertBuf = Float32Array.fromJavaArray(finalVerts).getBuffer();
+                ArrayBuffer vertBuf = TypedArrays.from(finalVerts).getBuffer();
                 gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
                 gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, finalSegments + 2);
             });
@@ -721,7 +722,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
 
         // Render to normal framebuffer
         useColorProgram();
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
         gl.drawArrays(WebGLRenderingContext.TRIANGLE_FAN, 0, segments + 2);
 
@@ -751,7 +752,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             verts[i * 2 + 1] = (float) (h - (cy + ry * Math.sin(angle)));
         }
 
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
 
         gl.drawArrays(WebGLRenderingContext.LINE_LOOP, 0, segments);
@@ -785,7 +786,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             verts[i * 2 + 1] = (float) (h - (cy - ry * Math.sin(angle)));
         }
 
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
 
         gl.drawArrays(WebGLRenderingContext.LINE_STRIP, 0, segments + 1);
@@ -868,7 +869,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             idx++;
         }
 
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(java.util.Arrays.copyOf(verts, idx * 2)).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(java.util.Arrays.copyOf(verts, idx * 2)).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
 
         gl.drawArrays(WebGLRenderingContext.LINE_LOOP, 0, idx);
@@ -890,7 +891,7 @@ public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
             verts[i * 2 + 1] = h - ypoints[i];
         }
 
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
 
         gl.drawArrays(WebGLRenderingContext.LINE_STRIP, 0, npoints);

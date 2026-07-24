@@ -28,6 +28,7 @@ import org.teavm.jso.workers.MessagePort;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
+import me.mdbell.awtea.util.TypedArrays;
 
 @ExtensionMethod({ JSObjectsExtensions.class })
 public class PcmProcessorClient {
@@ -217,7 +218,7 @@ public class PcmProcessorClient {
         }
 
         // Convert Java byte array to JS Int8Array
-        Int8Array arr = Int8Array.fromJavaArray(data);
+        Int8Array arr = TypedArrays.from(data);
         ArrayBuffer buf = arr.getBuffer();
 
         int arrayOffset = arr.getByteOffset();

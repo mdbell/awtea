@@ -11,6 +11,8 @@ import java.util.Map;
 
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
+import me.mdbell.awtea.gfx.software.SoftwareSurface;
+import me.mdbell.awtea.util.TypedArrays;
 
 /**
  * A persistent texture atlas for caching rendered glyphs.
@@ -473,13 +475,23 @@ public class GlyphAtlas {
         private final int height;
 
         SurfaceRasterTarget(Surface surface) {
-            Uint8ClampedArray pixelArray = surface.getPixelData();
-            Int32Array intArray = new Int32Array(
-                    pixelArray.getBuffer(),
-                    pixelArray.getByteOffset(),
-                    pixelArray.getLength() / 4);
             this.surface = surface;
-            this.pixels = intArray.toJavaArray();
+            if (surface instanceof SoftwareSurface) {
+                // The surface's canonical int[] store: an aliased view on the
+                // JS backend, the canonical array itself on wasm-gc — glyph
+                // writes reach the surface on both backends.
+                this.pixels = ((SoftwareSurface) surface).getPixelDataAsInt32Array();
+            } else {
+                // JS backend: zero-copy view of the surface pixels. (On wasm-gc
+                // this branch would be a detached snapshot, but non-software
+                // surfaces stay on the JS side of the boundary there.)
+                Uint8ClampedArray pixelArray = surface.getPixelData();
+                Int32Array intArray = new Int32Array(
+                        pixelArray.getBuffer(),
+                        pixelArray.getByteOffset(),
+                        pixelArray.getLength() / 4);
+                this.pixels = TypedArrays.toJavaArray(intArray);
+            }
             this.width = surface.getWidth();
             this.height = surface.getHeight();
         }
