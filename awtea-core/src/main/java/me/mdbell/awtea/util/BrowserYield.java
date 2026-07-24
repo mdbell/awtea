@@ -28,10 +28,30 @@ public final class BrowserYield {
     }
 
     /** Suspends the calling green thread until the next macrotask turn. */
-    @Async
-    public static native void yieldNow();
+    public static void yieldNow() {
+        if (PlatformSupport.isWebAssemblyGC()) {
+            // wasm-gc: the MessageChannel resume functor calls
+            // AsyncCallback.complete (fiber-resume machinery), which
+            // CPS-taints it — invoked from port.onmessage with no current
+            // fiber it traps in Fiber.isResuming, silently hanging the
+            // yielding thread (observed as the main tick loop freezing and
+            // cache requests stopping). TeaVM's wasm event queue schedules
+            // sleep(0) without the browser's nested-setTimeout clamp, so the
+            // MessageChannel trick isn't needed there anyway.
+            try {
+                Thread.sleep(0);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return;
+        }
+        yieldViaMessageChannel();
+    }
 
-    private static void yieldNow(AsyncCallback<Void> callback) {
+    @Async
+    private static native void yieldViaMessageChannel();
+
+    private static void yieldViaMessageChannel(AsyncCallback<Void> callback) {
         post(() -> callback.complete(null));
     }
 

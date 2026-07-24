@@ -779,6 +779,21 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
 
     }
 
+    /**
+     * flush() with a guarantee that a failure can never wedge the pipeline:
+     * an exception thrown mid-flush would leave {@code scheduled} stuck true,
+     * silently freezing all 2D rendering forever (observed as the loading
+     * screen freezing under wasm-gc). Used by the wasm flush thread.
+     */
+    private void flushSafe() {
+        try {
+            flush();
+        } catch (Throwable t) {
+            log.error("rasterize flush failed: {}", String.valueOf(t));
+            scheduled = false;
+        }
+    }
+
     public void flush() {
         // Swap lists
         List<SurfaceCommand> temp = readList;
@@ -824,7 +839,7 @@ public class TSurfaceRasterizerGraphics extends TGraphics2D {
             // spawn the flush directly; the 2D flush loses vsync alignment,
             // which Phase 0 accepts. (Raw PlatformDetector would evaluate
             // false in this package-mapped class — hence PlatformSupport.)
-            new Thread(this::flush, "rasterize").start();
+            new Thread(this::flushSafe, "rasterize").start();
         } else {
             Window.requestAnimationFrame(time -> flush());
         }
