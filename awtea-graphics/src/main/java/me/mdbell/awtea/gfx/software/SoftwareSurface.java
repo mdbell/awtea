@@ -23,6 +23,15 @@ public class SoftwareSurface implements Surface {
 	private final Uint8ClampedArray pixelData;
 	private final int[] intPixels;
 
+	// wasm-gc present buffer: a per-surface direct ByteBuffer that getPixelData()
+	// bulk-copies the canonical int[] into, then hands JS a zero-copy view of.
+	// This is ~4x faster than Int32Array.copyFromJavaArray (which allocates a
+	// fresh JS ArrayBuffer and copies across the boundary every call); the bulk
+	// int[]->direct-buffer copy stays in wasm linear memory and the typed-array
+	// view over a DIRECT buffer is free. Allocated lazily so never-read surfaces
+	// don't pay. JS backend never uses this (its pixelData is already a view).
+	private java.nio.IntBuffer presentBuffer;
+
 	public SoftwareSurface(WritableRaster raster, ColorModel cm, int format) {
 		this.raster = raster;
 		this.cm = cm;
@@ -156,13 +165,22 @@ public class SoftwareSurface implements Surface {
 		dirty = false;
 		if (PlatformDetector.isWebAssemblyGC()) {
 			// Fresh JS-side snapshot of the canonical Java array. Callers get
-			// current pixels but NOT a live view — hold the int[] from
-			// getPixelDataAsInt32Array() instead if a live view is needed.
+			// current pixels but NOT a live view, and the view is only valid
+			// until the next getPixelData() on THIS surface (the direct buffer
+			// is reused). Hold the int[] from getPixelDataAsInt32Array() if a
+			// live view is needed.
 			if (intPixels == null) {
 				return null;
 			}
-			Int32Array copy = Int32Array.copyFromJavaArray(intPixels);
-			return new Uint8ClampedArray(copy.getBuffer(), 0, intPixels.length * 4);
+			if (presentBuffer == null) {
+				presentBuffer = java.nio.ByteBuffer.allocateDirect(intPixels.length * 4)
+					.order(java.nio.ByteOrder.nativeOrder()).asIntBuffer();
+			}
+			presentBuffer.clear();
+			presentBuffer.put(intPixels);
+			presentBuffer.rewind();
+			Int32Array view = Int32Array.fromJavaBuffer(presentBuffer);
+			return new Uint8ClampedArray(view.getBuffer(), view.getByteOffset(), intPixels.length * 4);
 		}
 		return pixelData;
 	}
