@@ -13,6 +13,7 @@ import me.mdbell.awtea.classlib.java.awt.event.TMouseWheelEvent;
 import me.mdbell.awtea.input.KeyboardKey;
 import me.mdbell.awtea.input.MouseButtonType;
 import me.mdbell.awtea.input.MouseEventType;
+import me.mdbell.awtea.util.DomEventRelay;
 import me.mdbell.awtea.util.ElementUtils;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.NormalizedPoint;
@@ -172,70 +173,27 @@ public final class TEventManager implements AutoCloseable {
      * Attach mouse listeners, mapping to TMouseEvent.
      */
     public TEventManager withMouse() {
-        for (MouseEventType type : MouseEventType.values()) {
-            if (type == MouseEventType.WHEEL) {
-                continue; // Handled separately
+        if (PlatformSupport.isWebAssemblyGC()) {
+            ensureDomRelay();
+            for (MouseEventType type : MouseEventType.values()) {
+                if (type != MouseEventType.WHEEL) {
+                    DomEventRelay.capture(element, type.getType());
+                }
             }
-            element.onEvent(type.getType(), e -> {
-                MouseEvent me = (MouseEvent) e;
-                MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
-                Point point = new Point(me.getClientX(), me.getClientY());
-                translatePoint(point, (HTMLCanvasElement) element);
-
-                TComponent comp = getComponentAt(point);
-
-                log.trace("Mouse event: type={}, button={}, point=({}, {}) on component={}",
-                        type, button, point.getX(), point.getY(), comp.getClass().getName());
-
-                // Synthesize MOUSE_ENTERED/MOUSE_EXITED events when the component under mouse
-                // changes
-                // This should happen on all mouse events (move, press, release, etc.)
-                if (comp != componentUnderMouse) {
-                    synthesizeComponentTransition(me, button, point, comp);
+            DomEventRelay.capture(element, "mouseout");
+        } else {
+            for (MouseEventType type : MouseEventType.values()) {
+                if (type == MouseEventType.WHEEL) {
+                    continue; // Handled separately
                 }
-
-                java.awt.Point onScreen = comp.getLocationOnScreen();
-
-                point.translate(-onScreen.x, -onScreen.y);
-
-                // Debounce mousemove events - only dispatch if coordinates changed
-                if (type == MouseEventType.MOVED) {
-                    if (point.getX() == lastMouseX && point.getY() == lastMouseY) {
-                        return; // Skip duplicate event
-                    }
-                    lastMouseX = point.getX();
-                    lastMouseY = point.getY();
-                }
-
-                TMouseEvent event = new TMouseEvent(comp, type.getId(),
-                        point.getX(), point.getY(), button, me.getMetaKey());
-                post(event);
-
-            }).track(registrations);
+                element.onEvent(type.getType(), e -> handleDomMouse((MouseEvent) e, type)).track(registrations);
+            }
         }
 
         // Handle when mouse leaves the canvas entirely - fire MOUSE_EXITED
-        element.onEvent("mouseout", e -> {
-            if (componentUnderMouse != null) {
-                MouseEvent me = (MouseEvent) e;
-                MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
-
-                // Use last known position relative to the component
-                java.awt.Point onScreen = componentUnderMouse.getLocationOnScreen();
-                Point point = new Point(me.getClientX(), me.getClientY());
-                translatePoint(point, (HTMLCanvasElement) element);
-                point.translate(-onScreen.x, -onScreen.y);
-
-                TMouseEvent exitEvent = new TMouseEvent(componentUnderMouse,
-                        TMouseEvent.MOUSE_EXITED,
-                        point.getX(), point.getY(), button, me.getMetaKey());
-                post(exitEvent);
-                log.trace("Synthesized MOUSE_EXITED (canvas exit) for component={}",
-                        componentUnderMouse.getClass().getName());
-
-                componentUnderMouse = null;
-            }
-        }).track(registrations);
+        if (!PlatformSupport.isWebAssemblyGC()) {
+            element.onEvent("mouseout", e -> handleDomMouseOut((MouseEvent) e)).track(registrations);
+        }
 
         return this;
     }
@@ -249,40 +207,12 @@ public final class TEventManager implements AutoCloseable {
      * - PAGE mode (2): multiplied by configurable multiplier (default: 1)
      */
     public TEventManager withMouseWheel() {
-        element.onEvent("wheel", e -> {
-            WheelEvent me = (WheelEvent) e;
-            MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
-            Point point = new Point(me.getClientX(), me.getClientY());
-            translatePoint(point, (HTMLCanvasElement) element);
-
-            TComponent comp = getComponentAt(point);
-
-            java.awt.Point onScreen = comp.getLocationOnScreen();
-
-            point.translate(-onScreen.x, -onScreen.y);
-
-            int deltaMode = me.getDeltaMode();
-            double rawDeltaY = me.getDeltaY();
-
-            // Normalize the wheel delta based on browser deltaMode
-            double normalizedDelta = normalizeWheelDelta(rawDeltaY, deltaMode);
-
-            int rotation = (int) Math.signum(normalizedDelta);
-            int unitsToScroll = rotation * SCROLL_AMOUNT;
-            boolean meta = me.getMetaKey();
-
-            log.trace("Mouse wheel: rawDelta={}, deltaMode={}, normalized={}, rotation={}",
-                    rawDeltaY, deltaMode, normalizedDelta, rotation);
-
-            TMouseWheelEvent event = new TMouseWheelEvent(comp, MouseEventType.WHEEL.getId(),
-                    point.getX(), point.getY(), button, meta,
-                    normalizedDelta,
-                    SCROLL_AMOUNT,
-                    deltaMode,
-                    unitsToScroll,
-                    rotation);
-            post(event);
-        }).track(registrations);
+        if (PlatformSupport.isWebAssemblyGC()) {
+            ensureDomRelay();
+            DomEventRelay.capture(element, "wheel");
+        } else {
+            element.onEvent("wheel", e -> handleDomWheel((WheelEvent) e)).track(registrations);
+        }
 
         return this;
     }
@@ -291,23 +221,15 @@ public final class TEventManager implements AutoCloseable {
      * Attach keyboard listeners, mapping to TKeyEvent.
      */
     public TEventManager withKeyboard() {
-        for (TKeyEvent.KeyEvent type : TKeyEvent.KeyEvent.values()) {
-            element.onEvent(type.getType(), e -> {
-                TComponent focusOwner = TFocusManager.get().getGlobalFocusOwner();
-                if (focusOwner == null) {
-                    log.debug("No focus Owner! Discarding event");
-                    return;
-                }
-                KeyboardEvent ke = (KeyboardEvent) e;
-                TKeyEvent awt = TKeyEvent.adapt(focusOwner, ke);
-                // Prevent default browser behavior for TAB key to stop browser focus changes
-                // Do this for all TAB key events (keydown, keyup, keypress)
-                if (awt.getKey() == KeyboardKey.TAB) {
-                    e.preventDefault(); // prevents focus change when tab is pressed inside the canvas
-                }
-                log.debug("Dispatching key event {}", awt);
-                post(awt);
-            }).track(registrations);
+        if (PlatformSupport.isWebAssemblyGC()) {
+            ensureDomRelay();
+            for (TKeyEvent.KeyEvent type : TKeyEvent.KeyEvent.values()) {
+                DomEventRelay.capture(element, type.getType());
+            }
+        } else {
+            for (TKeyEvent.KeyEvent type : TKeyEvent.KeyEvent.values()) {
+                element.onEvent(type.getType(), e -> handleDomKey((KeyboardEvent) e)).track(registrations);
+            }
         }
         return this;
     }
@@ -320,13 +242,15 @@ public final class TEventManager implements AutoCloseable {
         // need to ensure canvas is focusable
         element.setAttribute("tabindex", "0");
 
-        element.onEvent("focus", e -> {
-            post(new TFocusEvent(container, TFocusEvent.FOCUS_GAINED));
-        }).track(registrations);
-
-        element.onEvent("blur", e -> {
-            post(new TFocusEvent(container, TFocusEvent.FOCUS_LOST));
-        }).track(registrations);
+        if (PlatformSupport.isWebAssemblyGC()) {
+            ensureDomRelay();
+            DomEventRelay.capture(element, "focus");
+            DomEventRelay.capture(element, "blur");
+            DomEventRelay.capture(element, "contextmenu");
+        } else {
+            element.onEvent("focus", e -> post(new TFocusEvent(container, TFocusEvent.FOCUS_GAINED))).track(registrations);
+            element.onEvent("blur", e -> post(new TFocusEvent(container, TFocusEvent.FOCUS_LOST))).track(registrations);
+        }
         return this;
     }
 
@@ -359,6 +283,175 @@ public final class TEventManager implements AutoCloseable {
             return (component != null) ? component : container;
         }
         return componentHitStrategy.getComponentAt(p.getX(), p.getY());
+    }
+
+    private void handleDomMouse(MouseEvent me, MouseEventType type) {
+            MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
+            Point point = new Point(me.getClientX(), me.getClientY());
+            translatePoint(point, (HTMLCanvasElement) element);
+
+            TComponent comp = getComponentAt(point);
+
+            log.trace("Mouse event: type={}, button={}, point=({}, {}) on component={}",
+                    type, button, point.getX(), point.getY(), comp.getClass().getName());
+
+            // Synthesize MOUSE_ENTERED/MOUSE_EXITED events when the component under mouse
+            // changes
+            // This should happen on all mouse events (move, press, release, etc.)
+            if (comp != componentUnderMouse) {
+                synthesizeComponentTransition(me, button, point, comp);
+            }
+
+            java.awt.Point onScreen = comp.getLocationOnScreen();
+
+            point.translate(-onScreen.x, -onScreen.y);
+
+            // Debounce mousemove events - only dispatch if coordinates changed
+            if (type == MouseEventType.MOVED) {
+                if (point.getX() == lastMouseX && point.getY() == lastMouseY) {
+                    return; // Skip duplicate event
+                }
+                lastMouseX = point.getX();
+                lastMouseY = point.getY();
+            }
+
+            TMouseEvent event = new TMouseEvent(comp, type.getId(),
+                    point.getX(), point.getY(), button, me.getMetaKey());
+            post(event);
+    }
+
+    private void handleDomMouseOut(MouseEvent me0) {
+        if (componentUnderMouse != null) {
+            MouseEvent me = me0;
+            MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
+
+            // Use last known position relative to the component
+            java.awt.Point onScreen = componentUnderMouse.getLocationOnScreen();
+            Point point = new Point(me.getClientX(), me.getClientY());
+            translatePoint(point, (HTMLCanvasElement) element);
+            point.translate(-onScreen.x, -onScreen.y);
+
+            TMouseEvent exitEvent = new TMouseEvent(componentUnderMouse,
+                    TMouseEvent.MOUSE_EXITED,
+                    point.getX(), point.getY(), button, me.getMetaKey());
+            post(exitEvent);
+            log.trace("Synthesized MOUSE_EXITED (canvas exit) for component={}",
+                    componentUnderMouse.getClass().getName());
+
+            componentUnderMouse = null;
+        }
+    }
+
+    private void handleDomWheel(WheelEvent me) {
+        MouseButtonType button = MouseButtonType.fromHtml(me.getButton());
+        Point point = new Point(me.getClientX(), me.getClientY());
+        translatePoint(point, (HTMLCanvasElement) element);
+
+        TComponent comp = getComponentAt(point);
+
+        java.awt.Point onScreen = comp.getLocationOnScreen();
+
+        point.translate(-onScreen.x, -onScreen.y);
+
+        int deltaMode = me.getDeltaMode();
+        double rawDeltaY = me.getDeltaY();
+
+        // Normalize the wheel delta based on browser deltaMode
+        double normalizedDelta = normalizeWheelDelta(rawDeltaY, deltaMode);
+
+        int rotation = (int) Math.signum(normalizedDelta);
+        int unitsToScroll = rotation * SCROLL_AMOUNT;
+        boolean meta = me.getMetaKey();
+
+        log.trace("Mouse wheel: rawDelta={}, deltaMode={}, normalized={}, rotation={}",
+                rawDeltaY, deltaMode, normalizedDelta, rotation);
+
+        TMouseWheelEvent event = new TMouseWheelEvent(comp, MouseEventType.WHEEL.getId(),
+                point.getX(), point.getY(), button, meta,
+                normalizedDelta,
+                SCROLL_AMOUNT,
+                deltaMode,
+                unitsToScroll,
+                rotation);
+        post(event);
+    }
+
+    private void handleDomKey(KeyboardEvent ke0) {
+        TComponent focusOwner = TFocusManager.get().getGlobalFocusOwner();
+        if (focusOwner == null) {
+        log.debug("No focus Owner! Discarding event");
+        return;
+        }
+        KeyboardEvent ke = ke0;
+        TKeyEvent awt = TKeyEvent.adapt(focusOwner, ke);
+        // Prevent default browser behavior for TAB key to stop browser focus changes
+        // Do this for all TAB key events (keydown, keyup, keypress)
+        if (awt.getKey() == KeyboardKey.TAB) {
+        ke0.preventDefault(); // prevents focus change when tab is pressed inside the canvas
+        }
+        log.debug("Dispatching key event {}", awt);
+        post(awt);
+    }
+
+    /** wasm-gc: polls the pure-JS DOM event queue (DomEventRelay) and runs
+     * the normal conversion/dispatch logic from fiber context. */
+    private Thread domRelayPump;
+
+    private void ensureDomRelay() {
+        if (domRelayPump != null) {
+            return;
+        }
+        domRelayPump = new Thread(() -> {
+            while (true) {
+                Event e;
+                while ((e = DomEventRelay.poll(element)) != null) {
+                    try {
+                        dispatchDomEvent(e);
+                    } catch (Throwable t) {
+                        log.error("DOM relay dispatch failed: {}", String.valueOf(t));
+                    }
+                }
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException ie) {
+                    return;
+                }
+            }
+        }, "wasm-dom-relay");
+        domRelayPump.setDaemon(true);
+        domRelayPump.start();
+    }
+
+    private void dispatchDomEvent(Event e) {
+        String t = e.getType();
+        if ("mouseout".equals(t)) {
+            handleDomMouseOut((MouseEvent) e);
+            return;
+        }
+        if ("wheel".equals(t)) {
+            handleDomWheel((WheelEvent) e);
+            return;
+        }
+        if ("focus".equals(t)) {
+            post(new TFocusEvent(container, TFocusEvent.FOCUS_GAINED));
+            return;
+        }
+        if ("blur".equals(t)) {
+            post(new TFocusEvent(container, TFocusEvent.FOCUS_LOST));
+            return;
+        }
+        for (TKeyEvent.KeyEvent kt : TKeyEvent.KeyEvent.values()) {
+            if (kt.getType().equals(t)) {
+                handleDomKey((KeyboardEvent) e);
+                return;
+            }
+        }
+        for (MouseEventType mt : MouseEventType.values()) {
+            if (mt != MouseEventType.WHEEL && mt.getType().equals(t)) {
+                handleDomMouse((MouseEvent) e, mt);
+                return;
+            }
+        }
     }
 
     private void post(TAWTEvent event) {

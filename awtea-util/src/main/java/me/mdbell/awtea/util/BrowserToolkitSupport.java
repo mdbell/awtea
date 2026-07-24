@@ -1,7 +1,11 @@
 package me.mdbell.awtea.util;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.browser.Window;
+import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.core.JSPromise;
+import org.teavm.jso.dom.html.HTMLCanvasElement;
+import org.teavm.jso.dom.html.HTMLImageElement;
 
 /**
  * Browser-side helpers backing {@code java.awt.Toolkit} services (beep,
@@ -46,6 +50,31 @@ public final class BrowserToolkitSupport {
      *
      * @return a promise that resolves after the next animation frame
      */
+    /**
+     * Decodes an image URL into a canvas 2D context. Declared here (unmapped)
+     * because the wasm-gc backend CPS-taints JS-callback lambdas declared in
+     * package-mapped classlib classes — the old @Async onLoad handler in the
+     * Toolkit trapped in Fiber.isResuming when the image finished decoding,
+     * permanently suspending the loading thread. The object URL is revoked on
+     * success.
+     */
+    public static JSPromise<CanvasRenderingContext2D> loadImage(String url) {
+        return new JSPromise<>((resolve, reject) -> {
+            HTMLImageElement img = (HTMLImageElement) Window.current().getDocument().createElement("img");
+            HTMLCanvasElement canvasElement = (HTMLCanvasElement) Window.current().getDocument().createElement("canvas");
+            img.onLoad(evt -> {
+                canvasElement.setWidth(img.getWidth());
+                canvasElement.setHeight(img.getHeight());
+                CanvasRenderingContext2D context = JSObjectsExtensions.getContext2d(canvasElement, true);
+                context.drawImage(img, 0, 0);
+                JSObjectsExtensions.revokeObjectUrl(url);
+                resolve.accept(context);
+            });
+            img.onEvent("error", evt -> reject.accept(new java.io.IOException("Unable to read image from URL")));
+            img.setSrc(url);
+        });
+    }
+
     @JSBody(script =
         "return new Promise(function(resolve) {" +
         "  if (typeof requestAnimationFrame !== 'undefined') {" +

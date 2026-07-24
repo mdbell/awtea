@@ -24,6 +24,7 @@ dependencies {
 
     implementation("org.teavm:teavm-core:0.13.1")
     implementation("org.teavm:teavm-classlib:0.13.1")
+    implementation("org.teavm:teavm-jso:0.13.1")
     
     implementation(project(":awtea-core"))
     implementation(project(":awtea-util"))

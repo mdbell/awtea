@@ -183,24 +183,12 @@ public class TAWTeaToolkit extends TToolkit {
 		return loadImage(url);
 	}
 
-	@Async
-	private static native CanvasRenderingContext2D loadImage(String url);
-
-	private static void loadImage(String url, AsyncCallback<CanvasRenderingContext2D> callback) {
-		HTMLImageElement img = (HTMLImageElement) Window.current().getDocument().createElement("img");
-		HTMLCanvasElement canvasElement = (HTMLCanvasElement) Window.current().getDocument().createElement("canvas");
-		img.onLoad(evt -> {
-			canvasElement.setWidth(img.getWidth());
-			canvasElement.setHeight(img.getHeight());
-			CanvasRenderingContext2D context = canvasElement.getContext2d(true);
-			context.drawImage(img, 0, 0);
-			url.revokeObjectUrl();
-			callback.complete(context);
-		});
-		img.onEvent("error", evt -> {
-			callback.error(new IOException("Unable to read image from URL"));
-		});
-		img.setSrc(url);
+	// Await a promise whose JS callbacks live in BrowserToolkitSupport
+	// (unmapped): the previous @Async implementation's onLoad lambda was
+	// declared in this package-mapped class, got CPS-tainted under wasm-gc,
+	// and trapped on image completion — permanently suspending the caller.
+	private static CanvasRenderingContext2D loadImage(String url) {
+		return BrowserToolkitSupport.loadImage(url).await();
 	}
 
 }

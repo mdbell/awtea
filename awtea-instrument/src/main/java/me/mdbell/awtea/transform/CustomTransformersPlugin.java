@@ -27,6 +27,12 @@ public class CustomTransformersPlugin implements TeaVMPlugin {
 			host.add(new MonitorHacks());
 		}
 		host.add(new ArrayHacks());
+		// Debug method-entry tracing, off unless the property is set (see
+		// TraceHacks). Comma-separated class-name prefixes.
+		String tracePrefixes = host.getProperties().getProperty("awtea.trace");
+		if (tracePrefixes != null && !tracePrefixes.isEmpty()) {
+			host.add(new me.mdbell.awtea.instrument.TraceHacks(tracePrefixes));
+		}
 	}
 
 }
