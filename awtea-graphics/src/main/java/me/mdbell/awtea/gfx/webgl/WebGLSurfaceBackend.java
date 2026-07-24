@@ -81,6 +81,19 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
         options.put("antialias", false);
         // Prefer the discrete GPU on dual-GPU machines.
         options.put("powerPreference", JSString.valueOf("high-performance"));
+        // wasm-gc: the 2D present (TSurfaceRasterizerGraphics.flush) runs on a
+        // green thread scheduled via setTimeout, NOT in requestAnimationFrame,
+        // so it is not synchronized with the browser's compositing. Without a
+        // preserved drawing buffer, WebGL clears the default framebuffer after
+        // each composite, and composites that land before the next (late)
+        // flush show a black buffer — a full-canvas flicker. Preserving the
+        // buffer keeps the last complete flushed frame on screen between
+        // presents, eliminating the flicker (at a small cost the JS backend,
+        // which presents in rAF, doesn't need to pay). See the rAF-timing note
+        // in docs/wasm-port-plan.md.
+        if (org.teavm.classlib.PlatformDetector.isWebAssemblyGC()) {
+            options.put("preserveDrawingBuffer", true);
+        }
         this.gl = (WebGL2RenderingContext) element.getContext("webgl2", options);
 
         gl.enable(WebGLRenderingContext.BLEND);
