@@ -87,7 +87,7 @@ public final class EventQueueMonitor extends AbstractMonitor<EventQueueMonitor.E
 
 	// ---- monitor API used from TEventQueue ----
 
-	public synchronized void onPost(Object queue, int priority, int[] pendingPerPriority) {
+	public void onPost(Object queue, int priority, int[] pendingPerPriority) {
 		Entry e = ensureEntry(queue);
 		e.totalPosted++;
 
@@ -97,7 +97,7 @@ public final class EventQueueMonitor extends AbstractMonitor<EventQueueMonitor.E
 		updatePending(e, pendingPerPriority);
 	}
 
-	public synchronized void onDispatch(Object queue, int[] pendingPerPriority,
+	public void onDispatch(Object queue, int[] pendingPerPriority,
 										long dispatchTimeMs, Object eventObj) {
 		Entry e = ensureEntry(queue);
 		e.totalDispatched++;

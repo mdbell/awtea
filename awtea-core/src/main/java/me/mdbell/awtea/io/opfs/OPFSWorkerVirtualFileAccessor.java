@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import me.mdbell.awtea.util.TypedArrays;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 class OPFSWorkerVirtualFileAccessor implements VirtualFileAccessor {
@@ -197,7 +198,7 @@ class OPFSWorkerVirtualFileAccessor implements VirtualFileAccessor {
             return -1;
         }
 
-        byte[] data = new Int8Array(response.getData()).toJavaArray();
+        byte[] data = TypedArrays.toJavaArray(new Int8Array(response.getData()));
         System.arraycopy(data, 0, buffer, offset, bytesRead);
         position += bytesRead;
         return bytesRead;
@@ -209,7 +210,7 @@ class OPFSWorkerVirtualFileAccessor implements VirtualFileAccessor {
             return;
         }
 
-        Int8Array source = Int8Array.fromJavaArray(buffer);
+        Int8Array source = TypedArrays.from(buffer);
         ArrayBuffer data = source.getBuffer().slice(source.getByteOffset() + offset,
                 source.getByteOffset() + offset + limit);
 

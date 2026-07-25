@@ -35,11 +35,11 @@ public class OperationsMonitor extends AbstractMonitor<OperationsMonitor.Entry, 
 		return monitors.values();
 	}
 
-	public static synchronized OperationsMonitor get(Object baseTarget, String name) {
+	public static OperationsMonitor get(Object baseTarget, String name) {
 		return get(baseTarget, name, true);
 	}
 
-	public static synchronized OperationsMonitor get(Object baseTarget, String name, boolean weak) {
+	public static OperationsMonitor get(Object baseTarget, String name, boolean weak) {
 		return monitors.computeIfAbsent(baseTarget, k -> new OperationsMonitor(name, weak));
 	}
 

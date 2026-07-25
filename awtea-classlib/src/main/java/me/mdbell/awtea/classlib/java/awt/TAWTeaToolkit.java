@@ -3,15 +3,15 @@ package me.mdbell.awtea.classlib.java.awt;
 import lombok.SneakyThrows;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.classlib.java.awt.image.*;
+import me.mdbell.awtea.util.BrowserToolkitSupport;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.classlib.java.awt.TDimension;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
-import org.teavm.jso.JSBody;
-import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
-import org.teavm.jso.core.JSPromise;
+import org.teavm.jso.core.JSArray;
+import org.teavm.jso.file.Blob;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLImageElement;
 import org.teavm.jso.typedarrays.Uint8Array;
@@ -90,29 +90,8 @@ public class TAWTeaToolkit extends TToolkit {
 
 	@Override
 	public void beep() {
-		playBeepSound();
+		BrowserToolkitSupport.playBeepSound();
 	}
-
-	/**
-	 * Plays a system beep sound using the Web Audio API.
-	 * Creates a short 440Hz tone (standard beep frequency).
-	 */
-	@JSBody(script = 
-		"try {" +
-		"  var ctx = new (window.AudioContext || window.webkitAudioContext)();" +
-		"  var osc = ctx.createOscillator();" +
-		"  var gain = ctx.createGain();" +
-		"  osc.connect(gain);" +
-		"  gain.connect(ctx.destination);" +
-		"  osc.frequency.value = 440;" + // Standard A4 note
-		"  gain.gain.value = 0.3;" +      // 30% volume to avoid being too loud
-		"  osc.start(ctx.currentTime);" +
-		"  osc.stop(ctx.currentTime + 0.1);" + // 100ms beep
-		"} catch(e) {" +
-		"  console.warn('Unable to play beep sound:', e);" +
-		"}"
-	)
-	private static native void playBeepSound();
 
 	@Override
 	public void sync() {
@@ -120,26 +99,8 @@ public class TAWTeaToolkit extends TToolkit {
 		// We use requestAnimationFrame to wait for the browser to process all pending
 		// paint operations. Unlike the previous async implementation, this blocks
 		// until the animation frame callback is executed.
-		syncRendering().await();
+		BrowserToolkitSupport.syncRendering().await();
 	}
-
-	/**
-	 * Synchronizes rendering by waiting for the next animation frame.
-	 * This ensures all pending DOM and canvas operations are flushed.
-	 * Returns a promise that resolves when the next animation frame is processed.
-	 * 
-	 * @return a promise that resolves after the next animation frame
-	 */
-	@JSBody(script = 
-		"return new Promise(function(resolve) {" +
-		"  if (typeof requestAnimationFrame !== 'undefined') {" +
-		"    requestAnimationFrame(function() { resolve(null); });" +
-		"  } else {" +
-		"    resolve(null);" +
-		"  }" +
-		"});"
-	)
-	private static native JSPromise<Void> syncRendering();
 
 	@Override
 	protected TEventQueue getSystemEventQueueImpl() {
@@ -213,31 +174,21 @@ public class TAWTeaToolkit extends TToolkit {
 	public static CanvasRenderingContext2D loadImage(byte[] data) {
 		Uint8Array arr = new Uint8Array(data.length);
 		arr.set(data);
-		JSObject blob = blob(arr);
+		// Typed Blob ctor instead of @JSBody: the wasm-gc backend does not
+		// process @JSBody methods declared in package-mapped classlib classes
+		// (they reach codegen as bare natives and fail with "not annotated
+		// with @Import"), and classlib should avoid raw JSO helpers anyway.
+		Blob blob = new Blob(JSArray.of(arr));
 		String url = blob.createObjectUrl();
 		return loadImage(url);
 	}
 
-	@Async
-	private static native CanvasRenderingContext2D loadImage(String url);
-
-	private static void loadImage(String url, AsyncCallback<CanvasRenderingContext2D> callback) {
-		HTMLImageElement img = (HTMLImageElement) Window.current().getDocument().createElement("img");
-		HTMLCanvasElement canvasElement = (HTMLCanvasElement) Window.current().getDocument().createElement("canvas");
-		img.onLoad(evt -> {
-			canvasElement.setWidth(img.getWidth());
-			canvasElement.setHeight(img.getHeight());
-			CanvasRenderingContext2D context = canvasElement.getContext2d(true);
-			context.drawImage(img, 0, 0);
-			url.revokeObjectUrl();
-			callback.complete(context);
-		});
-		img.onEvent("error", evt -> {
-			callback.error(new IOException("Unable to read image from URL"));
-		});
-		img.setSrc(url);
+	// Await a promise whose JS callbacks live in BrowserToolkitSupport
+	// (unmapped): the previous @Async implementation's onLoad lambda was
+	// declared in this package-mapped class, got CPS-tainted under wasm-gc,
+	// and trapped on image completion — permanently suspending the caller.
+	private static CanvasRenderingContext2D loadImage(String url) {
+		return BrowserToolkitSupport.loadImage(url).await();
 	}
 
-	@JSBody(params = {"arr"}, script = "return new Blob([arr]);")
-	private static native JSObject blob(Uint8Array arr);
 }

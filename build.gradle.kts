@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("org.teavm") version "0.13.0" apply false
+    id("org.teavm") version "0.13.1" apply false
     id("maven-publish")
 }
 

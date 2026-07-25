@@ -814,12 +814,15 @@ public class IndexedDBHelper {
         @JSProperty(CHUNK_INDEX_PROPERTY)
         void setIndex(int index);
 
-        @JSByRef
+        // optional = true: wasm-gc cannot pass arrays by reference, so it falls
+        // back to a copy there; callers always setData() mutations back, so copy
+        // semantics are safe.
+        @JSByRef(optional = true)
         @JSProperty
         byte[] getData();
 
         @JSProperty
-        void setData(@JSByRef byte[] data);
+        void setData(@JSByRef(optional = true) byte[] data);
 
         static IndexDBChunk create(String uuid, int index) {
             IndexDBChunk chunk = JSObjects.create();

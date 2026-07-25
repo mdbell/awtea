@@ -3,7 +3,7 @@ package me.mdbell.awtea.gfx.webgl;
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.instrument.Monitored;
-import org.teavm.jso.typedarrays.ArrayBufferView;
+import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import org.teavm.jso.webgl.WebGL2RenderingContext;
 import org.teavm.jso.webgl.WebGLFramebuffer;
@@ -50,7 +50,12 @@ public class WebGLSurface implements Surface {
         gl.bindTexture(WebGL2RenderingContext.TEXTURE_2D, texture);
         gl.texImage2D(WebGLRenderingContext.TEXTURE_2D, 0, WebGLRenderingContext.RGBA, width,
                 height, 0, WebGLRenderingContext.RGBA,
-                WebGLRenderingContext.UNSIGNED_BYTE, (ArrayBufferView) null);
+                // Uint8Array (a real JS global) instead of ArrayBufferView:
+                // ArrayBufferView is a spec-fiction type with no global
+                // constructor, and the wasm-gc JSO runtime resolves parameter
+                // classes by global name — (ArrayBufferView) null throws
+                // ReferenceError there. The JS backend never looked it up.
+                WebGLRenderingContext.UNSIGNED_BYTE, (Uint8Array) null);
 
         //TODO: reconsider texture parameters
         gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_MIN_FILTER, WebGLRenderingContext.NEAREST);

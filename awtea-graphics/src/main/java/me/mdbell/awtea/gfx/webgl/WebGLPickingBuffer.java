@@ -9,6 +9,7 @@ import org.teavm.jso.webgl.WebGLFramebuffer;
 import org.teavm.jso.webgl.WebGLRenderbuffer;
 import org.teavm.jso.webgl.WebGLRenderingContext;
 import org.teavm.jso.webgl.WebGLTexture;
+import me.mdbell.awtea.util.TypedArrays;
 
 /**
  * Manages the picking buffer for GPU-based component hit-testing.
@@ -94,7 +95,7 @@ public class WebGLPickingBuffer {
                 0,
                 WebGLRenderingContext.RGB,
                 WebGLRenderingContext.UNSIGNED_BYTE,
-                (org.teavm.jso.typedarrays.ArrayBufferView) null);
+                (org.teavm.jso.typedarrays.Uint8Array) null); // not ArrayBufferView: no JS global, wasm-gc JSO resolves cast classes by global name
         gl.texParameteri(WebGLRenderingContext.TEXTURE_2D,
                 WebGLRenderingContext.TEXTURE_MIN_FILTER,
                 WebGLRenderingContext.NEAREST);
@@ -203,8 +204,8 @@ public class WebGLPickingBuffer {
 
         // Alias the byte array to an int array for efficient access
         // Any reads from pixels will be reflected from pixelBytes
-        pixels = new Int32Array(pixelBytes.getBuffer(), pixelBytes.getByteOffset(), pixelBytes.getByteLength() / 4)
-                .toJavaArray();
+        pixels = TypedArrays.toJavaArray(
+                new Int32Array(pixelBytes.getBuffer(), pixelBytes.getByteOffset(), pixelBytes.getByteLength() / 4));
 
         // Unbind framebuffer
         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);

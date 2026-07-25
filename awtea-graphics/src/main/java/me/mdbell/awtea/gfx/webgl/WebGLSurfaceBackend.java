@@ -14,6 +14,7 @@ import org.teavm.jso.webgl.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import me.mdbell.awtea.util.TypedArrays;
 
 public final class WebGLSurfaceBackend implements SurfaceBackend {
 
@@ -80,6 +81,19 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
         options.put("antialias", false);
         // Prefer the discrete GPU on dual-GPU machines.
         options.put("powerPreference", JSString.valueOf("high-performance"));
+        // wasm-gc: the 2D present (TSurfaceRasterizerGraphics.flush) runs on a
+        // green thread scheduled via setTimeout, NOT in requestAnimationFrame,
+        // so it is not synchronized with the browser's compositing. Without a
+        // preserved drawing buffer, WebGL clears the default framebuffer after
+        // each composite, and composites that land before the next (late)
+        // flush show a black buffer — a full-canvas flicker. Preserving the
+        // buffer keeps the last complete flushed frame on screen between
+        // presents, eliminating the flicker (at a small cost the JS backend,
+        // which presents in rAF, doesn't need to pay). See the rAF-timing note
+        // in docs/wasm-port-plan.md.
+        if (org.teavm.classlib.PlatformDetector.isWebAssemblyGC()) {
+            options.put("preserveDrawingBuffer", true);
+        }
         this.gl = (WebGL2RenderingContext) element.getContext("webgl2", options);
 
         gl.enable(WebGLRenderingContext.BLEND);
@@ -153,8 +167,8 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
     }
 
     void uploadQuadVertices(float[] verts, float[] uvs) {
-        ArrayBuffer vertBuf = Float32Array.fromJavaArray(verts).getBuffer();
-        ArrayBuffer uvBuf = Float32Array.fromJavaArray(uvs).getBuffer();
+        ArrayBuffer vertBuf = TypedArrays.from(verts).getBuffer();
+        ArrayBuffer uvBuf = TypedArrays.from(uvs).getBuffer();
 
         gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadBuffer);
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, vertBuf, WebGLRenderingContext.STREAM_DRAW);
@@ -396,7 +410,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
         // Upload vertex data
         gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadBuffer);
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER,
-                org.teavm.jso.typedarrays.Float32Array.fromJavaArray(vertices).getBuffer(),
+                TypedArrays.from(vertices).getBuffer(),
                 WebGLRenderingContext.DYNAMIC_DRAW);
         gl.enableVertexAttribArray(aPositionLocTex);
         gl.vertexAttribPointer(aPositionLocTex, 2, WebGLRenderingContext.FLOAT, false, 0, 0);
@@ -404,7 +418,7 @@ public final class WebGLSurfaceBackend implements SurfaceBackend {
         // Upload texture coordinate data
         gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, quadTexCoordBuffer);
         gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER,
-                org.teavm.jso.typedarrays.Float32Array.fromJavaArray(uvs).getBuffer(),
+                TypedArrays.from(uvs).getBuffer(),
                 WebGLRenderingContext.DYNAMIC_DRAW);
         gl.enableVertexAttribArray(aTexCoordLocTex);
         gl.vertexAttribPointer(aTexCoordLocTex, 2, WebGLRenderingContext.FLOAT, false, 0, 0);

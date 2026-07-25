@@ -6,7 +6,6 @@ import me.mdbell.awtea.util.jso.JSAsyncIterator;
 import me.mdbell.awtea.util.jso.JSRecord;
 import me.mdbell.awtea.util.jso.MediaQueryList;
 import org.teavm.jso.JSBody;
-import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
@@ -17,7 +16,6 @@ import org.teavm.jso.core.JSString;
 import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.typedarrays.TypedArray;
-import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import org.teavm.jso.webgl.WebGL2RenderingContext;
 
 import java.util.List;
@@ -66,10 +64,6 @@ public final class JSObjectsExtensions {
 
     @JSBody(params = { "url" }, script = "return (window.URL || window.webkitURL).revokeObjectURL(url);")
     public static native void revokeObjectUrl(String url);
-
-    @JSByRef
-    @JSBody(params = { "arr" }, script = "return arr;")
-    public static native byte[] getArrayFromJS(Uint8ClampedArray arr);
 
     @JSBody(params = { "iterator" }, script = "return Array.fromAsync(iterator);")
     public static native <T extends JSObject> JSPromise<JSArray<T>> toArray(JSAsyncIterator<T> iterator);

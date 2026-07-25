@@ -5,9 +5,11 @@ import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.jso.typedarrays.*;
 
 import java.awt.image.*;
+import me.mdbell.awtea.util.TypedArrays;
 
 public class SoftwareSurface implements Surface {
 
@@ -21,15 +23,42 @@ public class SoftwareSurface implements Surface {
 	private final Uint8ClampedArray pixelData;
 	private final int[] intPixels;
 
+	// wasm-gc present buffer: a per-surface direct ByteBuffer that getPixelData()
+	// bulk-copies the canonical int[] into, then hands JS a zero-copy view of.
+	// This is ~4x faster than Int32Array.copyFromJavaArray (which allocates a
+	// fresh JS ArrayBuffer and copies across the boundary every call); the bulk
+	// int[]->direct-buffer copy stays in wasm linear memory and the typed-array
+	// view over a DIRECT buffer is free. Allocated lazily so never-read surfaces
+	// don't pay. JS backend never uses this (its pixelData is already a view).
+	private java.nio.IntBuffer presentBuffer;
+
 	public SoftwareSurface(WritableRaster raster, ColorModel cm, int format) {
 		this.raster = raster;
 		this.cm = cm;
 		this.format = format;
 
-		this.pixelData = getPixelDataFromBuffer(raster.getDataBuffer());
-
-		this.intPixels = this.pixelData == null ? null : new Int32Array(this.pixelData.getBuffer(), this.pixelData.getByteOffset(),
-			this.pixelData.getByteLength() / 4).toJavaArray();
+		if (PlatformDetector.isWebAssemblyGC()) {
+			// wasm-gc: JS typed arrays cannot alias Java arrays, so the raster's
+			// own Java array is the canonical pixel store and getPixelData()
+			// materializes a JS-side copy on demand (a per-present cost, akin
+			// to putImageData).
+			DataBuffer db = raster.getDataBuffer();
+			if (db instanceof DataBufferInt) {
+				this.intPixels = ((DataBufferInt) db).getData();
+			} else {
+				log.error("SoftwareSurface: only TYPE_INT rasters are supported under wasm-gc, got type: {}",
+					db.getDataType());
+				this.intPixels = null;
+			}
+			this.pixelData = null;
+		} else {
+			// JS backend: pixelData and intPixels are zero-copy views of the
+			// raster's storage — one memory, three names. Writes through any
+			// of them are visible everywhere.
+			this.pixelData = getPixelDataFromBuffer(raster.getDataBuffer());
+			this.intPixels = this.pixelData == null ? null : TypedArrays.toJavaArray(new Int32Array(this.pixelData.getBuffer(), this.pixelData.getByteOffset(),
+				this.pixelData.getByteLength() / 4));
+		}
 	}
 
 	@Override
@@ -69,42 +98,42 @@ public class SoftwareSurface implements Surface {
 
 	private Uint8ClampedArray getPixelDataFromByteBuffer(DataBufferByte buffer) {
 		byte[] buff = buffer.getData();
-		Int8Array jsArray = Int8Array.fromJavaArray(buff);
+		Int8Array jsArray = TypedArrays.from(buff);
 		return new Uint8ClampedArray(jsArray.getBuffer(), buffer.getOffset(),
 			buffer.getSize());
 	}
 
 	private Uint8ClampedArray getPixelDataFromIntBuffer(DataBufferInt buffer) {
 		int[] buff = buffer.getData();
-		Int32Array jsArray = Int32Array.fromJavaArray(buff);
+		Int32Array jsArray = TypedArrays.from(buff);
 		return new Uint8ClampedArray(jsArray.getBuffer(), buffer.getOffset() * 4,
 			buffer.getSize() * 4);
 	}
 
 	private Uint8ClampedArray getPixelDataFromUShortBuffer(DataBufferUShort buffer) {
 		short[] buff = buffer.getData();
-		Int16Array jsArray = Int16Array.fromJavaArray(buff);
+		Int16Array jsArray = TypedArrays.from(buff);
 		return new Uint8ClampedArray(jsArray.getBuffer(), buffer.getOffset() * 2,
 			buffer.getSize() * 2);
 	}
 
 	private Uint8ClampedArray getPixelDataFromShortBuffer(DataBufferShort buffer) {
 		short[] buff = buffer.getData();
-		Int16Array jsArray = Int16Array.fromJavaArray(buff);
+		Int16Array jsArray = TypedArrays.from(buff);
 		return new Uint8ClampedArray(jsArray.getBuffer(), buffer.getOffset() * 2,
 			buffer.getSize() * 2);
 	}
 
 	private Uint8ClampedArray getPixelDataFromFloatBuffer(DataBufferFloat buffer) {
 		float[] buff = buffer.getData();
-		Float32Array jsArray = Float32Array.fromJavaArray(buff);
+		Float32Array jsArray = TypedArrays.from(buff);
 		return new Uint8ClampedArray(jsArray.getBuffer(), buffer.getOffset() * 4,
 			buffer.getSize() * 4);
 	}
 
 	private Uint8ClampedArray getPixelDataFromDoubleBuffer(DataBufferDouble buffer) {
 		double[] buff = buffer.getData();
-		Float64Array jsArray = Float64Array.fromJavaArray(buff);
+		Float64Array jsArray = TypedArrays.from(buff);
 		return new Uint8ClampedArray(jsArray.getBuffer(), buffer.getOffset() * 8,
 			buffer.getSize() * 8);
 	}
@@ -134,6 +163,25 @@ public class SoftwareSurface implements Surface {
 		// Clear dirty flag when pixel data is accessed
 		// This allows consumers to track if surface has been modified since last read
 		dirty = false;
+		if (PlatformDetector.isWebAssemblyGC()) {
+			// Fresh JS-side snapshot of the canonical Java array. Callers get
+			// current pixels but NOT a live view, and the view is only valid
+			// until the next getPixelData() on THIS surface (the direct buffer
+			// is reused). Hold the int[] from getPixelDataAsInt32Array() if a
+			// live view is needed.
+			if (intPixels == null) {
+				return null;
+			}
+			if (presentBuffer == null) {
+				presentBuffer = java.nio.ByteBuffer.allocateDirect(intPixels.length * 4)
+					.order(java.nio.ByteOrder.nativeOrder()).asIntBuffer();
+			}
+			presentBuffer.clear();
+			presentBuffer.put(intPixels);
+			presentBuffer.rewind();
+			Int32Array view = Int32Array.fromJavaBuffer(presentBuffer);
+			return new Uint8ClampedArray(view.getBuffer(), view.getByteOffset(), intPixels.length * 4);
+		}
 		return pixelData;
 	}
 
