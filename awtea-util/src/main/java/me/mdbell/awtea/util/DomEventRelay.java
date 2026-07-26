@@ -12,8 +12,8 @@ import org.teavm.jso.dom.html.HTMLElement;
  * Exists because DOM listener lambdas declared in the package-mapped
  * TEventManager get CPS-tainted under wasm-gc and trap in Fiber.isResuming on
  * the first input event. preventDefault decisions that must be synchronous
- * (context menu, keypress, Tab focus-trap) are made in the JS listener; the
- * Java side sees the event afterwards.
+ * (context menu, keypress, Tab focus-trap, function keys) are made in the JS
+ * listener; the Java side sees the event afterwards.
  */
 public final class DomEventRelay {
 
@@ -25,7 +25,11 @@ public final class DomEventRelay {
             + "var q = el.__awteaQ;"
             + "el.addEventListener(type, function(e) {"
             + "  if (type === 'contextmenu' || type === 'keypress') { e.preventDefault(); }"
-            + "  if (type === 'keydown' && e.key === 'Tab') { e.preventDefault(); }"
+            // Tab would move focus out of the element; F1-F12 trigger browser
+            // actions (F1 help, F5 reload, F11 fullscreen, ...). Must be
+            // decided here: by the time the Java side polls the event it is
+            // too late to preventDefault.
+            + "  if (type === 'keydown' && (e.key === 'Tab' || /^F([1-9]|1[0-2])$/.test(e.key))) { e.preventDefault(); }"
             + "  if (type !== 'contextmenu') { q.push(e); }"
             + "  if (q.length > 4096) { q.splice(0, 2048); }"
             + "}, { passive: false });")

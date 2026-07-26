@@ -377,6 +377,19 @@ public final class TEventManager implements AutoCloseable {
     }
 
     private void handleDomKey(KeyboardEvent ke0) {
+        // Prevent default browser behavior for keys the app consumes: TAB would
+        // move focus out of the canvas, and function keys trigger browser
+        // actions (F1 help, F3 find, F5 reload, F11 fullscreen, ...). Done
+        // before the focus-owner check so the browser action is suppressed
+        // whenever the element has focus, even if the event is discarded.
+        // Only effective on the JS path where this runs inside the listener;
+        // on wasm-gc the synchronous equivalent lives in DomEventRelay.capture.
+        // Note: some keys are handled at the browser level and cannot be
+        // suppressed (e.g. F12 devtools in Chrome).
+        KeyboardKey key = KeyboardKey.lookup(ke0.getCode());
+        if (key == KeyboardKey.TAB || key.isFunctionKey()) {
+            ke0.preventDefault();
+        }
         TComponent focusOwner = TFocusManager.get().getGlobalFocusOwner();
         if (focusOwner == null) {
         log.debug("No focus Owner! Discarding event");
@@ -384,11 +397,6 @@ public final class TEventManager implements AutoCloseable {
         }
         KeyboardEvent ke = ke0;
         TKeyEvent awt = TKeyEvent.adapt(focusOwner, ke);
-        // Prevent default browser behavior for TAB key to stop browser focus changes
-        // Do this for all TAB key events (keydown, keyup, keypress)
-        if (awt.getKey() == KeyboardKey.TAB) {
-        ke0.preventDefault(); // prevents focus change when tab is pressed inside the canvas
-        }
         log.debug("Dispatching key event {}", awt);
         post(awt);
     }

@@ -141,6 +141,13 @@ public enum KeyboardKey {
         this.shiftedSymbol = shiftedSymbol;
     }
 
+    /**
+     * @return true if this key is one of the function keys (F1-F12)
+     */
+    public boolean isFunctionKey() {
+        return keyCode >= VK_F1 && keyCode <= VK_F12;
+    }
+
     public char getBaseChar() {
         if (this.baseChar != CHAR_UNDEFINED) {
             return this.baseChar;
