@@ -2,8 +2,9 @@ package me.mdbell.awtea.input;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import static me.mdbell.awtea.input.MouseConstants.*;
 import me.mdbell.awtea.util.EnumLookup;
+
+import static me.mdbell.awtea.input.MouseConstants.*;
 
 @AllArgsConstructor
 @Getter

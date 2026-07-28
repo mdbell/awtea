@@ -2,17 +2,12 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import lombok.Getter;
 import lombok.Setter;
-import me.mdbell.awtea.classlib.java.awt.event.TActionEvent;
-import me.mdbell.awtea.classlib.java.awt.event.TActionListener;
-import me.mdbell.awtea.classlib.java.awt.event.TKeyEvent;
-import me.mdbell.awtea.classlib.java.awt.event.TKeyListener;
-import me.mdbell.awtea.classlib.java.awt.event.TMouseEvent;
+import me.mdbell.awtea.classlib.java.awt.event.*;
+import org.teavm.classlib.java.awt.TDimension;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.LinkedList;
 import java.util.List;
-
-import org.teavm.classlib.java.awt.TDimension;
 
 /**
  * A basic button component that displays a label and responds to clicks.

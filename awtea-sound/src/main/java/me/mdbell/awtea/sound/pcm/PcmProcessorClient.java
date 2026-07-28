@@ -7,6 +7,9 @@ import me.mdbell.awtea.sound.AudioUtils;
 import me.mdbell.awtea.sound.DrainListener;
 import me.mdbell.awtea.sound.pcm.messages.*;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.PlatformSupport;
+import me.mdbell.awtea.util.RawTimers;
+import me.mdbell.awtea.util.TypedArrays;
 import me.mdbell.awtea.util.jso.JSRecord;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
@@ -28,9 +31,6 @@ import org.teavm.jso.workers.MessagePort;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
-import me.mdbell.awtea.util.TypedArrays;
-import me.mdbell.awtea.util.RawTimers;
-import me.mdbell.awtea.util.PlatformSupport;
 
 @ExtensionMethod({ JSObjectsExtensions.class })
 public class PcmProcessorClient {

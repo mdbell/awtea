@@ -8,6 +8,7 @@ import me.mdbell.awtea.classlib.java.awt.image.TImageObserver;
 import me.mdbell.awtea.classlib.java.awt.image.TImageProducer;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.classlib.java.awt.TDimension;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -17,8 +18,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-
-import org.teavm.classlib.java.awt.TDimension;
 
 /**
  * @see java.awt.Component

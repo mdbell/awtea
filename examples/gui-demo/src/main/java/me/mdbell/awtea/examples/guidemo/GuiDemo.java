@@ -4,15 +4,14 @@ import me.mdbell.awtea.util.StubAppletStub;
 import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.jso.JSExport;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
 
 import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
-import org.teavm.jso.JSExport;
-import org.teavm.jso.JSFunctor;
-import org.teavm.jso.JSObject;
 
 /**
  * Comprehensive GUI demo showcasing awtea features including:

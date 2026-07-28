@@ -15,7 +15,7 @@ public class CustomTransformersPlugin implements TeaVMPlugin {
 		host.add(detours);
 		// warnings only: the classlib detours are opportunistic platform
 		// fixes, and an app need not use every API they cover
-		host.add(detours.zeroMatchVerifier(false));
+		host.add(detours.zeroMatchVerifier(true));
 		host.add(new EmbedResourceTransformer(host.getClassLoader()));
 		// JS backend only: the monitor wrappers call synchronized code
 		// (OperationsMonitor.ensureEntry), which wasm-gc classifies as

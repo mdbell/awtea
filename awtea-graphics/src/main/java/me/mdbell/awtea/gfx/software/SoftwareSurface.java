@@ -1,15 +1,14 @@
 package me.mdbell.awtea.gfx.software;
 
-import me.mdbell.awtea.util.logging.Logger;
-import me.mdbell.awtea.util.logging.LoggerFactory;
-
 import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
+import me.mdbell.awtea.util.TypedArrays;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.jso.typedarrays.*;
 
 import java.awt.image.*;
-import me.mdbell.awtea.util.TypedArrays;
 
 public class SoftwareSurface implements Surface {
 

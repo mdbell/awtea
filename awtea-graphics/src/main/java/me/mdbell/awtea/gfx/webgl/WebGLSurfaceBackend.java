@@ -5,6 +5,7 @@ import lombok.Getter;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
 import me.mdbell.awtea.gl.Shaders;
+import me.mdbell.awtea.util.TypedArrays;
 import me.mdbell.awtea.util.jso.JSRecord;
 import org.teavm.jso.core.JSString;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
@@ -14,7 +15,6 @@ import org.teavm.jso.webgl.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import me.mdbell.awtea.util.TypedArrays;
 
 public final class WebGLSurfaceBackend implements SurfaceBackend {
 

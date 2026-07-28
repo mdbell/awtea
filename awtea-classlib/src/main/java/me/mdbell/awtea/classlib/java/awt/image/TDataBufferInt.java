@@ -1,12 +1,12 @@
 package me.mdbell.awtea.classlib.java.awt.image;
 
 import lombok.Getter;
+import me.mdbell.awtea.util.TypedArrays;
 import org.teavm.jso.canvas.ImageData;
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.awt.image.DataBufferInt;
-import me.mdbell.awtea.util.TypedArrays;
 
 /**
  * @see DataBufferInt

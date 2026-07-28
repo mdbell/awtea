@@ -2,10 +2,10 @@ package me.mdbell.awtea.gfx.webgl;
 
 import me.mdbell.awtea.gfx.*;
 import me.mdbell.awtea.instrument.Monitored;
+import me.mdbell.awtea.util.TypedArrays;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.typedarrays.ArrayBuffer;
-import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 import org.teavm.jso.webgl.WebGL2RenderingContext;
 import org.teavm.jso.webgl.WebGLFramebuffer;
@@ -16,7 +16,6 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.List;
-import me.mdbell.awtea.util.TypedArrays;
 
 @Monitored.AllMethods
 public class WebGLRasterizer implements Rasterizer, PickingRasterizer {
