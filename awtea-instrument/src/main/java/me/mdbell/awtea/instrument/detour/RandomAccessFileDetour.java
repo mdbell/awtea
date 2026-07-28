@@ -1,5 +1,6 @@
 package me.mdbell.awtea.instrument.detour;
 
+import me.mdbell.awtea.instrument.AllowUnmatched;
 import me.mdbell.awtea.instrument.DetourMethod;
 import me.mdbell.awtea.instrument.DetourReceiver;
 import me.mdbell.awtea.instrument.NoDetours;
@@ -28,6 +29,12 @@ public class RandomAccessFileDetour {
         return new RandomAccessFile(file, mode);
     }
 
+    /**
+     * Guard, not a replacement: TeaVM has no {@link FileChannel}, so this
+     * exists to turn a would-be silent misbehaviour into an immediate throw.
+     * Binding nothing means nothing calls it, which is the outcome we want.
+     */
+    @AllowUnmatched("guard: nothing should call RandomAccessFile.getChannel() on this target")
     @DetourMethod()
     public static FileChannel getChannel(RandomAccessFile instance) {
         log.error("RandomAccessFile.getChannel() called but FileChannel is not supported in this environment.");

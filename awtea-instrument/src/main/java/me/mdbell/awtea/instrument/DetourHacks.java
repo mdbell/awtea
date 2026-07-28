@@ -169,6 +169,13 @@ public class DetourHacks implements ClassHolderTransformer {
          */
         Set<String> callers;
         /**
+         * {@link AllowUnmatched}: this detour is a guard and may legitimately
+         * bind nothing, so zero-match verification skips it.
+         */
+        boolean allowUnmatched;
+        /** {@link AllowUnmatched#value()}, for the build log. */
+        String allowUnmatchedReason;
+        /**
          * BODY: FQCN of the @DetourReceiver target whose method body this
          * hook replaces (needed by the declaring-class call-through rewrite).
          */
@@ -510,6 +517,7 @@ public class DetourHacks implements ClassHolderTransformer {
                         }
                     }
                     built.callers = callers;
+                    applyAllowUnmatched(built, detourClass, m);
                     tmp.computeIfAbsent(targetClassName, k -> new ArrayList<>()).add(built);
                     continue;
                 }
@@ -532,6 +540,7 @@ public class DetourHacks implements ClassHolderTransformer {
                         m.getName()
                 );
                 md.callers = callers;
+                applyAllowUnmatched(md, detourClass, m);
 
                 tmp.computeIfAbsent(targetClassName, k -> new ArrayList<>())
                         .add(md);
@@ -1781,6 +1790,22 @@ public class DetourHacks implements ClassHolderTransformer {
      *                        detours should be annotated {@link DisableDetour}
      *                        rather than left unmatched.
      */
+    /**
+     * Records {@link AllowUnmatched} from the detour method or its declaring
+     * class onto {@code detour}, so zero-match verification can skip guards
+     * that are supposed to bind nothing.
+     */
+    private static void applyAllowUnmatched(MethodDetour detour, Class<?> detourClass, Method m) {
+        AllowUnmatched allow = m.getAnnotation(AllowUnmatched.class);
+        if (allow == null) {
+            allow = detourClass.getAnnotation(AllowUnmatched.class);
+        }
+        if (allow != null) {
+            detour.allowUnmatched = true;
+            detour.allowUnmatchedReason = allow.value();
+        }
+    }
+
     public DependencyListener zeroMatchVerifier(boolean failOnUnmatched) {
         return new DependencyListener() {
             @Override
@@ -1801,6 +1826,7 @@ public class DetourHacks implements ClassHolderTransformer {
 
             @Override
             public void completing(DependencyAgent agent) {
+                List<String> unmatched = new ArrayList<>();
                 detours.forEach((targetClass, detourList) -> {
                     for (MethodDetour detour : detourList) {
                         if (detour.matchedSites > 0) {
@@ -1809,18 +1835,47 @@ public class DetourHacks implements ClassHolderTransformer {
                         String originalName = detour.original != null
                                 ? detour.original.getName()
                                 : detour.adviceTargetName;
-                        String message = "Detour matched no call sites: " + detour.kind + " on "
-                                + targetClass + "." + originalName + " -> "
-                                + detour.detourClass.getName() + "." + detour.detourName
-                                + " (was the original renamed? annotate with @DisableDetour if"
-                                + " intentionally disabled)";
-                        if (failOnUnmatched) {
-                            agent.getDiagnostics().error(null, message);
-                        } else {
-                            agent.getDiagnostics().warning(null, message);
+                        String site = detour.kind + " on " + targetClass + "." + originalName
+                                + " -> " + detour.detourClass.getName() + "." + detour.detourName;
+                        if (detour.allowUnmatched) {
+                            log.info("Detour bound no call sites, as declared by @AllowUnmatched:"
+                                    + " {}{}", site,
+                                    detour.allowUnmatchedReason == null
+                                            || detour.allowUnmatchedReason.isEmpty()
+                                            ? "" : " (" + detour.allowUnmatchedReason + ")");
+                            continue;
                         }
+                        unmatched.add(site);
                     }
                 });
+                if (unmatched.isEmpty()) {
+                    return;
+                }
+                // One banner rather than N interchangeable lines: an unmatched
+                // detour means client code silently stopped being instrumented,
+                // which is easy to skim past when it looks like a warning.
+                StringBuilder sb = new StringBuilder();
+                sb.append("\n");
+                sb.append("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                sb.append("!! ").append(unmatched.size())
+                        .append(unmatched.size() == 1 ? " DETOUR IS" : " DETOURS ARE")
+                        .append(" NOT DETOURING - the code they hook runs UNMODIFIED\n");
+                sb.append("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                for (String site : unmatched) {
+                    sb.append("!!   ").append(site).append('\n');
+                }
+                sb.append("!! The original was probably renamed, moved to another class, or had\n");
+                sb.append("!! its signature changed. Fix the binding, or:\n");
+                sb.append("!!   @DisableDetour   - the detour is intentionally turned off\n");
+                sb.append("!!   @AllowUnmatched  - it is a guard and binding nothing is correct\n");
+                sb.append("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                String banner = sb.toString();
+                log.error(banner);
+                if (failOnUnmatched) {
+                    agent.getDiagnostics().error(null, banner);
+                } else {
+                    agent.getDiagnostics().warning(null, banner);
+                }
             }
 
             @Override
