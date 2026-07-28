@@ -2,17 +2,16 @@ package me.mdbell.awtea.font;
 
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceBackend;
+import me.mdbell.awtea.gfx.software.SoftwareSurface;
 import me.mdbell.awtea.util.GlyphRasterizer;
+import me.mdbell.awtea.util.TypedArrays;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.jso.typedarrays.Int32Array;
+import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import org.teavm.jso.typedarrays.Int32Array;
-import org.teavm.jso.typedarrays.Uint8ClampedArray;
-import me.mdbell.awtea.gfx.software.SoftwareSurface;
-import me.mdbell.awtea.util.TypedArrays;
 
 /**
  * A persistent texture atlas for caching rendered glyphs.

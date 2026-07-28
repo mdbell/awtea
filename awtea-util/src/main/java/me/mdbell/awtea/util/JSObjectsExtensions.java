@@ -1,7 +1,5 @@
 package me.mdbell.awtea.util;
 
-import me.mdbell.awtea.util.jso.FileSystemDirectoryHandle;
-import me.mdbell.awtea.util.jso.FileSystemHandle;
 import me.mdbell.awtea.util.jso.JSAsyncIterator;
 import me.mdbell.awtea.util.jso.JSRecord;
 import me.mdbell.awtea.util.jso.MediaQueryList;
@@ -12,7 +10,6 @@ import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSPromise;
-import org.teavm.jso.core.JSString;
 import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.typedarrays.TypedArray;

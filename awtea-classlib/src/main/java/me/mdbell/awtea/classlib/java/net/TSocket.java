@@ -3,11 +3,12 @@ package me.mdbell.awtea.classlib.java.net;
 import lombok.Getter;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.monitor.NetworkMonitor;
-import me.mdbell.awtea.net.WebSocketConnectSupport;
 import me.mdbell.awtea.net.SocketResolver;
 import me.mdbell.awtea.net.SocketResolverFactory;
+import me.mdbell.awtea.net.WebSocketConnectSupport;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import me.mdbell.awtea.util.ThreadUtils;
+import me.mdbell.awtea.util.TypedArrays;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.core.JSPromise;
@@ -24,7 +25,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import me.mdbell.awtea.util.TypedArrays;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class TSocket {

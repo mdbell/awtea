@@ -4,6 +4,7 @@ import me.mdbell.awtea.gfx.Rasterizer;
 import me.mdbell.awtea.gfx.Surface;
 import me.mdbell.awtea.gfx.SurfaceCommand;
 import me.mdbell.awtea.gfx.SurfaceContainer;
+import me.mdbell.awtea.util.TypedArrays;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.typedarrays.Int32Array;
@@ -13,7 +14,6 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.List;
-import me.mdbell.awtea.util.TypedArrays;
 
 /**
  * Pure Java software rasterizer implementation.

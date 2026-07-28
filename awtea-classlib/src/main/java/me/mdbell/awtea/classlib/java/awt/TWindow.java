@@ -1,10 +1,9 @@
 package me.mdbell.awtea.classlib.java.awt;
 
 import me.mdbell.awtea.classlib.java.awt.event.TWindowListener;
+import org.teavm.classlib.java.awt.TDimension;
 
 import java.awt.*;
-
-import org.teavm.classlib.java.awt.TDimension;
 
 /**
  * A {@code TWindow} object is a top-level window with no borders and no

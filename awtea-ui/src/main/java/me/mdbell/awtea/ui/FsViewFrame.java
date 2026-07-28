@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.TypedArrays;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
 import org.teavm.jso.dom.css.CSSStyleDeclaration;
@@ -16,7 +17,6 @@ import java.util.Arrays;
 
 import static me.mdbell.awtea.ui.Theme.humanReadableSize;
 import static me.mdbell.awtea.ui.Theme.humanReadableTimestamp;
-import me.mdbell.awtea.util.TypedArrays;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 public class FsViewFrame extends FloatingFrame {

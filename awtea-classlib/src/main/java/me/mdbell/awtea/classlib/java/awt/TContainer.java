@@ -4,13 +4,12 @@ import lombok.Getter;
 import lombok.Setter;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
+import org.teavm.classlib.java.awt.TDimension;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.teavm.classlib.java.awt.TDimension;
 
 /**
  * @see java.awt.Container

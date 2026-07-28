@@ -2,10 +2,9 @@ package me.mdbell.awtea.classlib.java.awt;
 
 import lombok.Getter;
 import lombok.Setter;
-
-import java.awt.Color;
-
 import org.teavm.classlib.java.awt.TDimension;
+
+import java.awt.*;
 
 /**
  * A label component for displaying non-editable text.

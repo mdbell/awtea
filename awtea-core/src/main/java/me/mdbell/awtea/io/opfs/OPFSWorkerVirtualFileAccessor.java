@@ -2,6 +2,7 @@ package me.mdbell.awtea.io.opfs;
 
 import lombok.experimental.ExtensionMethod;
 import me.mdbell.awtea.util.JSObjectsExtensions;
+import me.mdbell.awtea.util.TypedArrays;
 import me.mdbell.awtea.util.jso.FileSystemFileHandle;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
@@ -18,7 +19,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import me.mdbell.awtea.util.TypedArrays;
 
 @ExtensionMethod({JSObjectsExtensions.class})
 class OPFSWorkerVirtualFileAccessor implements VirtualFileAccessor {

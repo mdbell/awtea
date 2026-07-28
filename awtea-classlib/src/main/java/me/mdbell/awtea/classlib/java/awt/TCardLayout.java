@@ -1,11 +1,11 @@
 package me.mdbell.awtea.classlib.java.awt;
 
+import org.teavm.classlib.java.awt.TDimension;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.teavm.classlib.java.awt.TDimension;
 
 /**
  * A {@code TCardLayout} object is a layout manager for a container.

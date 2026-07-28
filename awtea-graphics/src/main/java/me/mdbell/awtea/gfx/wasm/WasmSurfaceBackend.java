@@ -5,12 +5,11 @@ import me.mdbell.awtea.gfx.SurfaceBackend;
 import me.mdbell.awtea.util.logging.LogLevel;
 import me.mdbell.awtea.util.logging.Logger;
 import me.mdbell.awtea.util.logging.LoggerFactory;
-
-import java.awt.image.BufferedImage;
-
 import org.teavm.jso.browser.Performance;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.typedarrays.Int8Array;
+
+import java.awt.image.BufferedImage;
 
 public class WasmSurfaceBackend implements SurfaceBackend {
 

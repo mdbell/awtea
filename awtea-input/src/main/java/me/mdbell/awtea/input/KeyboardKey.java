@@ -1,8 +1,9 @@
 package me.mdbell.awtea.input;
 
 import lombok.Getter;
-import static me.mdbell.awtea.input.KeyConstants.*;
 import me.mdbell.awtea.util.EnumLookup;
+
+import static me.mdbell.awtea.input.KeyConstants.*;
 
 @Getter
 public enum KeyboardKey {

@@ -1,13 +1,13 @@
 package me.mdbell.awtea.classlib.java.awt.test;
 
-import me.mdbell.awtea.classlib.java.awt.*;
+import me.mdbell.awtea.classlib.java.awt.TFlowLayout;
+import me.mdbell.awtea.classlib.java.awt.TGraphics;
+import me.mdbell.awtea.classlib.java.awt.TPanel;
+import me.mdbell.awtea.classlib.java.awt.TWindow;
 import me.mdbell.awtea.test.Test;
-
-import java.awt.Color;
-
 import org.teavm.classlib.java.awt.TDimension;
 
-import static me.mdbell.awtea.test.Assert.*;
+import static me.mdbell.awtea.test.Assert.assertTrue;
 
 /**
  * Tests for TWindow functionality, especially the pack() method.

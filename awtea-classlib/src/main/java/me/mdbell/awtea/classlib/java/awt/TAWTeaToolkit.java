@@ -6,17 +6,12 @@ import me.mdbell.awtea.classlib.java.awt.image.*;
 import me.mdbell.awtea.util.BrowserToolkitSupport;
 import me.mdbell.awtea.util.JSObjectsExtensions;
 import org.teavm.classlib.java.awt.TDimension;
-import org.teavm.interop.Async;
-import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.file.Blob;
-import org.teavm.jso.dom.html.HTMLCanvasElement;
-import org.teavm.jso.dom.html.HTMLImageElement;
 import org.teavm.jso.typedarrays.Uint8Array;
 
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;

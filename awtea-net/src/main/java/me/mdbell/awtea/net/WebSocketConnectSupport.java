@@ -1,12 +1,12 @@
 package me.mdbell.awtea.net;
 
-import java.io.IOException;
-import java.util.function.Consumer;
-
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.function.JSConsumer;
 import org.teavm.jso.websocket.WebSocket;
+
+import java.io.IOException;
+import java.util.function.Consumer;
 
 /**
  * JS-side WebSocket connect plumbing for the classlib Socket.

@@ -4,6 +4,8 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import me.mdbell.awtea.util.coverage.*;
+import me.mdbell.awtea.util.logging.Logger;
+import me.mdbell.awtea.util.logging.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -15,8 +17,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import me.mdbell.awtea.util.logging.Logger;
-import me.mdbell.awtea.util.logging.LoggerFactory;
 
 public class ApiDiff {
 
