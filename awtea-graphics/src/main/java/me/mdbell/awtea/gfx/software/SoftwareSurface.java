@@ -31,6 +31,13 @@ public class SoftwareSurface implements Surface {
 	// don't pay. JS backend never uses this (its pixelData is already a view).
 	private java.nio.IntBuffer presentBuffer;
 
+	// wasm-gc external store: when a renderer already keeps this surface's
+	// pixels in a DIRECT buffer (a linear-memory framebuffer), presenting
+	// through the canonical int[] would cost two bulk copies per frame.
+	// Attaching the buffer makes getPixelData() a zero-copy view over it
+	// instead. See attachDirectStore for the coherence contract.
+	private java.nio.IntBuffer externalStore;
+
 	public SoftwareSurface(WritableRaster raster, ColorModel cm, int format) {
 		this.raster = raster;
 		this.cm = cm;
@@ -72,6 +79,32 @@ public class SoftwareSurface implements Surface {
 	@Override
 	public boolean isDirty() {
 		return dirty;
+	}
+
+	/**
+	 * wasm-gc only: makes {@code store} — which must be a <em>direct</em>
+	 * {@link java.nio.IntBuffer} at least as large as the raster's data
+	 * buffer — the canonical pixel source for {@link #getPixelData()},
+	 * turning the per-present int[]-to-direct-buffer copy into a zero-copy
+	 * typed-array view.
+	 *
+	 * <p>The coherence contract is the attacher's: pixels written through the
+	 * raster's own {@code int[]} (surface-rasterizer graphics, font raster
+	 * targets) are NOT visible through the attached store, so only attach when
+	 * every writer of this surface writes the buffer. Detach with
+	 * {@code null}. No-op semantics off wasm-gc, where {@code pixelData} is
+	 * already a zero-copy view of the raster.
+	 */
+	public void attachDirectStore(java.nio.IntBuffer store) {
+		if (store != null && store.hasArray()) {
+			throw new IllegalArgumentException("attachDirectStore needs a direct buffer");
+		}
+		this.externalStore = store;
+	}
+
+	/** The attached direct store, or null. */
+	public java.nio.IntBuffer getDirectStore() {
+		return externalStore;
 	}
 
 	private Uint8ClampedArray getPixelDataFromBuffer(DataBuffer dataBuffer) {
@@ -163,6 +196,15 @@ public class SoftwareSurface implements Surface {
 		// This allows consumers to track if surface has been modified since last read
 		dirty = false;
 		if (PlatformDetector.isWebAssemblyGC()) {
+			if (externalStore != null) {
+				// Zero-copy: a fresh view straight over the attached direct
+				// store. Taken per call so linear-memory growth (which
+				// detaches existing ArrayBuffer views) can never hand out a
+				// stale one.
+				Int32Array view = Int32Array.fromJavaBuffer(externalStore);
+				return new Uint8ClampedArray(view.getBuffer(), view.getByteOffset(),
+					externalStore.capacity() * 4);
+			}
 			// Fresh JS-side snapshot of the canonical Java array. Callers get
 			// current pixels but NOT a live view, and the view is only valid
 			// until the next getPixelData() on THIS surface (the direct buffer
