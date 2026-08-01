@@ -4,6 +4,15 @@ plugins {
     id("maven-publish")
 }
 
+/**
+ * Injectable ExecOperations holder: Project.javaexec was removed in Gradle 9,
+ * and this is the replacement that also works on Gradle 8.
+ */
+interface ExecOpsProvider {
+    @get:javax.inject.Inject
+    val execOps: org.gradle.process.ExecOperations
+}
+
 group = "me.mdbell"
 version = "0.1.0"
 
@@ -64,7 +73,8 @@ tasks.register<JavaExec>("generateDocs") {
     
     doLast {
         // Generate Markdown report in a separate execution
-        project.javaexec {
+        val execOps = project.objects.newInstance(ExecOpsProvider::class.java).execOps
+        execOps.javaexec {
             classpath = project(":awtea-util").sourceSets["main"].runtimeClasspath +
                         project(":awtea-classlib").sourceSets["main"].output
             mainClass.set("me.mdbell.awtea.util.ApiDiff")

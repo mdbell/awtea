@@ -7,6 +7,15 @@ import java.net.URL
 import java.net.URLClassLoader
 import org.gradle.api.tasks.testing.Test
 
+/**
+ * Injectable ExecOperations holder: Project.exec was removed in Gradle 9,
+ * and this is the replacement that also works on Gradle 8.
+ */
+interface ExecOpsProvider {
+    @get:javax.inject.Inject
+    val execOps: org.gradle.process.ExecOperations
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(11))
@@ -116,7 +125,7 @@ tasks.register("buildAwtRasterWasm") {
             ))
         }
 
-        exec {
+        project.objects.newInstance(ExecOpsProvider::class.java).execOps.exec {
             commandLine(args)
         }
     }
