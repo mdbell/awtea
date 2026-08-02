@@ -1,6 +1,7 @@
 package me.mdbell.awtea.util.logging;
 
 import org.teavm.interop.PlatformMarker;
+import org.teavm.interop.Sync;
 import org.teavm.jso.JSBody;
 
 import java.util.ArrayList;
@@ -58,13 +59,22 @@ public final class LoggerFactory {
 	/**
 	 * Get or create a logger for the specified class
 	 */
+	@Sync
 	public static Logger getLogger(Class<?> clazz) {
 		return getLogger(clazz.getName());
 	}
 
 	/**
-	 * Get or create a logger with the specified name
+	 * Get or create a logger with the specified name.
+	 *
+	 * <p>{@code @Sync}: a map lookup plus a {@link SinkLogger} allocation —
+	 * this never suspends. Without the assertion, TeaVM's async-taint
+	 * analysis routes every static-logger class initializer through the
+	 * type-imprecise {@code ConcurrentHashMap.computeIfAbsent} call-graph
+	 * node into unrelated {@code Function} lambdas that do suspend, dragging
+	 * half the program into the CPS transform.
 	 */
+	@Sync
 	public static Logger getLogger(String name) {
 		return loggers.computeIfAbsent(name, LoggerFactory::createLogger);
 	}
