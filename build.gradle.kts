@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("org.teavm") version "0.13.1" apply false
+    id("org.teavm") version "0.15.0" apply false
     id("maven-publish")
 }
 
@@ -32,11 +32,11 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(11))
+            languageVersion.set(JavaLanguageVersion.of(17))
         }
 
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     // Only configure publishing for non-example projects
