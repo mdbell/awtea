@@ -4,11 +4,11 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 group = "me.mdbell"
@@ -19,5 +19,5 @@ repositories {
 }
 
 dependencies {
-    implementation("org.teavm:teavm-jso-apis:0.13.0")
+    implementation("org.teavm:teavm-jso-apis:0.15.0")
 }

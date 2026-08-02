@@ -4,11 +4,11 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 group = "me.mdbell"
@@ -22,8 +22,8 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.36")
     annotationProcessor("org.projectlombok:lombok:1.18.36")
 
-    implementation("org.teavm:teavm-core:0.13.1")
-    implementation("org.teavm:teavm-jso-apis:0.13.1")
+    implementation("org.teavm:teavm-core:0.15.0")
+    implementation("org.teavm:teavm-jso-apis:0.15.0")
 
     implementation(project(":awtea-util"))
     implementation(project(":awtea-sound:worklet"))

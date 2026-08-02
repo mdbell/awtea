@@ -18,11 +18,11 @@ interface ExecOpsProvider {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 group = "me.mdbell"
@@ -36,19 +36,19 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.36")
     annotationProcessor("org.projectlombok:lombok:1.18.36")
 
-    implementation("org.teavm:teavm-core:0.13.1")
-    implementation("org.teavm:teavm-classlib:0.13.1")
-    implementation("org.teavm:teavm-jso-apis:0.13.1")
+    implementation("org.teavm:teavm-core:0.15.0")
+    implementation("org.teavm:teavm-classlib:0.15.0")
+    implementation("org.teavm:teavm-jso-apis:0.15.0")
     
     implementation(project(":awtea-instrument"))
     implementation(project(":awtea-util"))
     
     testImplementation(project(":awtea-test-util"))
     testImplementation(project(":awtea-classlib"))  // For TeaVM to access AWT implementations
-    testImplementation("org.teavm:teavm-tooling:0.13.1")
-    testImplementation("org.teavm:teavm-platform:0.13.1")
-    testImplementation("org.teavm:teavm-jso-impl:0.13.1")
-    testImplementation("org.teavm:teavm-metaprogramming-impl:0.13.1")
+    testImplementation("org.teavm:teavm-tooling:0.15.0")
+    testImplementation("org.teavm:teavm-platform:0.15.0")
+    testImplementation("org.teavm:teavm-jso-impl:0.15.0")
+    testImplementation("org.teavm:teavm-metaprogramming-impl:0.15.0")
 }
 
 var wasmOutputDir = file(layout.buildDirectory.dir("wasm"))
