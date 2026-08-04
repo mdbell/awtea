@@ -224,6 +224,7 @@ For complete examples, use cases, and migration guidance, see the **[Canvas Comp
 - [Blit Optimizations](docs/BLIT_OPTIMIZATIONS.md) - WASM renderer performance optimizations for image blitting
 - [Alpha Blending](docs/ALPHA_BLENDING.md) - Transparency and alpha compositing support
 - [Font Rendering Architecture](docs/FONT_RENDERING_ARCHITECTURE.md) - Modular font rendering with pluggable strategies
+- **[Font Rendering Phase 1](docs/FONT_RENDERING_PHASE1.md) - Context-aware metrics and AWT alignment** ⭐ NEW
 - [Font Loading Strategy](docs/FONT_LOADING.md) - Runtime font loading with browser HTTP caching
 - [CSS Embedding](docs/CSS_EMBEDDING.md) - Embedding CSS files with CSS custom properties for theming
 - [System Properties](docs/SYSTEM_PROPERTIES.md) - Configuration via system properties
